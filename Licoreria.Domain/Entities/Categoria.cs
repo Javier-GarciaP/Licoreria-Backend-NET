@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Licoreria.Domain.Common;
 
 namespace Licoreria.Domain.Entities;
 
-public class Categoria
+public class Categoria : BaseEntity
 {
-    public int Id { get; set; }
     public string Nombre { get; set; } = string.Empty;
     public string Descripcion { get; set; } = string.Empty;
 
