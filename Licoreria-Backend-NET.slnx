@@ -1,1 +1,6 @@
-<Solution />
+<Solution>
+  <Project Path="Licoreria.Application/Licoreria.Application.csproj" />
+  <Project Path="Licoreria.Domain/Licoreria.Domain.csproj" />
+  <Project Path="Licoreria.Infrastructure/Licoreria.Infrastructure.csproj" />
+  <Project Path="Licoreria.WebAPI/Licoreria.WebAPI.csproj" />
+</Solution>

@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Licoreria.Application\Licoreria.Application.csproj" />
+    <ProjectReference Include="..\Licoreria.Domain\Licoreria.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
