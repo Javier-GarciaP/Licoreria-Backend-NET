@@ -1,13 +1,12 @@
 using Licoreria.Infrastructure.Persistence;
 using Licoreria.WebAPI.Middlewares;
 using Microsoft.EntityFrameworkCore;
+using Licoreria.Infrastructure.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Registrar DbContext con SQL Server
-builder.Services.AddDbContext<LicoreriaDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
+// Registrar los servicios de Infraestructura (DbContext + EF Core)
+builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
