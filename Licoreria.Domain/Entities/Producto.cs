@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Licoreria.Domain.Common;
 
 namespace Licoreria.Domain.Entities;
 
-public class Producto
+public class Producto : BaseEntity
 {
-    public int Id { get; set; }
     public string Nombre { get; set; } = string.Empty;
     public string CodigoBarras { get; set; } = string.Empty;
 
@@ -21,6 +18,6 @@ public class Producto
     public bool Activo { get; set; } = true;
 
     // Relación N:1 con Categoria
-    public int CategoriaId { get; set; }
+    public Guid CategoriaId { get; set; }
     public Categoria Categoria { get; set; } = null!;
 }

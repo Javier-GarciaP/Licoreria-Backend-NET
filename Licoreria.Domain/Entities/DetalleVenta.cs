@@ -1,19 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Licoreria.Domain.Common;
 
 namespace Licoreria.Domain.Entities;
 
-public class DetalleVenta
+public class DetalleVenta : BaseEntity
 {
-    public int Id { get; set; }
-
     // Relación N:1 con Venta
-    public int VentaId { get; set; }
+    public Guid VentaId { get; set; }
     public Venta Venta { get; set; } = null!;
 
     // Relación N:1 con Producto
-    public int ProductoId { get; set; }
+    public Guid ProductoId { get; set; }
     public Producto Producto { get; set; } = null!;
 
     public int Cantidad { get; set; }

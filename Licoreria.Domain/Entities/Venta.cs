@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Licoreria.Domain.Common;
 
 namespace Licoreria.Domain.Entities;
 
-public class Venta
+public class Venta : BaseEntity
 {
-    public int Id { get; set; }
     public DateTime Fecha { get; set; } = DateTime.UtcNow;
     public decimal TasaCambio { get; set; }
     public decimal TotalUSD { get; set; }
@@ -14,7 +11,7 @@ public class Venta
     public string MetodoPago { get; set; } = string.Empty; // EfectivoUSD, PagoMovil, Zelle, Punto
 
     // Relación N:1 con Usuario (Cajero)
-    public int UsuarioId { get; set; }
+    public Guid UsuarioId { get; set; }
     public Usuario Usuario { get; set; } = null!;
 
     // Relación 1:N con DetalleVenta
