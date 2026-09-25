@@ -333,6 +333,12 @@ A continuación se presenta el espacio destinado a las evidencias de validación
 
 ---
 
+### 🧪 Colección de Pruebas de Postman
+La colección completa con las pruebas de los endpoints en formato .jason para esta fase se encuentra disponible en el repositorio en la siguiente ruta:
+* [`Licoreria_Fase1_Postman_Collection.json`](Licoreria.WebAPI/docs/Licoreria_Fase1_Postman_Collection.json)
+
+---
+
 ## 🗓️ Historial de Entregas por Fase
 
 | Fase | Alcance | Tag de Git / Release | Estado |
