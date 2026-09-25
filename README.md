@@ -327,7 +327,8 @@ A continuación se presenta el espacio destinado a las evidencias de validación
 *Descripción:* Captura de pantalla de Postman donde se evidencia el encabezado `Content-Type: application/problem+json`, el código de estado correspondiente y el cuerpo JSON con los campos `type`, `title`, `status`, `detail` e `instance`.
 
 > **📎 Insertar aquí la captura de pantalla:**
->
+> ![Evidencia 200 OK](Licoreria.WebAPI/docs/postman1.peg)
+> ![Evidencia RFC 7807](Licoreria.WebAPI/docs/postman2.peg)
 > `![Evidencia RFC 7807 - Postman](docs/screenshots/PLACEHOLDER_fase1_rfc7807.png)`
 
 ---
