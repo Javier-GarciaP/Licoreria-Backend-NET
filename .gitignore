@@ -200,6 +200,9 @@ PublishScripts/
 **/[Pp]ackages/*
 # except build/, which is used as an MSBuild target.
 !**/[Pp]ackages/build/
+# excepcion: paquetes compartidos del frontend
+!frontend/packages/
+!frontend/packages/**
 # Uncomment if necessary however generally it will be regenerated when needed
 #!**/[Pp]ackages/repositories.config
 # NuGet v3's project.json files produces more ignorable files
@@ -370,3 +373,30 @@ appsettings.*.Local.json
 *.local.json
 .env
 .env.*
+!.env.example
+
+# ==========================================
+# Node / Frontend / Sitio de documentacion
+# ==========================================
+node_modules/
+dist/
+build/
+.astro/
+.turbo/
+.vite/
+*.tsbuildinfo
+.eslintcache
+
+# ==========================================
+# Backups de base de datos
+# ==========================================
+database/backups/
+*.dump
+*.sql.gz
+
+# ==========================================
+# Entornos virtuales / tooling
+# ==========================================
+.venv/
+venv/
+__pycache__/
