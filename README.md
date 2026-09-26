@@ -343,8 +343,8 @@ La colección completa con las pruebas de los endpoints en formato .jason para e
 
 | Fase | Alcance | Tag de Git / Release | Estado |
 | :---: | :--- | :--- | :---: |
-| **Fase 1** | Estructura Onion Architecture, `BaseEntity` (Guid/UTC), persistencia EF Core, Middleware RFC 7807, repositorios e Inyección de Dependencias. | _Pendiente_ | _En evaluación_ |
+| **Fase 1** | Estructura Onion Architecture, `BaseEntity` (Guid/UTC), persistencia EF Core, Middleware RFC 7807, repositorios e Inyección de Dependencias. | [`fase-1`](https://github.com/Javier-GarciaP/Licoreria-Backend-NET/releases/tag/fase-1) | ✅ Completada |
 | **Fase 2** | _Por definir_ | _Pendiente_ | _No iniciada_ |
 | **Fase 3** | _Por definir_ | _Pendiente_ | _No iniciada_ |
 
-> **Nota:** Los Tags / Releases de Git se registrarán a medida que se cierre y apruebe cada fase.
+> **Nota:** Los Tags / Releases de Git se registran a medida que se cierra y aprueba cada fase.
