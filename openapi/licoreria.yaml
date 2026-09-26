@@ -1,0 +1,536 @@
+openapi: 3.0.3
+info:
+  title: API Licoreria / Discoteca
+  description: |
+    Contrato de la API REST del sistema de licoreria y discoteca (sucursal unica).
+    Los errores se devuelven conforme a RFC 7807 (`application/problem+json`).
+  version: 0.1.0
+  contact:
+    name: Equipo de desarrollo
+    url: https://github.com/Javier-GarciaP/Licoreria-Backend-NET
+servers:
+  - url: https://localhost:7271/api/v1
+    description: Desarrollo (HTTPS)
+  - url: http://localhost:5190/api/v1
+    description: Desarrollo (HTTP)
+tags:
+  - name: Auth
+    description: Autenticacion y sesion.
+  - name: Catalogo
+    description: Productos, categorias y precios.
+  - name: Inventario
+    description: Stock, kardex y mermas.
+  - name: Ventas
+    description: Ventas, cuentas y pagos.
+  - name: Club
+    description: Zonas, mesas y reservas.
+  - name: Finanzas
+    description: Monedas y tasas de cambio.
+  - name: Contenido
+    description: Web publica, eventos y menu digital.
+  - name: IA
+    description: Generacion asistida por IA.
+security:
+  - bearerAuth: []
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Inicia sesion y devuelve tokens
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Tokens emitidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Datos del usuario autenticado
+      responses:
+        '200':
+          description: Usuario actual
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /categorias:
+    get:
+      tags: [Catalogo]
+      summary: Lista las categorias
+      responses:
+        '200':
+          description: Categorias
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Categoria'
+  /productos:
+    get:
+      tags: [Catalogo]
+      summary: Lista productos con paginacion
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - name: categoriaId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Productos paginados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductoPagina'
+    post:
+      tags: [Catalogo]
+      summary: Crea un producto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductoCreate'
+      responses:
+        '201':
+          description: Producto creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Producto'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /productos/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Catalogo]
+      summary: Obtiene un producto por id
+      responses:
+        '200':
+          description: Producto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Producto'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /stock:
+    get:
+      tags: [Inventario]
+      summary: Existencias por variante
+      responses:
+        '200':
+          description: Stock
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Stock'
+  /mermas:
+    post:
+      tags: [Inventario]
+      summary: Registra una merma y su reposicion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MermaCreate'
+      responses:
+        '201':
+          description: Merma registrada
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /ventas:
+    get:
+      tags: [Ventas]
+      summary: Lista ventas
+      responses:
+        '200':
+          description: Ventas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Venta'
+    post:
+      tags: [Ventas]
+      summary: Registra una venta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VentaCreate'
+      responses:
+        '201':
+          description: Venta creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Venta'
+  /cuentas/{id}/abonos:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [Ventas]
+      summary: Registra un abono sobre una cuenta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AbonoCreate'
+      responses:
+        '200':
+          description: Abono registrado
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /zonas:
+    get:
+      tags: [Club]
+      summary: Lista las zonas del local
+      responses:
+        '200':
+          description: Zonas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Zona'
+  /mesas:
+    get:
+      tags: [Club]
+      summary: Lista mesas y disponibilidad
+      responses:
+        '200':
+          description: Mesas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Mesa'
+  /reservas:
+    get:
+      tags: [Club]
+      summary: Lista reservas
+      responses:
+        '200':
+          description: Reservas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Reserva'
+    post:
+      tags: [Club]
+      summary: Crea una reserva
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservaCreate'
+      responses:
+        '201':
+          description: Reserva creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reserva'
+  /reservas/{id}/validar-pago:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [Club]
+      summary: Valida la sena de una reserva
+      responses:
+        '200':
+          description: Reserva confirmada
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /tasas-cambio/actual:
+    get:
+      tags: [Finanzas]
+      summary: Tasa de cambio vigente
+      security: []
+      responses:
+        '200':
+          description: Tasa vigente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TasaCambio'
+  /eventos:
+    get:
+      tags: [Contenido]
+      summary: Lista eventos publicados
+      security: []
+      responses:
+        '200':
+          description: Eventos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Evento'
+  /ai/planos:
+    post:
+      tags: [IA]
+      summary: Digitaliza un plano desde una imagen
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                imagen:
+                  type: string
+                  format: binary
+      responses:
+        '202':
+          description: Trabajo aceptado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiGeneracion'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    PageSize:
+      name: pageSize
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+  responses:
+    BadRequest:
+      description: Datos invalidos
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    Unauthorized:
+      description: No autenticado
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    Unprocessable:
+      description: Regla de negocio incumplida
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+  schemas:
+    ProblemDetails:
+      type: object
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        instance: { type: string }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+    LoginResponse:
+      type: object
+      properties:
+        accessToken: { type: string }
+        refreshToken: { type: string }
+        expiresIn: { type: integer }
+    Usuario:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nombreCompleto: { type: string }
+        email: { type: string, format: email }
+        rol: { type: string }
+    Categoria:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nombre: { type: string }
+        categoriaPadreId: { type: string, format: uuid, nullable: true }
+    ProductoVariante:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nombre: { type: string }
+        sku: { type: string }
+        precioVentaUsd: { type: number, format: double }
+    Producto:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nombre: { type: string }
+        categoriaId: { type: string, format: uuid }
+        marcaId: { type: string, format: uuid, nullable: true }
+        activo: { type: boolean }
+        variantes:
+          type: array
+          items: { $ref: '#/components/schemas/ProductoVariante' }
+    ProductoCreate:
+      type: object
+      required: [nombre, categoriaId]
+      properties:
+        nombre: { type: string }
+        categoriaId: { type: string, format: uuid }
+        marcaId: { type: string, format: uuid, nullable: true }
+    ProductoPagina:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Producto' }
+        page: { type: integer }
+        pageSize: { type: integer }
+        totalItems: { type: integer }
+        totalPages: { type: integer }
+    Stock:
+      type: object
+      properties:
+        varianteId: { type: string, format: uuid }
+        cantidad: { type: number, format: double }
+        stockMinimo: { type: number, format: double }
+        bajoMinimo: { type: boolean }
+    MermaCreate:
+      type: object
+      required: [varianteId, cantidad, motivo]
+      properties:
+        varianteId: { type: string, format: uuid }
+        cantidad: { type: number, format: double }
+        motivo:
+          type: string
+          enum: [danado, partido, vencido]
+        reponer: { type: boolean, default: false }
+    Venta:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        fecha: { type: string, format: date-time }
+        tasaCambio: { type: number, format: double }
+        totalUsd: { type: number, format: double }
+        totalBs: { type: number, format: double }
+        metodoPago: { type: string }
+    VentaCreate:
+      type: object
+      required: [items, pagos]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [varianteId, cantidad]
+            properties:
+              varianteId: { type: string, format: uuid }
+              cantidad: { type: number, format: double }
+        pagos:
+          type: array
+          items:
+            type: object
+            required: [metodoPago, monto]
+            properties:
+              metodoPago: { type: string }
+              monto: { type: number, format: double }
+              propina: { type: number, format: double }
+    AbonoCreate:
+      type: object
+      required: [monto, metodoPago]
+      properties:
+        monto: { type: number, format: double }
+        metodoPago: { type: string }
+    Zona:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nombre: { type: string }
+        tipo: { type: string, enum: [barra, mesas, juegos, pista, vip] }
+    Mesa:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        zonaId: { type: string, format: uuid }
+        numero: { type: string }
+        capacidad: { type: integer }
+        disponible: { type: boolean }
+    Reserva:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        fechaHora: { type: string, format: date-time }
+        personas: { type: integer }
+        estado: { type: string, enum: [pendiente, confirmada, cancelada, asistio, no_asistio] }
+        origen: { type: string, enum: [web, whatsapp, presencial] }
+    ReservaCreate:
+      type: object
+      required: [fechaHora, personas, mesas]
+      properties:
+        fechaHora: { type: string, format: date-time }
+        personas: { type: integer }
+        mesas:
+          type: array
+          items: { type: string, format: uuid }
+        nombreContacto: { type: string }
+        telefono: { type: string }
+    TasaCambio:
+      type: object
+      properties:
+        fecha: { type: string, format: date }
+        tipo: { type: string, enum: [bcv, paralelo] }
+        valor: { type: number, format: double }
+    Evento:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        titulo: { type: string }
+        fecha: { type: string, format: date-time }
+        descripcion: { type: string }
+        imagenUrl: { type: string }
+    AiGeneracion:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tipo: { type: string }
+        estado: { type: string, enum: [pendiente, procesando, completado, error] }
+        aprobado: { type: boolean }
