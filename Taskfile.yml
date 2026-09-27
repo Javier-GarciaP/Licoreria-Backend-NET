@@ -1,0 +1,76 @@
+version: '3'
+
+# =========================================================
+# Tareas de desarrollo del monorepo.
+# Requiere Task (https://taskfile.dev): task <tarea>
+# =========================================================
+
+tasks:
+  default:
+    desc: Lista las tareas disponibles
+    cmds:
+      - task --list
+
+  # ---------- Backend (.NET / Onion) ----------
+  backend:build:
+    desc: Compila la solucion .NET
+    dir: backend
+    cmds:
+      - dotnet build Licoreria.slnx
+
+  backend:run:
+    desc: Ejecuta la WebAPI en modo desarrollo
+    dir: backend
+    cmds:
+      - dotnet run --project src/Licoreria.WebAPI
+
+  backend:format:
+    desc: Formatea el codigo C# con dotnet format
+    dir: backend
+    cmds:
+      - dotnet format Licoreria.slnx
+
+  backend:test:
+    desc: Ejecuta las pruebas del backend
+    dir: backend
+    cmds:
+      - dotnet test Licoreria.slnx
+
+  # ---------- Base de datos ----------
+  db:up:
+    desc: Levanta PostgreSQL con Docker Compose
+    cmds:
+      - docker compose up -d postgres
+
+  db:down:
+    desc: Detiene los servicios de base de datos
+    cmds:
+      - docker compose down
+
+  # ---------- Documentacion ----------
+  docs:dev:
+    desc: Inicia el sitio de documentacion en modo desarrollo
+    dir: docs/site
+    cmds:
+      - npm install
+      - npm run dev
+
+  docs:build:
+    desc: Compila el sitio de documentacion
+    dir: docs/site
+    cmds:
+      - npm install
+      - npm run build
+
+  # ---------- Frontend ----------
+  frontend:install:
+    desc: Instala dependencias del frontend
+    dir: frontend
+    cmds:
+      - npm install
+
+  frontend:dev:
+    desc: Inicia las apps del frontend en modo desarrollo
+    dir: frontend
+    cmds:
+      - npm run dev

@@ -1,0 +1,13 @@
+# Propietarios de código
+# Ver: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Propietarios por defecto
+* @Javier-GarciaP
+
+# Áreas
+/backend/            @Javier-GarciaP
+/frontend/           @Javier-GarciaP
+/database/           @Javier-GarciaP
+/docs/               @Javier-GarciaP
+/openapi/            @Javier-GarciaP
+/.github/            @Javier-GarciaP

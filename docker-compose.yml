@@ -1,0 +1,40 @@
+services:
+  # =========================================================
+  # Base de datos principal del sistema (PostgreSQL)
+  # =========================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: licoreria-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-licoreria}
+      POSTGRES_USER: ${POSTGRES_USER:-licoreria}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-licoreria}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-licoreria} -d ${POSTGRES_DB:-licoreria}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # =========================================================
+  # Cliente web opcional para administrar la base de datos
+  # =========================================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: licoreria-pgadmin
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@licoreria.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+
+volumes:
+  postgres_data:
