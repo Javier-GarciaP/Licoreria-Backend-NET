@@ -1,6 +1,11 @@
 <Solution>
-  <Project Path="src/Licoreria.Application/Licoreria.Application.csproj" />
-  <Project Path="src/Licoreria.Domain/Licoreria.Domain.csproj" />
-  <Project Path="src/Licoreria.Infrastructure/Licoreria.Infrastructure.csproj" />
-  <Project Path="src/Licoreria.WebAPI/Licoreria.WebAPI.csproj" />
+  <Folder Name="/src/">
+    <Project Path="src/Licoreria.Application/Licoreria.Application.csproj" />
+    <Project Path="src/Licoreria.Domain/Licoreria.Domain.csproj" />
+    <Project Path="src/Licoreria.Infrastructure/Licoreria.Infrastructure.csproj" />
+    <Project Path="src/Licoreria.WebAPI/Licoreria.WebAPI.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Licoreria.UnitTests/Licoreria.UnitTests.csproj" />
+  </Folder>
 </Solution>
