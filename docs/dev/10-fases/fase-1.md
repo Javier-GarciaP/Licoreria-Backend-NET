@@ -53,11 +53,29 @@ Respuestas con `Content-Type: application/problem+json`.
 | Excepción | HTTP | Título |
 | :--- | :---: | :--- |
 | `KeyNotFoundException` | `404` | Recurso No Encontrado |
+| `ArgumentException` | `400` | Solicitud Inválida |
 | `InvalidOperationException` | `400` | Solicitud Inválida |
+| `UnauthorizedAccessException` | `401` | No Autorizado |
 | `Exception` | `500` | Error Interno del Servidor |
 
 En producción, los errores `500` ocultan el detalle técnico. El campo `type` usa
 `https://httpstatuses.com/{status}`.
+
+## CORS
+
+Política configurable desde `appsettings.json` (`Cors:AllowedOrigins`), aplicada con
+`app.UseCors(...)` antes de la autorización y del mapeo de controladores. Por defecto
+permite el frontend React en `http://localhost:5173`.
+
+## Persistencia (PostgreSQL)
+
+- Proveedor **Npgsql** (`UseNpgsql`).
+- Configuración **Fluent API** por entidad en `Configurations/` (`IEntityTypeConfiguration<T>`),
+  sin Data Annotations en el dominio.
+- Precisiones `numeric(18,2)`, índice único en `Sku`, borrado restrictivo e integridad
+  referencial.
+- **Data seeding** de categorías, marcas, unidades de medida, productos y usuarios.
+- **Migraciones aplicadas al arrancar** con `Database.MigrateAsync()` en un scope.
 
 ```json
 {

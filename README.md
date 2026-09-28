@@ -70,7 +70,8 @@ cd docs/site && npm install && npm run dev
 ```
 
 > El proyecto incluye un `Taskfile.yml` con atajos: `task --list`.
-> En la Fase 1 la persistencia usa SQL Server LocalDB; PostgreSQL se adopta en la Fase 2.
+> La persistencia usa **PostgreSQL** (ver `docker-compose.yml`); las migraciones se
+> aplican automáticamente al arrancar la API.
 
 ---
 
@@ -81,8 +82,12 @@ Implementada y verificada:
 - **Onion Architecture** en 4 proyectos (`Domain` sin dependencias de frameworks).
 - **Inyección de dependencias** con ciclos de vida `Transient`, `Scoped` y `Singleton`
   y validación de scopes (sin dependencias cautivas).
-- **Middleware global RFC 7807** (`application/problem+json`) con títulos en español y
-  ocultamiento de trazas en producción.
+- **Middleware global RFC 7807** (`application/problem+json`) con títulos en español,
+  mapeo de `404/400/401/500` y ocultamiento de trazas en producción.
+- **CORS** configurable desde `appsettings.json` para el frontend React.
+- **Persistencia PostgreSQL** con Fluent API por entidad (`IEntityTypeConfiguration`),
+  índices únicos, integridad referencial restrictiva, data seeding y `MigrateAsync`
+  al arrancar.
 - **Lógica de dominio** con C# 14: salud de stock, generador de SKU, cuenta/abonos,
   merma/cortesía, conversión de moneda, estados de comanda y conflictos de reserva.
 - **45 pruebas unitarias** (xUnit) ejecutadas correctamente.

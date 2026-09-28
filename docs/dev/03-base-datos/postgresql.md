@@ -1,7 +1,7 @@
 # Estrategia PostgreSQL
 
-La implementación final de la API usará **PostgreSQL**. El proyecto parte de SQL Server
-LocalDB (fases académicas iniciales); esta sección describe el objetivo y la migración.
+La API usa **PostgreSQL** como base de datos (proveedor `Npgsql`). Esta sección describe
+las convenciones y el proceso de migración aplicado.
 
 ## Convenciones
 

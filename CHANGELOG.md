@@ -30,14 +30,21 @@ y el proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 - Controlador de simulacion (`/api/v1/simulacion`) para la logica de dominio.
 - Proyecto de pruebas `Licoreria.UnitTests` (xUnit) con 45 pruebas.
 - Pagina de la Fase 1 en la documentacion.
+- Entidades `Marca` y `UnidadMedida` con su siembra y relacion con `Producto`.
+- Configuraciones Fluent API por entidad (`IEntityTypeConfiguration<T>`) en `Configurations/`.
+- Politica de CORS configurable desde `appsettings.json`.
+- Migracion inicial de PostgreSQL (`InicialPostgreSql`).
 
 ### Cambiado
 
 - La solucion .NET se reubico en `backend/src` conservando la arquitectura Onion.
 - El `README.md` raiz se reescribio como portada del monorepo.
 - La inyeccion de dependencias se organiza por ciclos de vida (Transient, Scoped, Singleton).
-- El middleware RFC 7807 usa titulos en espanol y `https://httpstatuses.com/{status}`.
+- El middleware RFC 7807 usa titulos en espanol y `https://httpstatuses.com/{status}`,
+  y mapea `ArgumentException` (400) y `UnauthorizedAccessException` (401).
 - `Program.cs` valida scopes para evitar dependencias cautivas.
+- La persistencia migra de SQL Server a **PostgreSQL** (Npgsql) y aplica `MigrateAsync`
+  al arrancar.
 
 ### Eliminado
 
