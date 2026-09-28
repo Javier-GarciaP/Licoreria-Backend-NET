@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Licoreria.Infrastructure.DependencyInjection;
+using Licoreria.WebAPI.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,7 +20,8 @@ builder.Host.UseDefaultServiceProvider(options =>
 
 // Registrar los servicios de Infraestructura (DbContext + EF Core)
 builder.Services.AddInfrastructureServices(builder.Configuration);
-builder.Services.AddControllers();
+builder.Services.AddControllers(options => options.Filters.AddService<ValidationFilter>());
+builder.Services.AddScoped<ValidationFilter>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
