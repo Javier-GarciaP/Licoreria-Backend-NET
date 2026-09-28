@@ -38,6 +38,7 @@ public static class DependencyInjection
         services.AddScoped<IServicioInventario, ServicioInventario>();
         services.AddScoped<IServicioCuenta, ServicioCuenta>();
         services.AddScoped<IServicioAutenticacion, ServicioAutenticacion>();
+        services.AddScoped<IServicioCatalogo, ServicioCatalogo>();
 
         // =========================================================
         // Transient: servicios ligeros sin estado (validadores).
