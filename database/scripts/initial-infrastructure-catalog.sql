@@ -169,3 +169,15 @@ VALUES ('20260928120124_InitialInfrastructureCatalog', '10.0.12');
 
 COMMIT;
 
+START TRANSACTION;
+UPDATE usuarios SET "PasswordHash" = '100000.bGljb3JlcmlhLWFkbWluIQ==.YwgspkL29TkDaFw34dp94bJtoYuLiheB1jTHjHoI0/A='
+WHERE "Id" = '20000000-0000-0000-0000-000000000001';
+
+UPDATE usuarios SET "PasswordHash" = '100000.bGljb3JlcmlhLWNhamVybw==.vBfTiTnA2NkFbJLRMHRR/Cp00Fm6VwefpzHLwFJcVY0='
+WHERE "Id" = '20000000-0000-0000-0000-000000000002';
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260928121214_SeedUsuariosConPasswordHash', '10.0.12');
+
+COMMIT;
+
