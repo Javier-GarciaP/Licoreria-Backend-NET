@@ -17,8 +17,8 @@ public class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
         builder.Property(u => u.Rol).HasConversion<string>().HasMaxLength(30);
 
         builder.HasData(
-            new { Id = SeedData.UsuarioAdmin, NombreCompleto = "Administrador Principal", Email = "admin@licoreria.com", PasswordHash = "admin123_hash", Rol = RolUsuario.Administrador, Activo = true, CreatedAt = SeedData.Fecha, LastModifiedAt = (DateTime?)null, IsDeleted = false },
-            new { Id = SeedData.UsuarioCajero, NombreCompleto = "Cajero Turno Mañana", Email = "cajero1@licoreria.com", PasswordHash = "cajero123_hash", Rol = RolUsuario.Cajero, Activo = true, CreatedAt = SeedData.Fecha, LastModifiedAt = (DateTime?)null, IsDeleted = false }
+            new { Id = SeedData.UsuarioAdmin, NombreCompleto = "Administrador Principal", Email = "admin@licoreria.com", PasswordHash = "100000.bGljb3JlcmlhLWFkbWluIQ==.YwgspkL29TkDaFw34dp94bJtoYuLiheB1jTHjHoI0/A=", Rol = RolUsuario.Administrador, Activo = true, CreatedAt = SeedData.Fecha, LastModifiedAt = (DateTime?)null, IsDeleted = false },
+            new { Id = SeedData.UsuarioCajero, NombreCompleto = "Cajero Turno Mañana", Email = "cajero1@licoreria.com", PasswordHash = "100000.bGljb3JlcmlhLWNhamVybw==.vBfTiTnA2NkFbJLRMHRR/Cp00Fm6VwefpzHLwFJcVY0=", Rol = RolUsuario.Cajero, Activo = true, CreatedAt = SeedData.Fecha, LastModifiedAt = (DateTime?)null, IsDeleted = false }
         );
     }
 }
