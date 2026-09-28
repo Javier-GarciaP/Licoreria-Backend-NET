@@ -54,7 +54,7 @@ services.AddDbContext<LicoreriaDbContext>(options =>
 
 ## Entorno local
 
-El `docker-compose.yml` de la raíz levanta PostgreSQL 16 con:
+El `docker-compose.yml` de la raíz levanta PostgreSQL 15 con:
 
 - Base de datos: `licoreria`
 - Usuario/contraseña: definidos en `.env` (ver `.env.example`)

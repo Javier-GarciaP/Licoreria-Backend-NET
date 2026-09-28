@@ -3,7 +3,7 @@ services:
   # Base de datos principal del sistema (PostgreSQL)
   # =========================================================
   postgres:
-    image: postgres:16-alpine
+    image: postgres:15-alpine
     container_name: licoreria-postgres
     restart: unless-stopped
     environment:
