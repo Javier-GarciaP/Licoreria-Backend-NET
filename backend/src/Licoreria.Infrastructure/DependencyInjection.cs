@@ -24,7 +24,7 @@ public static class DependencyInjection
         // Persistencia, repositorios y servicios de aplicación.
         // =========================================================
         services.AddDbContext<LicoreriaDbContext>(options =>
-            options.UseSqlServer(
+            options.UseNpgsql(
                 configuration.GetConnectionString("DefaultConnection"),
                 b => b.MigrationsAssembly(typeof(LicoreriaDbContext).Assembly.FullName)));
 

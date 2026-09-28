@@ -35,6 +35,23 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Aplicar las migraciones pendientes al arrancar la API (PostgreSQL).
+using (var scope = app.Services.CreateScope())
+{
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    try
+    {
+        var context = scope.ServiceProvider.GetRequiredService<LicoreriaDbContext>();
+        await context.Database.MigrateAsync();
+        logger.LogInformation("Migraciones aplicadas correctamente.");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Error al aplicar las migraciones de la base de datos.");
+        throw;
+    }
+}
+
 // Middleware Global para captura de excepciones según estándar RFC 7807
 app.UseMiddleware<ExceptionMiddleware>();
 
