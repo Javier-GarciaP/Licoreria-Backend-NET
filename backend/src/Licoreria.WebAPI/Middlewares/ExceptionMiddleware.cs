@@ -44,10 +44,22 @@ public class ExceptionMiddleware
                 "https://httpstatuses.com/404",
                 exception.Message),
 
+            ArgumentException => (
+                HttpStatusCode.BadRequest,
+                "Solicitud Inválida",
+                "https://httpstatuses.com/400",
+                exception.Message),
+
             InvalidOperationException => (
                 HttpStatusCode.BadRequest,
                 "Solicitud Inválida",
                 "https://httpstatuses.com/400",
+                exception.Message),
+
+            UnauthorizedAccessException => (
+                HttpStatusCode.Unauthorized,
+                "No Autorizado",
+                "https://httpstatuses.com/401",
                 exception.Message),
 
             // Errores no controlados: se oculta el detalle técnico en producción
