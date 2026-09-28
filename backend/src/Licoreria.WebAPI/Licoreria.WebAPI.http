@@ -1,6 +1,46 @@
 @Licoreria.WebAPI_HostAddress = http://localhost:5190
 
-GET {{Licoreria.WebAPI_HostAddress}}/weatherforecast/
+### Salud del inventario (dominio)
+POST {{Licoreria.WebAPI_HostAddress}}/api/v1/simulacion/salud-stock
+Content-Type: application/json
+
+{
+  "sku": "LIC-RON-0001",
+  "stockActual": 0,
+  "stockMinimo": 5,
+  "stockMaximo": 60
+}
+
+### Generación de SKU (dominio)
+POST {{Licoreria.WebAPI_HostAddress}}/api/v1/simulacion/sku
+Content-Type: application/json
+
+{
+  "categoria": "Herramientas",
+  "producto": "Taladro",
+  "secuencia": 7
+}
+
+### Merma con reposición sin cobro (dominio)
+POST {{Licoreria.WebAPI_HostAddress}}/api/v1/simulacion/merma
+Content-Type: application/json
+
+{
+  "motivo": "Danado",
+  "cantidad": 2,
+  "reponerSinCobro": true
+}
+
+### RFC 7807 - 404
+GET {{Licoreria.WebAPI_HostAddress}}/api/test-error/not-found
+Accept: application/json
+
+### RFC 7807 - 400
+GET {{Licoreria.WebAPI_HostAddress}}/api/test-error/bad-request
+Accept: application/json
+
+### RFC 7807 - 500
+GET {{Licoreria.WebAPI_HostAddress}}/api/test-error/server-error
 Accept: application/json
 
 ###
