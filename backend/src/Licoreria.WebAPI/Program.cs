@@ -19,6 +19,20 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// CORS: permite el consumo desde el frontend React (configurable en appsettings.json)
+const string corsPolicy = "FrontendPolicy";
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(corsPolicy, policy =>
+    {
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
 var app = builder.Build();
 
 // Middleware Global para captura de excepciones según estándar RFC 7807
@@ -31,6 +45,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// CORS debe aplicarse antes de la autorización y del mapeo de controladores.
+app.UseCors(corsPolicy);
+
 app.UseAuthorization();
 app.MapControllers();
 
