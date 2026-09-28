@@ -59,9 +59,10 @@ Detalle en [docs/dev/02-arquitectura](docs/dev/02-arquitectura/onion.md).
 ```bash
 # Backend
 dotnet build backend/Licoreria.slnx
+dotnet test backend/Licoreria.slnx
 dotnet run --project backend/src/Licoreria.WebAPI
 
-# Base de datos local (PostgreSQL)
+# Base de datos local (PostgreSQL, objetivo de la Fase 2)
 docker compose up -d postgres
 
 # Documentación
@@ -69,6 +70,32 @@ cd docs/site && npm install && npm run dev
 ```
 
 > El proyecto incluye un `Taskfile.yml` con atajos: `task --list`.
+> En la Fase 1 la persistencia usa SQL Server LocalDB; PostgreSQL se adopta en la Fase 2.
+
+---
+
+## Fase 1 · Fundamentos y resiliencia REST
+
+Implementada y verificada:
+
+- **Onion Architecture** en 4 proyectos (`Domain` sin dependencias de frameworks).
+- **Inyección de dependencias** con ciclos de vida `Transient`, `Scoped` y `Singleton`
+  y validación de scopes (sin dependencias cautivas).
+- **Middleware global RFC 7807** (`application/problem+json`) con títulos en español y
+  ocultamiento de trazas en producción.
+- **Lógica de dominio** con C# 14: salud de stock, generador de SKU, cuenta/abonos,
+  merma/cortesía, conversión de moneda, estados de comanda y conflictos de reserva.
+- **45 pruebas unitarias** (xUnit) ejecutadas correctamente.
+
+Detalle completo en [`docs/dev/10-fases/fase-1.md`](docs/dev/10-fases/fase-1.md).
+
+### Evidencia RFC 7807 (Postman)
+
+| Archivo | Descripción |
+| :--- | :--- |
+| `backend/src/Licoreria.WebAPI/docs/postman1.jpeg` | Respuesta de la API. |
+| `backend/src/Licoreria.WebAPI/docs/postman2.jpeg` | Respuesta RFC 7807. |
+| `backend/src/Licoreria.WebAPI/docs/Licoreria_Fase1_Postman_Collection.json` | Colección de pruebas. |
 
 ---
 
@@ -76,7 +103,7 @@ cd docs/site && npm install && npm run dev
 
 | Fase | Alcance | Estado |
 | :---: | :--- | :---: |
-| 1 | Documentación (este repositorio) | En curso |
+| 1 | Fundamentos, DI, RFC 7807 y dominio (este repositorio) | Completada |
 | 2 | API final sobre PostgreSQL | Pendiente |
 | 3 | Seguridad JWT / RBAC | Pendiente |
 | 4 | Frontend React | Pendiente |
