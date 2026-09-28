@@ -13,6 +13,7 @@ Plataforma web integral para la gestión de un local de **licorería y discoteca
 | Recurso | Descripción |
 | :--- | :--- |
 | [Documentación técnica](docs/dev/README.md) | Visión, requerimientos, arquitectura, modelo de datos, API, seguridad, módulos, IA y guías. |
+| [Evidencias por fase](docs/assets/evidencias/README.md) | Capturas y colecciones Postman de Fases 1, 2 y 3. |
 | [Sitio de documentación](docs/site) | Sitio Astro Starlight (secciones *Desarrolladores* y *Cliente*). |
 | [Contrato OpenAPI](openapi/licoreria.yaml) | Especificación de la API v1 (contract-first). |
 | [Guía de contribución](CONTRIBUTING.md) | Flujo de trabajo, ramas y commits. |
@@ -77,7 +78,7 @@ cd docs/site && npm install && npm run dev
 
 ## Fase 1 · Fundamentos y resiliencia REST
 
-Implementada y verificada:
+Lo logrado:
 
 - **Onion Architecture** en 4 proyectos (`Domain` sin dependencias de frameworks).
 - **Inyección de dependencias** con ciclos de vida `Transient`, `Scoped` y `Singleton`
@@ -85,45 +86,86 @@ Implementada y verificada:
 - **Middleware global RFC 7807** (`application/problem+json`) con títulos en español,
   mapeo de `404/400/401/500` y ocultamiento de trazas en producción.
 - **CORS** configurable desde `appsettings.json` para el frontend React.
-- **Persistencia PostgreSQL** con Fluent API por entidad (`IEntityTypeConfiguration`),
-  índices únicos, integridad referencial restrictiva, data seeding y `MigrateAsync`
-  al arrancar.
 - **Lógica de dominio** con C# 14: salud de stock, generador de SKU, cuenta/abonos,
   merma/cortesía, conversión de moneda, estados de comanda y conflictos de reserva.
-- **45 pruebas unitarias** (xUnit) ejecutadas correctamente.
+- **61 pruebas unitarias** (xUnit) ejecutadas correctamente.
 
-Detalle completo en [`docs/dev/10-fases/fase-1.md`](docs/dev/10-fases/fase-1.md).
+### Evidencia (RFC 7807 · Postman)
 
-### Evidencia RFC 7807 (Postman)
+![Respuesta de la API](docs/assets/evidencias/fase-1/postman1.jpeg)
 
-![Respuesta de la API](docs/assets/evidencias/postman1.jpeg)
+![Respuesta RFC 7807](docs/assets/evidencias/fase-1/postman2.jpeg)
 
-![Respuesta RFC 7807](docs/assets/evidencias/postman2.jpeg)
+Colección: [`Licoreria_Fase1_Postman_Collection.json`](docs/assets/evidencias/Licoreria_Fase1_Postman_Collection.json).
 
-Colección de pruebas: [`Licoreria_Fase1_Postman_Collection.json`](docs/assets/evidencias/Licoreria_Fase1_Postman_Collection.json).
+📄 [Ver documentación detallada de la Fase 1 →](docs/dev/10-fases/fase-1.md)
 
 ---
 
 ## Fase 2 · Persistencia PostgreSQL 15
 
+Lo logrado:
+
 - **PostgreSQL 15** con Npgsql, migraciones versionadas y `MigrateAsync` al arrancar.
 - **Fluent API** por entidad (tablas en minúsculas, UUID, `numeric(18,2)`, índice único
   en `Sku`, `DeleteBehavior.Restrict`), sin Data Annotations en el dominio.
-- **Data seeding** de categorías, marcas, unidades y productos (licorería).
+- **Data seeding** de categorías, marcas, unidades, productos y usuarios.
 - Repositorios con **`AsNoTracking`** y script DDL en
   [`database/scripts/initial-infrastructure-catalog.sql`](database/scripts/initial-infrastructure-catalog.sql).
 
-Detalle en [`docs/dev/10-fases/fase-2.md`](docs/dev/10-fases/fase-2.md).
+### Evidencia (PostgreSQL · DBeaver)
+
+**Tablas creadas:**
+
+![Tablas](docs/assets/evidencias/fase-2/tablas.png)
+
+**DDL con restricciones (UUID, `numeric(18,2)`, PK/FK, único):**
+
+![DDL de productos](docs/assets/evidencias/fase-2/genera-sql-productos.png)
+
+**Datos sembrados:**
+
+![Siembra de datos](docs/assets/evidencias/fase-2/siembra-datos.png)
+
+📄 [Ver documentación detallada de la Fase 2 →](docs/dev/10-fases/fase-2.md)
 
 ## Fase 3 · Seguridad JWT, RBAC y validación
 
-- Login `POST /api/auth/login` con **JWT HMAC-SHA256** y contraseñas **PBKDF2**.
+Lo logrado:
+
+- Login `POST /api/auth/login` con **JWT HMAC-SHA256** y contraseñas **PBKDF2 + salt**.
 - **RBAC**: `Admin` (CRUD total) y `Employee` (sin eliminación).
 - **401** sin token y **403** con rol insuficiente.
 - Validación con **FluentValidation** → **400** con errores por campo.
 
-Detalle y credenciales en [`docs/dev/10-fases/fase-3.md`](docs/dev/10-fases/fase-3.md).
-Colección Postman: [`Licoreria_Fase3_Postman_Collection.json`](docs/assets/evidencias/Licoreria_Fase3_Postman_Collection.json).
+Credenciales de prueba: `admin@licoreria.com` / `admin123` (Admin) y
+`cajero1@licoreria.com` / `cajero123` (Employee).
+
+### Evidencia (Postman)
+
+| Login Admin | Login Employee |
+| :---: | :---: |
+| ![Login Admin](docs/assets/evidencias/fase-3/login-admin.png) | ![Login Employee](docs/assets/evidencias/fase-3/login-empleado.png) |
+
+**Listar productos con Employee (200):**
+
+![Listar productos](docs/assets/evidencias/fase-3/fase3-listrarproductos.png)
+
+**Endpoint protegido sin token (401):**
+
+![Sin token 401](docs/assets/evidencias/fase-3/fase3-401.png)
+
+**Eliminar con rol Employee (403):**
+
+![Eliminar con Employee 403](docs/assets/evidencias/fase-3/fase3-403.png)
+
+**Producto con precio negativo (400 con validación):**
+
+![Precio negativo 400](docs/assets/evidencias/fase-3/fase3-400.png)
+
+Colección: [`Licoreria_Fase3_Postman_Collection.json`](docs/assets/evidencias/Licoreria_Fase3_Postman_Collection.json).
+
+📄 [Ver documentación detallada de la Fase 3 →](docs/dev/10-fases/fase-3.md)
 
 ---
 

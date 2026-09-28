@@ -127,9 +127,9 @@ Swagger: `http://localhost:5190/swagger`.
 
 ## Evidencia (RFC 7807 en Postman)
 
-![Respuesta de la API](../../assets/evidencias/postman1.jpeg)
+![Respuesta de la API](../../assets/evidencias/fase-1/postman1.jpeg)
 
-![Respuesta RFC 7807](../../assets/evidencias/postman2.jpeg)
+![Respuesta RFC 7807](../../assets/evidencias/fase-1/postman2.jpeg)
 
 Colección de pruebas:
 [`Licoreria_Fase1_Postman_Collection.json`](../../assets/evidencias/Licoreria_Fase1_Postman_Collection.json).
@@ -142,3 +142,10 @@ Colección de pruebas:
 | Modelado de entidades base (16) | `BaseEntity` con auditoría UTC y `Producto` encapsulado. |
 | Middleware RFC 7807 (28) | Middleware tipificado, `application/problem+json`, 500 sin trazas. |
 | Repositorio, documentación y puntualidad (12) | Commits descriptivos, `.gitignore`, README y evidencia Postman. |
+
+## Documentación relacionada
+
+- [Evidencias por fase](../../assets/evidencias/README.md)
+- [Arquitectura Onion](../02-arquitectura/onion.md)
+- [Errores RFC 7807](../04-api/errores-rfc7807.md)
+

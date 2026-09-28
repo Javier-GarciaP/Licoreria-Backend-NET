@@ -73,7 +73,10 @@ async function main() {
 
   if (existsSync(assetsSourceDir)) {
     await rm(assetsTargetDir, { recursive: true, force: true });
-    await cp(assetsSourceDir, assetsTargetDir, { recursive: true });
+    await cp(assetsSourceDir, assetsTargetDir, {
+      recursive: true,
+      filter: (src) => !src.endsWith('.md'),
+    });
     console.log('[sync-docs] Assets copiados desde docs/assets a src/content/docs/assets');
   }
 }
