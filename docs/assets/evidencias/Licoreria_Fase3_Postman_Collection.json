@@ -1,0 +1,175 @@
+{
+  "info": {
+    "name": "Licoreria - Fase 3 (JWT, RBAC y validacion)",
+    "description": "Escenarios de prueba de la Fase 3: login Admin/Employee, 401 sin token, 403 con rol insuficiente y 400 por validacion.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5190" },
+    { "key": "adminToken", "value": "" },
+    { "key": "employeeToken", "value": "" },
+    { "key": "productId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Login Admin (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Rol Admin', function () { pm.expect(pm.response.json().role).to.eql('Admin'); });",
+              "pm.collectionVariables.set('adminToken', pm.response.json().token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"admin@licoreria.com\",\n  \"password\": \"admin123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        }
+      }
+    },
+    {
+      "name": "2. Login Employee (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Rol Employee', function () { pm.expect(pm.response.json().role).to.eql('Employee'); });",
+              "pm.collectionVariables.set('employeeToken', pm.response.json().token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"cajero1@licoreria.com\",\n  \"password\": \"cajero123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        }
+      }
+    },
+    {
+      "name": "3. Endpoint protegido sin token (401)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 401 Unauthorized', function () { pm.response.to.have.status(401); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/productos",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "productos"]
+        }
+      }
+    },
+    {
+      "name": "4. Listar productos con Employee (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200', function () { pm.response.to.have.status(200); });",
+              "const productos = pm.response.json();",
+              "if (productos.length > 0) { pm.collectionVariables.set('productId', productos[0].id); }"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{employeeToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/productos",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "productos"]
+        }
+      }
+    },
+    {
+      "name": "5. Eliminar producto con Employee (403)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 403 Forbidden', function () { pm.response.to.have.status(403); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{employeeToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/productos/{{productId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "productos", "{{productId}}"]
+        }
+      }
+    },
+    {
+      "name": "6. Crear producto con precio negativo (400)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 400 Bad Request', function () { pm.response.to.have.status(400); });",
+              "pm.test('Incluye errores de validacion', function () { pm.expect(pm.response.json().errors).to.be.an('object'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Producto de prueba\",\n  \"descripcion\": \"Prueba de validacion\",\n  \"sku\": \"TST-0001\",\n  \"codigoBarras\": \"000000000001\",\n  \"precioCompraUSD\": -1,\n  \"precioVentaUSD\": -5,\n  \"stock\": 0,\n  \"stockMinimo\": 1,\n  \"stockMaximo\": 5,\n  \"categoriaId\": \"11111111-1111-1111-1111-111111111111\",\n  \"marcaId\": \"55555555-5555-5555-5555-555555555551\",\n  \"unidadMedidaId\": \"66666666-6666-6666-6666-666666666661\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/productos",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "productos"]
+        }
+      }
+    }
+  ]
+}

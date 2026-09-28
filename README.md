@@ -104,13 +104,36 @@ Colección de pruebas: [`Licoreria_Fase1_Postman_Collection.json`](docs/assets/e
 
 ---
 
+## Fase 2 · Persistencia PostgreSQL 15
+
+- **PostgreSQL 15** con Npgsql, migraciones versionadas y `MigrateAsync` al arrancar.
+- **Fluent API** por entidad (tablas en minúsculas, UUID, `numeric(18,2)`, índice único
+  en `Sku`, `DeleteBehavior.Restrict`), sin Data Annotations en el dominio.
+- **Data seeding** de categorías, marcas, unidades y productos (licorería).
+- Repositorios con **`AsNoTracking`** y script DDL en
+  [`database/scripts/initial-infrastructure-catalog.sql`](database/scripts/initial-infrastructure-catalog.sql).
+
+Detalle en [`docs/dev/10-fases/fase-2.md`](docs/dev/10-fases/fase-2.md).
+
+## Fase 3 · Seguridad JWT, RBAC y validación
+
+- Login `POST /api/auth/login` con **JWT HMAC-SHA256** y contraseñas **PBKDF2**.
+- **RBAC**: `Admin` (CRUD total) y `Employee` (sin eliminación).
+- **401** sin token y **403** con rol insuficiente.
+- Validación con **FluentValidation** → **400** con errores por campo.
+
+Detalle y credenciales en [`docs/dev/10-fases/fase-3.md`](docs/dev/10-fases/fase-3.md).
+Colección Postman: [`Licoreria_Fase3_Postman_Collection.json`](docs/assets/evidencias/Licoreria_Fase3_Postman_Collection.json).
+
+---
+
 ## Fases del proyecto
 
 | Fase | Alcance | Estado |
 | :---: | :--- | :---: |
-| 1 | Fundamentos, DI, RFC 7807 y dominio (este repositorio) | Completada |
-| 2 | API final sobre PostgreSQL | Pendiente |
-| 3 | Seguridad JWT / RBAC | Pendiente |
+| 1 | Fundamentos, DI, RFC 7807 y dominio | Completada |
+| 2 | Persistencia PostgreSQL 15 y seeding | Completada |
+| 3 | Seguridad JWT / RBAC y validación | Completada |
 | 4 | Frontend React | Pendiente |
 | 5 | Despliegue | Pendiente |
 

@@ -5,6 +5,7 @@ namespace Licoreria.Domain.Entities;
 public class Producto : BaseEntity
 {
     public string Nombre { get; private set; } = string.Empty;
+    public string? Descripcion { get; private set; }
     public string Sku { get; private set; } = string.Empty;
     public string CodigoBarras { get; private set; } = string.Empty;
 
@@ -36,6 +37,7 @@ public class Producto : BaseEntity
 
     public Producto(
         string nombre,
+        string? descripcion,
         string sku,
         string codigoBarras,
         decimal precioCompraUSD,
@@ -57,6 +59,7 @@ public class Producto : BaseEntity
         }
 
         Nombre = nombre;
+        Descripcion = descripcion;
         Sku = sku;
         CodigoBarras = codigoBarras;
         PrecioCompraUSD = precioCompraUSD;
@@ -103,7 +106,7 @@ public class Producto : BaseEntity
         MarcarModificado();
     }
 
-    public void ActualizarDatos(string nombre, string codigoBarras, string? imagenUrl)
+    public void ActualizarDatos(string nombre, string? descripcion, string codigoBarras, string? imagenUrl)
     {
         if (string.IsNullOrWhiteSpace(nombre))
         {
@@ -111,6 +114,7 @@ public class Producto : BaseEntity
         }
 
         Nombre = nombre;
+        Descripcion = descripcion;
         CodigoBarras = codigoBarras;
         ImagenUrl = imagenUrl;
         MarcarModificado();

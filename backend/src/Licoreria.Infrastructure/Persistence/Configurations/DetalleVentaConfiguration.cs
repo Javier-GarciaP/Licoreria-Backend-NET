@@ -8,7 +8,7 @@ public class DetalleVentaConfiguration : IEntityTypeConfiguration<DetalleVenta>
 {
     public void Configure(EntityTypeBuilder<DetalleVenta> builder)
     {
-        builder.ToTable("DetallesVenta");
+        builder.ToTable("detalles_venta");
         builder.HasKey(d => d.Id);
         builder.Property(d => d.PrecioUnitarioUSD).HasPrecision(18, 2);
         builder.Ignore(d => d.SubtotalUSD);

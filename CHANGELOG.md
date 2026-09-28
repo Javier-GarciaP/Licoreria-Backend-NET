@@ -29,6 +29,12 @@ y el proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 - DTOs, interfaces de servicios y validadores con FluentValidation.
 - Controlador de simulacion (`/api/v1/simulacion`) para la logica de dominio.
 - Proyecto de pruebas `Licoreria.UnitTests` (xUnit) con 45 pruebas.
+- Fase 2: tablas en minusculas, `Descripcion` en `Producto`, PostgreSQL 15 y migracion
+  `InitialInfrastructureCatalog`.
+- Fase 3: autenticacion JWT (`POST /api/auth/login`), `IPasswordHasher` (PBKDF2),
+  `ITokenService` (HMAC-SHA256), controladores de catalogo con RBAC y `ValidationFilter`.
+- Coleccion Postman de la Fase 3 con los 4 escenarios.
+- Paginas de documentacion de Fase 2 y Fase 3.
 - Pagina de la Fase 1 en la documentacion.
 - Entidades `Marca` y `UnidadMedida` con su siembra y relacion con `Producto`.
 - Configuraciones Fluent API por entidad (`IEntityTypeConfiguration<T>`) en `Configurations/`.

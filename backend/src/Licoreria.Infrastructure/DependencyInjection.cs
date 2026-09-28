@@ -5,6 +5,7 @@ using Licoreria.Application.Validators;
 using Licoreria.Domain.Services;
 using Licoreria.Infrastructure.Persistence;
 using Licoreria.Infrastructure.Repositories;
+using Licoreria.Infrastructure.Security;
 using Licoreria.Infrastructure.Services;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -31,10 +32,13 @@ public static class DependencyInjection
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<ICategoriaRepository, CategoriaRepository>();
         services.AddScoped<IProductoRepository, ProductoRepository>();
+        services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 
         services.AddScoped<IServicioProducto, ServicioProducto>();
         services.AddScoped<IServicioInventario, ServicioInventario>();
         services.AddScoped<IServicioCuenta, ServicioCuenta>();
+        services.AddScoped<IServicioAutenticacion, ServicioAutenticacion>();
+        services.AddScoped<IServicioCatalogo, ServicioCatalogo>();
 
         // =========================================================
         // Transient: servicios ligeros sin estado (validadores).
@@ -43,6 +47,11 @@ public static class DependencyInjection
         services.AddTransient<IValidator<SkuRequest>, SkuRequestValidator>();
         services.AddTransient<IValidator<MermaRequest>, MermaRequestValidator>();
         services.AddTransient<IValidator<AbonoRequest>, AbonoRequestValidator>();
+        services.AddTransient<IValidator<LoginDto>, LoginDtoValidator>();
+        services.AddTransient<IValidator<ProductoCrearDto>, ProductoCrearDtoValidator>();
+        services.AddTransient<IValidator<ProductoEditarDto>, ProductoEditarDtoValidator>();
+        services.AddTransient<IValidator<CategoriaCrearDto>, CategoriaCrearDtoValidator>();
+        services.AddTransient<IValidator<CategoriaEditarDto>, CategoriaEditarDtoValidator>();
 
         // =========================================================
         // Singleton: servicios de dominio sin estado y cachés en memoria.
@@ -56,6 +65,11 @@ public static class DependencyInjection
         services.AddSingleton<MaquinaEstadosComanda>();
         services.AddSingleton<DetectorConflictosReserva>();
         services.AddSingleton<IServicioTasas, CacheTasasEnMemoria>();
+        services.AddSingleton<IPasswordHasher, PasswordHasher>();
+
+        // Configuración y generación de tokens JWT
+        services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
+        services.AddSingleton<ITokenService, TokenService>();
 
         return services;
     }

@@ -8,7 +8,7 @@ public class UnidadMedidaConfiguration : IEntityTypeConfiguration<UnidadMedida>
 {
     public void Configure(EntityTypeBuilder<UnidadMedida> builder)
     {
-        builder.ToTable("UnidadesMedida");
+        builder.ToTable("unidades_medida");
         builder.HasKey(u => u.Id);
         builder.Property(u => u.Nombre).IsRequired().HasMaxLength(50);
         builder.Property(u => u.Abreviatura).IsRequired().HasMaxLength(10);

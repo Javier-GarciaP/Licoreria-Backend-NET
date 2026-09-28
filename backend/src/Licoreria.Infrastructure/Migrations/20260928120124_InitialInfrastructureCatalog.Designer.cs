@@ -3,6 +3,7 @@ using System;
 using Licoreria.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Licoreria.Infrastructure.Migrations
 {
     [DbContext(typeof(LicoreriaDbContext))]
-    partial class LicoreriaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260928120124_InitialInfrastructureCatalog")]
+    partial class InitialInfrastructureCatalog
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -499,7 +502,7 @@ namespace Licoreria.Infrastructure.Migrations
                             Email = "admin@licoreria.com",
                             IsDeleted = false,
                             NombreCompleto = "Administrador Principal",
-                            PasswordHash = "100000.bGljb3JlcmlhLWFkbWluIQ==.YwgspkL29TkDaFw34dp94bJtoYuLiheB1jTHjHoI0/A=",
+                            PasswordHash = "admin123_hash",
                             Rol = "Administrador"
                         },
                         new
@@ -510,7 +513,7 @@ namespace Licoreria.Infrastructure.Migrations
                             Email = "cajero1@licoreria.com",
                             IsDeleted = false,
                             NombreCompleto = "Cajero Turno Mañana",
-                            PasswordHash = "100000.bGljb3JlcmlhLWNhamVybw==.vBfTiTnA2NkFbJLRMHRR/Cp00Fm6VwefpzHLwFJcVY0=",
+                            PasswordHash = "cajero123_hash",
                             Rol = "Cajero"
                         });
                 });
