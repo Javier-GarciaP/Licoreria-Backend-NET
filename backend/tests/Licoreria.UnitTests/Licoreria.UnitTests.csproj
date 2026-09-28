@@ -20,6 +20,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Licoreria.Domain\Licoreria.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Licoreria.Application\Licoreria.Application.csproj" />
+    <ProjectReference Include="..\..\src\Licoreria.Infrastructure\Licoreria.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
