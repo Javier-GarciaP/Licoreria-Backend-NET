@@ -40,25 +40,25 @@ public class ExceptionMiddleware
         {
             KeyNotFoundException => (
                 HttpStatusCode.NotFound,
-                "Not Found",
-                "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.4",
+                "Recurso No Encontrado",
+                "https://httpstatuses.com/404",
                 exception.Message),
 
             InvalidOperationException => (
                 HttpStatusCode.BadRequest,
-                "Bad Request",
-                "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.1",
+                "Solicitud Inválida",
+                "https://httpstatuses.com/400",
                 exception.Message),
 
             // Errores no controlados: se oculta el detalle técnico en producción
             // para no exponer información sensible (ni StackTrace ni mensaje interno).
             _ => (
                 HttpStatusCode.InternalServerError,
-                "Internal Server Error",
-                "https://datatracker.ietf.org/doc/html/rfc7231#section-6.6.1",
+                "Error Interno del Servidor",
+                "https://httpstatuses.com/500",
                 _environment.IsDevelopment()
                     ? exception.Message
-                    : "Ha ocurrido un error interno en el servidor. Contacte al administrador.")
+                    : "Ocurrió un error inesperado al procesar la solicitud.")
         };
 
         context.Response.ContentType = "application/problem+json";
