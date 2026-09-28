@@ -44,6 +44,11 @@ public static class DependencyInjection
         services.AddTransient<IValidator<SkuRequest>, SkuRequestValidator>();
         services.AddTransient<IValidator<MermaRequest>, MermaRequestValidator>();
         services.AddTransient<IValidator<AbonoRequest>, AbonoRequestValidator>();
+        services.AddTransient<IValidator<LoginDto>, LoginDtoValidator>();
+        services.AddTransient<IValidator<ProductoCrearDto>, ProductoCrearDtoValidator>();
+        services.AddTransient<IValidator<ProductoEditarDto>, ProductoEditarDtoValidator>();
+        services.AddTransient<IValidator<CategoriaCrearDto>, CategoriaCrearDtoValidator>();
+        services.AddTransient<IValidator<CategoriaEditarDto>, CategoriaEditarDtoValidator>();
 
         // =========================================================
         // Singleton: servicios de dominio sin estado y cachés en memoria.
