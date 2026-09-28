@@ -19,9 +19,10 @@ web y un módulo de IA.
 | [07 · Frontend](07-frontend/overview.md) | Aplicaciones React y design system. |
 | [08 · IA](08-ia/casos-uso.md) | Casos de uso profesionales de IA. |
 | [09 · Operaciones](09-operaciones/entornos.md) | Entornos, despliegue y observabilidad. |
-| [10 · Fases](10-fases/roadmap.md) | Roadmap y criterios de aceptación. |
+| [10 · Fases](10-fases/roadmap.md) | Roadmap, Fase 1, Fase 2 y Fase 3 con evidencias. |
 | [11 · Guías](11-guias/commits.md) | Commits, ramas y estilo de trabajo. |
 | [ADR](adr/README.md) | Registro de decisiones de arquitectura. |
+| [Evidencias](../../assets/evidencias/README.md) | Capturas y colecciones Postman de cada fase. |
 
 ## Cómo usar esta documentación
 

@@ -3,6 +3,9 @@
 > **Nota:** Las fases de desarrollo académico se rigen por lo indicado por el docente.
 > Este roadmap describe el alcance técnico del proyecto y su trazabilidad con dichas
 > fases; no las sustituye ni altera su orden.
+>
+> **Evidencias:** capturas y colecciones en
+> [`docs/assets/evidencias`](../../assets/evidencias/README.md).
 
 ## Fases del proyecto
 
