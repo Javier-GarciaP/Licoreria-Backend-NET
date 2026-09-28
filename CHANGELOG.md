@@ -40,6 +40,9 @@ y el proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 - Configuraciones Fluent API por entidad (`IEntityTypeConfiguration<T>`) en `Configurations/`.
 - Politica de CORS configurable desde `appsettings.json`.
 - Migracion inicial de PostgreSQL (`InicialPostgreSql`).
+- Evidencias de Fase 2 (capturas de tablas, DDL y siembra) y Fase 3 (login, 401, 403 y 400)
+  organizadas en `docs/assets/evidencias/`.
+- Indice de evidencias (`docs/assets/evidencias/README.md`) y enlaces por fase.
 
 ### Cambiado
 
