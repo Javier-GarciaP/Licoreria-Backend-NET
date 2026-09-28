@@ -8,7 +8,7 @@ public class VentaConfiguration : IEntityTypeConfiguration<Venta>
 {
     public void Configure(EntityTypeBuilder<Venta> builder)
     {
-        builder.ToTable("Ventas");
+        builder.ToTable("ventas");
         builder.HasKey(v => v.Id);
         builder.Property(v => v.TasaCambio).HasPrecision(18, 4);
         builder.Property(v => v.TotalUSD).HasPrecision(18, 2);

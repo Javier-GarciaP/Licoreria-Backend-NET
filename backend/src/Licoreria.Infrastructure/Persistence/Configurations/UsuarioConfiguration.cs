@@ -9,7 +9,7 @@ public class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
 {
     public void Configure(EntityTypeBuilder<Usuario> builder)
     {
-        builder.ToTable("Usuarios");
+        builder.ToTable("usuarios");
         builder.HasKey(u => u.Id);
         builder.Property(u => u.NombreCompleto).IsRequired().HasMaxLength(100);
         builder.Property(u => u.Email).IsRequired().HasMaxLength(100);
