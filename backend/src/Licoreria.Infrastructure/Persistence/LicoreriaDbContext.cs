@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 
 using Licoreria.Domain.Entities;
+using Licoreria.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Licoreria.Infrastructure.Persistence;
@@ -40,9 +41,12 @@ public class LicoreriaDbContext : DbContext
         {
             entity.HasKey(p => p.Id);
             entity.Property(p => p.Nombre).IsRequired().HasMaxLength(100);
+            entity.Property(p => p.Sku).IsRequired().HasMaxLength(20);
+            entity.HasIndex(p => p.Sku).IsUnique();
             entity.Property(p => p.CodigoBarras).HasMaxLength(50);
             entity.Property(p => p.PrecioCompraUSD).HasPrecision(18, 2);
             entity.Property(p => p.PrecioVentaUSD).HasPrecision(18, 2);
+            entity.Property(p => p.StockMaximo).HasDefaultValue(0);
             entity.Property(p => p.ImagenUrl).HasMaxLength(500);
 
             entity.HasOne(p => p.Categoria)
@@ -58,7 +62,7 @@ public class LicoreriaDbContext : DbContext
             entity.Property(u => u.NombreCompleto).IsRequired().HasMaxLength(100);
             entity.Property(u => u.Email).IsRequired().HasMaxLength(100);
             entity.HasIndex(u => u.Email).IsUnique();
-            entity.Property(u => u.Rol).HasMaxLength(20);
+            entity.Property(u => u.Rol).HasConversion<string>().HasMaxLength(30);
         });
 
         // Venta
@@ -117,17 +121,17 @@ public class LicoreriaDbContext : DbContext
 
         // --- Productos ---
         modelBuilder.Entity<Producto>().HasData(
-            new { Id = Guid.Parse("10000000-0000-0000-0000-000000000001"), CategoriaId = catLicores, Nombre = "Ron Cacique Añejo 0.75L", CodigoBarras = "759100100101", PrecioCompraUSD = 8.50m, PrecioVentaUSD = 12.00m, Stock = 30, StockMinimo = 5, ImagenUrl = (string?)null, Activo = true, CreatedAt = seedDate, LastModifiedAt = (DateTime?)null, IsDeleted = false },
-            new { Id = Guid.Parse("10000000-0000-0000-0000-000000000002"), CategoriaId = catLicores, Nombre = "Whisky Old Parr 12 Años 0.75L", CodigoBarras = "500028100202", PrecioCompraUSD = 28.00m, PrecioVentaUSD = 38.00m, Stock = 12, StockMinimo = 3, ImagenUrl = (string?)null, Activo = true, CreatedAt = seedDate, LastModifiedAt = (DateTime?)null, IsDeleted = false },
-            new { Id = Guid.Parse("10000000-0000-0000-0000-000000000003"), CategoriaId = catGaseosas, Nombre = "Coca-Cola 2 Litros", CodigoBarras = "759100200303", PrecioCompraUSD = 1.60m, PrecioVentaUSD = 2.50m, Stock = 50, StockMinimo = 10, ImagenUrl = (string?)null, Activo = true, CreatedAt = seedDate, LastModifiedAt = (DateTime?)null, IsDeleted = false },
-            new { Id = Guid.Parse("10000000-0000-0000-0000-000000000004"), CategoriaId = catEnergizantes, Nombre = "Red Bull 250ml", CodigoBarras = "900249010001", PrecioCompraUSD = 1.80m, PrecioVentaUSD = 3.00m, Stock = 40, StockMinimo = 8, ImagenUrl = (string?)null, Activo = true, CreatedAt = seedDate, LastModifiedAt = (DateTime?)null, IsDeleted = false },
-            new { Id = Guid.Parse("10000000-0000-0000-0000-000000000005"), CategoriaId = catPasabocas, Nombre = "Doritos Queso Atrevido 150g", CodigoBarras = "759100400505", PrecioCompraUSD = 1.20m, PrecioVentaUSD = 2.00m, Stock = 25, StockMinimo = 5, ImagenUrl = (string?)null, Activo = true, CreatedAt = seedDate, LastModifiedAt = (DateTime?)null, IsDeleted = false }
+            new { Id = Guid.Parse("10000000-0000-0000-0000-000000000001"), CategoriaId = catLicores, Nombre = "Ron Cacique Añejo 0.75L", Sku = "LIC-RON-0001", CodigoBarras = "759100100101", PrecioCompraUSD = 8.50m, PrecioVentaUSD = 12.00m, Stock = 30, StockMinimo = 5, StockMaximo = 60, ImagenUrl = (string?)null, Activo = true, CreatedAt = seedDate, LastModifiedAt = (DateTime?)null, IsDeleted = false },
+            new { Id = Guid.Parse("10000000-0000-0000-0000-000000000002"), CategoriaId = catLicores, Nombre = "Whisky Old Parr 12 Años 0.75L", Sku = "LIC-WHI-0002", CodigoBarras = "500028100202", PrecioCompraUSD = 28.00m, PrecioVentaUSD = 38.00m, Stock = 12, StockMinimo = 3, StockMaximo = 24, ImagenUrl = (string?)null, Activo = true, CreatedAt = seedDate, LastModifiedAt = (DateTime?)null, IsDeleted = false },
+            new { Id = Guid.Parse("10000000-0000-0000-0000-000000000003"), CategoriaId = catGaseosas, Nombre = "Coca-Cola 2 Litros", Sku = "GAS-COC-0003", CodigoBarras = "759100200303", PrecioCompraUSD = 1.60m, PrecioVentaUSD = 2.50m, Stock = 50, StockMinimo = 10, StockMaximo = 100, ImagenUrl = (string?)null, Activo = true, CreatedAt = seedDate, LastModifiedAt = (DateTime?)null, IsDeleted = false },
+            new { Id = Guid.Parse("10000000-0000-0000-0000-000000000004"), CategoriaId = catEnergizantes, Nombre = "Red Bull 250ml", Sku = "ENE-RED-0004", CodigoBarras = "900249010001", PrecioCompraUSD = 1.80m, PrecioVentaUSD = 3.00m, Stock = 40, StockMinimo = 8, StockMaximo = 80, ImagenUrl = (string?)null, Activo = true, CreatedAt = seedDate, LastModifiedAt = (DateTime?)null, IsDeleted = false },
+            new { Id = Guid.Parse("10000000-0000-0000-0000-000000000005"), CategoriaId = catPasabocas, Nombre = "Doritos Queso Atrevido 150g", Sku = "PAS-DOR-0005", CodigoBarras = "759100400505", PrecioCompraUSD = 1.20m, PrecioVentaUSD = 2.00m, Stock = 25, StockMinimo = 5, StockMaximo = 50, ImagenUrl = (string?)null, Activo = true, CreatedAt = seedDate, LastModifiedAt = (DateTime?)null, IsDeleted = false }
         );
 
         // --- Usuarios ---
         modelBuilder.Entity<Usuario>().HasData(
-            new { Id = Guid.Parse("20000000-0000-0000-0000-000000000001"), NombreCompleto = "Administrador Principal", Email = "admin@licoreria.com", PasswordHash = "admin123_hash", Rol = "Admin", Activo = true, CreatedAt = seedDate, LastModifiedAt = (DateTime?)null, IsDeleted = false },
-            new { Id = Guid.Parse("20000000-0000-0000-0000-000000000002"), NombreCompleto = "Cajero Turno Mañana", Email = "cajero1@licoreria.com", PasswordHash = "cajero123_hash", Rol = "Cajero", Activo = true, CreatedAt = seedDate, LastModifiedAt = (DateTime?)null, IsDeleted = false }
+            new { Id = Guid.Parse("20000000-0000-0000-0000-000000000001"), NombreCompleto = "Administrador Principal", Email = "admin@licoreria.com", PasswordHash = "admin123_hash", Rol = RolUsuario.Administrador, Activo = true, CreatedAt = seedDate, LastModifiedAt = (DateTime?)null, IsDeleted = false },
+            new { Id = Guid.Parse("20000000-0000-0000-0000-000000000002"), NombreCompleto = "Cajero Turno Mañana", Email = "cajero1@licoreria.com", PasswordHash = "cajero123_hash", Rol = RolUsuario.Cajero, Activo = true, CreatedAt = seedDate, LastModifiedAt = (DateTime?)null, IsDeleted = false }
         );
     }
 }
