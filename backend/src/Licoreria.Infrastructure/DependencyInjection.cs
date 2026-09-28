@@ -1,10 +1,12 @@
-﻿using Licoreria.Application.Interfaces;
+﻿using Licoreria.Application.Dtos;
+using Licoreria.Application.Interfaces;
 using Licoreria.Application.Services;
 using Licoreria.Application.Validators;
 using Licoreria.Domain.Services;
 using Licoreria.Infrastructure.Persistence;
 using Licoreria.Infrastructure.Repositories;
 using Licoreria.Infrastructure.Services;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,10 +39,10 @@ public static class DependencyInjection
         // =========================================================
         // Transient: servicios ligeros sin estado (validadores).
         // =========================================================
-        services.AddTransient<SaludStockRequestValidator>();
-        services.AddTransient<SkuRequestValidator>();
-        services.AddTransient<MermaRequestValidator>();
-        services.AddTransient<AbonoRequestValidator>();
+        services.AddTransient<IValidator<SaludStockRequest>, SaludStockRequestValidator>();
+        services.AddTransient<IValidator<SkuRequest>, SkuRequestValidator>();
+        services.AddTransient<IValidator<MermaRequest>, MermaRequestValidator>();
+        services.AddTransient<IValidator<AbonoRequest>, AbonoRequestValidator>();
 
         // =========================================================
         // Singleton: servicios de dominio sin estado y cachés en memoria.

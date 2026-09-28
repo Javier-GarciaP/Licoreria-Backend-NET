@@ -19,6 +19,10 @@ public sealed record AbonoRequest(
     decimal TotalAbonado,
     decimal MontoAbono);
 
+public sealed record CuentaRequest(
+    IEnumerable<decimal> Consumos,
+    IEnumerable<decimal> Abonos);
+
 public sealed record ResumenCuentaDto(
     decimal Total,
     decimal TotalAbonado,
