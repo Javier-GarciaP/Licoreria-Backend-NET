@@ -5,6 +5,7 @@ using Licoreria.Application.Validators;
 using Licoreria.Domain.Services;
 using Licoreria.Infrastructure.Persistence;
 using Licoreria.Infrastructure.Repositories;
+using Licoreria.Infrastructure.Security;
 using Licoreria.Infrastructure.Services;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -56,6 +57,7 @@ public static class DependencyInjection
         services.AddSingleton<MaquinaEstadosComanda>();
         services.AddSingleton<DetectorConflictosReserva>();
         services.AddSingleton<IServicioTasas, CacheTasasEnMemoria>();
+        services.AddSingleton<IPasswordHasher, PasswordHasher>();
 
         return services;
     }
