@@ -3,8 +3,8 @@ using System;
 using Licoreria.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -18,38 +18,38 @@ namespace Licoreria.Infrastructure.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "10.0.12")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Licoreria.Domain.Entities.Categoria", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Descripcion")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("character varying(200)");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime?>("LastModifiedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("character varying(50)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Categorias");
+                    b.ToTable("Categorias", (string)null);
 
                     b.HasData(
                         new
@@ -90,29 +90,29 @@ namespace Licoreria.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<int>("Cantidad")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime?>("LastModifiedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal>("PrecioUnitarioUSD")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<Guid>("ProductoId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("VentaId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -120,63 +120,165 @@ namespace Licoreria.Infrastructure.Migrations
 
                     b.HasIndex("VentaId");
 
-                    b.ToTable("DetallesVenta");
+                    b.ToTable("DetallesVenta", (string)null);
+                });
+
+            modelBuilder.Entity("Licoreria.Domain.Entities.Marca", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Marcas", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("55555555-5555-5555-5555-555555555551"),
+                            Activo = true,
+                            CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Descripcion = "Ron venezolano",
+                            IsDeleted = false,
+                            Nombre = "Cacique"
+                        },
+                        new
+                        {
+                            Id = new Guid("55555555-5555-5555-5555-555555555552"),
+                            Activo = true,
+                            CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Descripcion = "Whisky escocés",
+                            IsDeleted = false,
+                            Nombre = "Old Parr"
+                        },
+                        new
+                        {
+                            Id = new Guid("55555555-5555-5555-5555-555555555553"),
+                            Activo = true,
+                            CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Descripcion = "Bebidas gaseosas",
+                            IsDeleted = false,
+                            Nombre = "Coca-Cola"
+                        },
+                        new
+                        {
+                            Id = new Guid("55555555-5555-5555-5555-555555555554"),
+                            Activo = true,
+                            CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Descripcion = "Bebidas energizantes",
+                            IsDeleted = false,
+                            Nombre = "Red Bull"
+                        },
+                        new
+                        {
+                            Id = new Guid("55555555-5555-5555-5555-555555555555"),
+                            Activo = true,
+                            CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Descripcion = "Snacks y pasabocas",
+                            IsDeleted = false,
+                            Nombre = "Frito-Lay"
+                        });
                 });
 
             modelBuilder.Entity("Licoreria.Domain.Entities.Producto", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("Activo")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<Guid>("CategoriaId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("CodigoBarras")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("ImagenUrl")
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("character varying(500)");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime?>("LastModifiedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("MarcaId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<decimal>("PrecioCompraUSD")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<decimal>("PrecioVentaUSD")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Sku")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<int>("Stock")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
+
+                    b.Property<int>("StockMaximo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<int>("StockMinimo")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("UnidadMedidaId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CategoriaId");
 
-                    b.ToTable("Productos");
+                    b.HasIndex("MarcaId");
+
+                    b.HasIndex("Sku")
+                        .IsUnique();
+
+                    b.HasIndex("UnidadMedidaId");
+
+                    b.ToTable("Productos", (string)null);
 
                     b.HasData(
                         new
@@ -187,11 +289,15 @@ namespace Licoreria.Infrastructure.Migrations
                             CodigoBarras = "759100100101",
                             CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
+                            MarcaId = new Guid("55555555-5555-5555-5555-555555555551"),
                             Nombre = "Ron Cacique Añejo 0.75L",
                             PrecioCompraUSD = 8.50m,
                             PrecioVentaUSD = 12.00m,
+                            Sku = "LIC-RON-0001",
                             Stock = 30,
-                            StockMinimo = 5
+                            StockMaximo = 60,
+                            StockMinimo = 5,
+                            UnidadMedidaId = new Guid("66666666-6666-6666-6666-666666666661")
                         },
                         new
                         {
@@ -201,11 +307,15 @@ namespace Licoreria.Infrastructure.Migrations
                             CodigoBarras = "500028100202",
                             CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
+                            MarcaId = new Guid("55555555-5555-5555-5555-555555555552"),
                             Nombre = "Whisky Old Parr 12 Años 0.75L",
                             PrecioCompraUSD = 28.00m,
                             PrecioVentaUSD = 38.00m,
+                            Sku = "LIC-WHI-0002",
                             Stock = 12,
-                            StockMinimo = 3
+                            StockMaximo = 24,
+                            StockMinimo = 3,
+                            UnidadMedidaId = new Guid("66666666-6666-6666-6666-666666666661")
                         },
                         new
                         {
@@ -215,11 +325,15 @@ namespace Licoreria.Infrastructure.Migrations
                             CodigoBarras = "759100200303",
                             CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
+                            MarcaId = new Guid("55555555-5555-5555-5555-555555555553"),
                             Nombre = "Coca-Cola 2 Litros",
                             PrecioCompraUSD = 1.60m,
                             PrecioVentaUSD = 2.50m,
+                            Sku = "GAS-COC-0003",
                             Stock = 50,
-                            StockMinimo = 10
+                            StockMaximo = 100,
+                            StockMinimo = 10,
+                            UnidadMedidaId = new Guid("66666666-6666-6666-6666-666666666661")
                         },
                         new
                         {
@@ -229,11 +343,15 @@ namespace Licoreria.Infrastructure.Migrations
                             CodigoBarras = "900249010001",
                             CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
+                            MarcaId = new Guid("55555555-5555-5555-5555-555555555554"),
                             Nombre = "Red Bull 250ml",
                             PrecioCompraUSD = 1.80m,
                             PrecioVentaUSD = 3.00m,
+                            Sku = "ENE-RED-0004",
                             Stock = 40,
-                            StockMinimo = 8
+                            StockMaximo = 80,
+                            StockMinimo = 8,
+                            UnidadMedidaId = new Guid("66666666-6666-6666-6666-666666666662")
                         },
                         new
                         {
@@ -243,11 +361,79 @@ namespace Licoreria.Infrastructure.Migrations
                             CodigoBarras = "759100400505",
                             CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
+                            MarcaId = new Guid("55555555-5555-5555-5555-555555555555"),
                             Nombre = "Doritos Queso Atrevido 150g",
                             PrecioCompraUSD = 1.20m,
                             PrecioVentaUSD = 2.00m,
+                            Sku = "PAS-DOR-0005",
                             Stock = 25,
-                            StockMinimo = 5
+                            StockMaximo = 50,
+                            StockMinimo = 5,
+                            UnidadMedidaId = new Guid("66666666-6666-6666-6666-666666666662")
+                        });
+                });
+
+            modelBuilder.Entity("Licoreria.Domain.Entities.UnidadMedida", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Abreviatura")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("UnidadesMedida", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("66666666-6666-6666-6666-666666666661"),
+                            Abreviatura = "BOT",
+                            CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsDeleted = false,
+                            Nombre = "Botella"
+                        },
+                        new
+                        {
+                            Id = new Guid("66666666-6666-6666-6666-666666666662"),
+                            Abreviatura = "UND",
+                            CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsDeleted = false,
+                            Nombre = "Unidad"
+                        },
+                        new
+                        {
+                            Id = new Guid("66666666-6666-6666-6666-666666666663"),
+                            Abreviatura = "TOB",
+                            CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsDeleted = false,
+                            Nombre = "Tobo"
+                        },
+                        new
+                        {
+                            Id = new Guid("66666666-6666-6666-6666-666666666664"),
+                            Abreviatura = "PLA",
+                            CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsDeleted = false,
+                            Nombre = "Plato"
                         });
                 });
 
@@ -255,45 +441,45 @@ namespace Licoreria.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("Activo")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime?>("LastModifiedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("NombreCompleto")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Rol")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Usuarios");
+                    b.ToTable("Usuarios", (string)null);
 
                     b.HasData(
                         new
@@ -305,7 +491,7 @@ namespace Licoreria.Infrastructure.Migrations
                             IsDeleted = false,
                             NombreCompleto = "Administrador Principal",
                             PasswordHash = "admin123_hash",
-                            Rol = "Admin"
+                            Rol = "Administrador"
                         },
                         new
                         {
@@ -324,45 +510,45 @@ namespace Licoreria.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("Fecha")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime?>("LastModifiedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("MetodoPago")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<decimal>("TasaCambio")
                         .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
+                        .HasColumnType("numeric(18,4)");
 
                     b.Property<decimal>("TotalBS")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<decimal>("TotalUSD")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<Guid>("UsuarioId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
                     b.HasIndex("UsuarioId");
 
-                    b.ToTable("Ventas");
+                    b.ToTable("Ventas", (string)null);
                 });
 
             modelBuilder.Entity("Licoreria.Domain.Entities.DetalleVenta", b =>
@@ -392,7 +578,23 @@ namespace Licoreria.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Licoreria.Domain.Entities.Marca", "Marca")
+                        .WithMany("Productos")
+                        .HasForeignKey("MarcaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Licoreria.Domain.Entities.UnidadMedida", "UnidadMedida")
+                        .WithMany("Productos")
+                        .HasForeignKey("UnidadMedidaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Categoria");
+
+                    b.Navigation("Marca");
+
+                    b.Navigation("UnidadMedida");
                 });
 
             modelBuilder.Entity("Licoreria.Domain.Entities.Venta", b =>
@@ -407,6 +609,16 @@ namespace Licoreria.Infrastructure.Migrations
                 });
 
             modelBuilder.Entity("Licoreria.Domain.Entities.Categoria", b =>
+                {
+                    b.Navigation("Productos");
+                });
+
+            modelBuilder.Entity("Licoreria.Domain.Entities.Marca", b =>
+                {
+                    b.Navigation("Productos");
+                });
+
+            modelBuilder.Entity("Licoreria.Domain.Entities.UnidadMedida", b =>
                 {
                     b.Navigation("Productos");
                 });

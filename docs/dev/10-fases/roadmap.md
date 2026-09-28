@@ -22,15 +22,21 @@
 - [x] `docs/` con visión, requerimientos, arquitectura, BD, API, seguridad, módulos,
       frontend, IA, operaciones y guías.
 - [x] Registro de decisiones (ADR).
-- [ ] Sitio Astro Starlight con secciones *Desarrolladores* y *Cliente*.
-- [ ] Workflow de GitHub Pages publicando el sitio.
-- [ ] Contrato OpenAPI inicial.
+- [x] Sitio Astro Starlight con secciones *Desarrolladores* y *Cliente*.
+- [x] Workflow de GitHub Pages publicando el sitio.
+- [x] Contrato OpenAPI inicial.
+
+> La **Fase 1** del docente (fundamentos, DI, CORS, RFC 7807 y lógica de dominio) está
+> documentada en [Fase 1](fase-1.md).
 
 ## Fase 2 · API final
 
 **Alcance**
 
 - Migrar de SQL Server a **PostgreSQL** (ver [estrategia](../03-base-datos/postgresql.md)).
+  _Avanzado: proveedor Npgsql, migración inicial y `MigrateAsync` al arrancar._
+- Configuración **Fluent API** por entidad y data seeding.
+  _Avanzado: `Configurations/` con categorías, marcas, unidades y productos._
 - Implementar los módulos: catálogo, inventario, compras, ventas/POS, caja, club,
   CRM, finanzas, contenido e IA.
 - Completar el contrato OpenAPI y Swagger.

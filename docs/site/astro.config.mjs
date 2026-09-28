@@ -111,7 +111,7 @@ export default defineConfig({
             },
             {
               label: 'Fases',
-              items: ['dev/10-fases/roadmap'],
+              items: ['dev/10-fases/roadmap', 'dev/10-fases/fase-1'],
             },
             {
               label: 'Guías',

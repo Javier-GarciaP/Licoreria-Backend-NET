@@ -4,20 +4,127 @@ namespace Licoreria.Domain.Entities;
 
 public class Producto : BaseEntity
 {
-    public string Nombre { get; set; } = string.Empty;
-    public string CodigoBarras { get; set; } = string.Empty;
+    public string Nombre { get; private set; } = string.Empty;
+    public string Sku { get; private set; } = string.Empty;
+    public string CodigoBarras { get; private set; } = string.Empty;
 
-    // Precios y Stock
-    public decimal PrecioCompraUSD { get; set; }
-    public decimal PrecioVentaUSD { get; set; }
-    public int Stock { get; set; }
-    public int StockMinimo { get; set; } = 5;
+    public decimal PrecioCompraUSD { get; private set; }
+    public decimal PrecioVentaUSD { get; private set; }
 
-    // Imagen y Estado
-    public string? ImagenUrl { get; set; }
-    public bool Activo { get; set; } = true;
+    public int Stock { get; private set; }
+    public int StockMinimo { get; private set; }
+    public int StockMaximo { get; private set; }
 
-    // Relación N:1 con Categoria
-    public Guid CategoriaId { get; set; }
-    public Categoria Categoria { get; set; } = null!;
+    public string? ImagenUrl { get; private set; }
+    public bool Activo { get; private set; } = true;
+
+    public Guid CategoriaId { get; private set; }
+    public Categoria Categoria { get; private set; } = null!;
+
+    public Guid MarcaId { get; private set; }
+    public Marca Marca { get; private set; } = null!;
+
+    public Guid UnidadMedidaId { get; private set; }
+    public UnidadMedida UnidadMedida { get; private set; } = null!;
+
+    /// <summary>
+    /// Constructor sin parámetros requerido por el ORM para la materialización.
+    /// </summary>
+    private Producto()
+    {
+    }
+
+    public Producto(
+        string nombre,
+        string sku,
+        string codigoBarras,
+        decimal precioCompraUSD,
+        decimal precioVentaUSD,
+        int stockMinimo,
+        int stockMaximo,
+        Guid categoriaId,
+        Guid marcaId,
+        Guid unidadMedidaId)
+    {
+        if (string.IsNullOrWhiteSpace(nombre))
+        {
+            throw new InvalidOperationException("El nombre del producto es obligatorio.");
+        }
+
+        if (stockMinimo < 0 || stockMaximo < stockMinimo)
+        {
+            throw new InvalidOperationException("Los límites de stock no son válidos.");
+        }
+
+        Nombre = nombre;
+        Sku = sku;
+        CodigoBarras = codigoBarras;
+        PrecioCompraUSD = precioCompraUSD;
+        PrecioVentaUSD = precioVentaUSD;
+        StockMinimo = stockMinimo;
+        StockMaximo = stockMaximo;
+        CategoriaId = categoriaId;
+        MarcaId = marcaId;
+        UnidadMedidaId = unidadMedidaId;
+        Stock = 0;
+        Activo = true;
+    }
+
+    /// <summary>
+    /// Incrementa o decrementa el stock. Un resultado negativo viola la regla de negocio.
+    /// </summary>
+    public void ActualizarStock(int cantidad)
+    {
+        var nuevoStock = Stock + cantidad;
+
+        if (nuevoStock < 0)
+        {
+            throw new InvalidOperationException("El stock no puede quedar en negativo.");
+        }
+
+        Stock = nuevoStock;
+        MarcarModificado();
+    }
+
+    public void ActualizarPrecios(decimal precioCompraUSD, decimal precioVentaUSD)
+    {
+        if (precioCompraUSD < 0 || precioVentaUSD < 0)
+        {
+            throw new InvalidOperationException("Los precios no pueden ser negativos.");
+        }
+
+        if (precioVentaUSD < precioCompraUSD)
+        {
+            throw new InvalidOperationException("El precio de venta no puede ser menor que el de compra.");
+        }
+
+        PrecioCompraUSD = precioCompraUSD;
+        PrecioVentaUSD = precioVentaUSD;
+        MarcarModificado();
+    }
+
+    public void ActualizarDatos(string nombre, string codigoBarras, string? imagenUrl)
+    {
+        if (string.IsNullOrWhiteSpace(nombre))
+        {
+            throw new InvalidOperationException("El nombre del producto es obligatorio.");
+        }
+
+        Nombre = nombre;
+        CodigoBarras = codigoBarras;
+        ImagenUrl = imagenUrl;
+        MarcarModificado();
+    }
+
+    public void Activar()
+    {
+        Activo = true;
+        MarcarModificado();
+    }
+
+    public void Desactivar()
+    {
+        Activo = false;
+        MarcarModificado();
+    }
 }
