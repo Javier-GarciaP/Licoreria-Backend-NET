@@ -49,7 +49,7 @@ namespace Licoreria.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Categorias", (string)null);
+                    b.ToTable("categorias", (string)null);
 
                     b.HasData(
                         new
@@ -120,7 +120,7 @@ namespace Licoreria.Infrastructure.Migrations
 
                     b.HasIndex("VentaId");
 
-                    b.ToTable("DetallesVenta", (string)null);
+                    b.ToTable("detalles_venta", (string)null);
                 });
 
             modelBuilder.Entity("Licoreria.Domain.Entities.Marca", b =>
@@ -152,7 +152,7 @@ namespace Licoreria.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Marcas", (string)null);
+                    b.ToTable("marcas", (string)null);
 
                     b.HasData(
                         new
@@ -222,6 +222,10 @@ namespace Licoreria.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
                     b.Property<string>("ImagenUrl")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -278,7 +282,7 @@ namespace Licoreria.Infrastructure.Migrations
 
                     b.HasIndex("UnidadMedidaId");
 
-                    b.ToTable("Productos", (string)null);
+                    b.ToTable("productos", (string)null);
 
                     b.HasData(
                         new
@@ -288,6 +292,7 @@ namespace Licoreria.Infrastructure.Migrations
                             CategoriaId = new Guid("11111111-1111-1111-1111-111111111111"),
                             CodigoBarras = "759100100101",
                             CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Descripcion = "Ron añejo venezolano de 0.75 litros.",
                             IsDeleted = false,
                             MarcaId = new Guid("55555555-5555-5555-5555-555555555551"),
                             Nombre = "Ron Cacique Añejo 0.75L",
@@ -306,6 +311,7 @@ namespace Licoreria.Infrastructure.Migrations
                             CategoriaId = new Guid("11111111-1111-1111-1111-111111111111"),
                             CodigoBarras = "500028100202",
                             CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Descripcion = "Whisky escocés de 12 años, 0.75 litros.",
                             IsDeleted = false,
                             MarcaId = new Guid("55555555-5555-5555-5555-555555555552"),
                             Nombre = "Whisky Old Parr 12 Años 0.75L",
@@ -324,6 +330,7 @@ namespace Licoreria.Infrastructure.Migrations
                             CategoriaId = new Guid("22222222-2222-2222-2222-222222222222"),
                             CodigoBarras = "759100200303",
                             CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Descripcion = "Refresco de cola de 2 litros.",
                             IsDeleted = false,
                             MarcaId = new Guid("55555555-5555-5555-5555-555555555553"),
                             Nombre = "Coca-Cola 2 Litros",
@@ -342,6 +349,7 @@ namespace Licoreria.Infrastructure.Migrations
                             CategoriaId = new Guid("33333333-3333-3333-3333-333333333333"),
                             CodigoBarras = "900249010001",
                             CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Descripcion = "Bebida energizante de 250 ml.",
                             IsDeleted = false,
                             MarcaId = new Guid("55555555-5555-5555-5555-555555555554"),
                             Nombre = "Red Bull 250ml",
@@ -360,6 +368,7 @@ namespace Licoreria.Infrastructure.Migrations
                             CategoriaId = new Guid("44444444-4444-4444-4444-444444444444"),
                             CodigoBarras = "759100400505",
                             CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Descripcion = "Snack de maíz sabor queso, 150 g.",
                             IsDeleted = false,
                             MarcaId = new Guid("55555555-5555-5555-5555-555555555555"),
                             Nombre = "Doritos Queso Atrevido 150g",
@@ -400,7 +409,7 @@ namespace Licoreria.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("UnidadesMedida", (string)null);
+                    b.ToTable("unidades_medida", (string)null);
 
                     b.HasData(
                         new
@@ -479,7 +488,7 @@ namespace Licoreria.Infrastructure.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Usuarios", (string)null);
+                    b.ToTable("usuarios", (string)null);
 
                     b.HasData(
                         new
@@ -548,7 +557,7 @@ namespace Licoreria.Infrastructure.Migrations
 
                     b.HasIndex("UsuarioId");
 
-                    b.ToTable("Ventas", (string)null);
+                    b.ToTable("ventas", (string)null);
                 });
 
             modelBuilder.Entity("Licoreria.Domain.Entities.DetalleVenta", b =>
