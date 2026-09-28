@@ -13,7 +13,9 @@ public class ProductoTests
             precioVentaUSD: 12.00m,
             stockMinimo: 5,
             stockMaximo: 60,
-            categoriaId: Guid.NewGuid());
+            categoriaId: Guid.NewGuid(),
+            marcaId: Guid.NewGuid(),
+            unidadMedidaId: Guid.NewGuid());
 
     [Fact]
     public void Constructor_InicializaElEstadoPorDefecto()

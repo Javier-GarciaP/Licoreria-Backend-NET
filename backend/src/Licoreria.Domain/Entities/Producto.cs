@@ -21,6 +21,12 @@ public class Producto : BaseEntity
     public Guid CategoriaId { get; private set; }
     public Categoria Categoria { get; private set; } = null!;
 
+    public Guid MarcaId { get; private set; }
+    public Marca Marca { get; private set; } = null!;
+
+    public Guid UnidadMedidaId { get; private set; }
+    public UnidadMedida UnidadMedida { get; private set; } = null!;
+
     /// <summary>
     /// Constructor sin parámetros requerido por el ORM para la materialización.
     /// </summary>
@@ -36,7 +42,9 @@ public class Producto : BaseEntity
         decimal precioVentaUSD,
         int stockMinimo,
         int stockMaximo,
-        Guid categoriaId)
+        Guid categoriaId,
+        Guid marcaId,
+        Guid unidadMedidaId)
     {
         if (string.IsNullOrWhiteSpace(nombre))
         {
@@ -56,6 +64,8 @@ public class Producto : BaseEntity
         StockMinimo = stockMinimo;
         StockMaximo = stockMaximo;
         CategoriaId = categoriaId;
+        MarcaId = marcaId;
+        UnidadMedidaId = unidadMedidaId;
         Stock = 0;
         Activo = true;
     }
