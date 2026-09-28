@@ -7,6 +7,7 @@ public class ProductoTests
     private static Producto CrearProducto()
         => new(
             nombre: "Ron Cacique",
+            descripcion: "Ron añejo venezolano.",
             sku: "LIC-RON-0001",
             codigoBarras: "759100100101",
             precioCompraUSD: 8.50m,
