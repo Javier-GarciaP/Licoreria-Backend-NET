@@ -64,6 +64,10 @@ public static class DependencyInjection
         services.AddSingleton<IServicioTasas, CacheTasasEnMemoria>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
 
+        // Configuración y generación de tokens JWT
+        services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
+        services.AddSingleton<ITokenService, TokenService>();
+
         return services;
     }
 }
