@@ -1,6 +1,10 @@
+using System.Text;
 using Licoreria.Infrastructure.Persistence;
+using Licoreria.Infrastructure.Security;
 using Licoreria.WebAPI.Middlewares;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Licoreria.Infrastructure.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +22,30 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Autenticación JWT (HMAC-SHA256) y autorización por roles (RBAC)
+var jwtSection = builder.Configuration.GetSection(JwtSettings.SectionName);
+var jwtKey = jwtSection["Key"] ?? throw new InvalidOperationException("Falta la configuración Jwt:Key.");
+var jwtIssuer = jwtSection["Issuer"];
+var jwtAudience = jwtSection["Audience"];
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwtIssuer,
+            ValidateAudience = true,
+            ValidAudience = jwtAudience,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
+builder.Services.AddAuthorization();
 
 // CORS: permite el consumo desde el frontend React (configurable en appsettings.json)
 const string corsPolicy = "FrontendPolicy";
@@ -66,6 +94,7 @@ app.UseHttpsRedirection();
 // CORS debe aplicarse antes de la autorización y del mapeo de controladores.
 app.UseCors(corsPolicy);
 
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 

@@ -32,10 +32,12 @@ public static class DependencyInjection
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<ICategoriaRepository, CategoriaRepository>();
         services.AddScoped<IProductoRepository, ProductoRepository>();
+        services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 
         services.AddScoped<IServicioProducto, ServicioProducto>();
         services.AddScoped<IServicioInventario, ServicioInventario>();
         services.AddScoped<IServicioCuenta, ServicioCuenta>();
+        services.AddScoped<IServicioAutenticacion, ServicioAutenticacion>();
 
         // =========================================================
         // Transient: servicios ligeros sin estado (validadores).
