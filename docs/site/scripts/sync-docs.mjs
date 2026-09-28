@@ -1,4 +1,4 @@
-import { readdir, readFile, writeFile, mkdir, rm } from 'node:fs/promises';
+import { readdir, readFile, writeFile, mkdir, rm, cp } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const sourceDir = path.resolve(__dirname, '../../dev');
 const targetDir = path.resolve(__dirname, '../src/content/docs/dev');
+const assetsSourceDir = path.resolve(__dirname, '../../assets');
+const assetsTargetDir = path.resolve(__dirname, '../src/content/docs/assets');
 
 function extractTitle(content, fallback) {
   const match = content.match(/^\s*#\s+(.+)$/m);
@@ -68,6 +70,12 @@ async function main() {
   console.log(
     `[sync-docs] ${count} documentos sincronizados desde docs/dev a src/content/docs/dev`,
   );
+
+  if (existsSync(assetsSourceDir)) {
+    await rm(assetsTargetDir, { recursive: true, force: true });
+    await cp(assetsSourceDir, assetsTargetDir, { recursive: true });
+    console.log('[sync-docs] Assets copiados desde docs/assets a src/content/docs/assets');
+  }
 }
 
 main().catch((err) => {

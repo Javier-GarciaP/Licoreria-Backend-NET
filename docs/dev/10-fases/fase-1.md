@@ -127,13 +127,12 @@ Swagger: `http://localhost:5190/swagger`.
 
 ## Evidencia (RFC 7807 en Postman)
 
-Capturas en `backend/src/Licoreria.WebAPI/docs/`:
+![Respuesta de la API](../../assets/evidencias/postman1.jpeg)
 
-- `postman1.jpeg`
-- `postman2.jpeg`
+![Respuesta RFC 7807](../../assets/evidencias/postman2.jpeg)
 
-La colección de pruebas está en
-`backend/src/Licoreria.WebAPI/docs/Licoreria_Fase1_Postman_Collection.json`.
+Colección de pruebas:
+[`Licoreria_Fase1_Postman_Collection.json`](../../assets/evidencias/Licoreria_Fase1_Postman_Collection.json).
 
 ## Criterios de evaluación (rúbrica)
 

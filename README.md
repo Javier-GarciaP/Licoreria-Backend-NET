@@ -96,11 +96,11 @@ Detalle completo en [`docs/dev/10-fases/fase-1.md`](docs/dev/10-fases/fase-1.md)
 
 ### Evidencia RFC 7807 (Postman)
 
-| Archivo | Descripción |
-| :--- | :--- |
-| `backend/src/Licoreria.WebAPI/docs/postman1.jpeg` | Respuesta de la API. |
-| `backend/src/Licoreria.WebAPI/docs/postman2.jpeg` | Respuesta RFC 7807. |
-| `backend/src/Licoreria.WebAPI/docs/Licoreria_Fase1_Postman_Collection.json` | Colección de pruebas. |
+![Respuesta de la API](docs/assets/evidencias/postman1.jpeg)
+
+![Respuesta RFC 7807](docs/assets/evidencias/postman2.jpeg)
+
+Colección de pruebas: [`Licoreria_Fase1_Postman_Collection.json`](docs/assets/evidencias/Licoreria_Fase1_Postman_Collection.json).
 
 ---
 
