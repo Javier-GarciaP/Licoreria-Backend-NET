@@ -1,0 +1,23 @@
+{
+  "name": "licoreria-docs",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "sync": "node scripts/sync-docs.mjs",
+    "dev": "npm run sync && astro dev",
+    "start": "npm run sync && astro dev",
+    "build": "npm run sync && astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^8.0.2",
+    "@astrojs/sitemap": "^3.7.4",
+    "@astrojs/starlight": "^0.42.4",
+    "astro": "^7.3.5",
+    "astro-mermaid": "^2.1.0",
+    "mermaid": "^11.0.0",
+    "starlight-openapi": "^0.26.2"
+  }
+}
