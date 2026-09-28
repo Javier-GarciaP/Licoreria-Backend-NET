@@ -29,26 +29,29 @@
 > La **Fase 1** del docente (fundamentos, DI, CORS, RFC 7807 y lógica de dominio) está
 > documentada en [Fase 1](fase-1.md).
 
-## Fase 2 · API final
+## Fase 2 · Persistencia de Datos y Seeding
 
-**Alcance**
+Documentada en [Fase 2](fase-2.md).
 
-- Migrar de SQL Server a **PostgreSQL** (ver [estrategia](../03-base-datos/postgresql.md)).
-  _Avanzado: proveedor Npgsql, migración inicial y `MigrateAsync` al arrancar._
-- Configuración **Fluent API** por entidad y data seeding.
-  _Avanzado: `Configurations/` con categorías, marcas, unidades y productos._
-- Implementar los módulos: catálogo, inventario, compras, ventas/POS, caja, club,
-  CRM, finanzas, contenido e IA.
-- Completar el contrato OpenAPI y Swagger.
+- [x] Migrar de SQL Server a **PostgreSQL 15** (proveedor Npgsql).
+- [x] Configuración **Fluent API** por entidad (`Configurations/`) sin Data Annotations.
+- [x] Tablas en minúsculas, UUID, `numeric(18,2)`, índice único y `DeleteBehavior.Restrict`.
+- [x] Data seeding de categorías, marcas, unidades y productos (sector licorería).
+- [x] Repositorios desacoplados con `AsNoTracking`.
+- [x] Migraciones versionadas y script SQL de evidencia.
+- [ ] Implementar los módulos restantes: inventario, compras, caja, club, CRM, finanzas, IA.
 
-## Fase 3 · Seguridad
+## Fase 3 · Seguridad Stateless (JWT), RBAC y Validación
 
-**Alcance**
+Documentada en [Fase 3](fase-3.md).
 
-- Autenticación JWT con refresco.
-- RBAC con permisos por rol.
-- Interceptor de auditoría (`created_by`/`updated_by`).
-- Endurecimiento de la API.
+- [x] Autenticación JWT (HMAC-SHA256) con `POST /api/auth/login`.
+- [x] Hash de contraseñas con PBKDF2 + salt.
+- [x] RBAC con roles de seguridad `Admin`/`Employee` y roles de dominio.
+- [x] 401 sin token y 403 con rol insuficiente.
+- [x] Validación defensiva con FluentValidation y 400 estructurado.
+- [x] Colección Postman con los 4 escenarios.
+- [ ] Refresco de token e interceptor de auditoría (`created_by`/`updated_by`).
 
 ## Fase 4 · Frontend
 
