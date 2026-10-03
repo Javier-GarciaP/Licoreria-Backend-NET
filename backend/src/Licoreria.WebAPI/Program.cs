@@ -5,6 +5,7 @@ using Licoreria.Application.Security;
 using Licoreria.Infrastructure.Persistence;
 using Licoreria.Infrastructure.Security;
 using Licoreria.WebAPI.HealthChecks;
+using Licoreria.WebAPI.Hubs;
 using Licoreria.WebAPI.Middlewares;
 using Licoreria.WebAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -30,6 +31,10 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 // Contexto del usuario autenticado (claims del JWT) para la auditoría.
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IContextoUsuario, ContextoUsuarioHttp>();
+
+// Notificaciones en tiempo real (SignalR) para comandas y mesas.
+builder.Services.AddSignalR();
+builder.Services.AddScoped<INotificadorComandas, NotificadorComandasSignalR>();
 
 builder.Services.AddControllers(options => options.Filters.AddService<ValidationFilter>())
     .AddJsonOptions(options =>
@@ -90,6 +95,23 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero
+        };
+
+        // Permite autenticar el hub de SignalR con el token enviado por query string.
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -153,5 +175,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health");
+app.MapHub<ComandasHub>("/hubs/comandas");
 
 app.Run();

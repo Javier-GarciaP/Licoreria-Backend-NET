@@ -14,19 +14,22 @@ public sealed class ServicioCuentas : IServicioCuentas
     private readonly IRepository<MetodoPago> _metodosPago;
     private readonly IServicioVentas _ventas;
     private readonly IRelojSistema _reloj;
+    private readonly INotificadorComandas _notificador;
 
     public ServicioCuentas(
         ICuentaRepository cuentaRepository,
         IRepository<ProductoVariante> variantes,
         IRepository<MetodoPago> metodosPago,
         IServicioVentas ventas,
-        IRelojSistema reloj)
+        IRelojSistema reloj,
+        INotificadorComandas notificador)
     {
         _cuentaRepository = cuentaRepository;
         _variantes = variantes;
         _metodosPago = metodosPago;
         _ventas = ventas;
         _reloj = reloj;
+        _notificador = notificador;
     }
 
     public async Task<CuentaDto> AbrirMesaAsync(AbrirMesaDto dto, CancellationToken cancellationToken = default)
@@ -106,6 +109,8 @@ public sealed class ServicioCuentas : IServicioCuentas
         await _cuentaRepository.AgregarComandaAsync(comanda, cancellationToken);
         await _cuentaRepository.SaveChangesAsync(cancellationToken);
 
+        await _notificador.ComandaCreadaAsync(cuentaId, comanda.Id, cancellationToken);
+
         var actualizada = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, cancellationToken);
         return actualizada is null ? null : Mapear(actualizada);
     }
@@ -163,6 +168,8 @@ public sealed class ServicioCuentas : IServicioCuentas
 
         detalle.CambiarEstado(dto.Estado);
         await _cuentaRepository.SaveChangesAsync(cancellationToken);
+
+        await _notificador.ItemActualizadoAsync(cuentaId, comandaId, detalleId, dto.Estado.ToString(), cancellationToken);
 
         var cuenta = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, cancellationToken);
         return cuenta is null ? null : Mapear(cuenta);
