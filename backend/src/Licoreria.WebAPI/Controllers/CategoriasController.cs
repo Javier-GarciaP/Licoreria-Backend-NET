@@ -1,43 +1,65 @@
 using Licoreria.Application.Dtos;
 using Licoreria.Application.Interfaces;
+using Licoreria.Application.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Licoreria.WebAPI.Controllers;
 
 /// <summary>
-/// Catálogo de categorías. Requiere autenticación; la eliminación es exclusiva del rol Admin.
+/// Catálogo de categorías jerárquicas.
 /// </summary>
 [ApiController]
 [Route("api/v1/categorias")]
-[Authorize(Roles = "Admin,Employee")]
+[Authorize(Policy = Permisos.CatalogoLeer)]
 public class CategoriasController : ControllerBase
 {
-    private readonly IServicioCatalogo _servicioCatalogo;
+    private readonly IServicioCatalogo _servicio;
 
-    public CategoriasController(IServicioCatalogo servicioCatalogo)
-    {
-        _servicioCatalogo = servicioCatalogo;
-    }
+    public CategoriasController(IServicioCatalogo servicio) => _servicio = servicio;
 
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<CategoriaDto>>> ObtenerTodas(CancellationToken cancellationToken)
-        => Ok(await _servicioCatalogo.ObtenerCategoriasAsync(cancellationToken));
+        => Ok(await _servicio.ObtenerCategoriasAsync(cancellationToken));
+
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<CategoriaDto>> ObtenerPorId(Guid id, CancellationToken cancellationToken)
+    {
+        var categoria = await _servicio.ObtenerCategoriaAsync(id, cancellationToken);
+        return categoria is null ? NotFound() : Ok(categoria);
+    }
 
     [HttpPost]
+    [Authorize(Policy = Permisos.CatalogoEscribir)]
     public async Task<ActionResult<CategoriaDto>> Crear(
         [FromBody] CategoriaCrearDto dto,
         CancellationToken cancellationToken)
     {
-        var creada = await _servicioCatalogo.CrearCategoriaAsync(dto, cancellationToken);
-        return StatusCode(StatusCodes.Status201Created, creada);
+        var creada = await _servicio.CrearCategoriaAsync(dto, cancellationToken);
+        return CreatedAtAction(nameof(ObtenerPorId), new { id = creada.Id }, creada);
+    }
+
+    [HttpPut("{id:guid}")]
+    [Authorize(Policy = Permisos.CatalogoEscribir)]
+    public async Task<ActionResult<CategoriaDto>> Editar(
+        Guid id,
+        [FromBody] CategoriaEditarDto dto,
+        CancellationToken cancellationToken)
+    {
+        if (id != dto.Id)
+        {
+            return BadRequest(new { mensaje = "El identificador de la ruta no coincide con el cuerpo." });
+        }
+
+        var editada = await _servicio.EditarCategoriaAsync(dto, cancellationToken);
+        return editada is null ? NotFound() : Ok(editada);
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = Permisos.CatalogoEscribir)]
     public async Task<IActionResult> Eliminar(Guid id, CancellationToken cancellationToken)
     {
-        var eliminado = await _servicioCatalogo.EliminarCategoriaAsync(id, cancellationToken);
-        return eliminado ? NoContent() : NotFound();
+        var eliminada = await _servicio.EliminarCategoriaAsync(id, cancellationToken);
+        return eliminada ? NoContent() : NotFound();
     }
 }

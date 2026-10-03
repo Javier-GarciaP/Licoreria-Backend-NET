@@ -26,6 +26,14 @@ internal static class SeedData
     public static readonly Guid UnidadTobo = Guid.Parse("66666666-6666-6666-6666-666666666663");
     public static readonly Guid UnidadPlato = Guid.Parse("66666666-6666-6666-6666-666666666664");
 
+    // --- Impuestos ---
+    public static readonly Guid ImpuestoIva = Guid.Parse("77777777-7777-7777-7777-777777777771");
+    public static readonly Guid ImpuestoIgtf = Guid.Parse("77777777-7777-7777-7777-777777777772");
+
+    // --- Listas de precio ---
+    public static readonly Guid ListaDetal = Guid.Parse("88888888-8888-8888-8888-888888888881");
+    public static readonly Guid ListaMayorista = Guid.Parse("88888888-8888-8888-8888-888888888882");
+
     // --- Usuarios ---
     public static readonly Guid UsuarioAdmin = Guid.Parse("20000000-0000-0000-0000-000000000001");
     public static readonly Guid UsuarioCajero = Guid.Parse("20000000-0000-0000-0000-000000000002");

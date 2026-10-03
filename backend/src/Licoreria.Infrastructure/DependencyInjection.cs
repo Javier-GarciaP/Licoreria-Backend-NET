@@ -63,6 +63,15 @@ public static class DependencyInjection
         services.AddTransient<IValidator<ProductoEditarDto>, ProductoEditarDtoValidator>();
         services.AddTransient<IValidator<CategoriaCrearDto>, CategoriaCrearDtoValidator>();
         services.AddTransient<IValidator<CategoriaEditarDto>, CategoriaEditarDtoValidator>();
+        services.AddTransient<IValidator<MarcaCrearDto>, MarcaCrearDtoValidator>();
+        services.AddTransient<IValidator<MarcaEditarDto>, MarcaEditarDtoValidator>();
+        services.AddTransient<IValidator<UnidadMedidaCrearDto>, UnidadMedidaCrearDtoValidator>();
+        services.AddTransient<IValidator<UnidadMedidaEditarDto>, UnidadMedidaEditarDtoValidator>();
+        services.AddTransient<IValidator<ImpuestoCrearDto>, ImpuestoCrearDtoValidator>();
+        services.AddTransient<IValidator<ImpuestoEditarDto>, ImpuestoEditarDtoValidator>();
+        services.AddTransient<IValidator<ListaPrecioCrearDto>, ListaPrecioCrearDtoValidator>();
+        services.AddTransient<IValidator<ListaPrecioEditarDto>, ListaPrecioEditarDtoValidator>();
+        services.AddTransient<IValidator<RecetaCrearDto>, RecetaCrearDtoValidator>();
         services.AddTransient<IValidator<UsuarioCrearDto>, UsuarioCrearDtoValidator>();
         services.AddTransient<IValidator<UsuarioEditarDto>, UsuarioEditarDtoValidator>();
         services.AddTransient<IValidator<CambiarPasswordDto>, CambiarPasswordDtoValidator>();

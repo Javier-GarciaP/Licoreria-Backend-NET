@@ -11,6 +11,11 @@ public class CategoriaRepository : Repository<Categoria>, ICategoriaRepository
     {
     }
 
-    public Task<bool> ExisteNombreAsync(string nombre, CancellationToken cancellationToken = default)
-        => _dbSet.AnyAsync(c => c.Nombre == nombre, cancellationToken);
+    public Task<bool> ExisteNombreAsync(
+        string nombre,
+        Guid? excluirId = null,
+        CancellationToken cancellationToken = default)
+        => _dbSet.AnyAsync(
+            c => c.Nombre == nombre && !c.IsDeleted && (excluirId == null || c.Id != excluirId),
+            cancellationToken);
 }

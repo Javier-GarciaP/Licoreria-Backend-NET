@@ -5,54 +5,41 @@ namespace Licoreria.UnitTests;
 public class ProductoTests
 {
     private static Producto CrearProducto()
-        => new(
-            nombre: "Ron Cacique",
-            descripcion: "Ron añejo venezolano.",
-            sku: "LIC-RON-0001",
-            codigoBarras: "759100100101",
-            precioCompraUSD: 8.50m,
-            precioVentaUSD: 12.00m,
-            stockMinimo: 5,
-            stockMaximo: 60,
-            categoriaId: Guid.NewGuid(),
-            marcaId: Guid.NewGuid(),
-            unidadMedidaId: Guid.NewGuid());
+        => new()
+        {
+            Nombre = "Ron Cacique",
+            Descripcion = "Ron añejo venezolano.",
+            CategoriaId = Guid.NewGuid()
+        };
 
     [Fact]
     public void Constructor_InicializaElEstadoPorDefecto()
     {
         var producto = CrearProducto();
 
-        Assert.Equal(0, producto.Stock);
         Assert.True(producto.Activo);
         Assert.Null(producto.LastModifiedAt);
+        Assert.Empty(producto.Variantes);
     }
 
     [Fact]
-    public void ActualizarStock_IncrementaYRegistraModificacion()
+    public void ActualizarDatos_RegistraLaModificacion()
     {
         var producto = CrearProducto();
 
-        producto.ActualizarStock(10);
+        producto.ActualizarDatos("Ron Cacique Añejo", "Nueva descripción", producto.CategoriaId, null, null, producto.Tipo, null, null);
 
-        Assert.Equal(10, producto.Stock);
+        Assert.Equal("Ron Cacique Añejo", producto.Nombre);
         Assert.NotNull(producto.LastModifiedAt);
     }
 
     [Fact]
-    public void ActualizarStock_QueDejaStockNegativo_Lanza()
+    public void ActualizarDatos_SinNombre_Lanza()
     {
         var producto = CrearProducto();
 
-        Assert.Throws<InvalidOperationException>(() => producto.ActualizarStock(-1));
-    }
-
-    [Fact]
-    public void ActualizarPrecios_ConVentaMenorAlCosto_Lanza()
-    {
-        var producto = CrearProducto();
-
-        Assert.Throws<InvalidOperationException>(() => producto.ActualizarPrecios(10m, 9m));
+        Assert.Throws<InvalidOperationException>(() =>
+            producto.ActualizarDatos("", null, producto.CategoriaId, null, null, producto.Tipo, null, null));
     }
 
     [Fact]
@@ -63,5 +50,14 @@ public class ProductoTests
         producto.Desactivar();
 
         Assert.False(producto.Activo);
+    }
+
+    [Fact]
+    public void Variante_ActualizarDatos_ConVentaMenorAlCosto_Lanza()
+    {
+        var variante = new ProductoVariante();
+
+        Assert.Throws<InvalidOperationException>(() =>
+            variante.ActualizarDatos("Botella", "SKU-1", Guid.NewGuid(), 10m, 9m));
     }
 }

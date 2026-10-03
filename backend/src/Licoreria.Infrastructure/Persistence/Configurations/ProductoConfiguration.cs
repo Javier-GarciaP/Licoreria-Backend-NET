@@ -1,4 +1,5 @@
 using Licoreria.Domain.Entities;
+using Licoreria.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -11,15 +12,11 @@ public class ProductoConfiguration : IEntityTypeConfiguration<Producto>
         builder.ToTable("productos");
         builder.HasKey(p => p.Id);
 
-        builder.Property(p => p.Nombre).IsRequired().HasMaxLength(100);
+        builder.Property(p => p.Nombre).IsRequired().HasMaxLength(120);
         builder.Property(p => p.Descripcion).HasMaxLength(300);
-        builder.Property(p => p.Sku).IsRequired().HasMaxLength(20);
-        builder.HasIndex(p => p.Sku).IsUnique();
-        builder.Property(p => p.CodigoBarras).HasMaxLength(50);
-        builder.Property(p => p.PrecioCompraUSD).HasPrecision(18, 2);
-        builder.Property(p => p.PrecioVentaUSD).HasPrecision(18, 2);
-        builder.Property(p => p.StockMaximo).HasDefaultValue(0);
         builder.Property(p => p.ImagenUrl).HasMaxLength(500);
+        builder.Property(p => p.Tipo).HasConversion<string>().HasMaxLength(20);
+        builder.Property(p => p.GradoAlcoholico).HasPrecision(5, 2);
 
         builder.HasOne(p => p.Categoria)
                .WithMany(c => c.Productos)
@@ -31,17 +28,17 @@ public class ProductoConfiguration : IEntityTypeConfiguration<Producto>
                .HasForeignKey(p => p.MarcaId)
                .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(p => p.UnidadMedida)
-               .WithMany(u => u.Productos)
-               .HasForeignKey(p => p.UnidadMedidaId)
+        builder.HasOne(p => p.Impuesto)
+               .WithMany(i => i.Productos)
+               .HasForeignKey(p => p.ImpuestoId)
                .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasData(
-            new { Id = Guid.Parse("10000000-0000-0000-0000-000000000001"), CategoriaId = SeedData.CatLicores, MarcaId = SeedData.MarcaCacique, UnidadMedidaId = SeedData.UnidadBotella, Nombre = "Ron Cacique Añejo 0.75L", Descripcion = "Ron añejo venezolano de 0.75 litros.", Sku = "LIC-RON-0001", CodigoBarras = "759100100101", PrecioCompraUSD = 8.50m, PrecioVentaUSD = 12.00m, Stock = 30, StockMinimo = 5, StockMaximo = 60, ImagenUrl = (string?)null, Activo = true, CreatedAt = SeedData.Fecha, LastModifiedAt = (DateTime?)null, IsDeleted = false },
-            new { Id = Guid.Parse("10000000-0000-0000-0000-000000000002"), CategoriaId = SeedData.CatLicores, MarcaId = SeedData.MarcaOldParr, UnidadMedidaId = SeedData.UnidadBotella, Nombre = "Whisky Old Parr 12 Años 0.75L", Descripcion = "Whisky escocés de 12 años, 0.75 litros.", Sku = "LIC-WHI-0002", CodigoBarras = "500028100202", PrecioCompraUSD = 28.00m, PrecioVentaUSD = 38.00m, Stock = 12, StockMinimo = 3, StockMaximo = 24, ImagenUrl = (string?)null, Activo = true, CreatedAt = SeedData.Fecha, LastModifiedAt = (DateTime?)null, IsDeleted = false },
-            new { Id = Guid.Parse("10000000-0000-0000-0000-000000000003"), CategoriaId = SeedData.CatGaseosas, MarcaId = SeedData.MarcaCocaCola, UnidadMedidaId = SeedData.UnidadBotella, Nombre = "Coca-Cola 2 Litros", Descripcion = "Refresco de cola de 2 litros.", Sku = "GAS-COC-0003", CodigoBarras = "759100200303", PrecioCompraUSD = 1.60m, PrecioVentaUSD = 2.50m, Stock = 50, StockMinimo = 10, StockMaximo = 100, ImagenUrl = (string?)null, Activo = true, CreatedAt = SeedData.Fecha, LastModifiedAt = (DateTime?)null, IsDeleted = false },
-            new { Id = Guid.Parse("10000000-0000-0000-0000-000000000004"), CategoriaId = SeedData.CatEnergizantes, MarcaId = SeedData.MarcaRedBull, UnidadMedidaId = SeedData.UnidadUnidad, Nombre = "Red Bull 250ml", Descripcion = "Bebida energizante de 250 ml.", Sku = "ENE-RED-0004", CodigoBarras = "900249010001", PrecioCompraUSD = 1.80m, PrecioVentaUSD = 3.00m, Stock = 40, StockMinimo = 8, StockMaximo = 80, ImagenUrl = (string?)null, Activo = true, CreatedAt = SeedData.Fecha, LastModifiedAt = (DateTime?)null, IsDeleted = false },
-            new { Id = Guid.Parse("10000000-0000-0000-0000-000000000005"), CategoriaId = SeedData.CatPasabocas, MarcaId = SeedData.MarcaFritoLay, UnidadMedidaId = SeedData.UnidadUnidad, Nombre = "Doritos Queso Atrevido 150g", Descripcion = "Snack de maíz sabor queso, 150 g.", Sku = "PAS-DOR-0005", CodigoBarras = "759100400505", PrecioCompraUSD = 1.20m, PrecioVentaUSD = 2.00m, Stock = 25, StockMinimo = 5, StockMaximo = 50, ImagenUrl = (string?)null, Activo = true, CreatedAt = SeedData.Fecha, LastModifiedAt = (DateTime?)null, IsDeleted = false }
+            new { Id = Guid.Parse("10000000-0000-0000-0000-000000000001"), Nombre = "Ron Cacique Añejo", Descripcion = "Ron añejo venezolano.", ImagenUrl = (string?)null, Tipo = TipoProducto.Simple, GradoAlcoholico = (decimal?)40.00m, Activo = true, CategoriaId = SeedData.CatLicores, MarcaId = (Guid?)SeedData.MarcaCacique, ImpuestoId = (Guid?)SeedData.ImpuestoIva, CreatedAt = SeedData.Fecha, LastModifiedAt = (DateTime?)null, IsDeleted = false },
+            new { Id = Guid.Parse("10000000-0000-0000-0000-000000000002"), Nombre = "Whisky Old Parr 12 Años", Descripcion = "Whisky escocés de 12 años.", ImagenUrl = (string?)null, Tipo = TipoProducto.Simple, GradoAlcoholico = (decimal?)40.00m, Activo = true, CategoriaId = SeedData.CatLicores, MarcaId = (Guid?)SeedData.MarcaOldParr, ImpuestoId = (Guid?)SeedData.ImpuestoIva, CreatedAt = SeedData.Fecha, LastModifiedAt = (DateTime?)null, IsDeleted = false },
+            new { Id = Guid.Parse("10000000-0000-0000-0000-000000000003"), Nombre = "Coca-Cola", Descripcion = "Refresco de cola.", ImagenUrl = (string?)null, Tipo = TipoProducto.Simple, GradoAlcoholico = (decimal?)null, Activo = true, CategoriaId = SeedData.CatGaseosas, MarcaId = (Guid?)SeedData.MarcaCocaCola, ImpuestoId = (Guid?)SeedData.ImpuestoIva, CreatedAt = SeedData.Fecha, LastModifiedAt = (DateTime?)null, IsDeleted = false },
+            new { Id = Guid.Parse("10000000-0000-0000-0000-000000000004"), Nombre = "Red Bull", Descripcion = "Bebida energizante.", ImagenUrl = (string?)null, Tipo = TipoProducto.Simple, GradoAlcoholico = (decimal?)null, Activo = true, CategoriaId = SeedData.CatEnergizantes, MarcaId = (Guid?)SeedData.MarcaRedBull, ImpuestoId = (Guid?)SeedData.ImpuestoIva, CreatedAt = SeedData.Fecha, LastModifiedAt = (DateTime?)null, IsDeleted = false },
+            new { Id = Guid.Parse("10000000-0000-0000-0000-000000000005"), Nombre = "Doritos Queso Atrevido", Descripcion = "Snack de maíz sabor queso.", ImagenUrl = (string?)null, Tipo = TipoProducto.Simple, GradoAlcoholico = (decimal?)null, Activo = true, CategoriaId = SeedData.CatPasabocas, MarcaId = (Guid?)SeedData.MarcaFritoLay, ImpuestoId = (Guid?)SeedData.ImpuestoIva, CreatedAt = SeedData.Fecha, LastModifiedAt = (DateTime?)null, IsDeleted = false }
         );
     }
 }
