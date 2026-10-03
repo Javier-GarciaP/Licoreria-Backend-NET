@@ -42,6 +42,7 @@ public static class DependencyInjection
         services.AddScoped<IProductoRepository, ProductoRepository>();
         services.AddScoped<IUsuarioRepository, UsuarioRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IInventarioRepository, InventarioRepository>();
 
         services.AddScoped<IServicioProducto, ServicioProducto>();
         services.AddScoped<IServicioInventario, ServicioInventario>();
@@ -72,6 +73,8 @@ public static class DependencyInjection
         services.AddTransient<IValidator<ListaPrecioCrearDto>, ListaPrecioCrearDtoValidator>();
         services.AddTransient<IValidator<ListaPrecioEditarDto>, ListaPrecioEditarDtoValidator>();
         services.AddTransient<IValidator<RecetaCrearDto>, RecetaCrearDtoValidator>();
+        services.AddTransient<IValidator<RegistrarMermaDto>, RegistrarMermaDtoValidator>();
+        services.AddTransient<IValidator<AjusteInventarioDto>, AjusteInventarioDtoValidator>();
         services.AddTransient<IValidator<UsuarioCrearDto>, UsuarioCrearDtoValidator>();
         services.AddTransient<IValidator<UsuarioEditarDto>, UsuarioEditarDtoValidator>();
         services.AddTransient<IValidator<CambiarPasswordDto>, CambiarPasswordDtoValidator>();
