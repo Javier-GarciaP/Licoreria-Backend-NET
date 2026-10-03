@@ -49,6 +49,7 @@ public static class DependencyInjection
         services.AddScoped<ICuentaRepository, CuentaRepository>();
         services.AddScoped<ISesionCajaRepository, SesionCajaRepository>();
         services.AddScoped<IReservaRepository, ReservaRepository>();
+        services.AddScoped<IClienteRepository, ClienteRepository>();
 
         services.AddScoped<IServicioProducto, ServicioProducto>();
         services.AddScoped<IServicioInventario, ServicioInventario>();
@@ -63,6 +64,7 @@ public static class DependencyInjection
         services.AddScoped<IServicioCuentas, ServicioCuentas>();
         services.AddScoped<IServicioCaja, ServicioCaja>();
         services.AddScoped<IServicioClub, ServicioClub>();
+        services.AddScoped<IServicioCrm, ServicioCrm>();
 
         // =========================================================
         // Transient: servicios ligeros sin estado (validadores).
@@ -105,6 +107,10 @@ public static class DependencyInjection
         services.AddTransient<IValidator<ReservaCrearDto>, ReservaCrearDtoValidator>();
         services.AddTransient<IValidator<ReservaPagoCrearDto>, ReservaPagoCrearDtoValidator>();
         services.AddTransient<IValidator<EventoCrearDto>, EventoCrearDtoValidator>();
+        services.AddTransient<IValidator<ClienteCrearDto>, ClienteCrearDtoValidator>();
+        services.AddTransient<IValidator<PuntosOperacionDto>, PuntosOperacionDtoValidator>();
+        services.AddTransient<IValidator<CuentaPorCobrarCrearDto>, CuentaPorCobrarCrearDtoValidator>();
+        services.AddTransient<IValidator<PagoCuentaPorCobrarDto>, PagoCuentaPorCobrarDtoValidator>();
         services.AddTransient<IValidator<UsuarioCrearDto>, UsuarioCrearDtoValidator>();
         services.AddTransient<IValidator<UsuarioEditarDto>, UsuarioEditarDtoValidator>();
         services.AddTransient<IValidator<CambiarPasswordDto>, CambiarPasswordDtoValidator>();

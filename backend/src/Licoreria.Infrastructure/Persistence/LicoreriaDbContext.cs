@@ -51,6 +51,9 @@ public class LicoreriaDbContext : DbContext
     public DbSet<ReservaMesa> ReservaMesas => Set<ReservaMesa>();
     public DbSet<ReservaPago> ReservaPagos => Set<ReservaPago>();
     public DbSet<Evento> Eventos => Set<Evento>();
+    public DbSet<Cliente> Clientes => Set<Cliente>();
+    public DbSet<PuntosMovimiento> PuntosMovimiento => Set<PuntosMovimiento>();
+    public DbSet<CuentaPorCobrar> CuentasPorCobrar => Set<CuentaPorCobrar>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
