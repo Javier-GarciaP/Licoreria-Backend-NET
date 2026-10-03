@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Text.Json;
+using Licoreria.Domain.Common;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Licoreria.WebAPI.Middlewares;
@@ -38,10 +39,22 @@ public class ExceptionMiddleware
         // Mapeo de excepciones de negocio a códigos HTTP según el estándar RFC 7807.
         var (statusCode, title, type, detail) = exception switch
         {
-            KeyNotFoundException => (
+            NoEncontradoException or KeyNotFoundException => (
                 HttpStatusCode.NotFound,
                 "Recurso No Encontrado",
                 "https://httpstatuses.com/404",
+                exception.Message),
+
+            ConflictoException => (
+                HttpStatusCode.Conflict,
+                "Conflicto",
+                "https://httpstatuses.com/409",
+                exception.Message),
+
+            ReglaNegocioException => (
+                HttpStatusCode.UnprocessableEntity,
+                "Regla de Negocio Incumplida",
+                "https://httpstatuses.com/422",
                 exception.Message),
 
             ArgumentException => (

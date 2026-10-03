@@ -4,6 +4,7 @@ using Licoreria.Application.Services;
 using Licoreria.Application.Validators;
 using Licoreria.Domain.Services;
 using Licoreria.Infrastructure.Persistence;
+using Licoreria.Infrastructure.Persistence.Interceptors;
 using Licoreria.Infrastructure.Repositories;
 using Licoreria.Infrastructure.Security;
 using Licoreria.Infrastructure.Services;
@@ -24,10 +25,16 @@ public static class DependencyInjection
         // Scoped: una instancia por petición HTTP.
         // Persistencia, repositorios y servicios de aplicación.
         // =========================================================
-        services.AddDbContext<LicoreriaDbContext>(options =>
+        // Interceptor de auditoría: completa created_by/updated_by con el usuario autenticado.
+        services.AddScoped<AuditoriaInterceptor>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddSingleton<IRelojSistema, RelojSistema>();
+
+        services.AddDbContext<LicoreriaDbContext>((sp, options) =>
             options.UseNpgsql(
-                configuration.GetConnectionString("DefaultConnection"),
-                b => b.MigrationsAssembly(typeof(LicoreriaDbContext).Assembly.FullName)));
+                    configuration.GetConnectionString("DefaultConnection"),
+                    b => b.MigrationsAssembly(typeof(LicoreriaDbContext).Assembly.FullName))
+                .AddInterceptors(sp.GetRequiredService<AuditoriaInterceptor>()));
 
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<ICategoriaRepository, CategoriaRepository>();

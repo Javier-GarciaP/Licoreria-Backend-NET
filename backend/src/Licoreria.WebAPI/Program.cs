@@ -1,12 +1,16 @@
 using System.Text;
+using Licoreria.Application.Interfaces;
 using Licoreria.Infrastructure.Persistence;
 using Licoreria.Infrastructure.Security;
+using Licoreria.WebAPI.HealthChecks;
 using Licoreria.WebAPI.Middlewares;
+using Licoreria.WebAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Licoreria.Infrastructure.DependencyInjection;
 using Licoreria.WebAPI.Filters;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,10 +24,45 @@ builder.Host.UseDefaultServiceProvider(options =>
 
 // Registrar los servicios de Infraestructura (DbContext + EF Core)
 builder.Services.AddInfrastructureServices(builder.Configuration);
+
+// Contexto del usuario autenticado (claims del JWT) para la auditoría.
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IContextoUsuario, ContextoUsuarioHttp>();
+
 builder.Services.AddControllers(options => options.Filters.AddService<ValidationFilter>());
 builder.Services.AddScoped<ValidationFilter>();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+// Swagger / OpenAPI con soporte de autenticación Bearer (JWT).
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "API Licorería / Discoteca",
+        Version = "v1",
+        Description = "API REST del sistema de licorería y discoteca (sucursal única). "
+            + "Los errores se devuelven conforme a RFC 7807."
+    });
+
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Ingrese el token JWT. Ejemplo: Bearer {token}"
+    });
+
+    options.AddSecurityRequirement(_ => new OpenApiSecurityRequirement
+    {
+        { new OpenApiSecuritySchemeReference("Bearer"), new List<string>() }
+    });
+});
+
+// Health checks (liveness/readiness) para despliegue y monitoreo.
+builder.Services.AddHealthChecks()
+    .AddCheck<DbHealthCheck>("database");
 
 // Autenticación JWT (HMAC-SHA256) y autorización por roles (RBAC)
 var jwtSection = builder.Configuration.GetSection(JwtSettings.SectionName);
@@ -99,5 +138,6 @@ app.UseCors(corsPolicy);
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 app.Run();
