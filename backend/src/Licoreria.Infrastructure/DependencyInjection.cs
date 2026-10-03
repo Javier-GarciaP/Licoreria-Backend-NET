@@ -51,6 +51,10 @@ public static class DependencyInjection
         services.AddScoped<IReservaRepository, ReservaRepository>();
         services.AddScoped<IClienteRepository, ClienteRepository>();
 
+        // Almacenamiento local de archivos (imágenes, comprobantes, media).
+        services.Configure<OpcionesAlmacenamiento>(configuration.GetSection(OpcionesAlmacenamiento.SectionName));
+        services.AddSingleton<IAlmacenamientoArchivos, AlmacenamientoArchivosLocal>();
+
         services.AddScoped<IServicioProducto, ServicioProducto>();
         services.AddScoped<IServicioInventario, ServicioInventario>();
         services.AddScoped<IServicioCuenta, ServicioCuenta>();
@@ -65,6 +69,7 @@ public static class DependencyInjection
         services.AddScoped<IServicioCaja, ServicioCaja>();
         services.AddScoped<IServicioClub, ServicioClub>();
         services.AddScoped<IServicioCrm, ServicioCrm>();
+        services.AddScoped<IServicioContenido, ServicioContenido>();
 
         // =========================================================
         // Transient: servicios ligeros sin estado (validadores).
@@ -111,6 +116,9 @@ public static class DependencyInjection
         services.AddTransient<IValidator<PuntosOperacionDto>, PuntosOperacionDtoValidator>();
         services.AddTransient<IValidator<CuentaPorCobrarCrearDto>, CuentaPorCobrarCrearDtoValidator>();
         services.AddTransient<IValidator<PagoCuentaPorCobrarDto>, PagoCuentaPorCobrarDtoValidator>();
+        services.AddTransient<IValidator<PaginaCrearDto>, PaginaCrearDtoValidator>();
+        services.AddTransient<IValidator<HorarioGuardarDto>, HorarioGuardarDtoValidator>();
+        services.AddTransient<IValidator<LocalInfoEditarDto>, LocalInfoEditarDtoValidator>();
         services.AddTransient<IValidator<UsuarioCrearDto>, UsuarioCrearDtoValidator>();
         services.AddTransient<IValidator<UsuarioEditarDto>, UsuarioEditarDtoValidator>();
         services.AddTransient<IValidator<CambiarPasswordDto>, CambiarPasswordDtoValidator>();

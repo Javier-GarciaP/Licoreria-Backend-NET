@@ -400,3 +400,8 @@ database/backups/
 .venv/
 venv/
 __pycache__/
+
+# ==========================================
+# Archivos subidos por la API (almacenamiento local)
+# ==========================================
+backend/src/Licoreria.WebAPI/wwwroot/uploads/

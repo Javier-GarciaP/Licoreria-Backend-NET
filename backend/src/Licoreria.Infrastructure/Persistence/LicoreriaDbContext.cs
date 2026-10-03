@@ -54,6 +54,12 @@ public class LicoreriaDbContext : DbContext
     public DbSet<Cliente> Clientes => Set<Cliente>();
     public DbSet<PuntosMovimiento> PuntosMovimiento => Set<PuntosMovimiento>();
     public DbSet<CuentaPorCobrar> CuentasPorCobrar => Set<CuentaPorCobrar>();
+    public DbSet<Pagina> Paginas => Set<Pagina>();
+    public DbSet<Seccion> Secciones => Set<Seccion>();
+    public DbSet<BloqueContenido> BloquesContenido => Set<BloqueContenido>();
+    public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
+    public DbSet<HorarioAtencion> HorariosAtencion => Set<HorarioAtencion>();
+    public DbSet<LocalInfo> LocalInfo => Set<LocalInfo>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

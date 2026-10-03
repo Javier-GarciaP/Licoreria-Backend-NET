@@ -13,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Licoreria.Infrastructure.DependencyInjection;
 using Licoreria.WebAPI.Filters;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -167,6 +168,15 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Sirve los archivos subidos (imágenes, comprobantes, media) desde wwwroot.
+var rutaEstatica = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+Directory.CreateDirectory(rutaEstatica);
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(rutaEstatica),
+    RequestPath = string.Empty
+});
 
 // CORS debe aplicarse antes de la autorización y del mapeo de controladores.
 app.UseCors(corsPolicy);
