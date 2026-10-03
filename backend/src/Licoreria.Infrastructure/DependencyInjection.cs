@@ -50,10 +50,14 @@ public static class DependencyInjection
         services.AddScoped<ISesionCajaRepository, SesionCajaRepository>();
         services.AddScoped<IReservaRepository, ReservaRepository>();
         services.AddScoped<IClienteRepository, ClienteRepository>();
+        services.AddScoped<IAiRepository, AiRepository>();
 
         // Almacenamiento local de archivos (imágenes, comprobantes, media).
         services.Configure<OpcionesAlmacenamiento>(configuration.GetSection(OpcionesAlmacenamiento.SectionName));
         services.AddSingleton<IAlmacenamientoArchivos, AlmacenamientoArchivosLocal>();
+
+        // Proveedor de IA (simulado; reemplazable por uno real sin tocar Application).
+        services.AddSingleton<IProveedorIa, ProveedorIaSimulado>();
 
         services.AddScoped<IServicioProducto, ServicioProducto>();
         services.AddScoped<IServicioInventario, ServicioInventario>();
@@ -70,6 +74,7 @@ public static class DependencyInjection
         services.AddScoped<IServicioClub, ServicioClub>();
         services.AddScoped<IServicioCrm, ServicioCrm>();
         services.AddScoped<IServicioContenido, ServicioContenido>();
+        services.AddScoped<IServicioIa, ServicioIa>();
 
         // =========================================================
         // Transient: servicios ligeros sin estado (validadores).
@@ -119,6 +124,8 @@ public static class DependencyInjection
         services.AddTransient<IValidator<PaginaCrearDto>, PaginaCrearDtoValidator>();
         services.AddTransient<IValidator<HorarioGuardarDto>, HorarioGuardarDtoValidator>();
         services.AddTransient<IValidator<LocalInfoEditarDto>, LocalInfoEditarDtoValidator>();
+        services.AddTransient<IValidator<SolicitarSeccionIaDto>, SolicitarSeccionIaDtoValidator>();
+        services.AddTransient<IValidator<SolicitarImagenIaDto>, SolicitarImagenIaDtoValidator>();
         services.AddTransient<IValidator<UsuarioCrearDto>, UsuarioCrearDtoValidator>();
         services.AddTransient<IValidator<UsuarioEditarDto>, UsuarioEditarDtoValidator>();
         services.AddTransient<IValidator<CambiarPasswordDto>, CambiarPasswordDtoValidator>();

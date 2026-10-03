@@ -60,6 +60,8 @@ public class LicoreriaDbContext : DbContext
     public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
     public DbSet<HorarioAtencion> HorariosAtencion => Set<HorarioAtencion>();
     public DbSet<LocalInfo> LocalInfo => Set<LocalInfo>();
+    public DbSet<AiGeneracion> AiGeneraciones => Set<AiGeneracion>();
+    public DbSet<PlanoGenerado> PlanosGenerados => Set<PlanoGenerado>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
