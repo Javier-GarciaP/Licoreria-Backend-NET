@@ -43,6 +43,8 @@ public static class DependencyInjection
         services.AddScoped<IUsuarioRepository, UsuarioRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IInventarioRepository, InventarioRepository>();
+        services.AddScoped<ITasaCambioRepository, TasaCambioRepository>();
+        services.AddScoped<IMovimientoTesoreriaRepository, MovimientoTesoreriaRepository>();
 
         services.AddScoped<IServicioProducto, ServicioProducto>();
         services.AddScoped<IServicioInventario, ServicioInventario>();
@@ -51,6 +53,7 @@ public static class DependencyInjection
         services.AddScoped<IServicioCatalogo, ServicioCatalogo>();
         services.AddScoped<IServicioUsuarios, ServicioUsuarios>();
         services.AddScoped<IServicioSeguridad, ServicioSeguridad>();
+        services.AddScoped<IServicioFinanzas, ServicioFinanzas>();
 
         // =========================================================
         // Transient: servicios ligeros sin estado (validadores).
@@ -75,6 +78,8 @@ public static class DependencyInjection
         services.AddTransient<IValidator<RecetaCrearDto>, RecetaCrearDtoValidator>();
         services.AddTransient<IValidator<RegistrarMermaDto>, RegistrarMermaDtoValidator>();
         services.AddTransient<IValidator<AjusteInventarioDto>, AjusteInventarioDtoValidator>();
+        services.AddTransient<IValidator<RegistrarTasaDto>, RegistrarTasaDtoValidator>();
+        services.AddTransient<IValidator<RegistrarMovimientoTesoreriaDto>, RegistrarMovimientoTesoreriaDtoValidator>();
         services.AddTransient<IValidator<UsuarioCrearDto>, UsuarioCrearDtoValidator>();
         services.AddTransient<IValidator<UsuarioEditarDto>, UsuarioEditarDtoValidator>();
         services.AddTransient<IValidator<CambiarPasswordDto>, CambiarPasswordDtoValidator>();
@@ -91,7 +96,6 @@ public static class DependencyInjection
         services.AddSingleton<ConversorMoneda>();
         services.AddSingleton<MaquinaEstadosComanda>();
         services.AddSingleton<DetectorConflictosReserva>();
-        services.AddSingleton<IServicioTasas, CacheTasasEnMemoria>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
 
         // Configuración y generación de tokens JWT
