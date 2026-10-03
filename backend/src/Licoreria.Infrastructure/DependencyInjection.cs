@@ -1,4 +1,5 @@
 ﻿using Licoreria.Application.Dtos;
+using Licoreria.Application.Common;
 using Licoreria.Application.Interfaces;
 using Licoreria.Application.Services;
 using Licoreria.Application.Validators;
@@ -40,12 +41,15 @@ public static class DependencyInjection
         services.AddScoped<ICategoriaRepository, CategoriaRepository>();
         services.AddScoped<IProductoRepository, ProductoRepository>();
         services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
         services.AddScoped<IServicioProducto, ServicioProducto>();
         services.AddScoped<IServicioInventario, ServicioInventario>();
         services.AddScoped<IServicioCuenta, ServicioCuenta>();
         services.AddScoped<IServicioAutenticacion, ServicioAutenticacion>();
         services.AddScoped<IServicioCatalogo, ServicioCatalogo>();
+        services.AddScoped<IServicioUsuarios, ServicioUsuarios>();
+        services.AddScoped<IServicioSeguridad, ServicioSeguridad>();
 
         // =========================================================
         // Transient: servicios ligeros sin estado (validadores).
@@ -59,6 +63,10 @@ public static class DependencyInjection
         services.AddTransient<IValidator<ProductoEditarDto>, ProductoEditarDtoValidator>();
         services.AddTransient<IValidator<CategoriaCrearDto>, CategoriaCrearDtoValidator>();
         services.AddTransient<IValidator<CategoriaEditarDto>, CategoriaEditarDtoValidator>();
+        services.AddTransient<IValidator<UsuarioCrearDto>, UsuarioCrearDtoValidator>();
+        services.AddTransient<IValidator<UsuarioEditarDto>, UsuarioEditarDtoValidator>();
+        services.AddTransient<IValidator<CambiarPasswordDto>, CambiarPasswordDtoValidator>();
+        services.AddTransient<IValidator<RefreshTokenRequest>, RefreshTokenRequestValidator>();
 
         // =========================================================
         // Singleton: servicios de dominio sin estado y cachés en memoria.
@@ -76,6 +84,9 @@ public static class DependencyInjection
 
         // Configuración y generación de tokens JWT
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
+        services.AddSingleton(
+            configuration.GetSection(OpcionesAutenticacion.SectionName).Get<OpcionesAutenticacion>()
+            ?? new OpcionesAutenticacion());
         services.AddSingleton<ITokenService, TokenService>();
 
         return services;

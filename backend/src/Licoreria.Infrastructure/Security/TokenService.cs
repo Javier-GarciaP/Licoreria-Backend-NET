@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Licoreria.Application.Interfaces;
 using Licoreria.Application.Security;
@@ -10,7 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 namespace Licoreria.Infrastructure.Security;
 
 /// <summary>
-/// Genera tokens JWT firmados con HMAC-SHA256.
+/// Genera tokens JWT firmados con HMAC-SHA256 y tokens de refresco aleatorios.
 /// </summary>
 public sealed class TokenService : ITokenService
 {
@@ -42,6 +43,11 @@ public sealed class TokenService : ITokenService
             claims.Add(new Claim(ClaimTypes.Role, rol));
         }
 
+        foreach (var permiso in usuario.Rol.ObtenerPermisos())
+        {
+            claims.Add(new Claim("permissions", permiso));
+        }
+
         var credenciales = new SigningCredentials(
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Key)),
             SecurityAlgorithms.HmacSha256);
@@ -56,4 +62,7 @@ public sealed class TokenService : ITokenService
 
         return (new JwtSecurityTokenHandler().WriteToken(token), expira);
     }
+
+    public string GenerarTokenRefresco()
+        => Convert.ToHexString(RandomNumberGenerator.GetBytes(64));
 }

@@ -1,5 +1,7 @@
 using System.Text;
+using System.Text.Json.Serialization;
 using Licoreria.Application.Interfaces;
+using Licoreria.Application.Security;
 using Licoreria.Infrastructure.Persistence;
 using Licoreria.Infrastructure.Security;
 using Licoreria.WebAPI.HealthChecks;
@@ -29,7 +31,12 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IContextoUsuario, ContextoUsuarioHttp>();
 
-builder.Services.AddControllers(options => options.Filters.AddService<ValidationFilter>());
+builder.Services.AddControllers(options => options.Filters.AddService<ValidationFilter>())
+    .AddJsonOptions(options =>
+    {
+        // Los enums viajan como texto (por ejemplo "Administrador") para el frontend.
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddScoped<ValidationFilter>();
 builder.Services.AddEndpointsApiExplorer();
 
@@ -86,7 +93,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    // Una política por permiso: exige el claim "permissions" con la clave correspondiente.
+    foreach (var permiso in Permisos.Todos)
+    {
+        options.AddPolicy(permiso.Clave, policy => policy.RequireClaim("permissions", permiso.Clave));
+    }
+});
 
 // CORS: permite el consumo desde el frontend React (configurable en appsettings.json)
 const string corsPolicy = "FrontendPolicy";
