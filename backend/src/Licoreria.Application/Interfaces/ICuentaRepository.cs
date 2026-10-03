@@ -21,5 +21,7 @@ public interface ICuentaRepository
 
     Task<ComandaDetalle?> ObtenerDetalleAsync(Guid comandaId, Guid detalleId, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<Guid>> ObtenerMesasOcupadasAsync(CancellationToken cancellationToken = default);
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

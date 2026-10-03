@@ -43,6 +43,14 @@ public class LicoreriaDbContext : DbContext
     public DbSet<SesionCaja> SesionesCaja => Set<SesionCaja>();
     public DbSet<MovimientoCaja> MovimientosCaja => Set<MovimientoCaja>();
     public DbSet<ArqueoDenominacion> ArqueosDenominacion => Set<ArqueoDenominacion>();
+    public DbSet<Zona> Zonas => Set<Zona>();
+    public DbSet<Mesa> Mesas => Set<Mesa>();
+    public DbSet<Plano> Planos => Set<Plano>();
+    public DbSet<PlanoElemento> PlanoElementos => Set<PlanoElemento>();
+    public DbSet<Reserva> Reservas => Set<Reserva>();
+    public DbSet<ReservaMesa> ReservaMesas => Set<ReservaMesa>();
+    public DbSet<ReservaPago> ReservaPagos => Set<ReservaPago>();
+    public DbSet<Evento> Eventos => Set<Evento>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

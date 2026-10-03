@@ -51,6 +51,13 @@ public class CuentaRepository : ICuentaRepository
             d => d.Id == detalleId && d.ComandaId == comandaId && !d.IsDeleted,
             cancellationToken);
 
+    public async Task<IReadOnlyList<Guid>> ObtenerMesasOcupadasAsync(CancellationToken cancellationToken = default)
+        => await _context.SesionesMesa
+            .AsNoTracking()
+            .Where(s => !s.IsDeleted && s.MesaId != null && s.CerradaEn == null)
+            .Select(s => s.MesaId!.Value)
+            .ToListAsync(cancellationToken);
+
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => _context.SaveChangesAsync(cancellationToken);
 }
