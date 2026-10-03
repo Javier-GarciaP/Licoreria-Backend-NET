@@ -1,307 +1,1158 @@
-openapi: 3.0.3
+openapi: 3.0.4
 info:
-  title: API Licoreria / Discoteca
-  description: |
-    Contrato de la API REST del sistema de licoreria y discoteca (sucursal unica).
-    Los errores se devuelven conforme a RFC 7807 (`application/problem+json`).
-  version: 0.1.0
-  contact:
-    name: Equipo de desarrollo
-    url: https://github.com/Javier-GarciaP/Licoreria-Backend-NET
-servers:
-  - url: https://localhost:7271/api/v1
-    description: Desarrollo (HTTPS)
-  - url: http://localhost:5190/api/v1
-    description: Desarrollo (HTTP)
-tags:
-  - name: Auth
-    description: Autenticacion y sesion.
-  - name: Catalogo
-    description: Productos, categorias y precios.
-  - name: Inventario
-    description: Stock, kardex y mermas.
-  - name: Ventas
-    description: Ventas, cuentas y pagos.
-  - name: Club
-    description: Zonas, mesas y reservas.
-  - name: Finanzas
-    description: Monedas y tasas de cambio.
-  - name: Contenido
-    description: Web publica, eventos y menu digital.
-  - name: IA
-    description: Generacion asistida por IA.
-security:
-  - bearerAuth: []
+  title: API Licorería / Discoteca
+  description: Contrato generado desde el codigo de la API del sistema de licoreria y discoteca (sucursal unica). Los errores
+    se devuelven conforme a RFC 7807.
+  version: v1
 paths:
-  /auth/login:
+  /api/v1/ajustes-inventario:
     post:
-      tags: [Auth]
-      summary: Inicia sesion y devuelve tokens
-      security: []
+      tags:
+      - AjustesInventario
       requestBody:
-        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginRequest'
+              $ref: '#/components/schemas/AjusteInventarioDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/AjusteInventarioDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/AjusteInventarioDto'
       responses:
         '200':
-          description: Tokens emitidos
+          description: OK
           content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/MovimientoKardexDto'
             application/json:
               schema:
-                $ref: '#/components/schemas/LoginResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-  /auth/me:
-    get:
-      tags: [Auth]
-      summary: Datos del usuario autenticado
-      responses:
-        '200':
-          description: Usuario actual
-          content:
-            application/json:
+                $ref: '#/components/schemas/MovimientoKardexDto'
+            text/json:
               schema:
-                $ref: '#/components/schemas/Usuario'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-  /categorias:
+                $ref: '#/components/schemas/MovimientoKardexDto'
+  /api/v1/archivos:
     get:
-      tags: [Catalogo]
-      summary: Lista las categorias
+      tags:
+      - Archivos
       responses:
         '200':
-          description: Categorias
+          description: OK
           content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MediaAssetDto'
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Categoria'
-  /productos:
-    get:
-      tags: [Catalogo]
-      summary: Lista productos con paginacion
+                  $ref: '#/components/schemas/MediaAssetDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MediaAssetDto'
+    post:
+      tags:
+      - Archivos
       parameters:
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/PageSize'
-        - name: categoriaId
-          in: query
-          schema: { type: string, format: uuid }
+      - name: carpeta
+        in: query
+        schema:
+          type: string
+          default: media
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                archivo:
+                  type: string
+                  format: binary
+            encoding:
+              archivo:
+                style: form
       responses:
         '200':
-          description: Productos paginados
+          description: OK
           content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/MediaAssetDto'
             application/json:
               schema:
-                $ref: '#/components/schemas/ProductoPagina'
-    post:
-      tags: [Catalogo]
-      summary: Crea un producto
-      requestBody:
+                $ref: '#/components/schemas/MediaAssetDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/MediaAssetDto'
+  /api/v1/archivos/{id}:
+    delete:
+      tags:
+      - Archivos
+      parameters:
+      - name: id
+        in: path
         required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+  /api/auth/login:
+    post:
+      tags:
+      - Auth
+      requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ProductoCreate'
-      responses:
-        '201':
-          description: Producto creado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Producto'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-  /productos/{id}:
-    parameters:
-      - $ref: '#/components/parameters/Id'
-    get:
-      tags: [Catalogo]
-      summary: Obtiene un producto por id
+              $ref: '#/components/schemas/LoginDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/LoginDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/LoginDto'
       responses:
         '200':
-          description: Producto
+          description: OK
           content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/AuthResponseDto'
             application/json:
               schema:
-                $ref: '#/components/schemas/Producto'
-        '404':
-          $ref: '#/components/responses/NotFound'
-  /stock:
-    get:
-      tags: [Inventario]
-      summary: Existencias por variante
-      responses:
-        '200':
-          description: Stock
-          content:
-            application/json:
+                $ref: '#/components/schemas/AuthResponseDto'
+            text/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Stock'
-  /mermas:
+                $ref: '#/components/schemas/AuthResponseDto'
+  /api/auth/refresh:
     post:
-      tags: [Inventario]
-      summary: Registra una merma y su reposicion
+      tags:
+      - Auth
       requestBody:
-        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MermaCreate'
-      responses:
-        '201':
-          description: Merma registrada
-        '422':
-          $ref: '#/components/responses/Unprocessable'
-  /ventas:
-    get:
-      tags: [Ventas]
-      summary: Lista ventas
+              $ref: '#/components/schemas/RefreshTokenRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
       responses:
         '200':
-          description: Ventas
+          description: OK
           content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/AuthResponseDto'
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Venta'
+                $ref: '#/components/schemas/AuthResponseDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponseDto'
+  /api/auth/logout:
     post:
-      tags: [Ventas]
-      summary: Registra una venta
+      tags:
+      - Auth
       requestBody:
-        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/VentaCreate'
+              $ref: '#/components/schemas/RefreshTokenRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
       responses:
-        '201':
-          description: Venta creada
+        '200':
+          description: OK
+  /api/auth/me:
+    get:
+      tags:
+      - Auth
+      responses:
+        '200':
+          description: OK
           content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/UsuarioActualDto'
             application/json:
               schema:
-                $ref: '#/components/schemas/Venta'
-  /cuentas/{id}/abonos:
-    parameters:
-      - $ref: '#/components/parameters/Id'
+                $ref: '#/components/schemas/UsuarioActualDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioActualDto'
+  /api/v1/categorias:
+    get:
+      tags:
+      - Categorias
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CategoriaDto'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CategoriaDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CategoriaDto'
     post:
-      tags: [Ventas]
-      summary: Registra un abono sobre una cuenta
+      tags:
+      - Categorias
       requestBody:
-        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AbonoCreate'
+              $ref: '#/components/schemas/CategoriaCrearDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/CategoriaCrearDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/CategoriaCrearDto'
       responses:
         '200':
-          description: Abono registrado
-        '404':
-          $ref: '#/components/responses/NotFound'
-  /zonas:
-    get:
-      tags: [Club]
-      summary: Lista las zonas del local
-      responses:
-        '200':
-          description: Zonas
+          description: OK
           content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/CategoriaDto'
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Zona'
-  /mesas:
-    get:
-      tags: [Club]
-      summary: Lista mesas y disponibilidad
-      responses:
-        '200':
-          description: Mesas
-          content:
-            application/json:
+                $ref: '#/components/schemas/CategoriaDto'
+            text/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Mesa'
-  /reservas:
+                $ref: '#/components/schemas/CategoriaDto'
+  /api/v1/categorias/{id}:
     get:
-      tags: [Club]
-      summary: Lista reservas
-      responses:
-        '200':
-          description: Reservas
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Reserva'
-    post:
-      tags: [Club]
-      summary: Crea una reserva
-      security: []
-      requestBody:
+      tags:
+      - Categorias
+      parameters:
+      - name: id
+        in: path
         required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/CategoriaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoriaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/CategoriaDto'
+    put:
+      tags:
+      - Categorias
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReservaCreate'
+              $ref: '#/components/schemas/CategoriaEditarDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/CategoriaEditarDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/CategoriaEditarDto'
       responses:
-        '201':
-          description: Reserva creada
+        '200':
+          description: OK
           content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/CategoriaDto'
             application/json:
               schema:
-                $ref: '#/components/schemas/Reserva'
-  /reservas/{id}/validar-pago:
-    parameters:
-      - $ref: '#/components/parameters/Id'
+                $ref: '#/components/schemas/CategoriaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/CategoriaDto'
+    delete:
+      tags:
+      - Categorias
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+  /api/v1/clientes:
+    get:
+      tags:
+      - Clientes
+      parameters:
+      - name: Page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: PageSize
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: PaginaNormalizada
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: TamanoNormalizado
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: busqueda
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ClienteDtoResultadoPaginado'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClienteDtoResultadoPaginado'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ClienteDtoResultadoPaginado'
     post:
-      tags: [Club]
-      summary: Valida la sena de una reserva
+      tags:
+      - Clientes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClienteCrearDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/ClienteCrearDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/ClienteCrearDto'
       responses:
         '200':
-          description: Reserva confirmada
-        '404':
-          $ref: '#/components/responses/NotFound'
-  /tasas-cambio/actual:
-    get:
-      tags: [Finanzas]
-      summary: Tasa de cambio vigente
-      security: []
-      responses:
-        '200':
-          description: Tasa vigente
+          description: OK
           content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ClienteDto'
             application/json:
               schema:
-                $ref: '#/components/schemas/TasaCambio'
-  /eventos:
+                $ref: '#/components/schemas/ClienteDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ClienteDto'
+  /api/v1/clientes/{id}:
     get:
-      tags: [Contenido]
-      summary: Lista eventos publicados
-      security: []
+      tags:
+      - Clientes
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
         '200':
-          description: Eventos
+          description: OK
           content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ClienteDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClienteDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ClienteDto'
+    put:
+      tags:
+      - Clientes
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClienteEditarDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/ClienteEditarDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/ClienteEditarDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ClienteDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClienteDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ClienteDto'
+    delete:
+      tags:
+      - Clientes
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+  /api/v1/clientes/{id}/puntos:
+    get:
+      tags:
+      - Clientes
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PuntosMovimientoDto'
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Evento'
-  /ai/planos:
+                  $ref: '#/components/schemas/PuntosMovimientoDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PuntosMovimientoDto'
+  /api/v1/clientes/{id}/puntos/acumular:
     post:
-      tags: [IA]
-      summary: Digitaliza un plano desde una imagen
-      requestBody:
+      tags:
+      - Clientes
+      parameters:
+      - name: id
+        in: path
         required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PuntosOperacionDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/PuntosOperacionDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/PuntosOperacionDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ClienteDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClienteDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ClienteDto'
+  /api/v1/clientes/{id}/puntos/canjear:
+    post:
+      tags:
+      - Clientes
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PuntosOperacionDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/PuntosOperacionDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/PuntosOperacionDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ClienteDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClienteDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ClienteDto'
+  /api/v1/horarios:
+    get:
+      tags:
+      - Contenido
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HorarioDto'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HorarioDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HorarioDto'
+    put:
+      tags:
+      - Contenido
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HorarioGuardarDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/HorarioGuardarDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/HorarioGuardarDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/HorarioDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HorarioDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/HorarioDto'
+  /api/v1/local-info:
+    get:
+      tags:
+      - Contenido
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/LocalInfoDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalInfoDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/LocalInfoDto'
+    put:
+      tags:
+      - Contenido
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocalInfoEditarDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/LocalInfoEditarDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/LocalInfoEditarDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/LocalInfoDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalInfoDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/LocalInfoDto'
+  /api/v1/cuentas:
+    get:
+      tags:
+      - Cuentas
+      parameters:
+      - name: Page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: PageSize
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: PaginaNormalizada
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: TamanoNormalizado
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: estado
+        in: query
+        schema:
+          $ref: '#/components/schemas/EstadoCuenta'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/CuentaDtoResultadoPaginado'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CuentaDtoResultadoPaginado'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/CuentaDtoResultadoPaginado'
+    post:
+      tags:
+      - Cuentas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AbrirMesaDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/AbrirMesaDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/AbrirMesaDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/CuentaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CuentaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/CuentaDto'
+  /api/v1/cuentas/{id}:
+    get:
+      tags:
+      - Cuentas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/CuentaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CuentaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/CuentaDto'
+  /api/v1/cuentas/{id}/comandas:
+    post:
+      tags:
+      - Cuentas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearComandaDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/CrearComandaDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/CrearComandaDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/CuentaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CuentaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/CuentaDto'
+  /api/v1/cuentas/{id}/comandas/{comandaId}/detalles/{detalleId}/estado:
+    put:
+      tags:
+      - Cuentas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: comandaId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: detalleId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarEstadoItemDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarEstadoItemDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/ActualizarEstadoItemDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/CuentaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CuentaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/CuentaDto'
+  /api/v1/cuentas/{id}/abonos:
+    post:
+      tags:
+      - Cuentas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrarAbonoCuentaDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/RegistrarAbonoCuentaDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/RegistrarAbonoCuentaDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/CuentaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CuentaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/CuentaDto'
+  /api/v1/cuentas/{id}/cerrar:
+    post:
+      tags:
+      - Cuentas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CerrarCuentaDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/CerrarCuentaDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/CerrarCuentaDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/VentaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VentaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/VentaDto'
+  /api/v1/cuentas-por-cobrar:
+    get:
+      tags:
+      - CuentasPorCobrar
+      parameters:
+      - name: Page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: PageSize
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: PaginaNormalizada
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: TamanoNormalizado
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: clienteId
+        in: query
+        schema:
+          type: string
+          format: uuid
+      - name: soloPendientes
+        in: query
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/CuentaPorCobrarDtoResultadoPaginado'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CuentaPorCobrarDtoResultadoPaginado'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/CuentaPorCobrarDtoResultadoPaginado'
+    post:
+      tags:
+      - CuentasPorCobrar
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CuentaPorCobrarCrearDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/CuentaPorCobrarCrearDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/CuentaPorCobrarCrearDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/CuentaPorCobrarDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CuentaPorCobrarDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/CuentaPorCobrarDto'
+  /api/v1/cuentas-por-cobrar/{id}/pagos:
+    post:
+      tags:
+      - CuentasPorCobrar
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PagoCuentaPorCobrarDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/PagoCuentaPorCobrarDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/PagoCuentaPorCobrarDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/CuentaPorCobrarDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CuentaPorCobrarDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/CuentaPorCobrarDto'
+  /api/v1/denominaciones:
+    get:
+      tags:
+      - Denominaciones
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DenominacionDto'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DenominacionDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DenominacionDto'
+  /api/v1/eventos:
+    get:
+      tags:
+      - Eventos
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventoDto'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventoDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventoDto'
+    post:
+      tags:
+      - Eventos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventoCrearDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/EventoCrearDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/EventoCrearDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/EventoDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventoDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/EventoDto'
+  /api/v1/eventos/todos:
+    get:
+      tags:
+      - Eventos
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventoDto'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventoDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventoDto'
+  /api/v1/eventos/{id}:
+    put:
+      tags:
+      - Eventos
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventoEditarDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/EventoEditarDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/EventoEditarDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/EventoDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventoDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/EventoDto'
+    delete:
+      tags:
+      - Eventos
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+  /api/v1/ai/planos:
+    post:
+      tags:
+      - Ia
+      requestBody:
         content:
           multipart/form-data:
             schema:
@@ -310,227 +1161,5758 @@ paths:
                 imagen:
                   type: string
                   format: binary
+            encoding:
+              imagen:
+                style: form
       responses:
-        '202':
-          description: Trabajo aceptado
+        '200':
+          description: OK
           content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/AiGeneracionDto'
             application/json:
               schema:
-                $ref: '#/components/schemas/AiGeneracion'
-components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-  parameters:
-    Id:
-      name: id
-      in: path
-      required: true
-      schema: { type: string, format: uuid }
-    Page:
-      name: page
-      in: query
-      schema: { type: integer, minimum: 1, default: 1 }
-    PageSize:
-      name: pageSize
-      in: query
-      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
-  responses:
-    BadRequest:
-      description: Datos invalidos
-      content:
-        application/problem+json:
-          schema: { $ref: '#/components/schemas/ProblemDetails' }
-    Unauthorized:
-      description: No autenticado
-      content:
-        application/problem+json:
-          schema: { $ref: '#/components/schemas/ProblemDetails' }
-    NotFound:
-      description: Recurso no encontrado
-      content:
-        application/problem+json:
-          schema: { $ref: '#/components/schemas/ProblemDetails' }
-    Unprocessable:
-      description: Regla de negocio incumplida
-      content:
-        application/problem+json:
-          schema: { $ref: '#/components/schemas/ProblemDetails' }
-  schemas:
-    ProblemDetails:
-      type: object
-      properties:
-        type: { type: string }
-        title: { type: string }
-        status: { type: integer }
-        detail: { type: string }
-        instance: { type: string }
-    LoginRequest:
-      type: object
-      required: [email, password]
-      properties:
-        email: { type: string, format: email }
-        password: { type: string, format: password }
-    LoginResponse:
-      type: object
-      properties:
-        accessToken: { type: string }
-        refreshToken: { type: string }
-        expiresIn: { type: integer }
-    Usuario:
-      type: object
-      properties:
-        id: { type: string, format: uuid }
-        nombreCompleto: { type: string }
-        email: { type: string, format: email }
-        rol: { type: string }
-    Categoria:
-      type: object
-      properties:
-        id: { type: string, format: uuid }
-        nombre: { type: string }
-        categoriaPadreId: { type: string, format: uuid, nullable: true }
-    ProductoVariante:
-      type: object
-      properties:
-        id: { type: string, format: uuid }
-        nombre: { type: string }
-        sku: { type: string }
-        precioVentaUsd: { type: number, format: double }
-    Producto:
-      type: object
-      properties:
-        id: { type: string, format: uuid }
-        nombre: { type: string }
-        categoriaId: { type: string, format: uuid }
-        marcaId: { type: string, format: uuid, nullable: true }
-        activo: { type: boolean }
-        variantes:
-          type: array
-          items: { $ref: '#/components/schemas/ProductoVariante' }
-    ProductoCreate:
-      type: object
-      required: [nombre, categoriaId]
-      properties:
-        nombre: { type: string }
-        categoriaId: { type: string, format: uuid }
-        marcaId: { type: string, format: uuid, nullable: true }
-    ProductoPagina:
-      type: object
-      properties:
-        items:
-          type: array
-          items: { $ref: '#/components/schemas/Producto' }
-        page: { type: integer }
-        pageSize: { type: integer }
-        totalItems: { type: integer }
-        totalPages: { type: integer }
-    Stock:
-      type: object
-      properties:
-        varianteId: { type: string, format: uuid }
-        cantidad: { type: number, format: double }
-        stockMinimo: { type: number, format: double }
-        bajoMinimo: { type: boolean }
-    MermaCreate:
-      type: object
-      required: [varianteId, cantidad, motivo]
-      properties:
-        varianteId: { type: string, format: uuid }
-        cantidad: { type: number, format: double }
-        motivo:
+                $ref: '#/components/schemas/AiGeneracionDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/AiGeneracionDto'
+  /api/v1/ai/secciones:
+    post:
+      tags:
+      - Ia
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SolicitarSeccionIaDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/SolicitarSeccionIaDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/SolicitarSeccionIaDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/AiGeneracionDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiGeneracionDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/AiGeneracionDto'
+  /api/v1/ai/imagenes:
+    post:
+      tags:
+      - Ia
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SolicitarImagenIaDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/SolicitarImagenIaDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/SolicitarImagenIaDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/AiGeneracionDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiGeneracionDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/AiGeneracionDto'
+  /api/v1/ai/generaciones:
+    get:
+      tags:
+      - Ia
+      parameters:
+      - name: Page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: PageSize
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: PaginaNormalizada
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: TamanoNormalizado
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: tipo
+        in: query
+        schema:
           type: string
-          enum: [danado, partido, vencido]
-        reponer: { type: boolean, default: false }
-    Venta:
+      - name: estado
+        in: query
+        schema:
+          $ref: '#/components/schemas/EstadoIa'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/AiGeneracionDtoResultadoPaginado'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiGeneracionDtoResultadoPaginado'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/AiGeneracionDtoResultadoPaginado'
+  /api/v1/ai/generaciones/{id}:
+    get:
+      tags:
+      - Ia
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/AiGeneracionDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiGeneracionDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/AiGeneracionDto'
+  /api/v1/ai/generaciones/{id}/aprobar:
+    post:
+      tags:
+      - Ia
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/AiGeneracionDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiGeneracionDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/AiGeneracionDto'
+  /api/v1/impuestos:
+    get:
+      tags:
+      - Impuestos
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ImpuestoDto'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ImpuestoDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ImpuestoDto'
+    post:
+      tags:
+      - Impuestos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImpuestoCrearDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/ImpuestoCrearDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/ImpuestoCrearDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ImpuestoDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImpuestoDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ImpuestoDto'
+  /api/v1/impuestos/{id}:
+    put:
+      tags:
+      - Impuestos
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImpuestoEditarDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/ImpuestoEditarDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/ImpuestoEditarDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ImpuestoDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImpuestoDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ImpuestoDto'
+    delete:
+      tags:
+      - Impuestos
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+  /api/v1/listas-precio:
+    get:
+      tags:
+      - ListasPrecio
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ListaPrecioDto'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ListaPrecioDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ListaPrecioDto'
+    post:
+      tags:
+      - ListasPrecio
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListaPrecioCrearDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/ListaPrecioCrearDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/ListaPrecioCrearDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ListaPrecioDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListaPrecioDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ListaPrecioDto'
+  /api/v1/listas-precio/{id}:
+    put:
+      tags:
+      - ListasPrecio
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListaPrecioEditarDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/ListaPrecioEditarDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/ListaPrecioEditarDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ListaPrecioDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListaPrecioDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ListaPrecioDto'
+    delete:
+      tags:
+      - ListasPrecio
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+  /api/v1/marcas:
+    get:
+      tags:
+      - Marcas
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MarcaDto'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MarcaDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MarcaDto'
+    post:
+      tags:
+      - Marcas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarcaCrearDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/MarcaCrearDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/MarcaCrearDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/MarcaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarcaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/MarcaDto'
+  /api/v1/marcas/{id}:
+    put:
+      tags:
+      - Marcas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarcaEditarDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/MarcaEditarDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/MarcaEditarDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/MarcaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarcaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/MarcaDto'
+    delete:
+      tags:
+      - Marcas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+  /api/v1/menu-digital:
+    get:
+      tags:
+      - MenuDigital
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/MenuDigitalDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MenuDigitalDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/MenuDigitalDto'
+  /api/v1/menu-digital/qr:
+    get:
+      tags:
+      - MenuDigital
+      parameters:
+      - name: baseUrl
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/QrMenuDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QrMenuDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/QrMenuDto'
+  /api/v1/mermas:
+    get:
+      tags:
+      - Mermas
+      parameters:
+      - name: Page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: PageSize
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: PaginaNormalizada
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: TamanoNormalizado
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: desde
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: hasta
+        in: query
+        schema:
+          type: string
+          format: date-time
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/MermaDtoResultadoPaginado'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MermaDtoResultadoPaginado'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/MermaDtoResultadoPaginado'
+    post:
+      tags:
+      - Mermas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrarMermaDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/RegistrarMermaDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/RegistrarMermaDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/MermaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MermaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/MermaDto'
+  /api/v1/mesas:
+    get:
+      tags:
+      - Mesas
+      parameters:
+      - name: zonaId
+        in: query
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MesaDto'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MesaDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MesaDto'
+    post:
+      tags:
+      - Mesas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MesaCrearDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/MesaCrearDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/MesaCrearDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/MesaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MesaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/MesaDto'
+  /api/v1/mesas/{id}:
+    put:
+      tags:
+      - Mesas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MesaEditarDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/MesaEditarDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/MesaEditarDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/MesaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MesaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/MesaDto'
+    delete:
+      tags:
+      - Mesas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+  /api/v1/metodos-pago:
+    get:
+      tags:
+      - MetodosPago
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MetodoPagoDto'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MetodoPagoDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MetodoPagoDto'
+  /api/v1/monedas:
+    get:
+      tags:
+      - Monedas
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MonedaDto'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MonedaDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MonedaDto'
+  /api/v1/movimientos-inventario:
+    get:
+      tags:
+      - MovimientosInventario
+      parameters:
+      - name: Page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: PageSize
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: PaginaNormalizada
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: TamanoNormalizado
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: varianteId
+        in: query
+        schema:
+          type: string
+          format: uuid
+      - name: tipo
+        in: query
+        schema:
+          $ref: '#/components/schemas/TipoMovimientoInventario'
+      - name: desde
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: hasta
+        in: query
+        schema:
+          type: string
+          format: date-time
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/MovimientoKardexDtoResultadoPaginado'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovimientoKardexDtoResultadoPaginado'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/MovimientoKardexDtoResultadoPaginado'
+  /api/v1/movimientos-tesoreria:
+    get:
+      tags:
+      - MovimientosTesoreria
+      parameters:
+      - name: Page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: PageSize
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: PaginaNormalizada
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: TamanoNormalizado
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: tipo
+        in: query
+        schema:
+          $ref: '#/components/schemas/TipoMovimientoTesoreria'
+      - name: desde
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: hasta
+        in: query
+        schema:
+          type: string
+          format: date-time
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/MovimientoTesoreriaDtoResultadoPaginado'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovimientoTesoreriaDtoResultadoPaginado'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/MovimientoTesoreriaDtoResultadoPaginado'
+    post:
+      tags:
+      - MovimientosTesoreria
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrarMovimientoTesoreriaDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/RegistrarMovimientoTesoreriaDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/RegistrarMovimientoTesoreriaDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/MovimientoTesoreriaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovimientoTesoreriaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/MovimientoTesoreriaDto'
+  /api/v1/paginas:
+    get:
+      tags:
+      - Paginas
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaginaDto'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaginaDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaginaDto'
+    post:
+      tags:
+      - Paginas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaginaCrearDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/PaginaCrearDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/PaginaCrearDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/PaginaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/PaginaDto'
+  /api/v1/paginas/todos:
+    get:
+      tags:
+      - Paginas
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaginaDto'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaginaDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaginaDto'
+  /api/v1/paginas/{id}:
+    get:
+      tags:
+      - Paginas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/PaginaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/PaginaDto'
+    put:
+      tags:
+      - Paginas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaginaEditarDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/PaginaEditarDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/PaginaEditarDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/PaginaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/PaginaDto'
+    delete:
+      tags:
+      - Paginas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+  /api/v1/permisos:
+    get:
+      tags:
+      - Permisos
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PermisoDto'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PermisoDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PermisoDto'
+  /api/v1/planos:
+    get:
+      tags:
+      - Planos
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PlanoDto'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PlanoDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PlanoDto'
+    post:
+      tags:
+      - Planos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanoCrearDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/PlanoCrearDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/PlanoCrearDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/PlanoDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanoDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/PlanoDto'
+  /api/v1/planos/{id}:
+    get:
+      tags:
+      - Planos
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/PlanoDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanoDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/PlanoDto'
+    put:
+      tags:
+      - Planos
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanoEditarDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/PlanoEditarDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/PlanoEditarDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/PlanoDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanoDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/PlanoDto'
+    delete:
+      tags:
+      - Planos
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+  /api/v1/productos:
+    get:
+      tags:
+      - Productos
+      parameters:
+      - name: Page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: PageSize
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: PaginaNormalizada
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: TamanoNormalizado
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: categoriaId
+        in: query
+        schema:
+          type: string
+          format: uuid
+      - name: busqueda
+        in: query
+        schema:
+          type: string
+      - name: activo
+        in: query
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProductoDtoResultadoPaginado'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductoDtoResultadoPaginado'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProductoDtoResultadoPaginado'
+    post:
+      tags:
+      - Productos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductoCrearDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/ProductoCrearDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/ProductoCrearDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProductoDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductoDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProductoDto'
+  /api/v1/productos/{id}:
+    get:
+      tags:
+      - Productos
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProductoDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductoDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProductoDto'
+    put:
+      tags:
+      - Productos
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductoEditarDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/ProductoEditarDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/ProductoEditarDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProductoDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductoDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProductoDto'
+    delete:
+      tags:
+      - Productos
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+  /api/v1/productos/{id}/recetas:
+    get:
+      tags:
+      - Productos
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecetaDto'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecetaDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecetaDto'
+    post:
+      tags:
+      - Productos
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecetaCrearDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/RecetaCrearDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/RecetaCrearDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/RecetaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecetaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/RecetaDto'
+  /api/v1/productos/{id}/recetas/{recetaId}:
+    delete:
+      tags:
+      - Productos
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: recetaId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+  /api/v1/reportes/mermas:
+    get:
+      tags:
+      - Reportes
+      parameters:
+      - name: desde
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: hasta
+        in: query
+        schema:
+          type: string
+          format: date-time
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ReporteMermaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReporteMermaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ReporteMermaDto'
+  /api/v1/reservas:
+    get:
+      tags:
+      - Reservas
+      parameters:
+      - name: Page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: PageSize
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: PaginaNormalizada
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: TamanoNormalizado
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: desde
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: hasta
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: estado
+        in: query
+        schema:
+          $ref: '#/components/schemas/EstadoReserva'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ReservaDtoResultadoPaginado'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDtoResultadoPaginado'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDtoResultadoPaginado'
+    post:
+      tags:
+      - Reservas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservaCrearDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/ReservaCrearDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/ReservaCrearDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ReservaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDto'
+  /api/v1/reservas/{id}:
+    get:
+      tags:
+      - Reservas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ReservaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDto'
+  /api/v1/reservas/{id}/pagos:
+    post:
+      tags:
+      - Reservas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservaPagoCrearDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/ReservaPagoCrearDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/ReservaPagoCrearDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ReservaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDto'
+  /api/v1/reservas/{id}/pagos/{pagoId}/validar:
+    post:
+      tags:
+      - Reservas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: pagoId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidarReservaPagoDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/ValidarReservaPagoDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/ValidarReservaPagoDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ReservaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDto'
+  /api/v1/reservas/{id}/estado:
+    put:
+      tags:
+      - Reservas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CambiarEstadoReservaDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/CambiarEstadoReservaDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/CambiarEstadoReservaDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ReservaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDto'
+  /api/v1/roles:
+    get:
+      tags:
+      - Roles
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RolDto'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RolDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RolDto'
+  /api/v1/sesiones-caja:
+    post:
+      tags:
+      - SesionesCaja
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AbrirCajaDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/AbrirCajaDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/AbrirCajaDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/SesionCajaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SesionCajaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/SesionCajaDto'
+    get:
+      tags:
+      - SesionesCaja
+      parameters:
+      - name: Page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: PageSize
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: PaginaNormalizada
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: TamanoNormalizado
+        in: query
+        schema:
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/SesionCajaDtoResultadoPaginado'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SesionCajaDtoResultadoPaginado'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/SesionCajaDtoResultadoPaginado'
+  /api/v1/sesiones-caja/activa:
+    get:
+      tags:
+      - SesionesCaja
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/SesionCajaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SesionCajaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/SesionCajaDto'
+  /api/v1/sesiones-caja/{id}:
+    get:
+      tags:
+      - SesionesCaja
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/SesionCajaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SesionCajaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/SesionCajaDto'
+  /api/v1/sesiones-caja/{id}/movimientos:
+    post:
+      tags:
+      - SesionesCaja
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovimientoCajaCrearDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/MovimientoCajaCrearDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/MovimientoCajaCrearDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/SesionCajaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SesionCajaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/SesionCajaDto'
+  /api/v1/sesiones-caja/{id}/cerrar:
+    post:
+      tags:
+      - SesionesCaja
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CerrarCajaDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/CerrarCajaDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/CerrarCajaDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/SesionCajaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SesionCajaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/SesionCajaDto'
+  /api/v1/sesiones-caja/{id}/cierre:
+    get:
+      tags:
+      - SesionesCaja
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/CierreCajaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CierreCajaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/CierreCajaDto'
+  /api/v1/simulacion/salud-stock:
+    post:
+      tags:
+      - Simulacion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaludStockRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/SaludStockRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/SaludStockRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/InformeSaludStockDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InformeSaludStockDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/InformeSaludStockDto'
+  /api/v1/simulacion/sku:
+    post:
+      tags:
+      - Simulacion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SkuRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/SkuRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/SkuRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ResultadoSkuDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoSkuDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoSkuDto'
+  /api/v1/simulacion/merma:
+    post:
+      tags:
+      - Simulacion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MermaRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/MermaRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/MermaRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ResultadoMermaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoMermaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoMermaDto'
+  /api/v1/simulacion/cuenta:
+    post:
+      tags:
+      - Simulacion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CuentaRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/CuentaRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/CuentaRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ResumenCuentaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResumenCuentaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ResumenCuentaDto'
+  /api/v1/simulacion/tasa:
+    put:
+      tags:
+      - Simulacion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TasaRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/TasaRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/TasaRequest'
+      responses:
+        '200':
+          description: OK
+    get:
+      tags:
+      - Simulacion
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/TasaActualDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TasaActualDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/TasaActualDto'
+  /api/v1/simulacion/conversion:
+    post:
+      tags:
+      - Simulacion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversionRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/ConversionRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/ConversionRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ConversionResultDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversionResultDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ConversionResultDto'
+  /api/v1/stock:
+    get:
+      tags:
+      - Stock
+      parameters:
+      - name: Page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: PageSize
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: PaginaNormalizada
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: TamanoNormalizado
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: soloBajoMinimo
+        in: query
+        schema:
+          type: boolean
+      - name: busqueda
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/StockDtoResultadoPaginado'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockDtoResultadoPaginado'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/StockDtoResultadoPaginado'
+  /api/v1/tasas-cambio/actual:
+    get:
+      tags:
+      - TasasCambio
+      parameters:
+      - name: tipo
+        in: query
+        schema:
+          $ref: '#/components/schemas/TipoTasa'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/TasaCambioDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TasaCambioDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/TasaCambioDto'
+  /api/v1/tasas-cambio:
+    get:
+      tags:
+      - TasasCambio
+      parameters:
+      - name: desde
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: hasta
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: tipo
+        in: query
+        schema:
+          $ref: '#/components/schemas/TipoTasa'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TasaCambioDto'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TasaCambioDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TasaCambioDto'
+    post:
+      tags:
+      - TasasCambio
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrarTasaDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/RegistrarTasaDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/RegistrarTasaDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/TasaCambioDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TasaCambioDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/TasaCambioDto'
+  /api/v1/unidades-medida:
+    get:
+      tags:
+      - UnidadesMedida
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UnidadMedidaDto'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UnidadMedidaDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UnidadMedidaDto'
+    post:
+      tags:
+      - UnidadesMedida
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnidadMedidaCrearDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/UnidadMedidaCrearDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/UnidadMedidaCrearDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/UnidadMedidaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnidadMedidaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/UnidadMedidaDto'
+  /api/v1/unidades-medida/{id}:
+    put:
+      tags:
+      - UnidadesMedida
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnidadMedidaEditarDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/UnidadMedidaEditarDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/UnidadMedidaEditarDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/UnidadMedidaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnidadMedidaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/UnidadMedidaDto'
+    delete:
+      tags:
+      - UnidadesMedida
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+  /api/v1/usuarios:
+    get:
+      tags:
+      - Usuarios
+      parameters:
+      - name: Page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: PageSize
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: PaginaNormalizada
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: TamanoNormalizado
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: busqueda
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/UsuarioDtoResultadoPaginado'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioDtoResultadoPaginado'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioDtoResultadoPaginado'
+    post:
+      tags:
+      - Usuarios
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioCrearDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioCrearDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/UsuarioCrearDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/UsuarioDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioDto'
+  /api/v1/usuarios/{id}:
+    get:
+      tags:
+      - Usuarios
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/UsuarioDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioDto'
+    put:
+      tags:
+      - Usuarios
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioEditarDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioEditarDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/UsuarioEditarDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/UsuarioDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioDto'
+    delete:
+      tags:
+      - Usuarios
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+  /api/v1/usuarios/{id}/password:
+    post:
+      tags:
+      - Usuarios
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CambiarPasswordDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/CambiarPasswordDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/CambiarPasswordDto'
+      responses:
+        '200':
+          description: OK
+  /api/v1/ventas:
+    get:
+      tags:
+      - Ventas
+      parameters:
+      - name: Page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: PageSize
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: PaginaNormalizada
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: TamanoNormalizado
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: desde
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: hasta
+        in: query
+        schema:
+          type: string
+          format: date-time
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/VentaDtoResultadoPaginado'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VentaDtoResultadoPaginado'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/VentaDtoResultadoPaginado'
+    post:
+      tags:
+      - Ventas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrarVentaDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/RegistrarVentaDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/RegistrarVentaDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/VentaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VentaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/VentaDto'
+  /api/v1/ventas/{id}:
+    get:
+      tags:
+      - Ventas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/VentaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VentaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/VentaDto'
+  /api/v1/ventas/{id}/pagos:
+    post:
+      tags:
+      - Ventas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrarPagoVentaDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/RegistrarPagoVentaDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/RegistrarPagoVentaDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/VentaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VentaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/VentaDto'
+  /api/v1/ventas/{id}/devoluciones:
+    post:
+      tags:
+      - Ventas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrarDevolucionDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/RegistrarDevolucionDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/RegistrarDevolucionDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/DevolucionDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DevolucionDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/DevolucionDto'
+  /api/v1/zonas:
+    get:
+      tags:
+      - Zonas
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ZonaDto'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ZonaDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ZonaDto'
+    post:
+      tags:
+      - Zonas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ZonaCrearDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/ZonaCrearDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/ZonaCrearDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ZonaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ZonaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ZonaDto'
+  /api/v1/zonas/{id}:
+    put:
+      tags:
+      - Zonas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ZonaEditarDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/ZonaEditarDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/ZonaEditarDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ZonaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ZonaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ZonaDto'
+    delete:
+      tags:
+      - Zonas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+components:
+  schemas:
+    AbonoDto:
       type: object
       properties:
-        id: { type: string, format: uuid }
-        fecha: { type: string, format: date-time }
-        tasaCambio: { type: number, format: double }
-        totalUsd: { type: number, format: double }
-        totalBs: { type: number, format: double }
-        metodoPago: { type: string }
-    VentaCreate:
+        id:
+          type: string
+          format: uuid
+        metodoPagoId:
+          type: string
+          format: uuid
+        metodoPago:
+          type: string
+          nullable: true
+        monto:
+          type: number
+          format: double
+        moneda:
+          $ref: '#/components/schemas/Moneda'
+        fecha:
+          type: string
+          format: date-time
+      additionalProperties: false
+    AbrirCajaDto:
       type: object
-      required: [items, pagos]
+      properties:
+        fondoInicial:
+          type: number
+          format: double
+      additionalProperties: false
+    AbrirMesaDto:
+      type: object
+      properties:
+        nombreMesa:
+          type: string
+          nullable: true
+        mesaId:
+          type: string
+          format: uuid
+          nullable: true
+      additionalProperties: false
+    ActualizarEstadoItemDto:
+      type: object
+      properties:
+        estado:
+          $ref: '#/components/schemas/EstadoItemComanda'
+      additionalProperties: false
+    AiGeneracionDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tipo:
+          type: string
+          nullable: true
+        estado:
+          $ref: '#/components/schemas/EstadoIa'
+        entrada:
+          type: string
+          nullable: true
+        salida:
+          type: string
+          nullable: true
+        modelo:
+          type: string
+          nullable: true
+        costo:
+          type: number
+          format: double
+        aprobado:
+          type: boolean
+        fecha:
+          type: string
+          format: date-time
+      additionalProperties: false
+    AiGeneracionDtoResultadoPaginado:
+      type: object
       properties:
         items:
           type: array
           items:
-            type: object
-            required: [varianteId, cantidad]
-            properties:
-              varianteId: { type: string, format: uuid }
-              cantidad: { type: number, format: double }
+            $ref: '#/components/schemas/AiGeneracionDto'
+          nullable: true
+        page:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        totalItems:
+          type: integer
+          format: int32
+        totalPages:
+          type: integer
+          format: int32
+          readOnly: true
+      additionalProperties: false
+    AjusteInventarioDto:
+      type: object
+      properties:
+        varianteId:
+          type: string
+          format: uuid
+        cantidad:
+          type: number
+          format: double
+        motivo:
+          type: string
+          nullable: true
+      additionalProperties: false
+    AreaDestino:
+      enum:
+      - Barra
+      - Cocina
+      type: string
+    ArqueoLineaCrearDto:
+      type: object
+      properties:
+        denominacionId:
+          type: string
+          format: uuid
+        cantidad:
+          type: integer
+          format: int32
+      additionalProperties: false
+    ArqueoLineaDto:
+      type: object
+      properties:
+        denominacionId:
+          type: string
+          format: uuid
+        moneda:
+          $ref: '#/components/schemas/Moneda'
+        valor:
+          type: number
+          format: double
+        cantidad:
+          type: integer
+          format: int32
+        subtotal:
+          type: number
+          format: double
+      additionalProperties: false
+    AuthResponseDto:
+      type: object
+      properties:
+        usuarioId:
+          type: string
+          format: uuid
+        nombreCompleto:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        rol:
+          type: string
+          nullable: true
+        permisos:
+          type: array
+          items:
+            type: string
+          nullable: true
+        accessToken:
+          type: string
+          nullable: true
+        refreshToken:
+          type: string
+          nullable: true
+        expiraEn:
+          type: string
+          format: date-time
+      additionalProperties: false
+    BloqueCrearDto:
+      type: object
+      properties:
+        tipo:
+          type: string
+          nullable: true
+        orden:
+          type: integer
+          format: int32
+        contenido:
+          type: string
+          nullable: true
+        activo:
+          type: boolean
+      additionalProperties: false
+    BloqueDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tipo:
+          type: string
+          nullable: true
+        orden:
+          type: integer
+          format: int32
+        contenido:
+          type: string
+          nullable: true
+        activo:
+          type: boolean
+      additionalProperties: false
+    CambiarEstadoReservaDto:
+      type: object
+      properties:
+        estado:
+          $ref: '#/components/schemas/EstadoReserva'
+      additionalProperties: false
+    CambiarPasswordDto:
+      type: object
+      properties:
+        passwordNueva:
+          type: string
+          nullable: true
+      additionalProperties: false
+    CategoriaCrearDto:
+      type: object
+      properties:
+        nombre:
+          type: string
+          nullable: true
+        descripcion:
+          type: string
+          nullable: true
+        categoriaPadreId:
+          type: string
+          format: uuid
+          nullable: true
+        activo:
+          type: boolean
+      additionalProperties: false
+    CategoriaDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+          nullable: true
+        descripcion:
+          type: string
+          nullable: true
+        categoriaPadreId:
+          type: string
+          format: uuid
+          nullable: true
+        activo:
+          type: boolean
+      additionalProperties: false
+    CategoriaEditarDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+          nullable: true
+        descripcion:
+          type: string
+          nullable: true
+        categoriaPadreId:
+          type: string
+          format: uuid
+          nullable: true
+        activo:
+          type: boolean
+      additionalProperties: false
+    CerrarCajaDto:
+      type: object
+      properties:
+        arqueo:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArqueoLineaCrearDto'
+          nullable: true
+      additionalProperties: false
+    CerrarCuentaDto:
+      type: object
+      properties:
         pagos:
           type: array
           items:
-            type: object
-            required: [metodoPago, monto]
-            properties:
-              metodoPago: { type: string }
-              monto: { type: number, format: double }
-              propina: { type: number, format: double }
-    AbonoCreate:
-      type: object
-      required: [monto, metodoPago]
-      properties:
-        monto: { type: number, format: double }
-        metodoPago: { type: string }
-    Zona:
+            $ref: '#/components/schemas/VentaPagoDto'
+          nullable: true
+        descuentoUSD:
+          type: number
+          format: double
+      additionalProperties: false
+    CierreCajaDto:
       type: object
       properties:
-        id: { type: string, format: uuid }
-        nombre: { type: string }
-        tipo: { type: string, enum: [barra, mesas, juegos, pista, vip] }
-    Mesa:
+        id:
+          type: string
+          format: uuid
+        abiertaEn:
+          type: string
+          format: date-time
+        cerradaEn:
+          type: string
+          format: date-time
+          nullable: true
+        fondoInicial:
+          type: number
+          format: double
+        totalIngresos:
+          type: number
+          format: double
+        totalEgresos:
+          type: number
+          format: double
+        montoEsperado:
+          type: number
+          format: double
+        montoContado:
+          type: number
+          format: double
+        descuadre:
+          type: number
+          format: double
+        movimientos:
+          type: array
+          items:
+            $ref: '#/components/schemas/MovimientoCajaDto'
+          nullable: true
+        arqueo:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArqueoLineaDto'
+          nullable: true
+      additionalProperties: false
+    ClienteCrearDto:
       type: object
       properties:
-        id: { type: string, format: uuid }
-        zonaId: { type: string, format: uuid }
-        numero: { type: string }
-        capacidad: { type: integer }
-        disponible: { type: boolean }
-    Reserva:
+        nombre:
+          type: string
+          nullable: true
+        rif:
+          type: string
+          nullable: true
+        ci:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        telefono:
+          type: string
+          nullable: true
+        direccion:
+          type: string
+          nullable: true
+      additionalProperties: false
+    ClienteDto:
       type: object
       properties:
-        id: { type: string, format: uuid }
-        fechaHora: { type: string, format: date-time }
-        personas: { type: integer }
-        estado: { type: string, enum: [pendiente, confirmada, cancelada, asistio, no_asistio] }
-        origen: { type: string, enum: [web, whatsapp, presencial] }
-    ReservaCreate:
+        id:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+          nullable: true
+        rif:
+          type: string
+          nullable: true
+        ci:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        telefono:
+          type: string
+          nullable: true
+        direccion:
+          type: string
+          nullable: true
+        puntos:
+          type: integer
+          format: int32
+        activo:
+          type: boolean
+      additionalProperties: false
+    ClienteDtoResultadoPaginado:
       type: object
-      required: [fechaHora, personas, mesas]
       properties:
-        fechaHora: { type: string, format: date-time }
-        personas: { type: integer }
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClienteDto'
+          nullable: true
+        page:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        totalItems:
+          type: integer
+          format: int32
+        totalPages:
+          type: integer
+          format: int32
+          readOnly: true
+      additionalProperties: false
+    ClienteEditarDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+          nullable: true
+        rif:
+          type: string
+          nullable: true
+        ci:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        telefono:
+          type: string
+          nullable: true
+        direccion:
+          type: string
+          nullable: true
+        activo:
+          type: boolean
+      additionalProperties: false
+    ComandaDetalleDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        varianteId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+          nullable: true
+        nombre:
+          type: string
+          nullable: true
+        cantidad:
+          type: number
+          format: double
+        precioUnitarioUSD:
+          type: number
+          format: double
+        areaDestino:
+          $ref: '#/components/schemas/AreaDestino'
+        estado:
+          $ref: '#/components/schemas/EstadoItemComanda'
+        esCortesia:
+          type: boolean
+        subtotalUSD:
+          type: number
+          format: double
+      additionalProperties: false
+    ComandaDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        area:
+          $ref: '#/components/schemas/AreaDestino'
+        estado:
+          $ref: '#/components/schemas/EstadoComanda'
+        fecha:
+          type: string
+          format: date-time
+        detalles:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComandaDetalleDto'
+          nullable: true
+      additionalProperties: false
+    ComandaItemCrearDto:
+      type: object
+      properties:
+        varianteId:
+          type: string
+          format: uuid
+        cantidad:
+          type: number
+          format: double
+        esCortesia:
+          type: boolean
+      additionalProperties: false
+    ConversionRequest:
+      type: object
+      properties:
+        montoUsd:
+          type: number
+          format: double
+      additionalProperties: false
+    ConversionResultDto:
+      type: object
+      properties:
+        montoUsd:
+          type: number
+          format: double
+        tasaAplicada:
+          type: number
+          format: double
+        montoBs:
+          type: number
+          format: double
+      additionalProperties: false
+    CrearComandaDto:
+      type: object
+      properties:
+        area:
+          $ref: '#/components/schemas/AreaDestino'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComandaItemCrearDto'
+          nullable: true
+      additionalProperties: false
+    CuentaDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sesionMesaId:
+          type: string
+          format: uuid
+        nombreMesa:
+          type: string
+          nullable: true
+        estado:
+          $ref: '#/components/schemas/EstadoCuenta'
+        total:
+          type: number
+          format: double
+        totalAbonado:
+          type: number
+          format: double
+        saldo:
+          type: number
+          format: double
+        abiertaEn:
+          type: string
+          format: date-time
+        comandas:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComandaDto'
+          nullable: true
+        abonos:
+          type: array
+          items:
+            $ref: '#/components/schemas/AbonoDto'
+          nullable: true
+      additionalProperties: false
+    CuentaDtoResultadoPaginado:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CuentaDto'
+          nullable: true
+        page:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        totalItems:
+          type: integer
+          format: int32
+        totalPages:
+          type: integer
+          format: int32
+          readOnly: true
+      additionalProperties: false
+    CuentaPorCobrarCrearDto:
+      type: object
+      properties:
+        clienteId:
+          type: string
+          format: uuid
+        montoUSD:
+          type: number
+          format: double
+        vencimiento:
+          type: string
+          format: date-time
+      additionalProperties: false
+    CuentaPorCobrarDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        clienteId:
+          type: string
+          format: uuid
+        clienteNombre:
+          type: string
+          nullable: true
+        montoUSD:
+          type: number
+          format: double
+        saldoUSD:
+          type: number
+          format: double
+        vencimiento:
+          type: string
+          format: date-time
+        estado:
+          $ref: '#/components/schemas/EstadoCuentaPorCobrar'
+      additionalProperties: false
+    CuentaPorCobrarDtoResultadoPaginado:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CuentaPorCobrarDto'
+          nullable: true
+        page:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        totalItems:
+          type: integer
+          format: int32
+        totalPages:
+          type: integer
+          format: int32
+          readOnly: true
+      additionalProperties: false
+    CuentaRequest:
+      type: object
+      properties:
+        consumos:
+          type: array
+          items:
+            type: number
+            format: double
+          nullable: true
+        abonos:
+          type: array
+          items:
+            type: number
+            format: double
+          nullable: true
+      additionalProperties: false
+    DenominacionDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        moneda:
+          $ref: '#/components/schemas/Moneda'
+        tipo:
+          $ref: '#/components/schemas/TipoDenominacion'
+        valor:
+          type: number
+          format: double
+      additionalProperties: false
+    DevolucionDetalleCrearDto:
+      type: object
+      properties:
+        varianteId:
+          type: string
+          format: uuid
+        cantidad:
+          type: number
+          format: double
+      additionalProperties: false
+    DevolucionDetalleDto:
+      type: object
+      properties:
+        varianteId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+          nullable: true
+        cantidad:
+          type: number
+          format: double
+        precioUnitarioUSD:
+          type: number
+          format: double
+      additionalProperties: false
+    DevolucionDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        ventaId:
+          type: string
+          format: uuid
+        motivo:
+          type: string
+          nullable: true
+        montoUSD:
+          type: number
+          format: double
+        reintegrarInventario:
+          type: boolean
+        fecha:
+          type: string
+          format: date-time
+        detalles:
+          type: array
+          items:
+            $ref: '#/components/schemas/DevolucionDetalleDto'
+          nullable: true
+      additionalProperties: false
+    EstadoComanda:
+      enum:
+      - Pendiente
+      - EnPreparacion
+      - Lista
+      - Entregada
+      - Cancelada
+      type: string
+    EstadoCuenta:
+      enum:
+      - Abierta
+      - PorCobrar
+      - Cerrada
+      type: string
+    EstadoCuentaPorCobrar:
+      enum:
+      - Pendiente
+      - Pagada
+      - Vencida
+      type: string
+    EstadoIa:
+      enum:
+      - Pendiente
+      - Procesando
+      - Completado
+      - Error
+      type: string
+    EstadoItemComanda:
+      enum:
+      - Recibido
+      - Preparado
+      - Entregado
+      - Cancelado
+      type: string
+    EstadoReserva:
+      enum:
+      - Pendiente
+      - Confirmada
+      - Cancelada
+      - Asistio
+      - NoAsistio
+      type: string
+    EstadoReservaPago:
+      enum:
+      - Pendiente
+      - Validado
+      - Rechazado
+      type: string
+    EstadoSesionCaja:
+      enum:
+      - Abierta
+      - Cerrada
+      type: string
+    EstadoVenta:
+      enum:
+      - Completada
+      - Anulada
+      type: string
+    EventoCrearDto:
+      type: object
+      properties:
+        titulo:
+          type: string
+          nullable: true
+        descripcion:
+          type: string
+          nullable: true
+        fechaInicio:
+          type: string
+          format: date-time
+        fechaFin:
+          type: string
+          format: date-time
+          nullable: true
+        imagenUrl:
+          type: string
+          nullable: true
+        publicado:
+          type: boolean
+      additionalProperties: false
+    EventoDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        titulo:
+          type: string
+          nullable: true
+        descripcion:
+          type: string
+          nullable: true
+        fechaInicio:
+          type: string
+          format: date-time
+        fechaFin:
+          type: string
+          format: date-time
+          nullable: true
+        imagenUrl:
+          type: string
+          nullable: true
+        publicado:
+          type: boolean
+        activo:
+          type: boolean
+      additionalProperties: false
+    EventoEditarDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        titulo:
+          type: string
+          nullable: true
+        descripcion:
+          type: string
+          nullable: true
+        fechaInicio:
+          type: string
+          format: date-time
+        fechaFin:
+          type: string
+          format: date-time
+          nullable: true
+        imagenUrl:
+          type: string
+          nullable: true
+        publicado:
+          type: boolean
+        activo:
+          type: boolean
+      additionalProperties: false
+    HorarioDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        diaSemana:
+          type: integer
+          format: int32
+        abierto:
+          type: boolean
+        horaApertura:
+          type: string
+          format: time
+          nullable: true
+        horaCierre:
+          type: string
+          format: time
+          nullable: true
+      additionalProperties: false
+    HorarioGuardarDto:
+      type: object
+      properties:
+        diaSemana:
+          type: integer
+          format: int32
+        abierto:
+          type: boolean
+        horaApertura:
+          type: string
+          format: time
+          nullable: true
+        horaCierre:
+          type: string
+          format: time
+          nullable: true
+      additionalProperties: false
+    ImpuestoCrearDto:
+      type: object
+      properties:
+        nombre:
+          type: string
+          nullable: true
+        porcentaje:
+          type: number
+          format: double
+        activo:
+          type: boolean
+      additionalProperties: false
+    ImpuestoDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+          nullable: true
+        porcentaje:
+          type: number
+          format: double
+        activo:
+          type: boolean
+      additionalProperties: false
+    ImpuestoEditarDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+          nullable: true
+        porcentaje:
+          type: number
+          format: double
+        activo:
+          type: boolean
+      additionalProperties: false
+    InformeSaludStockDto:
+      type: object
+      properties:
+        sku:
+          type: string
+          nullable: true
+        stockActual:
+          type: integer
+          format: int32
+        stockMinimo:
+          type: integer
+          format: int32
+        stockMaximo:
+          type: integer
+          format: int32
+        estado:
+          type: string
+          nullable: true
+        mensajeDiagnostico:
+          type: string
+          nullable: true
+        unidadesCompraSugeridas:
+          type: integer
+          format: int32
+      additionalProperties: false
+    ListaPrecioCrearDto:
+      type: object
+      properties:
+        nombre:
+          type: string
+          nullable: true
+        descripcion:
+          type: string
+          nullable: true
+        esPredeterminada:
+          type: boolean
+        activo:
+          type: boolean
+      additionalProperties: false
+    ListaPrecioDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+          nullable: true
+        descripcion:
+          type: string
+          nullable: true
+        esPredeterminada:
+          type: boolean
+        activo:
+          type: boolean
+      additionalProperties: false
+    ListaPrecioEditarDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+          nullable: true
+        descripcion:
+          type: string
+          nullable: true
+        esPredeterminada:
+          type: boolean
+        activo:
+          type: boolean
+      additionalProperties: false
+    LocalInfoDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+          nullable: true
+        descripcion:
+          type: string
+          nullable: true
+        direccion:
+          type: string
+          nullable: true
+        telefono:
+          type: string
+          nullable: true
+        whatsapp:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        instagram:
+          type: string
+          nullable: true
+        facebook:
+          type: string
+          nullable: true
+        mapaUrl:
+          type: string
+          nullable: true
+        logoUrl:
+          type: string
+          nullable: true
+      additionalProperties: false
+    LocalInfoEditarDto:
+      type: object
+      properties:
+        nombre:
+          type: string
+          nullable: true
+        descripcion:
+          type: string
+          nullable: true
+        direccion:
+          type: string
+          nullable: true
+        telefono:
+          type: string
+          nullable: true
+        whatsapp:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        instagram:
+          type: string
+          nullable: true
+        facebook:
+          type: string
+          nullable: true
+        mapaUrl:
+          type: string
+          nullable: true
+        logoUrl:
+          type: string
+          nullable: true
+      additionalProperties: false
+    LoginDto:
+      type: object
+      properties:
+        username:
+          type: string
+          nullable: true
+        password:
+          type: string
+          nullable: true
+      additionalProperties: false
+    MarcaCrearDto:
+      type: object
+      properties:
+        nombre:
+          type: string
+          nullable: true
+        descripcion:
+          type: string
+          nullable: true
+        activo:
+          type: boolean
+      additionalProperties: false
+    MarcaDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+          nullable: true
+        descripcion:
+          type: string
+          nullable: true
+        activo:
+          type: boolean
+      additionalProperties: false
+    MarcaEditarDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+          nullable: true
+        descripcion:
+          type: string
+          nullable: true
+        activo:
+          type: boolean
+      additionalProperties: false
+    MediaAssetDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+          nullable: true
+        url:
+          type: string
+          nullable: true
+        tipo:
+          type: string
+          nullable: true
+        tamano:
+          type: integer
+          format: int64
+      additionalProperties: false
+    MenuDigitalDto:
+      type: object
+      properties:
+        nombre:
+          type: string
+          nullable: true
+        tasa:
+          type: number
+          format: double
+        generadoEn:
+          type: string
+          format: date-time
+        secciones:
+          type: array
+          items:
+            $ref: '#/components/schemas/MenuSeccionDto'
+          nullable: true
+      additionalProperties: false
+    MenuItemDto:
+      type: object
+      properties:
+        varianteId:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+          nullable: true
+        sku:
+          type: string
+          nullable: true
+        precioUSD:
+          type: number
+          format: double
+        precioBS:
+          type: number
+          format: double
+      additionalProperties: false
+    MenuSeccionDto:
+      type: object
+      properties:
+        categoriaId:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MenuItemDto'
+          nullable: true
+      additionalProperties: false
+    MermaDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        movimientoId:
+          type: string
+          format: uuid
+        varianteId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+          nullable: true
+        cantidad:
+          type: number
+          format: double
+        motivo:
+          $ref: '#/components/schemas/MotivoMerma'
+        repuesto:
+          type: boolean
+        fecha:
+          type: string
+          format: date-time
+      additionalProperties: false
+    MermaDtoResultadoPaginado:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MermaDto'
+          nullable: true
+        page:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        totalItems:
+          type: integer
+          format: int32
+        totalPages:
+          type: integer
+          format: int32
+          readOnly: true
+      additionalProperties: false
+    MermaRequest:
+      type: object
+      properties:
+        motivo:
+          type: string
+          nullable: true
+        cantidad:
+          type: integer
+          format: int32
+        reponerSinCobro:
+          type: boolean
+      additionalProperties: false
+    MesaCrearDto:
+      type: object
+      properties:
+        zonaId:
+          type: string
+          format: uuid
+        numero:
+          type: string
+          nullable: true
+        capacidad:
+          type: integer
+          format: int32
+        forma:
+          type: string
+          nullable: true
+        posX:
+          type: number
+          format: double
+        posY:
+          type: number
+          format: double
+        ancho:
+          type: number
+          format: double
+        alto:
+          type: number
+          format: double
+      additionalProperties: false
+    MesaDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        zonaId:
+          type: string
+          format: uuid
+        zonaNombre:
+          type: string
+          nullable: true
+        numero:
+          type: string
+          nullable: true
+        capacidad:
+          type: integer
+          format: int32
+        forma:
+          type: string
+          nullable: true
+        posX:
+          type: number
+          format: double
+        posY:
+          type: number
+          format: double
+        ancho:
+          type: number
+          format: double
+        alto:
+          type: number
+          format: double
+        activa:
+          type: boolean
+        disponible:
+          type: boolean
+      additionalProperties: false
+    MesaEditarDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        zonaId:
+          type: string
+          format: uuid
+        numero:
+          type: string
+          nullable: true
+        capacidad:
+          type: integer
+          format: int32
+        forma:
+          type: string
+          nullable: true
+        posX:
+          type: number
+          format: double
+        posY:
+          type: number
+          format: double
+        ancho:
+          type: number
+          format: double
+        alto:
+          type: number
+          format: double
+        activa:
+          type: boolean
+      additionalProperties: false
+    MetodoPagoDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        codigo:
+          type: string
+          nullable: true
+        nombre:
+          type: string
+          nullable: true
+      additionalProperties: false
+    Moneda:
+      enum:
+      - USD
+      - BS
+      type: string
+    MonedaDto:
+      type: object
+      properties:
+        codigo:
+          type: string
+          nullable: true
+        nombre:
+          type: string
+          nullable: true
+      additionalProperties: false
+    MotivoMerma:
+      enum:
+      - Danado
+      - Partido
+      - Vencido
+      type: string
+    MovimientoCajaCrearDto:
+      type: object
+      properties:
+        tipo:
+          $ref: '#/components/schemas/TipoMovimientoCaja'
+        monto:
+          type: number
+          format: double
+        moneda:
+          $ref: '#/components/schemas/Moneda'
+        motivo:
+          type: string
+          nullable: true
+      additionalProperties: false
+    MovimientoCajaDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tipo:
+          $ref: '#/components/schemas/TipoMovimientoCaja'
+        monto:
+          type: number
+          format: double
+        moneda:
+          $ref: '#/components/schemas/Moneda'
+        motivo:
+          type: string
+          nullable: true
+        fecha:
+          type: string
+          format: date-time
+      additionalProperties: false
+    MovimientoInventarioDto:
+      type: object
+      properties:
+        tipo:
+          type: string
+          nullable: true
+        cantidad:
+          type: integer
+          format: int32
+        motivo:
+          type: string
+          nullable: true
+      additionalProperties: false
+    MovimientoKardexDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        varianteId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+          nullable: true
+        tipo:
+          $ref: '#/components/schemas/TipoMovimientoInventario'
+        cantidad:
+          type: number
+          format: double
+        costoUnitario:
+          type: number
+          format: double
+          nullable: true
+        referenciaTipo:
+          type: string
+          nullable: true
+        referenciaId:
+          type: string
+          format: uuid
+          nullable: true
+        motivo:
+          type: string
+          nullable: true
+        fecha:
+          type: string
+          format: date-time
+      additionalProperties: false
+    MovimientoKardexDtoResultadoPaginado:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MovimientoKardexDto'
+          nullable: true
+        page:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        totalItems:
+          type: integer
+          format: int32
+        totalPages:
+          type: integer
+          format: int32
+          readOnly: true
+      additionalProperties: false
+    MovimientoTesoreriaDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tipo:
+          $ref: '#/components/schemas/TipoMovimientoTesoreria'
+        monto:
+          type: number
+          format: double
+        moneda:
+          $ref: '#/components/schemas/Moneda'
+        motivo:
+          type: string
+          nullable: true
+        referenciaTipo:
+          type: string
+          nullable: true
+        referenciaId:
+          type: string
+          format: uuid
+          nullable: true
+        fecha:
+          type: string
+          format: date-time
+      additionalProperties: false
+    MovimientoTesoreriaDtoResultadoPaginado:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MovimientoTesoreriaDto'
+          nullable: true
+        page:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        totalItems:
+          type: integer
+          format: int32
+        totalPages:
+          type: integer
+          format: int32
+          readOnly: true
+      additionalProperties: false
+    OrigenReserva:
+      enum:
+      - Web
+      - Whatsapp
+      - Presencial
+      type: string
+    PaginaCrearDto:
+      type: object
+      properties:
+        titulo:
+          type: string
+          nullable: true
+        slug:
+          type: string
+          nullable: true
+        publicada:
+          type: boolean
+        secciones:
+          type: array
+          items:
+            $ref: '#/components/schemas/SeccionCrearDto'
+          nullable: true
+      additionalProperties: false
+    PaginaDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        titulo:
+          type: string
+          nullable: true
+        slug:
+          type: string
+          nullable: true
+        publicada:
+          type: boolean
+        activo:
+          type: boolean
+        secciones:
+          type: array
+          items:
+            $ref: '#/components/schemas/SeccionDto'
+          nullable: true
+      additionalProperties: false
+    PaginaEditarDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        titulo:
+          type: string
+          nullable: true
+        slug:
+          type: string
+          nullable: true
+        publicada:
+          type: boolean
+        activo:
+          type: boolean
+        secciones:
+          type: array
+          items:
+            $ref: '#/components/schemas/SeccionCrearDto'
+          nullable: true
+      additionalProperties: false
+    PagoCuentaPorCobrarDto:
+      type: object
+      properties:
+        monto:
+          type: number
+          format: double
+      additionalProperties: false
+    PermisoDto:
+      type: object
+      properties:
+        clave:
+          type: string
+          nullable: true
+        modulo:
+          type: string
+          nullable: true
+        descripcion:
+          type: string
+          nullable: true
+      additionalProperties: false
+    PlanoCrearDto:
+      type: object
+      properties:
+        nombre:
+          type: string
+          nullable: true
+        elementos:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanoElementoCrearDto'
+          nullable: true
+      additionalProperties: false
+    PlanoDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+          nullable: true
+        version:
+          type: integer
+          format: int32
+        activo:
+          type: boolean
+        elementos:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanoElementoDto'
+          nullable: true
+      additionalProperties: false
+    PlanoEditarDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+          nullable: true
+        activo:
+          type: boolean
+        elementos:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanoElementoCrearDto'
+          nullable: true
+      additionalProperties: false
+    PlanoElementoCrearDto:
+      type: object
+      properties:
+        zonaId:
+          type: string
+          format: uuid
+          nullable: true
+        tipo:
+          type: string
+          nullable: true
+        etiqueta:
+          type: string
+          nullable: true
+        posX:
+          type: number
+          format: double
+        posY:
+          type: number
+          format: double
+        ancho:
+          type: number
+          format: double
+        alto:
+          type: number
+          format: double
+        rotacion:
+          type: number
+          format: double
+      additionalProperties: false
+    PlanoElementoDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        zonaId:
+          type: string
+          format: uuid
+          nullable: true
+        tipo:
+          type: string
+          nullable: true
+        etiqueta:
+          type: string
+          nullable: true
+        posX:
+          type: number
+          format: double
+        posY:
+          type: number
+          format: double
+        ancho:
+          type: number
+          format: double
+        alto:
+          type: number
+          format: double
+        rotacion:
+          type: number
+          format: double
+      additionalProperties: false
+    PrecioVarianteDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        listaPrecioId:
+          type: string
+          format: uuid
+        listaPrecioNombre:
+          type: string
+          nullable: true
+        moneda:
+          $ref: '#/components/schemas/Moneda'
+        precio:
+          type: number
+          format: double
+      additionalProperties: false
+    ProductoCrearDto:
+      type: object
+      properties:
+        nombre:
+          type: string
+          nullable: true
+        descripcion:
+          type: string
+          nullable: true
+        categoriaId:
+          type: string
+          format: uuid
+        marcaId:
+          type: string
+          format: uuid
+          nullable: true
+        impuestoId:
+          type: string
+          format: uuid
+          nullable: true
+        tipo:
+          $ref: '#/components/schemas/TipoProducto'
+        gradoAlcoholico:
+          type: number
+          format: double
+          nullable: true
+        imagenUrl:
+          type: string
+          nullable: true
+        variantes:
+          type: array
+          items:
+            $ref: '#/components/schemas/VarianteCrearDto'
+          nullable: true
+      additionalProperties: false
+    ProductoDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+          nullable: true
+        descripcion:
+          type: string
+          nullable: true
+        categoriaId:
+          type: string
+          format: uuid
+        categoriaNombre:
+          type: string
+          nullable: true
+        marcaId:
+          type: string
+          format: uuid
+          nullable: true
+        marcaNombre:
+          type: string
+          nullable: true
+        impuestoId:
+          type: string
+          format: uuid
+          nullable: true
+        tipo:
+          $ref: '#/components/schemas/TipoProducto'
+        gradoAlcoholico:
+          type: number
+          format: double
+          nullable: true
+        imagenUrl:
+          type: string
+          nullable: true
+        activo:
+          type: boolean
+        variantes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductoVarianteDto'
+          nullable: true
+      additionalProperties: false
+    ProductoDtoResultadoPaginado:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductoDto'
+          nullable: true
+        page:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        totalItems:
+          type: integer
+          format: int32
+        totalPages:
+          type: integer
+          format: int32
+          readOnly: true
+      additionalProperties: false
+    ProductoEditarDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+          nullable: true
+        descripcion:
+          type: string
+          nullable: true
+        categoriaId:
+          type: string
+          format: uuid
+        marcaId:
+          type: string
+          format: uuid
+          nullable: true
+        impuestoId:
+          type: string
+          format: uuid
+          nullable: true
+        tipo:
+          $ref: '#/components/schemas/TipoProducto'
+        gradoAlcoholico:
+          type: number
+          format: double
+          nullable: true
+        imagenUrl:
+          type: string
+          nullable: true
+        activo:
+          type: boolean
+        variantes:
+          type: array
+          items:
+            $ref: '#/components/schemas/VarianteCrearDto'
+          nullable: true
+      additionalProperties: false
+    ProductoVarianteDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+          nullable: true
+        sku:
+          type: string
+          nullable: true
+        precioCompraUSD:
+          type: number
+          format: double
+        precioVentaUSD:
+          type: number
+          format: double
+        unidadMedidaId:
+          type: string
+          format: uuid
+        unidadMedidaNombre:
+          type: string
+          nullable: true
+        activo:
+          type: boolean
+        codigosBarras:
+          type: array
+          items:
+            type: string
+          nullable: true
+        precios:
+          type: array
+          items:
+            $ref: '#/components/schemas/PrecioVarianteDto'
+          nullable: true
+      additionalProperties: false
+    PuntosMovimientoDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tipo:
+          $ref: '#/components/schemas/TipoMovimientoPuntos'
+        puntos:
+          type: integer
+          format: int32
+        motivo:
+          type: string
+          nullable: true
+        fecha:
+          type: string
+          format: date-time
+      additionalProperties: false
+    PuntosOperacionDto:
+      type: object
+      properties:
+        puntos:
+          type: integer
+          format: int32
+        motivo:
+          type: string
+          nullable: true
+        referenciaTipo:
+          type: string
+          nullable: true
+        referenciaId:
+          type: string
+          format: uuid
+          nullable: true
+      additionalProperties: false
+    QrMenuDto:
+      type: object
+      properties:
+        url:
+          type: string
+          nullable: true
+        contenido:
+          type: string
+          nullable: true
+      additionalProperties: false
+    RecetaCrearDto:
+      type: object
+      properties:
+        varianteInsumoId:
+          type: string
+          format: uuid
+        cantidad:
+          type: number
+          format: double
+      additionalProperties: false
+    RecetaDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        varianteInsumoId:
+          type: string
+          format: uuid
+        varianteInsumoNombre:
+          type: string
+          nullable: true
+        sku:
+          type: string
+          nullable: true
+        cantidad:
+          type: number
+          format: double
+      additionalProperties: false
+    RefreshTokenRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+          nullable: true
+      additionalProperties: false
+    RegistrarAbonoCuentaDto:
+      type: object
+      properties:
+        metodoPagoId:
+          type: string
+          format: uuid
+        monto:
+          type: number
+          format: double
+        moneda:
+          $ref: '#/components/schemas/Moneda'
+      additionalProperties: false
+    RegistrarDevolucionDto:
+      type: object
+      properties:
+        motivo:
+          type: string
+          nullable: true
+        reintegrarInventario:
+          type: boolean
+        detalles:
+          type: array
+          items:
+            $ref: '#/components/schemas/DevolucionDetalleCrearDto'
+          nullable: true
+      additionalProperties: false
+    RegistrarMermaDto:
+      type: object
+      properties:
+        varianteId:
+          type: string
+          format: uuid
+        cantidad:
+          type: number
+          format: double
+        motivo:
+          $ref: '#/components/schemas/MotivoMerma'
+        reponerSinCobro:
+          type: boolean
+      additionalProperties: false
+    RegistrarMovimientoTesoreriaDto:
+      type: object
+      properties:
+        tipo:
+          $ref: '#/components/schemas/TipoMovimientoTesoreria'
+        monto:
+          type: number
+          format: double
+        moneda:
+          $ref: '#/components/schemas/Moneda'
+        motivo:
+          type: string
+          nullable: true
+        referenciaTipo:
+          type: string
+          nullable: true
+        referenciaId:
+          type: string
+          format: uuid
+          nullable: true
+      additionalProperties: false
+    RegistrarPagoVentaDto:
+      type: object
+      properties:
+        metodoPagoId:
+          type: string
+          format: uuid
+        monto:
+          type: number
+          format: double
+        moneda:
+          $ref: '#/components/schemas/Moneda'
+        propina:
+          type: number
+          format: double
+      additionalProperties: false
+    RegistrarTasaDto:
+      type: object
+      properties:
+        fecha:
+          type: string
+          format: date-time
+          nullable: true
+        tipo:
+          $ref: '#/components/schemas/TipoTasa'
+        valor:
+          type: number
+          format: double
+      additionalProperties: false
+    RegistrarVentaDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/VentaItemDto'
+          nullable: true
+        pagos:
+          type: array
+          items:
+            $ref: '#/components/schemas/VentaPagoDto'
+          nullable: true
+        descuentoUSD:
+          type: number
+          format: double
+        cuentaId:
+          type: string
+          format: uuid
+          nullable: true
+      additionalProperties: false
+    ReporteMermaDto:
+      type: object
+      properties:
+        desde:
+          type: string
+          format: date-time
+        hasta:
+          type: string
+          format: date-time
+        totalRegistros:
+          type: integer
+          format: int32
+        totalUnidades:
+          type: number
+          format: double
+        porMotivo:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReporteMermaPorMotivoDto'
+          nullable: true
+      additionalProperties: false
+    ReporteMermaPorMotivoDto:
+      type: object
+      properties:
+        motivo:
+          $ref: '#/components/schemas/MotivoMerma'
+        registros:
+          type: integer
+          format: int32
+        unidades:
+          type: number
+          format: double
+      additionalProperties: false
+    ReservaCrearDto:
+      type: object
+      properties:
+        fechaHora:
+          type: string
+          format: date-time
+        personas:
+          type: integer
+          format: int32
         mesas:
           type: array
-          items: { type: string, format: uuid }
-        nombreContacto: { type: string }
-        telefono: { type: string }
-    TasaCambio:
+          items:
+            type: string
+            format: uuid
+          nullable: true
+        nombreContacto:
+          type: string
+          nullable: true
+        telefono:
+          type: string
+          nullable: true
+        origen:
+          $ref: '#/components/schemas/OrigenReserva'
+        notas:
+          type: string
+          nullable: true
+      additionalProperties: false
+    ReservaDto:
       type: object
       properties:
-        fecha: { type: string, format: date }
-        tipo: { type: string, enum: [bcv, paralelo] }
-        valor: { type: number, format: double }
-    Evento:
+        id:
+          type: string
+          format: uuid
+        fechaHora:
+          type: string
+          format: date-time
+        personas:
+          type: integer
+          format: int32
+        estado:
+          $ref: '#/components/schemas/EstadoReserva'
+        origen:
+          $ref: '#/components/schemas/OrigenReserva'
+        nombreContacto:
+          type: string
+          nullable: true
+        telefono:
+          type: string
+          nullable: true
+        notas:
+          type: string
+          nullable: true
+        mesas:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReservaMesaResumenDto'
+          nullable: true
+        pagos:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReservaPagoDto'
+          nullable: true
+      additionalProperties: false
+    ReservaDtoResultadoPaginado:
       type: object
       properties:
-        id: { type: string, format: uuid }
-        titulo: { type: string }
-        fecha: { type: string, format: date-time }
-        descripcion: { type: string }
-        imagenUrl: { type: string }
-    AiGeneracion:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReservaDto'
+          nullable: true
+        page:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        totalItems:
+          type: integer
+          format: int32
+        totalPages:
+          type: integer
+          format: int32
+          readOnly: true
+      additionalProperties: false
+    ReservaMesaResumenDto:
       type: object
       properties:
-        id: { type: string, format: uuid }
-        tipo: { type: string }
-        estado: { type: string, enum: [pendiente, procesando, completado, error] }
-        aprobado: { type: boolean }
+        mesaId:
+          type: string
+          format: uuid
+        numero:
+          type: string
+          nullable: true
+        zona:
+          type: string
+          nullable: true
+      additionalProperties: false
+    ReservaPagoCrearDto:
+      type: object
+      properties:
+        metodoPagoId:
+          type: string
+          format: uuid
+        monto:
+          type: number
+          format: double
+        moneda:
+          $ref: '#/components/schemas/Moneda'
+        comprobanteUrl:
+          type: string
+          nullable: true
+      additionalProperties: false
+    ReservaPagoDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        metodoPagoId:
+          type: string
+          format: uuid
+        metodoPago:
+          type: string
+          nullable: true
+        monto:
+          type: number
+          format: double
+        moneda:
+          $ref: '#/components/schemas/Moneda'
+        comprobanteUrl:
+          type: string
+          nullable: true
+        estado:
+          $ref: '#/components/schemas/EstadoReservaPago'
+      additionalProperties: false
+    ResultadoMermaDto:
+      type: object
+      properties:
+        movimientos:
+          type: array
+          items:
+            $ref: '#/components/schemas/MovimientoInventarioDto'
+          nullable: true
+        totalUnidadesDescontadas:
+          type: integer
+          format: int32
+      additionalProperties: false
+    ResultadoSkuDto:
+      type: object
+      properties:
+        entradaOriginal:
+          type: string
+          nullable: true
+        categoria:
+          type: string
+          nullable: true
+        nombreSanitizado:
+          type: string
+          nullable: true
+        skuGenerado:
+          type: string
+          nullable: true
+        formulaSku:
+          type: string
+          nullable: true
+        esValidoEmpresarial:
+          type: boolean
+      additionalProperties: false
+    ResumenCuentaDto:
+      type: object
+      properties:
+        total:
+          type: number
+          format: double
+        totalAbonado:
+          type: number
+          format: double
+        saldo:
+          type: number
+          format: double
+        estaSaldada:
+          type: boolean
+      additionalProperties: false
+    RolDto:
+      type: object
+      properties:
+        nombre:
+          type: string
+          nullable: true
+        descripcion:
+          type: string
+          nullable: true
+        permisos:
+          type: array
+          items:
+            type: string
+          nullable: true
+      additionalProperties: false
+    RolUsuario:
+      enum:
+      - Administrador
+      - Cajero
+      - Mesero
+      - Barra
+      - Cocina
+      - Host
+      - EditorContenido
+      type: string
+    SaludStockRequest:
+      type: object
+      properties:
+        sku:
+          type: string
+          nullable: true
+        stockActual:
+          type: integer
+          format: int32
+        stockMinimo:
+          type: integer
+          format: int32
+        stockMaximo:
+          type: integer
+          format: int32
+      additionalProperties: false
+    SeccionCrearDto:
+      type: object
+      properties:
+        titulo:
+          type: string
+          nullable: true
+        tipo:
+          type: string
+          nullable: true
+        orden:
+          type: integer
+          format: int32
+        activa:
+          type: boolean
+        bloques:
+          type: array
+          items:
+            $ref: '#/components/schemas/BloqueCrearDto'
+          nullable: true
+      additionalProperties: false
+    SeccionDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        titulo:
+          type: string
+          nullable: true
+        tipo:
+          type: string
+          nullable: true
+        orden:
+          type: integer
+          format: int32
+        activa:
+          type: boolean
+        bloques:
+          type: array
+          items:
+            $ref: '#/components/schemas/BloqueDto'
+          nullable: true
+      additionalProperties: false
+    SesionCajaDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        estado:
+          $ref: '#/components/schemas/EstadoSesionCaja'
+        fondoInicial:
+          type: number
+          format: double
+        montoEsperado:
+          type: number
+          format: double
+        montoContado:
+          type: number
+          format: double
+        descuadre:
+          type: number
+          format: double
+        abiertaEn:
+          type: string
+          format: date-time
+        cerradaEn:
+          type: string
+          format: date-time
+          nullable: true
+        movimientos:
+          type: array
+          items:
+            $ref: '#/components/schemas/MovimientoCajaDto'
+          nullable: true
+        arqueo:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArqueoLineaDto'
+          nullable: true
+      additionalProperties: false
+    SesionCajaDtoResultadoPaginado:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SesionCajaDto'
+          nullable: true
+        page:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        totalItems:
+          type: integer
+          format: int32
+        totalPages:
+          type: integer
+          format: int32
+          readOnly: true
+      additionalProperties: false
+    SkuRequest:
+      type: object
+      properties:
+        categoria:
+          type: string
+          nullable: true
+        producto:
+          type: string
+          nullable: true
+        secuencia:
+          type: integer
+          format: int32
+      additionalProperties: false
+    SolicitarImagenIaDto:
+      type: object
+      properties:
+        prompt:
+          type: string
+          nullable: true
+        estilo:
+          type: string
+          nullable: true
+      additionalProperties: false
+    SolicitarSeccionIaDto:
+      type: object
+      properties:
+        prompt:
+          type: string
+          nullable: true
+        plantilla:
+          type: string
+          nullable: true
+      additionalProperties: false
+    StockDto:
+      type: object
+      properties:
+        varianteId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+          nullable: true
+        productoNombre:
+          type: string
+          nullable: true
+        varianteNombre:
+          type: string
+          nullable: true
+        cantidad:
+          type: number
+          format: double
+        cantidadReservada:
+          type: number
+          format: double
+        stockMinimo:
+          type: number
+          format: double
+        stockMaximo:
+          type: number
+          format: double
+        bajoMinimo:
+          type: boolean
+      additionalProperties: false
+    StockDtoResultadoPaginado:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/StockDto'
+          nullable: true
+        page:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        totalItems:
+          type: integer
+          format: int32
+        totalPages:
+          type: integer
+          format: int32
+          readOnly: true
+      additionalProperties: false
+    TasaActualDto:
+      type: object
+      properties:
+        tasa:
+          type: number
+          format: double
+      additionalProperties: false
+    TasaCambioDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        fecha:
+          type: string
+          format: date-time
+        tipo:
+          $ref: '#/components/schemas/TipoTasa'
+        valor:
+          type: number
+          format: double
+      additionalProperties: false
+    TasaRequest:
+      type: object
+      properties:
+        tasa:
+          type: number
+          format: double
+      additionalProperties: false
+    TipoDenominacion:
+      enum:
+      - Billete
+      - Moneda
+      type: string
+    TipoMovimientoCaja:
+      enum:
+      - Ingreso
+      - Egreso
+      type: string
+    TipoMovimientoInventario:
+      enum:
+      - Compra
+      - Venta
+      - Ajuste
+      - Merma
+      - Cortesia
+      - ConsumoInterno
+      type: string
+    TipoMovimientoPuntos:
+      enum:
+      - Acumulacion
+      - Canje
+      type: string
+    TipoMovimientoTesoreria:
+      enum:
+      - Ingreso
+      - Egreso
+      type: string
+    TipoProducto:
+      enum:
+      - Simple
+      - Preparado
+      type: string
+    TipoTasa:
+      enum:
+      - BCV
+      - Paralelo
+      type: string
+    TipoZona:
+      enum:
+      - Barra
+      - Mesas
+      - Juegos
+      - Pista
+      - Vip
+      type: string
+    UnidadMedidaCrearDto:
+      type: object
+      properties:
+        nombre:
+          type: string
+          nullable: true
+        abreviatura:
+          type: string
+          nullable: true
+      additionalProperties: false
+    UnidadMedidaDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+          nullable: true
+        abreviatura:
+          type: string
+          nullable: true
+      additionalProperties: false
+    UnidadMedidaEditarDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+          nullable: true
+        abreviatura:
+          type: string
+          nullable: true
+      additionalProperties: false
+    UsuarioActualDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombreCompleto:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        rol:
+          type: string
+          nullable: true
+        permisos:
+          type: array
+          items:
+            type: string
+          nullable: true
+      additionalProperties: false
+    UsuarioCrearDto:
+      type: object
+      properties:
+        nombreCompleto:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        password:
+          type: string
+          nullable: true
+        rol:
+          $ref: '#/components/schemas/RolUsuario'
+        activo:
+          type: boolean
+      additionalProperties: false
+    UsuarioDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombreCompleto:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        rol:
+          type: string
+          nullable: true
+        activo:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      additionalProperties: false
+    UsuarioDtoResultadoPaginado:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/UsuarioDto'
+          nullable: true
+        page:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        totalItems:
+          type: integer
+          format: int32
+        totalPages:
+          type: integer
+          format: int32
+          readOnly: true
+      additionalProperties: false
+    UsuarioEditarDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombreCompleto:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        rol:
+          $ref: '#/components/schemas/RolUsuario'
+        activo:
+          type: boolean
+      additionalProperties: false
+    ValidarReservaPagoDto:
+      type: object
+      properties:
+        aprobar:
+          type: boolean
+      additionalProperties: false
+    VarianteCrearDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          nullable: true
+        nombre:
+          type: string
+          nullable: true
+        sku:
+          type: string
+          nullable: true
+        unidadMedidaId:
+          type: string
+          format: uuid
+        precioCompraUSD:
+          type: number
+          format: double
+        precioVentaUSD:
+          type: number
+          format: double
+        codigosBarras:
+          type: array
+          items:
+            type: string
+          nullable: true
+      additionalProperties: false
+    VentaDetalleDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        varianteId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+          nullable: true
+        nombre:
+          type: string
+          nullable: true
+        cantidad:
+          type: number
+          format: double
+        precioUnitarioUSD:
+          type: number
+          format: double
+        descuentoUSD:
+          type: number
+          format: double
+        esCortesia:
+          type: boolean
+        subtotalUSD:
+          type: number
+          format: double
+      additionalProperties: false
+    VentaDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        fecha:
+          type: string
+          format: date-time
+        tasaCambio:
+          type: number
+          format: double
+        subtotalUSD:
+          type: number
+          format: double
+        descuentoUSD:
+          type: number
+          format: double
+        totalUSD:
+          type: number
+          format: double
+        totalBS:
+          type: number
+          format: double
+        estado:
+          $ref: '#/components/schemas/EstadoVenta'
+        usuarioId:
+          type: string
+          format: uuid
+        numeroComprobante:
+          type: string
+          nullable: true
+        detalles:
+          type: array
+          items:
+            $ref: '#/components/schemas/VentaDetalleDto'
+          nullable: true
+        pagos:
+          type: array
+          items:
+            $ref: '#/components/schemas/VentaPagoRegistradoDto'
+          nullable: true
+      additionalProperties: false
+    VentaDtoResultadoPaginado:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/VentaDto'
+          nullable: true
+        page:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        totalItems:
+          type: integer
+          format: int32
+        totalPages:
+          type: integer
+          format: int32
+          readOnly: true
+      additionalProperties: false
+    VentaItemDto:
+      type: object
+      properties:
+        varianteId:
+          type: string
+          format: uuid
+        cantidad:
+          type: number
+          format: double
+        precioUnitarioUSD:
+          type: number
+          format: double
+          nullable: true
+        descuentoUSD:
+          type: number
+          format: double
+        esCortesia:
+          type: boolean
+      additionalProperties: false
+    VentaPagoDto:
+      type: object
+      properties:
+        metodoPagoId:
+          type: string
+          format: uuid
+        monto:
+          type: number
+          format: double
+        moneda:
+          $ref: '#/components/schemas/Moneda'
+        propina:
+          type: number
+          format: double
+      additionalProperties: false
+    VentaPagoRegistradoDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        metodoPagoId:
+          type: string
+          format: uuid
+        metodoPago:
+          type: string
+          nullable: true
+        monto:
+          type: number
+          format: double
+        moneda:
+          $ref: '#/components/schemas/Moneda'
+        propina:
+          type: number
+          format: double
+      additionalProperties: false
+    ZonaCrearDto:
+      type: object
+      properties:
+        nombre:
+          type: string
+          nullable: true
+        tipo:
+          $ref: '#/components/schemas/TipoZona'
+        activo:
+          type: boolean
+      additionalProperties: false
+    ZonaDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+          nullable: true
+        tipo:
+          $ref: '#/components/schemas/TipoZona'
+        activo:
+          type: boolean
+      additionalProperties: false
+    ZonaEditarDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+          nullable: true
+        tipo:
+          $ref: '#/components/schemas/TipoZona'
+        activo:
+          type: boolean
+      additionalProperties: false
+  securitySchemes:
+    Bearer:
+      type: http
+      description: 'Ingrese el token JWT. Ejemplo: Bearer {token}'
+      scheme: bearer
+      bearerFormat: JWT
+security:
+- {}
+tags:
+- name: AjustesInventario
+- name: Archivos
+- name: Auth
+- name: Categorias
+- name: Clientes
+- name: Contenido
+- name: Cuentas
+- name: CuentasPorCobrar
+- name: Denominaciones
+- name: Eventos
+- name: Ia
+- name: Impuestos
+- name: ListasPrecio
+- name: Marcas
+- name: MenuDigital
+- name: Mermas
+- name: Mesas
+- name: MetodosPago
+- name: Monedas
+- name: MovimientosInventario
+- name: MovimientosTesoreria
+- name: Paginas
+- name: Permisos
+- name: Planos
+- name: Productos
+- name: Reportes
+- name: Reservas
+- name: Roles
+- name: SesionesCaja
+- name: Simulacion
+- name: Stock
+- name: TasasCambio
+- name: UnidadesMedida
+- name: Usuarios
+- name: Ventas
+- name: Zonas
+servers:
+- url: https://localhost:7271
+  description: Desarrollo (HTTPS)
+- url: http://localhost:5190
+  description: Desarrollo (HTTP)

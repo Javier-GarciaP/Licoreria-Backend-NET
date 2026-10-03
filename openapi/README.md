@@ -1,17 +1,22 @@
 # Contrato OpenAPI
 
-Contrato **contract-first** de la API. Es la fuente compartida entre el backend (Swagger)
-y el frontend (`frontend/packages/api-client`).
+Contrato de la API. Es la fuente compartida entre el backend (Swagger) y el
+frontend (`frontend/packages/api-client`).
 
 ## Archivo
 
-- [`licoreria.yaml`](licoreria.yaml) — especificación OpenAPI 3.0.3.
+- [`licoreria.yaml`](licoreria.yaml) — especificación OpenAPI 3.0 **generada desde el
+  código** (Swagger) y versionada. Contiene todos los endpoints de la API v1.
+
+> Para regenerarla: ejecutar la API en desarrollo y descargar
+> `http://localhost:5190/swagger/v1/swagger.json` (o exportar desde Swagger UI).
 
 ## Uso
 
-- **Backend:** sirve como guía de implementación y para Swagger UI.
-- **Frontend:** genera el cliente tipado a partir de este contrato.
-- **Documentación:** el sitio Astro muestra la referencia de API (`starlight-openapi`).
+- **Backend:** Swagger UI disponible en desarrollo en `/swagger`.
+- **Frontend:** genera el cliente tipado a partir de este contrato
+  (`openapi-generator` o `orval`).
+- **Documentación:** el sitio Astro muestra la referencia de API.
 
 ## Validación
 

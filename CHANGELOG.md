@@ -13,6 +13,34 @@ y el proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
 ### Agregado
 
+- **API final (Fase 2 tecnica):** implementacion completa del nucleo operativo y la
+  web publica sobre PostgreSQL, manteniendo Onion Architecture al 100%.
+  - Transversales: paginacion/filtrado, errores `409`/`422` en RFC 7807, Swagger con
+    Bearer, health checks, `UnitOfWork`, interceptor de auditoria (`created_by`/`updated_by`)
+    y puertos de almacenamiento, reloj y notificaciones.
+  - Seguridad: refresh tokens con rotacion/revocacion, `/auth/me`, permisos `modulo:accion`
+    como claims y politicas por permiso; CRUD de usuarios y catalogos de roles/permisos.
+  - Catalogo: producto -> variante -> codigos de barras, categorias jerarquicas, marcas,
+    unidades, impuestos, listas de precio y recetas de productos preparados.
+  - Inventario: stock por variante, kardex inmutable, mermas/cortesias, ajustes y reporte.
+  - Finanzas: tasas persistidas (BCV/paralelo), monedas y movimientos de tesoreria.
+  - Ventas/POS: ventas con pago mixto, comprobante fiscal, devoluciones y descuento de
+    inventario en una transaccion.
+  - Cuentas y comandas: sesion de mesa, cuentas, abonos, comandas por area y cierre.
+  - Tiempo real: hub SignalR `/hubs/comandas` con notificaciones de comandas e items.
+  - Caja: sesiones, movimientos, arqueo por denominaciones y reporte de cierre (Z).
+  - Club: zonas, mesas, planos, reservas con sena y validacion, y eventos.
+  - CRM: clientes, puntos de fidelidad y cuentas por cobrar.
+  - Contenido: paginas/secciones/bloques, horarios, info del local, menu digital, QR y
+    almacenamiento local de archivos.
+  - IA: modulo simulado con trabajos, historial y aprobacion humana.
+- Guia de uso de la API para el frontend en `docs/dev/04-api/guia-frontend.md`.
+- Contrato OpenAPI regenerado desde el codigo (`openapi/licoreria.yaml`).
+- Pruebas unitarias adicionales de la logica de dominio operativa (stock, cuentas,
+  fidelidad y cuentas por cobrar).
+
+### Agregado (fases previas)
+
 - Estructura base de monorepo (`backend`, `frontend`, `database`, `docs`, `infra`, `openapi`).
 - Archivos de configuracion raiz (`.editorconfig`, `Taskfile.yml`, `docker-compose.yml`, `.env.example`).
 - Guia de contribucion, convencion de commits y plantilla `.gitmessage`.

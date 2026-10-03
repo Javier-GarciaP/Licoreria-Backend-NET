@@ -2,6 +2,7 @@ using FluentValidation;
 using Licoreria.Application.Dtos;
 using Licoreria.Application.Interfaces;
 using Licoreria.Domain.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Licoreria.WebAPI.Controllers;
@@ -9,9 +10,11 @@ namespace Licoreria.WebAPI.Controllers;
 /// <summary>
 /// Controlador de simulación para demostrar la lógica de dominio
 /// (salud de stock, generación de SKU, mermas, cuentas y tasas de cambio).
+/// Requiere autenticación.
 /// </summary>
 [ApiController]
 [Route("api/v1/simulacion")]
+[Authorize]
 public class SimulacionController : ControllerBase
 {
     private readonly IServicioProducto _servicioProducto;
