@@ -39,6 +39,10 @@ public class LicoreriaDbContext : DbContext
     public DbSet<Abono> Abonos => Set<Abono>();
     public DbSet<Comanda> Comandas => Set<Comanda>();
     public DbSet<ComandaDetalle> ComandaDetalles => Set<ComandaDetalle>();
+    public DbSet<Denominacion> Denominaciones => Set<Denominacion>();
+    public DbSet<SesionCaja> SesionesCaja => Set<SesionCaja>();
+    public DbSet<MovimientoCaja> MovimientosCaja => Set<MovimientoCaja>();
+    public DbSet<ArqueoDenominacion> ArqueosDenominacion => Set<ArqueoDenominacion>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
