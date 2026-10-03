@@ -34,6 +34,11 @@ public class LicoreriaDbContext : DbContext
     public DbSet<ComprobanteFiscal> ComprobantesFiscales => Set<ComprobanteFiscal>();
     public DbSet<Devolucion> Devoluciones => Set<Devolucion>();
     public DbSet<DevolucionDetalle> DevolucionDetalles => Set<DevolucionDetalle>();
+    public DbSet<SesionMesa> SesionesMesa => Set<SesionMesa>();
+    public DbSet<Cuenta> Cuentas => Set<Cuenta>();
+    public DbSet<Abono> Abonos => Set<Abono>();
+    public DbSet<Comanda> Comandas => Set<Comanda>();
+    public DbSet<ComandaDetalle> ComandaDetalles => Set<ComandaDetalle>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

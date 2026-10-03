@@ -384,7 +384,7 @@ public sealed class ServicioCatalogo : IServicioCatalogo
             producto.Desactivar();
         }
 
-        SincronizarVariantes(producto, dto.Variantes);
+        await SincronizarVariantesAsync(producto, dto.Variantes, cancellationToken);
 
         _productoRepository.Update(producto);
         await _productoRepository.SaveChangesAsync(cancellationToken);
@@ -527,7 +527,7 @@ public sealed class ServicioCatalogo : IServicioCatalogo
         return variante;
     }
 
-    private static void SincronizarVariantes(Producto producto, IReadOnlyList<VarianteCrearDto> variantes)
+    private async Task SincronizarVariantesAsync(Producto producto, IReadOnlyList<VarianteCrearDto> variantes, CancellationToken cancellationToken)
     {
         var existentes = producto.Variantes.ToDictionary(v => v.Id);
 
@@ -547,7 +547,9 @@ public sealed class ServicioCatalogo : IServicioCatalogo
             }
             else
             {
-                producto.Variantes.Add(CrearVariante(dto));
+                var nueva = CrearVariante(dto);
+                nueva.ProductoId = producto.Id;
+                await _productoRepository.AgregarVarianteAsync(nueva, cancellationToken);
             }
         }
 

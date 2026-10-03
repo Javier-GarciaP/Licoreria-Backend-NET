@@ -52,6 +52,9 @@ public class VentaRepository : IVentaRepository
     public async Task AgregarAsync(Venta venta, CancellationToken cancellationToken = default)
         => await _context.Ventas.AddAsync(venta, cancellationToken);
 
+    public async Task AgregarPagoAsync(Pago pago, CancellationToken cancellationToken = default)
+        => await _context.Pagos.AddAsync(pago, cancellationToken);
+
     public Task<int> ContarComprobantesAsync(CancellationToken cancellationToken = default)
         => _context.ComprobantesFiscales.CountAsync(cancellationToken);
 

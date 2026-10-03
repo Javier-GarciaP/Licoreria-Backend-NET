@@ -23,7 +23,8 @@ public sealed record VentaPagoDto(
 public sealed record RegistrarVentaDto(
     IReadOnlyList<VentaItemDto> Items,
     IReadOnlyList<VentaPagoDto> Pagos,
-    decimal DescuentoUSD = 0);
+    decimal DescuentoUSD = 0,
+    Guid? CuentaId = null);
 
 public sealed record RegistrarPagoVentaDto(
     Guid MetodoPagoId,

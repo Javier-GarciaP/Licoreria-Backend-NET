@@ -17,6 +17,8 @@ public interface IVentaRepository
 
     Task AgregarAsync(Venta venta, CancellationToken cancellationToken = default);
 
+    Task AgregarPagoAsync(Pago pago, CancellationToken cancellationToken = default);
+
     Task<int> ContarComprobantesAsync(CancellationToken cancellationToken = default);
 
     Task AgregarDevolucionAsync(Devolucion devolucion, CancellationToken cancellationToken = default);

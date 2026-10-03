@@ -46,6 +46,7 @@ public static class DependencyInjection
         services.AddScoped<ITasaCambioRepository, TasaCambioRepository>();
         services.AddScoped<IMovimientoTesoreriaRepository, MovimientoTesoreriaRepository>();
         services.AddScoped<IVentaRepository, VentaRepository>();
+        services.AddScoped<ICuentaRepository, CuentaRepository>();
 
         services.AddScoped<IServicioProducto, ServicioProducto>();
         services.AddScoped<IServicioInventario, ServicioInventario>();
@@ -57,6 +58,7 @@ public static class DependencyInjection
         services.AddScoped<IServicioFinanzas, ServicioFinanzas>();
         services.AddScoped<IServicioKardex, ServicioKardex>();
         services.AddScoped<IServicioVentas, ServicioVentas>();
+        services.AddScoped<IServicioCuentas, ServicioCuentas>();
 
         // =========================================================
         // Transient: servicios ligeros sin estado (validadores).
@@ -86,6 +88,11 @@ public static class DependencyInjection
         services.AddTransient<IValidator<RegistrarVentaDto>, RegistrarVentaDtoValidator>();
         services.AddTransient<IValidator<RegistrarPagoVentaDto>, RegistrarPagoVentaDtoValidator>();
         services.AddTransient<IValidator<RegistrarDevolucionDto>, RegistrarDevolucionDtoValidator>();
+        services.AddTransient<IValidator<AbrirMesaDto>, AbrirMesaDtoValidator>();
+        services.AddTransient<IValidator<CrearComandaDto>, CrearComandaDtoValidator>();
+        services.AddTransient<IValidator<RegistrarAbonoCuentaDto>, RegistrarAbonoCuentaDtoValidator>();
+        services.AddTransient<IValidator<CerrarCuentaDto>, CerrarCuentaDtoValidator>();
+        services.AddTransient<IValidator<ActualizarEstadoItemDto>, ActualizarEstadoItemDtoValidator>();
         services.AddTransient<IValidator<UsuarioCrearDto>, UsuarioCrearDtoValidator>();
         services.AddTransient<IValidator<UsuarioEditarDto>, UsuarioEditarDtoValidator>();
         services.AddTransient<IValidator<CambiarPasswordDto>, CambiarPasswordDtoValidator>();

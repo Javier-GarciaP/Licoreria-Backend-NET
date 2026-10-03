@@ -32,5 +32,7 @@ public interface IProductoRepository : IRepository<Producto>
 
     Task AgregarRecetaAsync(Receta receta, CancellationToken cancellationToken = default);
 
+    Task AgregarVarianteAsync(ProductoVariante variante, CancellationToken cancellationToken = default);
+
     void EliminarReceta(Receta receta);
 }

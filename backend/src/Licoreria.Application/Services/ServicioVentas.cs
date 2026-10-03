@@ -99,7 +99,8 @@ public sealed class ServicioVentas : IServicioVentas
             Fecha = _reloj.UtcNow,
             TasaCambio = tasa,
             UsuarioId = usuarioId,
-            DescuentoUSD = dto.DescuentoUSD
+            DescuentoUSD = dto.DescuentoUSD,
+            CuentaId = dto.CuentaId
         };
 
         var insumos = new List<(Guid VarianteId, decimal Cantidad)>();
@@ -201,14 +202,16 @@ public sealed class ServicioVentas : IServicioVentas
         var metodo = await _metodoPagoRepository.GetByIdAsync(dto.MetodoPagoId, cancellationToken)
             ?? throw new NoEncontradoException($"No existe el método de pago {dto.MetodoPagoId}.");
 
-        venta.Pagos.Add(new Pago
+        var pago = new Pago
         {
+            VentaId = ventaId,
             MetodoPagoId = metodo.Id,
             Monto = dto.Monto,
             Moneda = dto.Moneda,
             Propina = dto.Propina
-        });
+        };
 
+        await _ventaRepository.AgregarPagoAsync(pago, cancellationToken);
         await _ventaRepository.SaveChangesAsync(cancellationToken);
 
         var actualizada = await _ventaRepository.ObtenerConDetalleAsync(ventaId, cancellationToken);
