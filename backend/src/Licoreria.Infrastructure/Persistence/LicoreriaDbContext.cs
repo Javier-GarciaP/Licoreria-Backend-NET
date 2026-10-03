@@ -29,6 +29,11 @@ public class LicoreriaDbContext : DbContext
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Venta> Ventas => Set<Venta>();
     public DbSet<DetalleVenta> DetallesVenta => Set<DetalleVenta>();
+    public DbSet<MetodoPago> MetodosPago => Set<MetodoPago>();
+    public DbSet<Pago> Pagos => Set<Pago>();
+    public DbSet<ComprobanteFiscal> ComprobantesFiscales => Set<ComprobanteFiscal>();
+    public DbSet<Devolucion> Devoluciones => Set<Devolucion>();
+    public DbSet<DevolucionDetalle> DevolucionDetalles => Set<DevolucionDetalle>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

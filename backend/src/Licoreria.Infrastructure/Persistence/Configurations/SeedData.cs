@@ -41,4 +41,12 @@ internal static class SeedData
     // --- Tasas de cambio ---
     public static readonly Guid TasaBcv = Guid.Parse("aaaa0000-0000-0000-0000-000000000001");
     public static readonly Guid TasaParalelo = Guid.Parse("aaaa0000-0000-0000-0000-000000000002");
+
+    // --- Métodos de pago ---
+    public static readonly Guid PagoEfectivoUsd = Guid.Parse("bbbb0000-0000-0000-0000-000000000001");
+    public static readonly Guid PagoEfectivoBs = Guid.Parse("bbbb0000-0000-0000-0000-000000000002");
+    public static readonly Guid PagoPagoMovil = Guid.Parse("bbbb0000-0000-0000-0000-000000000003");
+    public static readonly Guid PagoZelle = Guid.Parse("bbbb0000-0000-0000-0000-000000000004");
+    public static readonly Guid PagoPunto = Guid.Parse("bbbb0000-0000-0000-0000-000000000005");
+    public static readonly Guid PagoCredito = Guid.Parse("bbbb0000-0000-0000-0000-000000000006");
 }

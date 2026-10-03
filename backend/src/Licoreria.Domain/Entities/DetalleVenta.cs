@@ -2,17 +2,23 @@
 
 namespace Licoreria.Domain.Entities;
 
+/// <summary>
+/// Línea de una venta. Referencia la variante vendida y fija el precio al momento.
+/// </summary>
 public class DetalleVenta : BaseEntity
 {
-    // Relación N:1 con Venta
     public Guid VentaId { get; set; }
     public Venta Venta { get; set; } = null!;
 
-    // Relación N:1 con Producto
-    public Guid ProductoId { get; set; }
-    public Producto Producto { get; set; } = null!;
+    public Guid VarianteId { get; set; }
+    public ProductoVariante Variante { get; set; } = null!;
 
-    public int Cantidad { get; set; }
+    public decimal Cantidad { get; set; }
     public decimal PrecioUnitarioUSD { get; set; }
-    public decimal SubtotalUSD => Cantidad * PrecioUnitarioUSD;
+    public decimal DescuentoUSD { get; set; }
+    public bool EsCortesia { get; set; }
+
+    public decimal SubtotalUSD => EsCortesia
+        ? 0m
+        : Math.Max(0m, (Cantidad * PrecioUnitarioUSD) - DescuentoUSD);
 }

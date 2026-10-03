@@ -10,7 +10,9 @@ public class DetalleVentaConfiguration : IEntityTypeConfiguration<DetalleVenta>
     {
         builder.ToTable("detalles_venta");
         builder.HasKey(d => d.Id);
+        builder.Property(d => d.Cantidad).HasPrecision(14, 3);
         builder.Property(d => d.PrecioUnitarioUSD).HasPrecision(18, 2);
+        builder.Property(d => d.DescuentoUSD).HasPrecision(18, 2);
         builder.Ignore(d => d.SubtotalUSD);
 
         builder.HasOne(d => d.Venta)
@@ -18,9 +20,9 @@ public class DetalleVentaConfiguration : IEntityTypeConfiguration<DetalleVenta>
                .HasForeignKey(d => d.VentaId)
                .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne(d => d.Producto)
+        builder.HasOne(d => d.Variante)
                .WithMany()
-               .HasForeignKey(d => d.ProductoId)
+               .HasForeignKey(d => d.VarianteId)
                .OnDelete(DeleteBehavior.Restrict);
     }
 }

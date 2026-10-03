@@ -16,6 +16,11 @@ public class InventarioRepository : IInventarioRepository
     public Task<StockProducto?> ObtenerStockAsync(Guid varianteId, CancellationToken cancellationToken = default)
         => _context.StockProductos.FirstOrDefaultAsync(s => s.VarianteId == varianteId, cancellationToken);
 
+    public Task<ProductoVariante?> ObtenerVarianteConRecetasAsync(Guid varianteId, CancellationToken cancellationToken = default)
+        => _context.ProductoVariantes
+            .Include(v => v.Producto).ThenInclude(p => p.Recetas).ThenInclude(r => r.VarianteInsumo)
+            .FirstOrDefaultAsync(v => v.Id == varianteId, cancellationToken);
+
     public Task<ResultadoPaginado<StockProducto>> ObtenerStockPaginadoAsync(
         PaginacionRequest paginacion,
         bool soloBajoMinimo = false,
