@@ -151,3 +151,62 @@ public sealed record EventoEditarDto(
     string? ImagenUrl,
     bool Publicado,
     bool Activo);
+
+public sealed record ListaVipDto(
+    Guid Id,
+    Guid? ClienteId,
+    string Nombre,
+    string? Documento,
+    string? Telefono,
+    string? Notas,
+    bool Activo);
+
+public sealed record ListaVipCrearDto(
+    string Nombre,
+    Guid? ClienteId = null,
+    string? Documento = null,
+    string? Telefono = null,
+    string? Notas = null);
+
+public sealed record ListaVipEditarDto(
+    Guid Id,
+    string Nombre,
+    Guid? ClienteId,
+    string? Documento,
+    string? Telefono,
+    string? Notas,
+    bool Activo);
+
+public sealed record EntradaDto(
+    Guid Id,
+    string Codigo,
+    Guid? EventoId,
+    string? EventoTitulo,
+    Guid? ReservaId,
+    Guid? ClienteId,
+    decimal Precio,
+    Moneda Moneda,
+    EstadoEntrada Estado,
+    DateTime EmitidaEn,
+    DateTime? UsadaEn);
+
+public sealed record EmitirEntradaDto(
+    decimal Precio,
+    Moneda Moneda = Moneda.USD,
+    Guid? EventoId = null,
+    Guid? ReservaId = null,
+    Guid? ClienteId = null);
+
+public sealed record PedidoAnticipadoDto(
+    Guid Id,
+    Guid VarianteId,
+    string Sku,
+    string Nombre,
+    decimal Cantidad,
+    decimal PrecioUnitarioUSD,
+    decimal SubtotalUSD);
+
+public sealed record PedidoAnticipadoCrearDto(
+    Guid VarianteId,
+    decimal Cantidad,
+    decimal? PrecioUnitarioUSD = null);

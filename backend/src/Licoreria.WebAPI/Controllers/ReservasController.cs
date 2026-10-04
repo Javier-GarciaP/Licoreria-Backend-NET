@@ -78,4 +78,22 @@ public class ReservasController : ControllerBase
         var reserva = await _servicio.CambiarEstadoReservaAsync(id, dto, cancellationToken);
         return reserva is null ? NotFound() : Ok(reserva);
     }
+
+    [HttpGet("{id:guid}/pedidos")]
+    [Authorize(Policy = Permisos.ReservasGestionar)]
+    public async Task<ActionResult<IReadOnlyList<PedidoAnticipadoDto>>> ObtenerPedidos(Guid id, CancellationToken cancellationToken)
+        => Ok(await _servicio.ObtenerPedidosAsync(id, cancellationToken));
+
+    [HttpPost("{id:guid}/pedidos")]
+    [Authorize(Policy = Permisos.ReservasGestionar)]
+    public async Task<ActionResult<PedidoAnticipadoDto>> AgregarPedido(
+        Guid id,
+        [FromBody] PedidoAnticipadoCrearDto dto,
+        CancellationToken cancellationToken)
+        => StatusCode(StatusCodes.Status201Created, await _servicio.AgregarPedidoAsync(id, dto, cancellationToken));
+
+    [HttpDelete("{id:guid}/pedidos/{pedidoId:guid}")]
+    [Authorize(Policy = Permisos.ReservasGestionar)]
+    public async Task<IActionResult> EliminarPedido(Guid id, Guid pedidoId, CancellationToken cancellationToken)
+        => await _servicio.EliminarPedidoAsync(id, pedidoId, cancellationToken) ? NoContent() : NotFound();
 }

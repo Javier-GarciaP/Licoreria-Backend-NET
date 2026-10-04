@@ -14,6 +14,10 @@ public sealed class ServicioClub : IServicioClub
     private readonly IRepository<Plano> _planos;
     private readonly IRepository<PlanoElemento> _planoElementos;
     private readonly IRepository<Evento> _eventos;
+    private readonly IRepository<ListaVip> _vip;
+    private readonly IRepository<Entrada> _entradas;
+    private readonly IRepository<PedidoAnticipado> _pedidos;
+    private readonly IRepository<ProductoVariante> _variantes;
     private readonly IReservaRepository _reservas;
     private readonly ICuentaRepository _cuentas;
     private readonly IRelojSistema _reloj;
@@ -24,6 +28,10 @@ public sealed class ServicioClub : IServicioClub
         IRepository<Plano> planos,
         IRepository<PlanoElemento> planoElementos,
         IRepository<Evento> eventos,
+        IRepository<ListaVip> vip,
+        IRepository<Entrada> entradas,
+        IRepository<PedidoAnticipado> pedidos,
+        IRepository<ProductoVariante> variantes,
         IReservaRepository reservas,
         ICuentaRepository cuentas,
         IRelojSistema reloj)
@@ -33,6 +41,10 @@ public sealed class ServicioClub : IServicioClub
         _planos = planos;
         _planoElementos = planoElementos;
         _eventos = eventos;
+        _vip = vip;
+        _entradas = entradas;
+        _pedidos = pedidos;
+        _variantes = variantes;
         _reservas = reservas;
         _cuentas = cuentas;
         _reloj = reloj;
@@ -468,6 +480,226 @@ public sealed class ServicioClub : IServicioClub
         return true;
     }
 
+    // ================= Lista VIP =================
+
+    public async Task<IReadOnlyList<ListaVipDto>> ObtenerListaVipAsync(CancellationToken cancellationToken = default)
+    {
+        var vip = await _vip.GetAllAsync(cancellationToken);
+        return vip.Where(v => !v.IsDeleted).OrderBy(v => v.Nombre).Select(MapearVip).ToList();
+    }
+
+    public async Task<ListaVipDto> CrearVipAsync(ListaVipCrearDto dto, CancellationToken cancellationToken = default)
+    {
+        var vip = new ListaVip
+        {
+            Nombre = dto.Nombre,
+            ClienteId = dto.ClienteId,
+            Documento = dto.Documento,
+            Telefono = dto.Telefono,
+            Notas = dto.Notas,
+            Activo = true
+        };
+
+        await _vip.AddAsync(vip, cancellationToken);
+        await _vip.SaveChangesAsync(cancellationToken);
+        return MapearVip(vip);
+    }
+
+    public async Task<ListaVipDto?> EditarVipAsync(ListaVipEditarDto dto, CancellationToken cancellationToken = default)
+    {
+        var vip = await _vip.GetByIdAsync(dto.Id, cancellationToken);
+        if (vip is null || vip.IsDeleted)
+        {
+            return null;
+        }
+
+        vip.Nombre = dto.Nombre;
+        vip.ClienteId = dto.ClienteId;
+        vip.Documento = dto.Documento;
+        vip.Telefono = dto.Telefono;
+        vip.Notas = dto.Notas;
+        vip.Activo = dto.Activo;
+        _vip.Update(vip);
+        await _vip.SaveChangesAsync(cancellationToken);
+        return MapearVip(vip);
+    }
+
+    public async Task<bool> EliminarVipAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var vip = await _vip.GetByIdAsync(id, cancellationToken);
+        if (vip is null || vip.IsDeleted)
+        {
+            return false;
+        }
+
+        vip.EliminarLogico();
+        _vip.Update(vip);
+        await _vip.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    // ================= Entradas =================
+
+    public async Task<ResultadoPaginado<EntradaDto>> ObtenerEntradasAsync(
+        PaginacionRequest paginacion,
+        Guid? eventoId = null,
+        EstadoEntrada? estado = null,
+        CancellationToken cancellationToken = default)
+    {
+        var todas = await _entradas.FindAsync(
+            e => !e.IsDeleted
+                 && (eventoId == null || e.EventoId == eventoId)
+                 && (estado == null || e.Estado == estado),
+            cancellationToken);
+
+        var eventos = (await _eventos.GetAllAsync(cancellationToken)).ToDictionary(e => e.Id, e => e.Titulo);
+
+        var page = paginacion.PaginaNormalizada;
+        var size = paginacion.TamanoNormalizado;
+        var items = todas
+            .OrderByDescending(e => e.EmitidaEn)
+            .Skip((page - 1) * size)
+            .Take(size)
+            .Select(e => MapearEntrada(e, eventos.GetValueOrDefault(e.EventoId ?? Guid.Empty)))
+            .ToList();
+
+        return ResultadoPaginado<EntradaDto>.Crear(items, page, size, todas.Count);
+    }
+
+    public async Task<EntradaDto> EmitirEntradaAsync(EmitirEntradaDto dto, CancellationToken cancellationToken = default)
+    {
+        if (dto.Precio < 0)
+        {
+            throw new ReglaNegocioException("El precio de la entrada no puede ser negativo.");
+        }
+
+        var entrada = new Entrada
+        {
+            Codigo = $"ENT-{Guid.NewGuid().ToString("N")[..10].ToUpperInvariant()}",
+            EventoId = dto.EventoId,
+            ReservaId = dto.ReservaId,
+            ClienteId = dto.ClienteId,
+            Precio = dto.Precio,
+            Moneda = dto.Moneda,
+            Estado = EstadoEntrada.Valida,
+            EmitidaEn = _reloj.UtcNow
+        };
+
+        await _entradas.AddAsync(entrada, cancellationToken);
+        await _entradas.SaveChangesAsync(cancellationToken);
+
+        string? titulo = null;
+        if (entrada.EventoId is Guid eventoId)
+        {
+            var evento = await _eventos.GetByIdAsync(eventoId, cancellationToken);
+            titulo = evento?.Titulo;
+        }
+
+        return MapearEntrada(entrada, titulo);
+    }
+
+    public async Task<EntradaDto?> ValidarEntradaAsync(string codigo, CancellationToken cancellationToken = default)
+    {
+        var entradas = await _entradas.FindAsync(e => !e.IsDeleted && e.Codigo == codigo, cancellationToken);
+        var entrada = entradas.FirstOrDefault();
+        if (entrada is null)
+        {
+            return null;
+        }
+
+        var tracked = await _entradas.GetByIdAsync(entrada.Id, cancellationToken) ?? entrada;
+
+        try
+        {
+            tracked.Validar(_reloj.UtcNow);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new ReglaNegocioException(ex.Message);
+        }
+
+        _entradas.Update(tracked);
+        await _entradas.SaveChangesAsync(cancellationToken);
+
+        string? titulo = null;
+        if (tracked.EventoId is Guid eventoId)
+        {
+            var evento = await _eventos.GetByIdAsync(eventoId, cancellationToken);
+            titulo = evento?.Titulo;
+        }
+
+        return MapearEntrada(tracked, titulo);
+    }
+
+    public async Task<bool> CancelarEntradaAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var entrada = await _entradas.GetByIdAsync(id, cancellationToken);
+        if (entrada is null || entrada.IsDeleted)
+        {
+            return false;
+        }
+
+        entrada.Cancelar();
+        _entradas.Update(entrada);
+        await _entradas.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    // ================= Pedidos anticipados =================
+
+    public async Task<IReadOnlyList<PedidoAnticipadoDto>> ObtenerPedidosAsync(Guid reservaId, CancellationToken cancellationToken = default)
+    {
+        var pedidos = await _pedidos.FindAsync(p => !p.IsDeleted && p.ReservaId == reservaId, cancellationToken);
+        var variantes = (await _variantes.GetAllAsync(cancellationToken)).ToDictionary(v => v.Id, v => v);
+
+        return pedidos.Select(p =>
+        {
+            variantes.TryGetValue(p.VarianteId, out var variante);
+            return MapearPedido(p, variante);
+        }).ToList();
+    }
+
+    public async Task<PedidoAnticipadoDto> AgregarPedidoAsync(Guid reservaId, PedidoAnticipadoCrearDto dto, CancellationToken cancellationToken = default)
+    {
+        var reserva = await _reservas.ObtenerConDetalleAsync(reservaId, cancellationToken)
+            ?? throw new NoEncontradoException($"No existe la reserva {reservaId}.");
+
+        if (dto.Cantidad <= 0)
+        {
+            throw new ReglaNegocioException("La cantidad debe ser mayor que cero.");
+        }
+
+        var variante = await _variantes.GetByIdAsync(dto.VarianteId, cancellationToken)
+            ?? throw new NoEncontradoException($"No existe la variante {dto.VarianteId}.");
+
+        var pedido = new PedidoAnticipado
+        {
+            ReservaId = reserva.Id,
+            VarianteId = variante.Id,
+            Cantidad = dto.Cantidad,
+            PrecioUnitarioUSD = dto.PrecioUnitarioUSD ?? variante.PrecioVentaUSD
+        };
+
+        await _pedidos.AddAsync(pedido, cancellationToken);
+        await _pedidos.SaveChangesAsync(cancellationToken);
+        return MapearPedido(pedido, variante);
+    }
+
+    public async Task<bool> EliminarPedidoAsync(Guid reservaId, Guid pedidoId, CancellationToken cancellationToken = default)
+    {
+        var pedidos = await _pedidos.FindAsync(p => !p.IsDeleted && p.Id == pedidoId && p.ReservaId == reservaId, cancellationToken);
+        var pedido = pedidos.FirstOrDefault();
+        if (pedido is null)
+        {
+            return false;
+        }
+
+        var tracked = await _pedidos.GetByIdAsync(pedido.Id, cancellationToken) ?? pedido;
+        _pedidos.Remove(tracked);
+        await _pedidos.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
     // ================= Mapeos =================
 
     private static PlanoElemento CrearElemento(PlanoElementoCrearDto dto) => new()
@@ -517,4 +749,13 @@ public sealed class ServicioClub : IServicioClub
 
     private static EventoDto MapearEvento(Evento e)
         => new(e.Id, e.Titulo, e.Descripcion, e.FechaInicio, e.FechaFin, e.ImagenUrl, e.Publicado, e.Activo);
+
+    private static ListaVipDto MapearVip(ListaVip v)
+        => new(v.Id, v.ClienteId, v.Nombre, v.Documento, v.Telefono, v.Notas, v.Activo);
+
+    private static EntradaDto MapearEntrada(Entrada e, string? eventoTitulo)
+        => new(e.Id, e.Codigo, e.EventoId, eventoTitulo, e.ReservaId, e.ClienteId, e.Precio, e.Moneda, e.Estado, e.EmitidaEn, e.UsadaEn);
+
+    private static PedidoAnticipadoDto MapearPedido(PedidoAnticipado p, ProductoVariante? variante)
+        => new(p.Id, p.VarianteId, variante?.Sku ?? string.Empty, variante?.Producto?.Nombre ?? variante?.Nombre ?? string.Empty, p.Cantidad, p.PrecioUnitarioUSD, p.Cantidad * p.PrecioUnitarioUSD);
 }

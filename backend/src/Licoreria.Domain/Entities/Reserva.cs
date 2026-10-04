@@ -16,6 +16,7 @@ public class Reserva : BaseEntity
 
     public ICollection<ReservaMesa> Mesas { get; set; } = new List<ReservaMesa>();
     public ICollection<ReservaPago> Pagos { get; set; } = new List<ReservaPago>();
+    public ICollection<PedidoAnticipado> Pedidos { get; set; } = new List<PedidoAnticipado>();
 
     public void Confirmar() => Estado = EstadoReserva.Confirmada;
     public void Cancelar() => Estado = EstadoReserva.Cancelada;

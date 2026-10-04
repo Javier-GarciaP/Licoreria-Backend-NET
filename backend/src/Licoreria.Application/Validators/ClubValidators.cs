@@ -55,3 +55,30 @@ public sealed class EventoCrearDtoValidator : AbstractValidator<EventoCrearDto>
         RuleFor(x => x.Descripcion).MaximumLength(1000).WithMessage("La descripción no puede superar los 1000 caracteres.");
     }
 }
+
+public sealed class ListaVipCrearDtoValidator : AbstractValidator<ListaVipCrearDto>
+{
+    public ListaVipCrearDtoValidator()
+    {
+        RuleFor(x => x.Nombre).NotEmpty().WithMessage("El nombre es obligatorio.")
+            .MaximumLength(120).WithMessage("El nombre no puede superar los 120 caracteres.");
+    }
+}
+
+public sealed class EmitirEntradaDtoValidator : AbstractValidator<EmitirEntradaDto>
+{
+    public EmitirEntradaDtoValidator()
+    {
+        RuleFor(x => x.Precio).GreaterThanOrEqualTo(0).WithMessage("El precio no puede ser negativo.");
+        RuleFor(x => x.Moneda).IsInEnum().WithMessage("La moneda no es válida.");
+    }
+}
+
+public sealed class PedidoAnticipadoCrearDtoValidator : AbstractValidator<PedidoAnticipadoCrearDto>
+{
+    public PedidoAnticipadoCrearDtoValidator()
+    {
+        RuleFor(x => x.VarianteId).NotEmpty().WithMessage("La variante es obligatoria.");
+        RuleFor(x => x.Cantidad).GreaterThan(0).WithMessage("La cantidad debe ser mayor que cero.");
+    }
+}

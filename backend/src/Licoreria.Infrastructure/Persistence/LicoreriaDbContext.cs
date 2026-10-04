@@ -74,6 +74,9 @@ public class LicoreriaDbContext : DbContext
     public DbSet<Lote> Lotes => Set<Lote>();
     public DbSet<TomaFisica> TomasFisicas => Set<TomaFisica>();
     public DbSet<TomaFisicaDetalle> TomaFisicaDetalles => Set<TomaFisicaDetalle>();
+    public DbSet<ListaVip> ListaVip => Set<ListaVip>();
+    public DbSet<Entrada> Entradas => Set<Entrada>();
+    public DbSet<PedidoAnticipado> PedidosAnticipados => Set<PedidoAnticipado>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

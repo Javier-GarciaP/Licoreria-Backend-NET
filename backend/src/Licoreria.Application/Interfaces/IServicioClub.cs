@@ -42,4 +42,23 @@ public interface IServicioClub
     Task<EventoDto> CrearEventoAsync(EventoCrearDto dto, CancellationToken cancellationToken = default);
     Task<EventoDto?> EditarEventoAsync(EventoEditarDto dto, CancellationToken cancellationToken = default);
     Task<bool> EliminarEventoAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<ListaVipDto>> ObtenerListaVipAsync(CancellationToken cancellationToken = default);
+    Task<ListaVipDto> CrearVipAsync(ListaVipCrearDto dto, CancellationToken cancellationToken = default);
+    Task<ListaVipDto?> EditarVipAsync(ListaVipEditarDto dto, CancellationToken cancellationToken = default);
+    Task<bool> EliminarVipAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task<ResultadoPaginado<EntradaDto>> ObtenerEntradasAsync(
+        PaginacionRequest paginacion,
+        Guid? eventoId = null,
+        EstadoEntrada? estado = null,
+        CancellationToken cancellationToken = default);
+
+    Task<EntradaDto> EmitirEntradaAsync(EmitirEntradaDto dto, CancellationToken cancellationToken = default);
+    Task<EntradaDto?> ValidarEntradaAsync(string codigo, CancellationToken cancellationToken = default);
+    Task<bool> CancelarEntradaAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<PedidoAnticipadoDto>> ObtenerPedidosAsync(Guid reservaId, CancellationToken cancellationToken = default);
+    Task<PedidoAnticipadoDto> AgregarPedidoAsync(Guid reservaId, PedidoAnticipadoCrearDto dto, CancellationToken cancellationToken = default);
+    Task<bool> EliminarPedidoAsync(Guid reservaId, Guid pedidoId, CancellationToken cancellationToken = default);
 }
