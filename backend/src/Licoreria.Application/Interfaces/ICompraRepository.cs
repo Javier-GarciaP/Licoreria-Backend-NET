@@ -27,5 +27,17 @@ public interface ICompraRepository
 
     Task AgregarRecepcionAsync(Recepcion recepcion, CancellationToken cancellationToken = default);
 
+    Task<ResultadoPaginado<CuentaPorPagar>> ObtenerCuentasPorPagarPaginadoAsync(
+        PaginacionRequest paginacion,
+        Guid? proveedorId = null,
+        bool soloPendientes = false,
+        CancellationToken cancellationToken = default);
+
+    Task<CuentaPorPagar?> ObtenerCuentaPorPagarConDetalleAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task AgregarCuentaPorPagarAsync(CuentaPorPagar cuenta, CancellationToken cancellationToken = default);
+
+    Task AgregarPagoProveedorAsync(PagoProveedor pago, CancellationToken cancellationToken = default);
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

@@ -34,4 +34,15 @@ public interface IServicioCompras
 
     Task<RecepcionDto?> ObtenerRecepcionAsync(Guid id, CancellationToken cancellationToken = default);
     Task<RecepcionDto> RegistrarRecepcionAsync(RegistrarRecepcionDto dto, CancellationToken cancellationToken = default);
+
+    Task<ResultadoPaginado<CuentaPorPagarDto>> ObtenerCuentasPorPagarAsync(
+        PaginacionRequest paginacion,
+        Guid? proveedorId = null,
+        bool soloPendientes = false,
+        CancellationToken cancellationToken = default);
+
+    Task<CuentaPorPagarDto?> RegistrarPagoCuentaAsync(
+        Guid cuentaId,
+        RegistrarPagoProveedorDto dto,
+        CancellationToken cancellationToken = default);
 }

@@ -90,3 +90,27 @@ public sealed record RegistrarRecepcionDto(
     Guid OrdenCompraId,
     IReadOnlyList<RecepcionDetalleCrearDto> Detalles,
     string? Observaciones = null);
+
+public sealed record CuentaPorPagarDto(
+    Guid Id,
+    Guid ProveedorId,
+    string ProveedorNombre,
+    Guid? OrdenCompraId,
+    decimal MontoUSD,
+    decimal SaldoUSD,
+    DateTime Vencimiento,
+    EstadoCuentaPorPagar Estado);
+
+public sealed record PagoProveedorDto(
+    Guid Id,
+    Guid CuentaPorPagarId,
+    decimal Monto,
+    Moneda Moneda,
+    string? Referencia,
+    DateTime Fecha);
+
+public sealed record RegistrarPagoProveedorDto(
+    decimal Monto,
+    Moneda Moneda = Moneda.USD,
+    Guid? MetodoPagoId = null,
+    string? Referencia = null);

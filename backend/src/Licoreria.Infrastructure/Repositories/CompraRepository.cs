@@ -74,6 +74,42 @@ public class CompraRepository : ICompraRepository
     public async Task AgregarRecepcionAsync(Recepcion recepcion, CancellationToken cancellationToken = default)
         => await _context.Recepciones.AddAsync(recepcion, cancellationToken);
 
+    public Task<ResultadoPaginado<CuentaPorPagar>> ObtenerCuentasPorPagarPaginadoAsync(
+        PaginacionRequest paginacion,
+        Guid? proveedorId = null,
+        bool soloPendientes = false,
+        CancellationToken cancellationToken = default)
+    {
+        var consulta = _context.CuentasPorPagar
+            .Include(c => c.Proveedor)
+            .AsNoTracking()
+            .Where(c => !c.IsDeleted);
+
+        if (proveedorId is not null)
+        {
+            consulta = consulta.Where(c => c.ProveedorId == proveedorId);
+        }
+
+        if (soloPendientes)
+        {
+            consulta = consulta.Where(c => c.Estado != EstadoCuentaPorPagar.Pagada);
+        }
+
+        return consulta.OrderBy(c => c.Vencimiento).PaginarAsync(paginacion, cancellationToken);
+    }
+
+    public Task<CuentaPorPagar?> ObtenerCuentaPorPagarConDetalleAsync(Guid id, CancellationToken cancellationToken = default)
+        => _context.CuentasPorPagar
+            .Include(c => c.Proveedor)
+            .Include(c => c.Pagos)
+            .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted, cancellationToken);
+
+    public async Task AgregarCuentaPorPagarAsync(CuentaPorPagar cuenta, CancellationToken cancellationToken = default)
+        => await _context.CuentasPorPagar.AddAsync(cuenta, cancellationToken);
+
+    public async Task AgregarPagoProveedorAsync(PagoProveedor pago, CancellationToken cancellationToken = default)
+        => await _context.PagosProveedor.AddAsync(pago, cancellationToken);
+
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => _context.SaveChangesAsync(cancellationToken);
 }

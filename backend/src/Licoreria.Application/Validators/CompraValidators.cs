@@ -55,3 +55,12 @@ public sealed class RegistrarRecepcionDtoValidator : AbstractValidator<Registrar
         });
     }
 }
+
+public sealed class RegistrarPagoProveedorDtoValidator : AbstractValidator<RegistrarPagoProveedorDto>
+{
+    public RegistrarPagoProveedorDtoValidator()
+    {
+        RuleFor(x => x.Monto).GreaterThan(0).WithMessage("El monto del pago debe ser mayor que cero.");
+        RuleFor(x => x.Moneda).IsInEnum().WithMessage("La moneda no es válida.");
+    }
+}

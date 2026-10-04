@@ -320,11 +320,69 @@ public sealed class ServicioCompras : IServicioCompras
         recepcion.RecalcularTotal();
         orden.ActualizarEstadoRecepcion();
 
+        var vencimiento = recepcion.Fecha.AddDays(orden.Proveedor?.DiasCredito ?? 0);
+        var cuenta = new CuentaPorPagar
+        {
+            ProveedorId = orden.ProveedorId,
+            OrdenCompraId = orden.Id,
+            RecepcionId = recepcion.Id,
+            Vencimiento = vencimiento,
+            Estado = EstadoCuentaPorPagar.Pendiente
+        };
+        cuenta.Inicializar(recepcion.TotalUSD);
+        await _compras.AgregarCuentaPorPagarAsync(cuenta, cancellationToken);
+
         await _compras.AgregarRecepcionAsync(recepcion, cancellationToken);
         await _compras.SaveChangesAsync(cancellationToken);
 
         var creada = await _compras.ObtenerRecepcionConDetalleAsync(recepcion.Id, cancellationToken);
         return MapearRecepcion(creada!);
+    }
+
+    // ================= Cuentas por pagar =================
+
+    public async Task<ResultadoPaginado<CuentaPorPagarDto>> ObtenerCuentasPorPagarAsync(
+        PaginacionRequest paginacion,
+        Guid? proveedorId = null,
+        bool soloPendientes = false,
+        CancellationToken cancellationToken = default)
+    {
+        var pagina = await _compras.ObtenerCuentasPorPagarPaginadoAsync(paginacion, proveedorId, soloPendientes, cancellationToken);
+        var items = pagina.Items.Select(MapearCuentaPorPagar).ToList();
+        return ResultadoPaginado<CuentaPorPagarDto>.Crear(items, pagina.Page, pagina.PageSize, pagina.TotalItems);
+    }
+
+    public async Task<CuentaPorPagarDto?> RegistrarPagoCuentaAsync(
+        Guid cuentaId,
+        RegistrarPagoProveedorDto dto,
+        CancellationToken cancellationToken = default)
+    {
+        var cuenta = await _compras.ObtenerCuentaPorPagarConDetalleAsync(cuentaId, cancellationToken);
+        if (cuenta is null || cuenta.IsDeleted)
+        {
+            return null;
+        }
+
+        try
+        {
+            cuenta.RegistrarPago(dto.Monto);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new ReglaNegocioException(ex.Message);
+        }
+
+        await _compras.AgregarPagoProveedorAsync(new PagoProveedor
+        {
+            CuentaPorPagarId = cuentaId,
+            Monto = dto.Monto,
+            Moneda = dto.Moneda,
+            MetodoPagoId = dto.MetodoPagoId,
+            Referencia = dto.Referencia
+        }, cancellationToken);
+
+        await _compras.SaveChangesAsync(cancellationToken);
+        return MapearCuentaPorPagar(cuenta);
     }
 
     private static RecepcionDto MapearRecepcion(Recepcion r)
@@ -342,6 +400,9 @@ public sealed class ServicioCompras : IServicioCompras
                 d.Variante?.Sku ?? string.Empty,
                 d.Cantidad,
                 d.CostoUnitarioUSD)).ToList());
+
+    private static CuentaPorPagarDto MapearCuentaPorPagar(CuentaPorPagar c)
+        => new(c.Id, c.ProveedorId, c.Proveedor?.Nombre ?? string.Empty, c.OrdenCompraId, c.MontoUSD, c.SaldoUSD, c.Vencimiento, c.Estado);
 
     private static ProveedorDto MapearProveedor(Proveedor p)
         => new(p.Id, p.Nombre, p.Rif, p.Contacto, p.Telefono, p.Email, p.Direccion, p.DiasCredito, p.Activo);
