@@ -218,3 +218,8 @@ app.MapHealthChecks("/health");
 app.MapHub<ComandasHub>("/hubs/comandas");
 
 app.Run();
+
+/// <summary>Punto de entrada expuesto para las pruebas de integración.</summary>
+public partial class Program
+{
+}
