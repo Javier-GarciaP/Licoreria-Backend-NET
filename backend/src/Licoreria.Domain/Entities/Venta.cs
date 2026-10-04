@@ -20,6 +20,7 @@ public class Venta : BaseEntity
     public Usuario Usuario { get; set; } = null!;
 
     public Guid? CuentaId { get; set; }
+    public Guid? PromocionId { get; set; }
 
     public ICollection<DetalleVenta> Detalles { get; set; } = new List<DetalleVenta>();
     public ICollection<Pago> Pagos { get; set; } = new List<Pago>();

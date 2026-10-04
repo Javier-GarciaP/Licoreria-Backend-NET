@@ -72,6 +72,16 @@ public class CuentasController : ControllerBase
         return cuenta is null ? NotFound() : Ok(cuenta);
     }
 
+    [HttpPost("{id:guid}/dividir")]
+    public async Task<ActionResult<IReadOnlyList<CuentaDivisionDto>>> Dividir(
+        Guid id,
+        [FromBody] DividirCuentaDto dto,
+        CancellationToken cancellationToken)
+    {
+        var divisiones = await _servicio.DividirCuentaAsync(id, dto, cancellationToken);
+        return divisiones is null ? NotFound() : Ok(divisiones);
+    }
+
     [HttpPost("{id:guid}/cerrar")]
     [Authorize(Policy = Permisos.CuentasCerrar)]
     public async Task<ActionResult<VentaDto>> Cerrar(

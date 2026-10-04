@@ -61,7 +61,18 @@ public sealed record CuentaDto(
     decimal Saldo,
     DateTime AbiertaEn,
     IReadOnlyList<ComandaDto> Comandas,
-    IReadOnlyList<AbonoDto> Abonos);
+    IReadOnlyList<AbonoDto> Abonos,
+    IReadOnlyList<CuentaDivisionDto> Divisiones);
+
+public sealed record CuentaDivisionDto(
+    Guid Id,
+    int Indice,
+    decimal Monto,
+    bool Pagada);
+
+public sealed record DividirCuentaDto(
+    int? Partes = null,
+    IReadOnlyList<decimal>? Montos = null);
 
 public sealed record ActualizarEstadoItemDto(
     EstadoItemComanda Estado);

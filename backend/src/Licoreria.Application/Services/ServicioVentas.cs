@@ -13,6 +13,7 @@ public sealed class ServicioVentas : IServicioVentas
     private readonly IInventarioRepository _inventarioRepository;
     private readonly IServicioKardex _kardex;
     private readonly IRepository<MetodoPago> _metodoPagoRepository;
+    private readonly IRepository<Promocion> _promocionRepository;
     private readonly IServicioFinanzas _finanzas;
     private readonly IContextoUsuario _contextoUsuario;
     private readonly IRelojSistema _reloj;
@@ -23,6 +24,7 @@ public sealed class ServicioVentas : IServicioVentas
         IInventarioRepository inventarioRepository,
         IServicioKardex kardex,
         IRepository<MetodoPago> metodoPagoRepository,
+        IRepository<Promocion> promocionRepository,
         IServicioFinanzas finanzas,
         IContextoUsuario contextoUsuario,
         IRelojSistema reloj,
@@ -32,6 +34,7 @@ public sealed class ServicioVentas : IServicioVentas
         _inventarioRepository = inventarioRepository;
         _kardex = kardex;
         _metodoPagoRepository = metodoPagoRepository;
+        _promocionRepository = promocionRepository;
         _finanzas = finanzas;
         _contextoUsuario = contextoUsuario;
         _reloj = reloj;
@@ -140,9 +143,27 @@ public sealed class ServicioVentas : IServicioVentas
         }
 
         var subtotal = venta.Detalles.Sum(d => d.SubtotalUSD);
-        var total = Math.Max(0m, subtotal - dto.DescuentoUSD);
+
+        decimal descuentoPromocion = 0m;
+        if (dto.PromocionId is Guid promocionId)
+        {
+            var promocion = await _promocionRepository.GetByIdAsync(promocionId, cancellationToken)
+                ?? throw new NoEncontradoException($"No existe la promoción {promocionId}.");
+
+            if (!promocion.EstaVigente(_reloj.UtcNow))
+            {
+                throw new ReglaNegocioException("La promoción no está vigente.");
+            }
+
+            descuentoPromocion = promocion.CalcularDescuento(subtotal);
+            venta.PromocionId = promocion.Id;
+        }
+
+        var descuentoTotal = dto.DescuentoUSD + descuentoPromocion;
+        var total = Math.Max(0m, subtotal - descuentoTotal);
 
         venta.SubtotalUSD = subtotal;
+        venta.DescuentoUSD = descuentoTotal;
         venta.TotalUSD = total;
         venta.TotalBS = Math.Round(total * tasa, 2);
 
@@ -277,6 +298,74 @@ public sealed class ServicioVentas : IServicioVentas
                 d.Cantidad,
                 d.PrecioUnitarioUSD)).ToList());
     }
+
+    public async Task<IReadOnlyList<PromocionDto>> ObtenerPromocionesAsync(bool soloVigentes = false, CancellationToken cancellationToken = default)
+    {
+        var promociones = await _promocionRepository.GetAllAsync(cancellationToken);
+        var ahora = _reloj.UtcNow;
+        return promociones
+            .Where(p => !p.IsDeleted && (!soloVigentes || p.EstaVigente(ahora)))
+            .Select(MapearPromocion)
+            .ToList();
+    }
+
+    public async Task<PromocionDto> CrearPromocionAsync(PromocionCrearDto dto, CancellationToken cancellationToken = default)
+    {
+        if (dto.Valor < 0)
+        {
+            throw new ReglaNegocioException("El valor de la promoción no puede ser negativo.");
+        }
+
+        var promocion = new Promocion
+        {
+            Nombre = dto.Nombre,
+            Tipo = dto.Tipo,
+            Valor = dto.Valor,
+            Activo = dto.Activo,
+            FechaInicio = dto.FechaInicio,
+            FechaFin = dto.FechaFin
+        };
+
+        await _promocionRepository.AddAsync(promocion, cancellationToken);
+        await _promocionRepository.SaveChangesAsync(cancellationToken);
+        return MapearPromocion(promocion);
+    }
+
+    public async Task<PromocionDto?> EditarPromocionAsync(PromocionEditarDto dto, CancellationToken cancellationToken = default)
+    {
+        var promocion = await _promocionRepository.GetByIdAsync(dto.Id, cancellationToken);
+        if (promocion is null || promocion.IsDeleted)
+        {
+            return null;
+        }
+
+        promocion.Nombre = dto.Nombre;
+        promocion.Tipo = dto.Tipo;
+        promocion.Valor = dto.Valor;
+        promocion.Activo = dto.Activo;
+        promocion.FechaInicio = dto.FechaInicio;
+        promocion.FechaFin = dto.FechaFin;
+        _promocionRepository.Update(promocion);
+        await _promocionRepository.SaveChangesAsync(cancellationToken);
+        return MapearPromocion(promocion);
+    }
+
+    public async Task<bool> EliminarPromocionAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var promocion = await _promocionRepository.GetByIdAsync(id, cancellationToken);
+        if (promocion is null || promocion.IsDeleted)
+        {
+            return false;
+        }
+
+        promocion.EliminarLogico();
+        _promocionRepository.Update(promocion);
+        await _promocionRepository.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    private static PromocionDto MapearPromocion(Promocion p)
+        => new(p.Id, p.Nombre, p.Tipo, p.Valor, p.Activo, p.FechaInicio, p.FechaFin);
 
     private static VentaDto Mapear(Venta v)
         => new(

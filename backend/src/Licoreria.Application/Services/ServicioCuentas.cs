@@ -12,6 +12,7 @@ public sealed class ServicioCuentas : IServicioCuentas
     private readonly ICuentaRepository _cuentaRepository;
     private readonly IRepository<ProductoVariante> _variantes;
     private readonly IRepository<MetodoPago> _metodosPago;
+    private readonly IRepository<CuentaDivision> _divisiones;
     private readonly IServicioVentas _ventas;
     private readonly IRelojSistema _reloj;
     private readonly INotificadorComandas _notificador;
@@ -20,6 +21,7 @@ public sealed class ServicioCuentas : IServicioCuentas
         ICuentaRepository cuentaRepository,
         IRepository<ProductoVariante> variantes,
         IRepository<MetodoPago> metodosPago,
+        IRepository<CuentaDivision> divisiones,
         IServicioVentas ventas,
         IRelojSistema reloj,
         INotificadorComandas notificador)
@@ -27,6 +29,7 @@ public sealed class ServicioCuentas : IServicioCuentas
         _cuentaRepository = cuentaRepository;
         _variantes = variantes;
         _metodosPago = metodosPago;
+        _divisiones = divisiones;
         _ventas = ventas;
         _reloj = reloj;
         _notificador = notificador;
@@ -153,6 +156,74 @@ public sealed class ServicioCuentas : IServicioCuentas
         return actualizada is null ? null : Mapear(actualizada);
     }
 
+    public async Task<IReadOnlyList<CuentaDivisionDto>?> DividirCuentaAsync(
+        Guid cuentaId,
+        DividirCuentaDto dto,
+        CancellationToken cancellationToken = default)
+    {
+        var cuenta = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, cancellationToken);
+        if (cuenta is null || cuenta.IsDeleted || cuenta.Estado == EstadoCuenta.Cerrada)
+        {
+            return null;
+        }
+
+        var saldo = cuenta.Saldo;
+        if (saldo <= 0)
+        {
+            throw new ReglaNegocioException("La cuenta no tiene saldo pendiente para dividir.");
+        }
+
+        List<decimal> montos;
+
+        if (dto.Partes is int partes && partes >= 2)
+        {
+            var baseMonto = Math.Floor(saldo / partes * 100m) / 100m;
+            montos = Enumerable.Repeat(baseMonto, partes).ToList();
+            montos[^1] += saldo - montos.Sum();
+        }
+        else if (dto.Montos is { Count: > 0 })
+        {
+            if (dto.Montos.Any(m => m <= 0))
+            {
+                throw new ReglaNegocioException("Cada monto debe ser mayor que cero.");
+            }
+
+            if (Math.Abs(dto.Montos.Sum() - saldo) > 0.01m)
+            {
+                throw new ReglaNegocioException("La suma de los montos debe coincidir con el saldo de la cuenta.");
+            }
+
+            montos = dto.Montos.ToList();
+        }
+        else
+        {
+            throw new ReglaNegocioException("Indique el número de partes o la lista de montos.");
+        }
+
+        var existentes = await _divisiones.FindAsync(d => d.CuentaId == cuentaId && !d.IsDeleted, cancellationToken);
+        foreach (var division in existentes)
+        {
+            var tracked = await _divisiones.GetByIdAsync(division.Id, cancellationToken);
+            if (tracked is not null)
+            {
+                _divisiones.Remove(tracked);
+            }
+        }
+
+        var resultado = new List<CuentaDivisionDto>();
+        var indice = 1;
+
+        foreach (var monto in montos)
+        {
+            var division = new CuentaDivision { CuentaId = cuentaId, Indice = indice++, Monto = monto };
+            await _divisiones.AddAsync(division, cancellationToken);
+            resultado.Add(new CuentaDivisionDto(division.Id, division.Indice, division.Monto, false));
+        }
+
+        await _divisiones.SaveChangesAsync(cancellationToken);
+        return resultado;
+    }
+
     public async Task<CuentaDto?> CambiarEstadoItemAsync(
         Guid cuentaId,
         Guid comandaId,
@@ -249,5 +320,10 @@ public sealed class ServicioCuentas : IServicioCuentas
                 a.MetodoPago?.Nombre ?? string.Empty,
                 a.Monto,
                 a.Moneda,
-                a.CreatedAt)).ToList());
+                a.CreatedAt)).ToList(),
+            cuenta.Divisiones.Where(d => !d.IsDeleted).OrderBy(d => d.Indice).Select(d => new CuentaDivisionDto(
+                d.Id,
+                d.Indice,
+                d.Monto,
+                d.Pagada)).ToList());
 }

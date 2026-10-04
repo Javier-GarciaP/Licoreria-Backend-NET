@@ -17,7 +17,8 @@ public class CuentaRepository : ICuentaRepository
         => _context.Cuentas
             .Include(c => c.SesionMesa)
             .Include(c => c.Comandas).ThenInclude(cd => cd.Detalles).ThenInclude(d => d.Variante).ThenInclude(v => v.Producto)
-            .Include(c => c.Abonos).ThenInclude(a => a.MetodoPago);
+            .Include(c => c.Abonos).ThenInclude(a => a.MetodoPago)
+            .Include(c => c.Divisiones);
 
     public Task<ResultadoPaginado<Cuenta>> ObtenerPaginadoAsync(
         PaginacionRequest paginacion,

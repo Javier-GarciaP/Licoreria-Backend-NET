@@ -22,6 +22,11 @@ public interface IServicioCuentas
 
     Task<CuentaDto?> RegistrarAbonoAsync(Guid cuentaId, RegistrarAbonoCuentaDto dto, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<CuentaDivisionDto>?> DividirCuentaAsync(
+        Guid cuentaId,
+        DividirCuentaDto dto,
+        CancellationToken cancellationToken = default);
+
     Task<CuentaDto?> CambiarEstadoItemAsync(
         Guid cuentaId,
         Guid comandaId,

@@ -23,4 +23,9 @@ public interface IServicioVentas
     Task<VentaDto?> RegistrarPagoAsync(Guid ventaId, RegistrarPagoVentaDto dto, CancellationToken cancellationToken = default);
 
     Task<DevolucionDto?> RegistrarDevolucionAsync(Guid ventaId, RegistrarDevolucionDto dto, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<PromocionDto>> ObtenerPromocionesAsync(bool soloVigentes = false, CancellationToken cancellationToken = default);
+    Task<PromocionDto> CrearPromocionAsync(PromocionCrearDto dto, CancellationToken cancellationToken = default);
+    Task<PromocionDto?> EditarPromocionAsync(PromocionEditarDto dto, CancellationToken cancellationToken = default);
+    Task<bool> EliminarPromocionAsync(Guid id, CancellationToken cancellationToken = default);
 }

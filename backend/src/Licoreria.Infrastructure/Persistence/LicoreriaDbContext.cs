@@ -69,6 +69,8 @@ public class LicoreriaDbContext : DbContext
     public DbSet<RecepcionDetalle> RecepcionDetalles => Set<RecepcionDetalle>();
     public DbSet<CuentaPorPagar> CuentasPorPagar => Set<CuentaPorPagar>();
     public DbSet<PagoProveedor> PagosProveedor => Set<PagoProveedor>();
+    public DbSet<CuentaDivision> CuentaDivisiones => Set<CuentaDivision>();
+    public DbSet<Promocion> Promociones => Set<Promocion>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

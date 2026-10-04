@@ -18,6 +18,7 @@ public class Cuenta : BaseEntity
 
     public ICollection<Comanda> Comandas { get; set; } = new List<Comanda>();
     public ICollection<Abono> Abonos { get; set; } = new List<Abono>();
+    public ICollection<CuentaDivision> Divisiones { get; set; } = new List<CuentaDivision>();
 
     public void Acumular(decimal monto)
     {
