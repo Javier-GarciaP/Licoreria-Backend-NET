@@ -17,6 +17,7 @@ public sealed class ServicioInventario : IServicioInventario
     private readonly ConversorMoneda _conversorMoneda;
     private readonly IContextoUsuario _contextoUsuario;
     private readonly IRelojSistema _reloj;
+    private readonly IServicioAuditoria _auditoria;
 
     public ServicioInventario(
         IInventarioRepository inventario,
@@ -25,7 +26,8 @@ public sealed class ServicioInventario : IServicioInventario
         EvaluadorMerma evaluadorMerma,
         ConversorMoneda conversorMoneda,
         IContextoUsuario contextoUsuario,
-        IRelojSistema reloj)
+        IRelojSistema reloj,
+        IServicioAuditoria auditoria)
     {
         _inventario = inventario;
         _variantes = variantes;
@@ -34,6 +36,7 @@ public sealed class ServicioInventario : IServicioInventario
         _conversorMoneda = conversorMoneda;
         _contextoUsuario = contextoUsuario;
         _reloj = reloj;
+        _auditoria = auditoria;
     }
 
     public ResultadoMermaDto EvaluarMerma(MermaRequest request)
@@ -130,6 +133,8 @@ public sealed class ServicioInventario : IServicioInventario
         }
 
         await _inventario.SaveChangesAsync(cancellationToken);
+
+        await _auditoria.RegistrarAsync("registrar", "merma", movimiento.Id, new { dto.VarianteId, dto.Cantidad, Motivo = dto.Motivo.ToString(), dto.ReponerSinCobro }, cancellationToken);
 
         return new MermaDto(
             merma.Id,
@@ -356,6 +361,7 @@ public sealed class ServicioInventario : IServicioInventario
         await _inventario.SaveChangesAsync(cancellationToken);
 
         var creada = await _inventario.ObtenerTomaConDetalleAsync(toma.Id, cancellationToken);
+        await _auditoria.RegistrarAsync("registrar", "toma-fisica", toma.Id, new { Lineas = toma.Detalles.Count }, cancellationToken);
         return MapearToma(creada!);
     }
 

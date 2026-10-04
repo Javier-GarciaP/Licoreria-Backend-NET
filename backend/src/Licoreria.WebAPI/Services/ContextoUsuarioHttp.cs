@@ -31,4 +31,7 @@ public sealed class ContextoUsuarioHttp : IContextoUsuario
 
     public bool EstaAutenticado
         => _accessor.HttpContext?.User.Identity?.IsAuthenticated ?? false;
+
+    public string? Ip
+        => _accessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
 }

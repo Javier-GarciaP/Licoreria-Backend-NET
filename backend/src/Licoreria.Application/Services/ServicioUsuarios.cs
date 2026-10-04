@@ -10,11 +10,22 @@ public sealed class ServicioUsuarios : IServicioUsuarios
 {
     private readonly IUsuarioRepository _usuarioRepository;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly IRefreshTokenRepository _refreshTokens;
+    private readonly IServicioAuditoria _auditoria;
+    private readonly IRelojSistema _reloj;
 
-    public ServicioUsuarios(IUsuarioRepository usuarioRepository, IPasswordHasher passwordHasher)
+    public ServicioUsuarios(
+        IUsuarioRepository usuarioRepository,
+        IPasswordHasher passwordHasher,
+        IRefreshTokenRepository refreshTokens,
+        IServicioAuditoria auditoria,
+        IRelojSistema reloj)
     {
         _usuarioRepository = usuarioRepository;
         _passwordHasher = passwordHasher;
+        _refreshTokens = refreshTokens;
+        _auditoria = auditoria;
+        _reloj = reloj;
     }
 
     public async Task<ResultadoPaginado<UsuarioDto>> ObtenerUsuariosAsync(
@@ -55,6 +66,8 @@ public sealed class ServicioUsuarios : IServicioUsuarios
         await _usuarioRepository.AddAsync(usuario, cancellationToken);
         await _usuarioRepository.SaveChangesAsync(cancellationToken);
 
+        await _auditoria.RegistrarAsync("crear", "usuario", usuario.Id, new { usuario.Email, Rol = usuario.Rol.ToString() }, cancellationToken);
+
         return Mapear(usuario);
     }
 
@@ -87,6 +100,8 @@ public sealed class ServicioUsuarios : IServicioUsuarios
         _usuarioRepository.Update(usuario);
         await _usuarioRepository.SaveChangesAsync(cancellationToken);
 
+        await _auditoria.RegistrarAsync("editar", "usuario", usuario.Id, new { usuario.Email, Rol = usuario.Rol.ToString(), usuario.Activo }, cancellationToken);
+
         return Mapear(usuario);
     }
 
@@ -101,6 +116,8 @@ public sealed class ServicioUsuarios : IServicioUsuarios
         usuario.EliminarLogico();
         _usuarioRepository.Update(usuario);
         await _usuarioRepository.SaveChangesAsync(cancellationToken);
+
+        await _auditoria.RegistrarAsync("eliminar", "usuario", usuario.Id, new { usuario.Email }, cancellationToken);
 
         return true;
     }
@@ -118,7 +135,27 @@ public sealed class ServicioUsuarios : IServicioUsuarios
 
         usuario.CambiarPasswordHash(_passwordHasher.Hash(dto.PasswordNueva));
         _usuarioRepository.Update(usuario);
+
+        // Revoca las sesiones activas del usuario al cambiar la contraseña.
+        await _refreshTokens.RevocarTodosDelUsuarioAsync(id, _reloj.UtcNow, cancellationToken);
+
         await _usuarioRepository.SaveChangesAsync(cancellationToken);
+        await _auditoria.RegistrarAsync("cambiar-password", "usuario", usuario.Id, new { usuario.Email }, cancellationToken);
+
+        return true;
+    }
+
+    public async Task<bool> RevocarSesionesAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var usuario = await _usuarioRepository.GetByIdAsync(id, cancellationToken);
+        if (usuario is null || usuario.IsDeleted)
+        {
+            return false;
+        }
+
+        await _refreshTokens.RevocarTodosDelUsuarioAsync(id, _reloj.UtcNow, cancellationToken);
+        await _refreshTokens.SaveChangesAsync(cancellationToken);
+        await _auditoria.RegistrarAsync("revocar-sesiones", "usuario", usuario.Id, new { usuario.Email }, cancellationToken);
 
         return true;
     }

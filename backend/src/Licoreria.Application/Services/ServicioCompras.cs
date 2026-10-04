@@ -15,6 +15,7 @@ public sealed class ServicioCompras : IServicioCompras
     private readonly IServicioKardex _kardex;
     private readonly IContextoUsuario _contextoUsuario;
     private readonly IRelojSistema _reloj;
+    private readonly IServicioAuditoria _auditoria;
 
     public ServicioCompras(
         ICompraRepository compras,
@@ -22,7 +23,8 @@ public sealed class ServicioCompras : IServicioCompras
         IRepository<ProductoVariante> variantes,
         IServicioKardex kardex,
         IContextoUsuario contextoUsuario,
-        IRelojSistema reloj)
+        IRelojSistema reloj,
+        IServicioAuditoria auditoria)
     {
         _compras = compras;
         _proveedores = proveedores;
@@ -30,6 +32,7 @@ public sealed class ServicioCompras : IServicioCompras
         _kardex = kardex;
         _contextoUsuario = contextoUsuario;
         _reloj = reloj;
+        _auditoria = auditoria;
     }
 
     // ================= Proveedores =================
@@ -336,6 +339,7 @@ public sealed class ServicioCompras : IServicioCompras
         await _compras.SaveChangesAsync(cancellationToken);
 
         var creada = await _compras.ObtenerRecepcionConDetalleAsync(recepcion.Id, cancellationToken);
+        await _auditoria.RegistrarAsync("recepcion", "orden-compra", orden.Id, new { recepcion.TotalUSD, Lineas = recepcion.Detalles.Count }, cancellationToken);
         return MapearRecepcion(creada!);
     }
 

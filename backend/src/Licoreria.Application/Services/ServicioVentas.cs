@@ -18,6 +18,7 @@ public sealed class ServicioVentas : IServicioVentas
     private readonly IContextoUsuario _contextoUsuario;
     private readonly IRelojSistema _reloj;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IServicioAuditoria _auditoria;
 
     public ServicioVentas(
         IVentaRepository ventaRepository,
@@ -28,7 +29,8 @@ public sealed class ServicioVentas : IServicioVentas
         IServicioFinanzas finanzas,
         IContextoUsuario contextoUsuario,
         IRelojSistema reloj,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IServicioAuditoria auditoria)
     {
         _ventaRepository = ventaRepository;
         _inventarioRepository = inventarioRepository;
@@ -39,6 +41,7 @@ public sealed class ServicioVentas : IServicioVentas
         _contextoUsuario = contextoUsuario;
         _reloj = reloj;
         _unitOfWork = unitOfWork;
+        _auditoria = auditoria;
     }
 
     public async Task<IReadOnlyList<MetodoPagoDto>> ObtenerMetodosPagoAsync(CancellationToken cancellationToken = default)
@@ -77,6 +80,7 @@ public sealed class ServicioVentas : IServicioVentas
         }, cancellationToken);
 
         var creada = await _ventaRepository.ObtenerConDetalleAsync(venta!.Id, cancellationToken);
+        await _auditoria.RegistrarAsync("registrar", "venta", venta.Id, new { venta.TotalUSD, venta.TotalBS, venta.TasaCambio }, cancellationToken);
         return Mapear(creada!);
     }
 
@@ -284,6 +288,8 @@ public sealed class ServicioVentas : IServicioVentas
 
         await _ventaRepository.AgregarDevolucionAsync(devolucion, cancellationToken);
         await _ventaRepository.SaveChangesAsync(cancellationToken);
+
+        await _auditoria.RegistrarAsync("devolucion", "venta", ventaId, new { devolucion.MontoUSD, devolucion.Motivo }, cancellationToken);
 
         return new DevolucionDto(
             devolucion.Id,

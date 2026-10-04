@@ -70,6 +70,13 @@ public class UsuariosController : ControllerBase
         return cambiado ? NoContent() : NotFound();
     }
 
+    [HttpPost("{id:guid}/revocar-sesiones")]
+    public async Task<IActionResult> RevocarSesiones(Guid id, CancellationToken cancellationToken)
+    {
+        var revocado = await _servicioUsuarios.RevocarSesionesAsync(id, cancellationToken);
+        return revocado ? NoContent() : NotFound();
+    }
+
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Eliminar(Guid id, CancellationToken cancellationToken)
     {

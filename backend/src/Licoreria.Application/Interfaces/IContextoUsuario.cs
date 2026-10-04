@@ -10,4 +10,6 @@ public interface IContextoUsuario
     string? Email { get; }
 
     bool EstaAutenticado { get; }
+
+    string? Ip { get; }
 }

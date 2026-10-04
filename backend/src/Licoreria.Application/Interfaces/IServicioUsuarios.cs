@@ -22,4 +22,6 @@ public interface IServicioUsuarios
     Task<bool> EliminarUsuarioAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<bool> CambiarPasswordAsync(Guid id, CambiarPasswordDto dto, CancellationToken cancellationToken = default);
+
+    Task<bool> RevocarSesionesAsync(Guid id, CancellationToken cancellationToken = default);
 }

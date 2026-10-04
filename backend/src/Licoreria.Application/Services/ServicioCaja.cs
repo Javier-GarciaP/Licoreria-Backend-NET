@@ -13,17 +13,20 @@ public sealed class ServicioCaja : IServicioCaja
     private readonly IRepository<Denominacion> _denominacionRepository;
     private readonly IContextoUsuario _contextoUsuario;
     private readonly IRelojSistema _reloj;
+    private readonly IServicioAuditoria _auditoria;
 
     public ServicioCaja(
         ISesionCajaRepository sesionRepository,
         IRepository<Denominacion> denominacionRepository,
         IContextoUsuario contextoUsuario,
-        IRelojSistema reloj)
+        IRelojSistema reloj,
+        IServicioAuditoria auditoria)
     {
         _sesionRepository = sesionRepository;
         _denominacionRepository = denominacionRepository;
         _contextoUsuario = contextoUsuario;
         _reloj = reloj;
+        _auditoria = auditoria;
     }
 
     public async Task<IReadOnlyList<DenominacionDto>> ObtenerDenominacionesAsync(CancellationToken cancellationToken = default)
@@ -61,6 +64,8 @@ public sealed class ServicioCaja : IServicioCaja
 
         await _sesionRepository.AgregarAsync(sesion, cancellationToken);
         await _sesionRepository.SaveChangesAsync(cancellationToken);
+
+        await _auditoria.RegistrarAsync("abrir", "sesion-caja", sesion.Id, new { sesion.FondoInicial }, cancellationToken);
 
         return Mapear(sesion);
     }
@@ -159,6 +164,8 @@ public sealed class ServicioCaja : IServicioCaja
 
         sesion.Cerrar(esperado, contado, _reloj.UtcNow);
         await _sesionRepository.SaveChangesAsync(cancellationToken);
+
+        await _auditoria.RegistrarAsync("cerrar", "sesion-caja", sesion.Id, new { esperado, contado, descuadre = sesion.Descuadre }, cancellationToken);
 
         var cerrada = await _sesionRepository.ObtenerConDetalleAsync(sesionId, cancellationToken);
         return cerrada is null ? null : Mapear(cerrada);

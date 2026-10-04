@@ -77,6 +77,7 @@ public class LicoreriaDbContext : DbContext
     public DbSet<ListaVip> ListaVip => Set<ListaVip>();
     public DbSet<Entrada> Entradas => Set<Entrada>();
     public DbSet<PedidoAnticipado> PedidosAnticipados => Set<PedidoAnticipado>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
