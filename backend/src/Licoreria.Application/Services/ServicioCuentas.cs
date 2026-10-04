@@ -112,7 +112,7 @@ public sealed class ServicioCuentas : IServicioCuentas
         await _cuentaRepository.AgregarComandaAsync(comanda, cancellationToken);
         await _cuentaRepository.SaveChangesAsync(cancellationToken);
 
-        await _notificador.ComandaCreadaAsync(cuentaId, comanda.Id, cancellationToken);
+        await _notificador.ComandaCreadaAsync(cuentaId, comanda.Id, comanda.Area.ToString(), cancellationToken);
 
         var actualizada = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, cancellationToken);
         return actualizada is null ? null : Mapear(actualizada);
@@ -240,7 +240,7 @@ public sealed class ServicioCuentas : IServicioCuentas
         detalle.CambiarEstado(dto.Estado);
         await _cuentaRepository.SaveChangesAsync(cancellationToken);
 
-        await _notificador.ItemActualizadoAsync(cuentaId, comandaId, detalleId, dto.Estado.ToString(), cancellationToken);
+        await _notificador.ItemActualizadoAsync(cuentaId, comandaId, detalleId, dto.Estado.ToString(), detalle.AreaDestino.ToString(), cancellationToken);
 
         var cuenta = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, cancellationToken);
         return cuenta is null ? null : Mapear(cuenta);

@@ -6,14 +6,15 @@ namespace Licoreria.Application.Interfaces;
 /// </summary>
 public interface INotificadorComandas
 {
-    Task ComandaCreadaAsync(Guid cuentaId, Guid comandaId, CancellationToken cancellationToken = default);
+    Task ComandaCreadaAsync(Guid cuentaId, Guid comandaId, string area, CancellationToken cancellationToken = default);
 
-    Task ComandaActualizadaAsync(Guid cuentaId, Guid comandaId, CancellationToken cancellationToken = default);
+    Task ComandaActualizadaAsync(Guid cuentaId, Guid comandaId, string area, CancellationToken cancellationToken = default);
 
     Task ItemActualizadoAsync(
         Guid cuentaId,
         Guid comandaId,
         Guid detalleId,
         string estado,
+        string area,
         CancellationToken cancellationToken = default);
 }
