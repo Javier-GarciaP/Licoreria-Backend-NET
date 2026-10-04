@@ -62,6 +62,9 @@ public class LicoreriaDbContext : DbContext
     public DbSet<LocalInfo> LocalInfo => Set<LocalInfo>();
     public DbSet<AiGeneracion> AiGeneraciones => Set<AiGeneracion>();
     public DbSet<PlanoGenerado> PlanosGenerados => Set<PlanoGenerado>();
+    public DbSet<Proveedor> Proveedores => Set<Proveedor>();
+    public DbSet<OrdenCompra> OrdenesCompra => Set<OrdenCompra>();
+    public DbSet<OrdenCompraDetalle> OrdenCompraDetalles => Set<OrdenCompraDetalle>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

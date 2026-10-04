@@ -51,6 +51,7 @@ public static class DependencyInjection
         services.AddScoped<IReservaRepository, ReservaRepository>();
         services.AddScoped<IClienteRepository, ClienteRepository>();
         services.AddScoped<IAiRepository, AiRepository>();
+        services.AddScoped<ICompraRepository, CompraRepository>();
 
         // Almacenamiento local de archivos (imágenes, comprobantes, media).
         services.Configure<OpcionesAlmacenamiento>(configuration.GetSection(OpcionesAlmacenamiento.SectionName));
@@ -75,6 +76,7 @@ public static class DependencyInjection
         services.AddScoped<IServicioCrm, ServicioCrm>();
         services.AddScoped<IServicioContenido, ServicioContenido>();
         services.AddScoped<IServicioIa, ServicioIa>();
+        services.AddScoped<IServicioCompras, ServicioCompras>();
 
         // =========================================================
         // Transient: servicios ligeros sin estado (validadores).
@@ -126,6 +128,9 @@ public static class DependencyInjection
         services.AddTransient<IValidator<LocalInfoEditarDto>, LocalInfoEditarDtoValidator>();
         services.AddTransient<IValidator<SolicitarSeccionIaDto>, SolicitarSeccionIaDtoValidator>();
         services.AddTransient<IValidator<SolicitarImagenIaDto>, SolicitarImagenIaDtoValidator>();
+        services.AddTransient<IValidator<ProveedorCrearDto>, ProveedorCrearDtoValidator>();
+        services.AddTransient<IValidator<ProveedorEditarDto>, ProveedorEditarDtoValidator>();
+        services.AddTransient<IValidator<OrdenCompraCrearDto>, OrdenCompraCrearDtoValidator>();
         services.AddTransient<IValidator<UsuarioCrearDto>, UsuarioCrearDtoValidator>();
         services.AddTransient<IValidator<UsuarioEditarDto>, UsuarioEditarDtoValidator>();
         services.AddTransient<IValidator<CambiarPasswordDto>, CambiarPasswordDtoValidator>();
