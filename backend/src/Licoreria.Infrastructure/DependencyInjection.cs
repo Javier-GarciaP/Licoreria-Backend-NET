@@ -61,6 +61,9 @@ public static class DependencyInjection
         // Proveedor de IA (simulado; reemplazable por uno real sin tocar Application).
         services.AddSingleton<IProveedorIa, ProveedorIaSimulado>();
 
+        // Generación de PDF del menú digital.
+        services.AddSingleton<IGeneradorMenuPdf, GeneradorMenuPdfQuestPdf>();
+
         services.AddScoped<IServicioProducto, ServicioProducto>();
         services.AddScoped<IServicioInventario, ServicioInventario>();
         services.AddScoped<IServicioCuenta, ServicioCuenta>();

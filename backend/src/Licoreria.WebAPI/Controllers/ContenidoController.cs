@@ -34,4 +34,15 @@ public class ContenidoController : ControllerBase
     [Authorize(Policy = Permisos.ContenidoPublicar)]
     public async Task<ActionResult<LocalInfoDto>> ActualizarLocalInfo([FromBody] LocalInfoEditarDto dto, CancellationToken cancellationToken)
         => Ok(await _servicio.ActualizarLocalInfoAsync(dto, cancellationToken));
+
+    /// <summary>Enlace de WhatsApp con mensaje precargado.</summary>
+    [HttpGet("local-info/whatsapp")]
+    [AllowAnonymous]
+    public async Task<ActionResult<object>> Whatsapp([FromQuery] string? mensaje, CancellationToken cancellationToken)
+    {
+        var info = await _servicio.ObtenerLocalInfoAsync(cancellationToken);
+        var numero = new string(info.Whatsapp.Where(char.IsDigit).ToArray());
+        var texto = Uri.EscapeDataString(string.IsNullOrWhiteSpace(mensaje) ? "Hola, quisiera más información" : mensaje);
+        return Ok(new { numero, url = $"https://wa.me/{numero}?text={texto}" });
+    }
 }

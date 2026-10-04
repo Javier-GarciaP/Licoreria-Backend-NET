@@ -5,15 +5,20 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Licoreria.WebAPI.Controllers;
 
-/// <summary>Menú digital y su código QR (público para la web).</summary>
+/// <summary>Menú digital, su código QR y su versión PDF (público para la web).</summary>
 [ApiController]
 [Route("api/v1/menu-digital")]
 [AllowAnonymous]
 public class MenuDigitalController : ControllerBase
 {
     private readonly IServicioContenido _servicio;
+    private readonly IGeneradorMenuPdf _generadorPdf;
 
-    public MenuDigitalController(IServicioContenido servicio) => _servicio = servicio;
+    public MenuDigitalController(IServicioContenido servicio, IGeneradorMenuPdf generadorPdf)
+    {
+        _servicio = servicio;
+        _generadorPdf = generadorPdf;
+    }
 
     [HttpGet]
     public async Task<ActionResult<MenuDigitalDto>> Obtener(CancellationToken cancellationToken)
@@ -25,5 +30,14 @@ public class MenuDigitalController : ControllerBase
     {
         var url = string.IsNullOrWhiteSpace(baseUrl) ? $"{Request.Scheme}://{Request.Host}" : baseUrl;
         return Ok(await _servicio.ObtenerQrMenuAsync(url, cancellationToken));
+    }
+
+    /// <summary>Descarga el menú en PDF.</summary>
+    [HttpGet("pdf")]
+    public async Task<IActionResult> Pdf(CancellationToken cancellationToken)
+    {
+        var menu = await _servicio.ObtenerMenuDigitalAsync(cancellationToken);
+        var bytes = _generadorPdf.Generar(menu);
+        return File(bytes, "application/pdf", "menu.pdf");
     }
 }
