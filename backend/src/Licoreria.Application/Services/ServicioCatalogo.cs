@@ -3,6 +3,7 @@ using Licoreria.Application.Dtos;
 using Licoreria.Application.Interfaces;
 using Licoreria.Domain.Common;
 using Licoreria.Domain.Entities;
+using Licoreria.Domain.Enums;
 
 namespace Licoreria.Application.Services;
 
@@ -14,6 +15,8 @@ public sealed class ServicioCatalogo : IServicioCatalogo
     private readonly IRepository<UnidadMedida> _unidadRepository;
     private readonly IRepository<Impuesto> _impuestoRepository;
     private readonly IRepository<ListaPrecio> _listaPrecioRepository;
+    private readonly IRepository<PrecioProducto> _precioRepository;
+    private readonly IRepository<ProductoVariante> _variantes;
 
     public ServicioCatalogo(
         IProductoRepository productoRepository,
@@ -21,7 +24,9 @@ public sealed class ServicioCatalogo : IServicioCatalogo
         IRepository<Marca> marcaRepository,
         IRepository<UnidadMedida> unidadRepository,
         IRepository<Impuesto> impuestoRepository,
-        IRepository<ListaPrecio> listaPrecioRepository)
+        IRepository<ListaPrecio> listaPrecioRepository,
+        IRepository<PrecioProducto> precioRepository,
+        IRepository<ProductoVariante> variantes)
     {
         _productoRepository = productoRepository;
         _categoriaRepository = categoriaRepository;
@@ -29,6 +34,8 @@ public sealed class ServicioCatalogo : IServicioCatalogo
         _unidadRepository = unidadRepository;
         _impuestoRepository = impuestoRepository;
         _listaPrecioRepository = listaPrecioRepository;
+        _precioRepository = precioRepository;
+        _variantes = variantes;
     }
 
     // ================= Categorías =================
@@ -459,6 +466,99 @@ public sealed class ServicioCatalogo : IServicioCatalogo
         _productoRepository.EliminarReceta(receta);
         await _productoRepository.SaveChangesAsync(cancellationToken);
         return true;
+    }
+
+    // ================= Precios por lista y moneda =================
+
+    public async Task<IReadOnlyList<PrecioVarianteDto>> ObtenerPreciosAsync(
+        Guid? varianteId = null,
+        Guid? listaPrecioId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var precios = await _precioRepository.FindAsync(
+            p => !p.IsDeleted
+                 && (varianteId == null || p.VarianteId == varianteId)
+                 && (listaPrecioId == null || p.ListaPrecioId == listaPrecioId),
+            cancellationToken);
+
+        var listas = (await _listaPrecioRepository.GetAllAsync(cancellationToken))
+            .ToDictionary(l => l.Id, l => l.Nombre);
+
+        return precios
+            .Select(p => new PrecioVarianteDto(
+                p.Id,
+                p.ListaPrecioId,
+                listas.GetValueOrDefault(p.ListaPrecioId, string.Empty),
+                p.Moneda,
+                p.Precio))
+            .ToList();
+    }
+
+    public async Task<PrecioVarianteDto> EstablecerPrecioAsync(EstablecerPrecioDto dto, CancellationToken cancellationToken = default)
+    {
+        if (dto.Precio < 0)
+        {
+            throw new ReglaNegocioException("El precio no puede ser negativo.");
+        }
+
+        _ = await _variantes.GetByIdAsync(dto.VarianteId, cancellationToken)
+            ?? throw new NoEncontradoException($"No existe la variante {dto.VarianteId}.");
+
+        var lista = await _listaPrecioRepository.GetByIdAsync(dto.ListaPrecioId, cancellationToken)
+            ?? throw new NoEncontradoException($"No existe la lista de precio {dto.ListaPrecioId}.");
+
+        var existentes = await _precioRepository.FindAsync(
+            p => !p.IsDeleted && p.VarianteId == dto.VarianteId && p.ListaPrecioId == dto.ListaPrecioId && p.Moneda == dto.Moneda,
+            cancellationToken);
+
+        var precio = existentes.FirstOrDefault();
+
+        if (precio is null)
+        {
+            precio = new PrecioProducto
+            {
+                VarianteId = dto.VarianteId,
+                ListaPrecioId = dto.ListaPrecioId,
+                Moneda = dto.Moneda,
+                Precio = dto.Precio,
+                Activo = true
+            };
+            await _precioRepository.AddAsync(precio, cancellationToken);
+        }
+        else
+        {
+            var tracked = await _precioRepository.GetByIdAsync(precio.Id, cancellationToken) ?? precio;
+            tracked.Precio = dto.Precio;
+            tracked.Activo = true;
+            _precioRepository.Update(tracked);
+            precio = tracked;
+        }
+
+        await _precioRepository.SaveChangesAsync(cancellationToken);
+        return new PrecioVarianteDto(precio.Id, precio.ListaPrecioId, lista.Nombre, precio.Moneda, precio.Precio);
+    }
+
+    public async Task<bool> EliminarPrecioAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var precio = await _precioRepository.GetByIdAsync(id, cancellationToken);
+        if (precio is null || precio.IsDeleted)
+        {
+            return false;
+        }
+
+        precio.EliminarLogico();
+        _precioRepository.Update(precio);
+        await _precioRepository.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    public async Task<decimal?> ObtenerPrecioAsync(Guid varianteId, Guid listaPrecioId, Moneda moneda, CancellationToken cancellationToken = default)
+    {
+        var precios = await _precioRepository.FindAsync(
+            p => !p.IsDeleted && p.VarianteId == varianteId && p.ListaPrecioId == listaPrecioId && p.Moneda == moneda,
+            cancellationToken);
+
+        return precios.FirstOrDefault()?.Precio;
     }
 
     // ================= Auxiliares =================
