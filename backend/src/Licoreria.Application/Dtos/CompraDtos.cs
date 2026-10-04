@@ -63,3 +63,30 @@ public sealed record OrdenCompraCrearDto(
     Guid ProveedorId,
     IReadOnlyList<OrdenCompraDetalleCrearDto> Detalles,
     string? Observaciones = null);
+
+public sealed record RecepcionDetalleDto(
+    Guid Id,
+    Guid OrdenCompraDetalleId,
+    Guid VarianteId,
+    string Sku,
+    decimal Cantidad,
+    decimal CostoUnitarioUSD);
+
+public sealed record RecepcionDto(
+    Guid Id,
+    Guid OrdenCompraId,
+    string NumeroOrden,
+    DateTime Fecha,
+    decimal TotalUSD,
+    string? Observaciones,
+    IReadOnlyList<RecepcionDetalleDto> Detalles);
+
+public sealed record RecepcionDetalleCrearDto(
+    Guid OrdenCompraDetalleId,
+    decimal Cantidad,
+    decimal? CostoUnitarioUSD = null);
+
+public sealed record RegistrarRecepcionDto(
+    Guid OrdenCompraId,
+    IReadOnlyList<RecepcionDetalleCrearDto> Detalles,
+    string? Observaciones = null);

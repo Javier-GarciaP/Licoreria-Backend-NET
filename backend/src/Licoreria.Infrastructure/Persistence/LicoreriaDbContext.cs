@@ -65,6 +65,8 @@ public class LicoreriaDbContext : DbContext
     public DbSet<Proveedor> Proveedores => Set<Proveedor>();
     public DbSet<OrdenCompra> OrdenesCompra => Set<OrdenCompra>();
     public DbSet<OrdenCompraDetalle> OrdenCompraDetalles => Set<OrdenCompraDetalle>();
+    public DbSet<Recepcion> Recepciones => Set<Recepcion>();
+    public DbSet<RecepcionDetalle> RecepcionDetalles => Set<RecepcionDetalle>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

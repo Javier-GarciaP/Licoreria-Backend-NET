@@ -12,15 +12,24 @@ public sealed class ServicioCompras : IServicioCompras
     private readonly ICompraRepository _compras;
     private readonly IRepository<Proveedor> _proveedores;
     private readonly IRepository<ProductoVariante> _variantes;
+    private readonly IServicioKardex _kardex;
+    private readonly IContextoUsuario _contextoUsuario;
+    private readonly IRelojSistema _reloj;
 
     public ServicioCompras(
         ICompraRepository compras,
         IRepository<Proveedor> proveedores,
-        IRepository<ProductoVariante> variantes)
+        IRepository<ProductoVariante> variantes,
+        IServicioKardex kardex,
+        IContextoUsuario contextoUsuario,
+        IRelojSistema reloj)
     {
         _compras = compras;
         _proveedores = proveedores;
         _variantes = variantes;
+        _kardex = kardex;
+        _contextoUsuario = contextoUsuario;
+        _reloj = reloj;
     }
 
     // ================= Proveedores =================
@@ -224,6 +233,115 @@ public sealed class ServicioCompras : IServicioCompras
         await _compras.SaveChangesAsync(cancellationToken);
         return MapearOrden(orden);
     }
+
+    // ================= Recepciones =================
+
+    public async Task<ResultadoPaginado<RecepcionDto>> ObtenerRecepcionesAsync(
+        PaginacionRequest paginacion,
+        Guid? ordenCompraId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var pagina = await _compras.ObtenerRecepcionesPaginadoAsync(paginacion, ordenCompraId, cancellationToken);
+        var items = pagina.Items.Select(MapearRecepcion).ToList();
+        return ResultadoPaginado<RecepcionDto>.Crear(items, pagina.Page, pagina.PageSize, pagina.TotalItems);
+    }
+
+    public async Task<RecepcionDto?> ObtenerRecepcionAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var recepcion = await _compras.ObtenerRecepcionConDetalleAsync(id, cancellationToken);
+        return recepcion is null ? null : MapearRecepcion(recepcion);
+    }
+
+    public async Task<RecepcionDto> RegistrarRecepcionAsync(RegistrarRecepcionDto dto, CancellationToken cancellationToken = default)
+    {
+        var orden = await _compras.ObtenerOrdenConDetalleAsync(dto.OrdenCompraId, cancellationToken)
+            ?? throw new NoEncontradoException($"No existe la orden {dto.OrdenCompraId}.");
+
+        if (orden.Estado is EstadoOrdenCompra.Cancelada or EstadoOrdenCompra.Recibida or EstadoOrdenCompra.Borrador)
+        {
+            throw new ReglaNegocioException("La orden no está en un estado que permita recibir mercancía.");
+        }
+
+        if (dto.Detalles.Count == 0)
+        {
+            throw new ReglaNegocioException("La recepción debe tener al menos una línea.");
+        }
+
+        var usuarioId = _contextoUsuario.UsuarioId
+            ?? throw new ReglaNegocioException("No se pudo identificar al usuario que recibe.");
+
+        var recepcion = new Recepcion
+        {
+            OrdenCompraId = orden.Id,
+            UsuarioId = usuarioId,
+            Fecha = _reloj.UtcNow,
+            Observaciones = dto.Observaciones
+        };
+
+        foreach (var linea in dto.Detalles)
+        {
+            var detalleOrden = orden.Detalles.FirstOrDefault(d => d.Id == linea.OrdenCompraDetalleId)
+                ?? throw new NoEncontradoException($"La línea {linea.OrdenCompraDetalleId} no pertenece a la orden.");
+
+            var costo = linea.CostoUnitarioUSD ?? detalleOrden.CostoUnitarioUSD;
+
+            try
+            {
+                detalleOrden.Recibir(linea.Cantidad);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new ReglaNegocioException(ex.Message);
+            }
+
+            recepcion.Detalles.Add(new RecepcionDetalle
+            {
+                OrdenCompraDetalleId = detalleOrden.Id,
+                VarianteId = detalleOrden.VarianteId,
+                Cantidad = linea.Cantidad,
+                CostoUnitarioUSD = costo
+            });
+
+            if (detalleOrden.Variante is not null)
+            {
+                detalleOrden.Variante.PrecioCompraUSD = costo;
+            }
+
+            await _kardex.AplicarAsync(
+                detalleOrden.VarianteId,
+                TipoMovimientoInventario.Compra,
+                linea.Cantidad,
+                "recepcion",
+                recepcion.Id,
+                "Recepción de compra",
+                cancellationToken);
+        }
+
+        recepcion.RecalcularTotal();
+        orden.ActualizarEstadoRecepcion();
+
+        await _compras.AgregarRecepcionAsync(recepcion, cancellationToken);
+        await _compras.SaveChangesAsync(cancellationToken);
+
+        var creada = await _compras.ObtenerRecepcionConDetalleAsync(recepcion.Id, cancellationToken);
+        return MapearRecepcion(creada!);
+    }
+
+    private static RecepcionDto MapearRecepcion(Recepcion r)
+        => new(
+            r.Id,
+            r.OrdenCompraId,
+            r.OrdenCompra?.Numero ?? string.Empty,
+            r.Fecha,
+            r.TotalUSD,
+            r.Observaciones,
+            r.Detalles.Select(d => new RecepcionDetalleDto(
+                d.Id,
+                d.OrdenCompraDetalleId,
+                d.VarianteId,
+                d.Variante?.Sku ?? string.Empty,
+                d.Cantidad,
+                d.CostoUnitarioUSD)).ToList());
 
     private static ProveedorDto MapearProveedor(Proveedor p)
         => new(p.Id, p.Nombre, p.Rif, p.Contacto, p.Telefono, p.Email, p.Direccion, p.DiasCredito, p.Activo);

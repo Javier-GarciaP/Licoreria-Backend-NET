@@ -18,5 +18,14 @@ public interface ICompraRepository
 
     Task<int> ContarOrdenesAsync(CancellationToken cancellationToken = default);
 
+    Task<ResultadoPaginado<Recepcion>> ObtenerRecepcionesPaginadoAsync(
+        PaginacionRequest paginacion,
+        Guid? ordenCompraId = null,
+        CancellationToken cancellationToken = default);
+
+    Task<Recepcion?> ObtenerRecepcionConDetalleAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task AgregarRecepcionAsync(Recepcion recepcion, CancellationToken cancellationToken = default);
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

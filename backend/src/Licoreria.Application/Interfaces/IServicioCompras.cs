@@ -26,4 +26,12 @@ public interface IServicioCompras
     Task<OrdenCompraDto?> AprobarOrdenAsync(Guid id, CancellationToken cancellationToken = default);
     Task<OrdenCompraDto?> EnviarOrdenAsync(Guid id, CancellationToken cancellationToken = default);
     Task<OrdenCompraDto?> CancelarOrdenAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task<ResultadoPaginado<RecepcionDto>> ObtenerRecepcionesAsync(
+        PaginacionRequest paginacion,
+        Guid? ordenCompraId = null,
+        CancellationToken cancellationToken = default);
+
+    Task<RecepcionDto?> ObtenerRecepcionAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<RecepcionDto> RegistrarRecepcionAsync(RegistrarRecepcionDto dto, CancellationToken cancellationToken = default);
 }

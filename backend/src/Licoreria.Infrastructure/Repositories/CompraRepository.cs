@@ -48,6 +48,32 @@ public class CompraRepository : ICompraRepository
     public Task<int> ContarOrdenesAsync(CancellationToken cancellationToken = default)
         => _context.OrdenesCompra.CountAsync(cancellationToken);
 
+    private IQueryable<Recepcion> RecepcionesConDetalle()
+        => _context.Recepciones
+            .Include(r => r.OrdenCompra)
+            .Include(r => r.Detalles).ThenInclude(d => d.Variante);
+
+    public Task<ResultadoPaginado<Recepcion>> ObtenerRecepcionesPaginadoAsync(
+        PaginacionRequest paginacion,
+        Guid? ordenCompraId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var consulta = RecepcionesConDetalle().AsNoTracking().Where(r => !r.IsDeleted);
+
+        if (ordenCompraId is not null)
+        {
+            consulta = consulta.Where(r => r.OrdenCompraId == ordenCompraId);
+        }
+
+        return consulta.OrderByDescending(r => r.Fecha).PaginarAsync(paginacion, cancellationToken);
+    }
+
+    public Task<Recepcion?> ObtenerRecepcionConDetalleAsync(Guid id, CancellationToken cancellationToken = default)
+        => RecepcionesConDetalle().FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted, cancellationToken);
+
+    public async Task AgregarRecepcionAsync(Recepcion recepcion, CancellationToken cancellationToken = default)
+        => await _context.Recepciones.AddAsync(recepcion, cancellationToken);
+
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => _context.SaveChangesAsync(cancellationToken);
 }

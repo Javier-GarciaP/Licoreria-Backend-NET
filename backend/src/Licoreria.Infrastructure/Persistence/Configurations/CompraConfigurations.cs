@@ -62,3 +62,51 @@ public class OrdenCompraDetalleConfiguration : IEntityTypeConfiguration<OrdenCom
                .OnDelete(DeleteBehavior.Restrict);
     }
 }
+
+public class RecepcionConfiguration : IEntityTypeConfiguration<Recepcion>
+{
+    public void Configure(EntityTypeBuilder<Recepcion> builder)
+    {
+        builder.ToTable("recepciones");
+        builder.HasKey(r => r.Id);
+        builder.Property(r => r.Observaciones).HasMaxLength(300);
+        builder.Property(r => r.TotalUSD).HasPrecision(18, 2);
+        builder.HasIndex(r => r.Fecha);
+
+        builder.HasOne(r => r.OrdenCompra)
+               .WithMany()
+               .HasForeignKey(r => r.OrdenCompraId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(r => r.Usuario)
+               .WithMany()
+               .HasForeignKey(r => r.UsuarioId)
+               .OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+public class RecepcionDetalleConfiguration : IEntityTypeConfiguration<RecepcionDetalle>
+{
+    public void Configure(EntityTypeBuilder<RecepcionDetalle> builder)
+    {
+        builder.ToTable("recepcion_detalles");
+        builder.HasKey(d => d.Id);
+        builder.Property(d => d.Cantidad).HasPrecision(14, 3);
+        builder.Property(d => d.CostoUnitarioUSD).HasPrecision(18, 2);
+
+        builder.HasOne(d => d.Recepcion)
+               .WithMany(r => r.Detalles)
+               .HasForeignKey(d => d.RecepcionId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(d => d.OrdenCompraDetalle)
+               .WithMany()
+               .HasForeignKey(d => d.OrdenCompraDetalleId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(d => d.Variante)
+               .WithMany()
+               .HasForeignKey(d => d.VarianteId)
+               .OnDelete(DeleteBehavior.Restrict);
+    }
+}

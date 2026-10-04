@@ -40,3 +40,18 @@ public sealed class OrdenCompraCrearDtoValidator : AbstractValidator<OrdenCompra
         });
     }
 }
+
+public sealed class RegistrarRecepcionDtoValidator : AbstractValidator<RegistrarRecepcionDto>
+{
+    public RegistrarRecepcionDtoValidator()
+    {
+        RuleFor(x => x.OrdenCompraId).NotEmpty().WithMessage("La orden es obligatoria.");
+        RuleFor(x => x.Detalles).NotEmpty().WithMessage("La recepción debe tener al menos una línea.");
+
+        RuleForEach(x => x.Detalles).ChildRules(linea =>
+        {
+            linea.RuleFor(l => l.OrdenCompraDetalleId).NotEmpty().WithMessage("La línea de la orden es obligatoria.");
+            linea.RuleFor(l => l.Cantidad).GreaterThan(0).WithMessage("La cantidad debe ser mayor que cero.");
+        });
+    }
+}
