@@ -2,6 +2,7 @@ using Licoreria.Application.Dtos;
 using Licoreria.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Licoreria.WebAPI.Controllers;
 
@@ -10,6 +11,7 @@ namespace Licoreria.WebAPI.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/auth")]
+[EnableRateLimiting("auth")]
 public class AuthController : ControllerBase
 {
     private readonly IServicioAutenticacion _servicioAutenticacion;

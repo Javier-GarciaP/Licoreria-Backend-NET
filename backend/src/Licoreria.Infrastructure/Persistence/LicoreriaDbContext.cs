@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using Licoreria.Domain.Common;
 using Licoreria.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -87,5 +88,18 @@ public class LicoreriaDbContext : DbContext
         // definidas en este ensamblado, incluidas las precisiones, índices,
         // integridad referencial y la siembra de datos.
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+        // Concurrencia optimista: mapea una propiedad uint al sistema xmin de PostgreSQL
+        // como token de versión en todas las entidades de negocio (sin columnas adicionales).
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
+            {
+                modelBuilder.Entity(entityType.ClrType)
+                    .Property<uint>("xmin")
+                    .ValueGeneratedOnAddOrUpdate()
+                    .IsConcurrencyToken();
+            }
+        }
     }
 }
