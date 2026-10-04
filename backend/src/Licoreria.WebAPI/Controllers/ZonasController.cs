@@ -31,7 +31,7 @@ public class ZonasController : ControllerBase
     {
         if (id != dto.Id)
         {
-            return BadRequest(new { mensaje = "El identificador de la ruta no coincide con el cuerpo." });
+            return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Solicitud Inválida", detail: "El identificador de la ruta no coincide con el cuerpo.");
         }
 
         var editada = await _servicio.EditarZonaAsync(dto, cancellationToken);

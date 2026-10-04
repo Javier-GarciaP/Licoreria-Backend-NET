@@ -41,7 +41,7 @@ public class ProveedoresController : ControllerBase
     {
         if (id != dto.Id)
         {
-            return BadRequest(new { mensaje = "El identificador de la ruta no coincide con el cuerpo." });
+            return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Solicitud Inválida", detail: "El identificador de la ruta no coincide con el cuerpo.");
         }
 
         var editado = await _servicio.EditarProveedorAsync(dto, cancellationToken);
