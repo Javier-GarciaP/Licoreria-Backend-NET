@@ -52,6 +52,7 @@ public static class DependencyInjection
         services.AddScoped<IClienteRepository, ClienteRepository>();
         services.AddScoped<IAiRepository, AiRepository>();
         services.AddScoped<ICompraRepository, CompraRepository>();
+        services.AddScoped<IReportesRepository, ReportesRepository>();
 
         // Almacenamiento local de archivos (imágenes, comprobantes, media).
         services.Configure<OpcionesAlmacenamiento>(configuration.GetSection(OpcionesAlmacenamiento.SectionName));
@@ -77,6 +78,7 @@ public static class DependencyInjection
         services.AddScoped<IServicioContenido, ServicioContenido>();
         services.AddScoped<IServicioIa, ServicioIa>();
         services.AddScoped<IServicioCompras, ServicioCompras>();
+        services.AddScoped<IServicioReportes, ServicioReportes>();
 
         // =========================================================
         // Transient: servicios ligeros sin estado (validadores).
