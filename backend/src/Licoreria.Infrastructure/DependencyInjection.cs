@@ -148,6 +148,9 @@ public static class DependencyInjection
         services.AddTransient<IValidator<PromocionCrearDto>, PromocionCrearDtoValidator>();
         services.AddTransient<IValidator<PromocionEditarDto>, PromocionEditarDtoValidator>();
         services.AddTransient<IValidator<DividirCuentaDto>, DividirCuentaDtoValidator>();
+        services.AddTransient<IValidator<LoteCrearDto>, LoteCrearDtoValidator>();
+        services.AddTransient<IValidator<LoteEditarDto>, LoteEditarDtoValidator>();
+        services.AddTransient<IValidator<RegistrarTomaFisicaDto>, RegistrarTomaFisicaDtoValidator>();
         services.AddTransient<IValidator<UsuarioCrearDto>, UsuarioCrearDtoValidator>();
         services.AddTransient<IValidator<UsuarioEditarDto>, UsuarioEditarDtoValidator>();
         services.AddTransient<IValidator<CambiarPasswordDto>, CambiarPasswordDtoValidator>();

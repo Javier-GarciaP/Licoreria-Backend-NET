@@ -39,4 +39,13 @@ public interface IServicioInventario
     Task<MovimientoKardexDto> RegistrarAjusteAsync(AjusteInventarioDto dto, CancellationToken cancellationToken = default);
 
     Task<ReporteMermaDto> ObtenerReporteMermasAsync(DateTime desde, DateTime hasta, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<LoteDto>> ObtenerLotesAsync(Guid? varianteId = null, CancellationToken cancellationToken = default);
+    Task<LoteDto> CrearLoteAsync(LoteCrearDto dto, CancellationToken cancellationToken = default);
+    Task<LoteDto?> EditarLoteAsync(LoteEditarDto dto, CancellationToken cancellationToken = default);
+    Task<bool> EliminarLoteAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task<ResultadoPaginado<TomaFisicaDto>> ObtenerTomasFisicasAsync(PaginacionRequest paginacion, CancellationToken cancellationToken = default);
+    Task<TomaFisicaDto?> ObtenerTomaFisicaAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<TomaFisicaDto> RegistrarTomaFisicaAsync(RegistrarTomaFisicaDto dto, CancellationToken cancellationToken = default);
 }

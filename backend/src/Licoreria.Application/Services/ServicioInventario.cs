@@ -12,21 +12,27 @@ public sealed class ServicioInventario : IServicioInventario
 {
     private readonly IInventarioRepository _inventario;
     private readonly IRepository<ProductoVariante> _variantes;
+    private readonly IRepository<Lote> _lotes;
     private readonly EvaluadorMerma _evaluadorMerma;
     private readonly ConversorMoneda _conversorMoneda;
+    private readonly IContextoUsuario _contextoUsuario;
     private readonly IRelojSistema _reloj;
 
     public ServicioInventario(
         IInventarioRepository inventario,
         IRepository<ProductoVariante> variantes,
+        IRepository<Lote> lotes,
         EvaluadorMerma evaluadorMerma,
         ConversorMoneda conversorMoneda,
+        IContextoUsuario contextoUsuario,
         IRelojSistema reloj)
     {
         _inventario = inventario;
         _variantes = variantes;
+        _lotes = lotes;
         _evaluadorMerma = evaluadorMerma;
         _conversorMoneda = conversorMoneda;
+        _contextoUsuario = contextoUsuario;
         _reloj = reloj;
     }
 
@@ -208,6 +214,163 @@ public sealed class ServicioInventario : IServicioInventario
             porMotivo.Sum(m => m.Unidades),
             porMotivo);
     }
+
+    // ================= Lotes =================
+
+    public async Task<IReadOnlyList<LoteDto>> ObtenerLotesAsync(Guid? varianteId = null, CancellationToken cancellationToken = default)
+    {
+        var lotes = await _lotes.FindAsync(
+            l => !l.IsDeleted && (varianteId == null || l.VarianteId == varianteId),
+            cancellationToken);
+
+        var variantes = (await _variantes.GetAllAsync(cancellationToken)).ToDictionary(v => v.Id, v => v.Sku);
+
+        return lotes
+            .OrderBy(l => l.FechaVencimiento)
+            .Select(l => new LoteDto(l.Id, l.VarianteId, variantes.GetValueOrDefault(l.VarianteId, string.Empty), l.Codigo, l.FechaVencimiento, l.Cantidad, l.Activo))
+            .ToList();
+    }
+
+    public async Task<LoteDto> CrearLoteAsync(LoteCrearDto dto, CancellationToken cancellationToken = default)
+    {
+        var variante = await _variantes.GetByIdAsync(dto.VarianteId, cancellationToken)
+            ?? throw new NoEncontradoException($"No existe la variante {dto.VarianteId}.");
+
+        if (dto.Cantidad < 0)
+        {
+            throw new ReglaNegocioException("La cantidad del lote no puede ser negativa.");
+        }
+
+        var lote = new Lote
+        {
+            VarianteId = variante.Id,
+            Codigo = dto.Codigo,
+            Cantidad = dto.Cantidad,
+            FechaVencimiento = dto.FechaVencimiento,
+            Activo = true
+        };
+
+        await _lotes.AddAsync(lote, cancellationToken);
+        await _lotes.SaveChangesAsync(cancellationToken);
+        return new LoteDto(lote.Id, lote.VarianteId, variante.Sku, lote.Codigo, lote.FechaVencimiento, lote.Cantidad, lote.Activo);
+    }
+
+    public async Task<LoteDto?> EditarLoteAsync(LoteEditarDto dto, CancellationToken cancellationToken = default)
+    {
+        var lote = await _lotes.GetByIdAsync(dto.Id, cancellationToken);
+        if (lote is null || lote.IsDeleted)
+        {
+            return null;
+        }
+
+        lote.Codigo = dto.Codigo;
+        lote.Cantidad = dto.Cantidad;
+        lote.FechaVencimiento = dto.FechaVencimiento;
+        lote.Activo = dto.Activo;
+        _lotes.Update(lote);
+        await _lotes.SaveChangesAsync(cancellationToken);
+
+        var variante = await _variantes.GetByIdAsync(lote.VarianteId, cancellationToken);
+        return new LoteDto(lote.Id, lote.VarianteId, variante?.Sku ?? string.Empty, lote.Codigo, lote.FechaVencimiento, lote.Cantidad, lote.Activo);
+    }
+
+    public async Task<bool> EliminarLoteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var lote = await _lotes.GetByIdAsync(id, cancellationToken);
+        if (lote is null || lote.IsDeleted)
+        {
+            return false;
+        }
+
+        lote.EliminarLogico();
+        _lotes.Update(lote);
+        await _lotes.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    // ================= Tomas físicas =================
+
+    public async Task<ResultadoPaginado<TomaFisicaDto>> ObtenerTomasFisicasAsync(PaginacionRequest paginacion, CancellationToken cancellationToken = default)
+    {
+        var pagina = await _inventario.ObtenerTomasPaginadoAsync(paginacion, cancellationToken);
+        var items = pagina.Items.Select(MapearToma).ToList();
+        return ResultadoPaginado<TomaFisicaDto>.Crear(items, pagina.Page, pagina.PageSize, pagina.TotalItems);
+    }
+
+    public async Task<TomaFisicaDto?> ObtenerTomaFisicaAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var toma = await _inventario.ObtenerTomaConDetalleAsync(id, cancellationToken);
+        return toma is null ? null : MapearToma(toma);
+    }
+
+    public async Task<TomaFisicaDto> RegistrarTomaFisicaAsync(RegistrarTomaFisicaDto dto, CancellationToken cancellationToken = default)
+    {
+        if (dto.Detalles.Count == 0)
+        {
+            throw new ReglaNegocioException("La toma física debe tener al menos una línea.");
+        }
+
+        var usuarioId = _contextoUsuario.UsuarioId
+            ?? throw new ReglaNegocioException("No se pudo identificar al usuario que registra la toma.");
+
+        var toma = new TomaFisica
+        {
+            UsuarioId = usuarioId,
+            Fecha = _reloj.UtcNow,
+            Estado = EstadoTomaFisica.Cerrada,
+            Observaciones = dto.Observaciones
+        };
+
+        foreach (var linea in dto.Detalles)
+        {
+            var variante = await _variantes.GetByIdAsync(linea.VarianteId, cancellationToken)
+                ?? throw new NoEncontradoException($"No existe la variante {linea.VarianteId}.");
+
+            var stock = await _inventario.ObtenerStockAsync(linea.VarianteId, cancellationToken);
+            var cantidadSistema = stock?.Cantidad ?? 0m;
+            var diferencia = linea.CantidadContada - cantidadSistema;
+
+            toma.Detalles.Add(new TomaFisicaDetalle
+            {
+                VarianteId = variante.Id,
+                CantidadSistema = cantidadSistema,
+                CantidadContada = linea.CantidadContada
+            });
+
+            if (diferencia != 0)
+            {
+                await AplicarStockAsync(linea.VarianteId, diferencia, cancellationToken);
+                await _inventario.AgregarMovimientoAsync(new MovimientoInventario
+                {
+                    VarianteId = variante.Id,
+                    Tipo = TipoMovimientoInventario.Ajuste,
+                    Cantidad = diferencia,
+                    ReferenciaTipo = "toma-fisica",
+                    ReferenciaId = toma.Id,
+                    Motivo = "Ajuste por toma física"
+                }, cancellationToken);
+            }
+        }
+
+        await _inventario.AgregarTomaAsync(toma, cancellationToken);
+        await _inventario.SaveChangesAsync(cancellationToken);
+
+        var creada = await _inventario.ObtenerTomaConDetalleAsync(toma.Id, cancellationToken);
+        return MapearToma(creada!);
+    }
+
+    private static TomaFisicaDto MapearToma(TomaFisica t)
+        => new(
+            t.Id,
+            t.Fecha,
+            t.Estado,
+            t.Observaciones,
+            t.Detalles.Select(d => new TomaFisicaDetalleDto(
+                d.VarianteId,
+                d.Variante?.Sku ?? string.Empty,
+                d.CantidadSistema,
+                d.CantidadContada,
+                d.Diferencia)).ToList());
 
     private async Task AplicarStockAsync(Guid varianteId, decimal delta, CancellationToken cancellationToken)
     {

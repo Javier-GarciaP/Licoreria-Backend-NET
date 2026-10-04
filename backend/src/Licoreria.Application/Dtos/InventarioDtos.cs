@@ -58,3 +58,47 @@ public sealed record ReporteMermaPorMotivoDto(
     MotivoMerma Motivo,
     int Registros,
     decimal Unidades);
+
+public sealed record LoteDto(
+    Guid Id,
+    Guid VarianteId,
+    string Sku,
+    string Codigo,
+    DateTime? FechaVencimiento,
+    decimal Cantidad,
+    bool Activo);
+
+public sealed record LoteCrearDto(
+    Guid VarianteId,
+    string Codigo,
+    decimal Cantidad,
+    DateTime? FechaVencimiento = null);
+
+public sealed record LoteEditarDto(
+    Guid Id,
+    string Codigo,
+    decimal Cantidad,
+    DateTime? FechaVencimiento,
+    bool Activo);
+
+public sealed record TomaFisicaDetalleDto(
+    Guid VarianteId,
+    string Sku,
+    decimal CantidadSistema,
+    decimal CantidadContada,
+    decimal Diferencia);
+
+public sealed record TomaFisicaDto(
+    Guid Id,
+    DateTime Fecha,
+    EstadoTomaFisica Estado,
+    string? Observaciones,
+    IReadOnlyList<TomaFisicaDetalleDto> Detalles);
+
+public sealed record TomaFisicaDetalleCrearDto(
+    Guid VarianteId,
+    decimal CantidadContada);
+
+public sealed record RegistrarTomaFisicaDto(
+    IReadOnlyList<TomaFisicaDetalleCrearDto> Detalles,
+    string? Observaciones = null);

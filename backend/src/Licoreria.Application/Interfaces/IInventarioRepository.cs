@@ -44,5 +44,13 @@ public interface IInventarioRepository
 
     Task AgregarMermaAsync(Merma merma, CancellationToken cancellationToken = default);
 
+    Task<ResultadoPaginado<TomaFisica>> ObtenerTomasPaginadoAsync(
+        PaginacionRequest paginacion,
+        CancellationToken cancellationToken = default);
+
+    Task<TomaFisica?> ObtenerTomaConDetalleAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task AgregarTomaAsync(TomaFisica toma, CancellationToken cancellationToken = default);
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

@@ -127,6 +127,24 @@ public class InventarioRepository : IInventarioRepository
     public async Task AgregarMermaAsync(Merma merma, CancellationToken cancellationToken = default)
         => await _context.Mermas.AddAsync(merma, cancellationToken);
 
+    public Task<ResultadoPaginado<TomaFisica>> ObtenerTomasPaginadoAsync(
+        PaginacionRequest paginacion,
+        CancellationToken cancellationToken = default)
+        => _context.TomasFisicas
+            .Include(t => t.Detalles).ThenInclude(d => d.Variante)
+            .AsNoTracking()
+            .Where(t => !t.IsDeleted)
+            .OrderByDescending(t => t.Fecha)
+            .PaginarAsync(paginacion, cancellationToken);
+
+    public Task<TomaFisica?> ObtenerTomaConDetalleAsync(Guid id, CancellationToken cancellationToken = default)
+        => _context.TomasFisicas
+            .Include(t => t.Detalles).ThenInclude(d => d.Variante)
+            .FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted, cancellationToken);
+
+    public async Task AgregarTomaAsync(TomaFisica toma, CancellationToken cancellationToken = default)
+        => await _context.TomasFisicas.AddAsync(toma, cancellationToken);
+
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => _context.SaveChangesAsync(cancellationToken);
 }
