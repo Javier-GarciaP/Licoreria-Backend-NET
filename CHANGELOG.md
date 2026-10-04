@@ -13,6 +13,15 @@ y el proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
 ### Agregado
 
+- **Completitud de la API:** compras (proveedores, órdenes, recepciones y cuentas por
+  pagar), precios por lista y moneda, tablero de KPIs, menú PDF (QuestPDF) y contacto
+  por WhatsApp, división de cuentas y promociones, lotes/vencimientos y tomas físicas,
+  lista VIP, entradas con QR y pedido anticipado.
+- **Endurecimiento:** auditoría (`audit_log`) de acciones sensibles, revocación de sesiones
+  al cambiar contraseña, concurrencia optimista con `xmin` en todas las entidades,
+  rate limiting global y en autenticación, y SignalR por área (barra/cocina/meseros).
+- **Pruebas:** proyecto de pruebas de integración (`WebApplicationFactory` + PostgreSQL) y
+  colección Postman de la API final; CI del backend con servicio PostgreSQL.
 - **API final (Fase 2 tecnica):** implementacion completa del nucleo operativo y la
   web publica sobre PostgreSQL, manteniendo Onion Architecture al 100%.
   - Transversales: paginacion/filtrado, errores `409`/`422` en RFC 7807, Swagger con

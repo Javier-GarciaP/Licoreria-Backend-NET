@@ -42,7 +42,10 @@ Documentada en [Fase 2](fase-2.md).
 - [x] Data seeding de categorías, marcas, unidades y productos (sector licorería).
 - [x] Repositorios desacoplados con `AsNoTracking`.
 - [x] Migraciones versionadas y script SQL de evidencia.
-- [ ] Implementar los módulos restantes: inventario, compras, caja, club, CRM, finanzas, IA.
+- [x] **API final**: implementados todos los módulos del núcleo operativo y la web
+      pública (catálogo con variantes, inventario/kardex, compras, finanzas, ventas/POS,
+      cuentas/comandas, caja, club/reservas, CRM, contenido y IA simulada), con
+      concurrencia optimista (`xmin`), auditoría, rate limiting y pruebas de integración.
 
 ## Fase 3 · Seguridad Stateless (JWT), RBAC y Validación
 
