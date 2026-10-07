@@ -268,6 +268,69 @@ export interface PagoProveedor {
   fecha: string;
 }
 
+/* ===================== Contenido ===================== */
+
+export interface Bloque {
+  id: string;
+  tipo: string;
+  orden: number;
+  contenido: string;
+  activo: boolean;
+}
+
+export interface Seccion {
+  id: string;
+  titulo: string;
+  tipo: string;
+  orden: number;
+  activa: boolean;
+  bloques: Bloque[];
+}
+
+export interface Pagina {
+  id: string;
+  titulo: string;
+  slug: string;
+  publicada: boolean;
+  activo: boolean;
+  secciones: Seccion[];
+}
+
+export interface Horario {
+  id: string;
+  diaSemana: number;
+  abierto: boolean;
+  horaApertura: string | null;
+  horaCierre: string | null;
+}
+
+export interface LocalInfo {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  direccion: string;
+  telefono: string;
+  whatsapp: string;
+  email: string;
+  instagram: string | null;
+  facebook: string | null;
+  mapaUrl: string | null;
+  logoUrl: string | null;
+}
+
+export interface MediaAsset {
+  id: string;
+  nombre: string;
+  url: string;
+  tipo: string;
+  tamano: number;
+}
+
+export interface QrMenu {
+  url: string;
+  contenido: string;
+}
+
 /* ===================== Ventas / Pagos ===================== */
 
 export interface MetodoPago {

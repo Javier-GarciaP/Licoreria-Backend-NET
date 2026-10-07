@@ -7,20 +7,25 @@ import type {
   Denominacion,
   DiagnosticoInventario,
   Dashboard,
+  Horario,
   LoginRequest,
+  LocalInfo,
   Lote,
   Marca,
+  MediaAsset,
   MenuDigital,
   Mesa,
   MetodoPago,
   Merma,
   MovimientoKardex,
   OrdenCompra,
+  Pagina,
   PedidoAnticipado,
   Plano,
   Producto,
   Promocion,
   Proveedor,
+  QrMenu,
   Recepcion,
   ReporteHeatmap,
   ReporteMermasVsVentas,
@@ -251,4 +256,36 @@ export const comprasApi = {
     apiFetch<ResultadoPaginado<CuentaPorPagar>>('/api/v1/cuentas-por-pagar', { query }),
   registrarPago: (id: string, body: unknown) =>
     apiFetch<CuentaPorPagar>(`/api/v1/cuentas-por-pagar/${id}/pagos`, { method: 'POST', body }),
+};
+
+/* ===================== Contenido ===================== */
+
+export const contenidoApi = {
+  paginas: () => apiFetch<Pagina[]>('/api/v1/paginas/todos'),
+  pagina: (id: string) => apiFetch<Pagina>(`/api/v1/paginas/${id}`),
+  crearPagina: (body: unknown) => apiFetch<Pagina>('/api/v1/paginas', { method: 'POST', body }),
+  actualizarPagina: (id: string, body: unknown) => apiFetch<Pagina>(`/api/v1/paginas/${id}`, { method: 'PUT', body }),
+  eliminarPagina: (id: string) => apiFetch<void>(`/api/v1/paginas/${id}`, { method: 'DELETE' }),
+
+  eventos: () => apiFetch<Evento[]>('/api/v1/eventos/todos'),
+  crearEvento: (body: unknown) => apiFetch<Evento>('/api/v1/eventos', { method: 'POST', body }),
+  actualizarEvento: (id: string, body: unknown) => apiFetch<Evento>(`/api/v1/eventos/${id}`, { method: 'PUT', body }),
+  eliminarEvento: (id: string) => apiFetch<void>(`/api/v1/eventos/${id}`, { method: 'DELETE' }),
+
+  horarios: () => apiFetch<Horario[]>('/api/v1/horarios'),
+  guardarHorario: (body: unknown) => apiFetch<Horario>('/api/v1/horarios', { method: 'PUT', body }),
+
+  localInfo: () => apiFetch<LocalInfo>('/api/v1/local-info'),
+  actualizarLocalInfo: (body: unknown) => apiFetch<LocalInfo>('/api/v1/local-info', { method: 'PUT', body }),
+
+  media: () => apiFetch<MediaAsset[]>('/api/v1/archivos'),
+  subirArchivo: (file: File, carpeta = 'media') => {
+    const formData = new FormData();
+    formData.append('archivo', file);
+    return apiFetch<MediaAsset>('/api/v1/archivos', { method: 'POST', formData, query: { carpeta } });
+  },
+  eliminarMedia: (id: string) => apiFetch<void>(`/api/v1/archivos/${id}`, { method: 'DELETE' }),
+
+  menuDigital: () => apiFetch<MenuDigital>('/api/v1/menu-digital'),
+  qrMenu: (baseUrl?: string) => apiFetch<QrMenu>('/api/v1/menu-digital/qr', { query: { baseUrl } }),
 };
