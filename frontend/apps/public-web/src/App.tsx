@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { lazy, Suspense } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { lazy, Suspense, useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   ArrowUpRight,
   CalendarDays,
@@ -12,7 +12,7 @@ import {
   Wine,
 } from 'lucide-react';
 import { publicApi } from '@licoreria/api-client';
-import type { Evento, MenuSeccion } from '@licoreria/types';
+import type { Evento, MenuSeccion, Mesa, MetodoPago, Reserva } from '@licoreria/types';
 import { BotanicalWatermark } from './components/BotanicalWatermark';
 import { formatBS, formatFecha, formatUSD } from './lib/format';
 
@@ -359,32 +359,230 @@ function HoySection({
 }
 
 function ReservaSection({ whatsapp }: { whatsapp: string | null }) {
+  const mesas = useQuery({ queryKey: ['reservar-mesas'], queryFn: publicApi.mesas });
+  const metodos = useQuery({ queryKey: ['reservar-metodos'], queryFn: publicApi.metodosPago });
+
+  const [fecha, setFecha] = useState('');
+  const [personas, setPersonas] = useState('2');
+  const [seleccion, setSeleccion] = useState<string[]>([]);
+  const [nombre, setNombre] = useState('');
+  const [telefono, setTelefono] = useState('');
+  const [notas, setNotas] = useState('');
+  const [conSena, setConSena] = useState(false);
+  const [metodoPagoId, setMetodoPagoId] = useState('');
+  const [monto, setMonto] = useState('');
+  const [creada, setCreada] = useState<Reserva | null>(null);
+
+  const toggleMesa = (id: string) =>
+    setSeleccion((actuales) => (actuales.includes(id) ? actuales.filter((x) => x !== id) : [...actuales, id]));
+
+  const porZona = (mesas.data ?? []).reduce<Record<string, Mesa[]>>((acc, mesa) => {
+    (acc[mesa.zonaNombre] ??= []).push(mesa);
+    return acc;
+  }, {});
+
+  const reservar = useMutation({
+    mutationFn: async () => {
+      const reserva = await publicApi.crearReserva({
+        fechaHora: new Date(fecha).toISOString(),
+        personas: Number(personas),
+        mesas: seleccion,
+        nombreContacto: nombre,
+        telefono,
+        origen: 'Web',
+        notas: notas || null,
+      });
+      if (conSena && metodoPagoId && Number(monto) > 0) {
+        await publicApi.registrarPagoReserva(reserva.id, {
+          metodoPagoId,
+          monto: Number(monto),
+          moneda: 'USD',
+          comprobanteUrl: null,
+        });
+      }
+      return reserva;
+    },
+    onSuccess: (reserva) => setCreada(reserva),
+  });
+
+  const puedeEnviar = fecha && seleccion.length > 0 && nombre.trim().length >= 2 && telefono.trim().length >= 6;
+
   return (
     <section id="reserva" className="relative isolate overflow-hidden py-24 sm:py-32">
       <BotanicalWatermark variant="left" />
-      <div className="relative z-10 mx-auto max-w-poster px-5 text-center sm:px-8 lg:px-12">
-        <Eyebrow>MESAS VIP · CUMPLEAÑOS · EVENTOS PRIVADOS</Eyebrow>
-        <h2 className="display-type mx-auto mt-4 text-[clamp(2.75rem,9vw,8.75rem)]">
-          RESERVA
-          <br />
-          TU MESA
-        </h2>
-        <p className="mx-auto mt-6 max-w-xl text-[15px] leading-relaxed text-tiger-gold/75">
-          Confirma tu mesa con seña y llega directo a la mejor ubicación. Te confirmamos disponibilidad por WhatsApp.
-        </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <a
-            href={whatsapp ? `https://wa.me/${whatsapp.replace(/\D/g, '')}` : '#hoy'}
-            target={whatsapp ? '_blank' : undefined}
-            rel="noreferrer"
-            className="btn-fill"
-          >
-            RESERVAR POR WHATSAPP <ArrowUpRight size={15} strokeWidth={2} />
-          </a>
-          <a href="#carta" className="btn-ghost">
-            VER LA CARTA
-          </a>
+      <div className="relative z-10 mx-auto max-w-poster px-5 sm:px-8 lg:px-12">
+        <div className="text-center">
+          <Eyebrow>MESAS VIP · CUMPLEAÑOS · EVENTOS PRIVADOS</Eyebrow>
+          <h2 className="display-type mx-auto mt-4 text-[clamp(2.75rem,9vw,8.75rem)]">
+            RESERVA
+            <br />
+            TU MESA
+          </h2>
+          <p className="mx-auto mt-6 max-w-xl text-[15px] leading-relaxed text-tiger-gold/75">
+            Elige tus mesas en el plano, confirma con seña y llega directo a la mejor ubicación.
+          </p>
         </div>
+
+        {creada ? (
+          <div className="mx-auto mt-12 max-w-xl rounded-card bg-dark-spice p-8 text-center">
+            <p className="display-type text-[clamp(2rem,6vw,3.5rem)]">¡RESERVADA!</p>
+            <p className="mt-4 text-[14px] text-tiger-gold/80">
+              Te esperamos el {formatFecha(creada.fechaHora)} para {creada.personas} personas.
+            </p>
+            <p className="mt-2 text-[13px] text-tiger-gold/60">
+              Mesas: {creada.mesas.map((mesa) => mesa.numero).join(', ') || 'por asignar'}
+            </p>
+            {whatsapp && (
+              <a
+                href={`https://wa.me/${whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(
+                  `Hola, reservé a nombre de ${creada.nombreContacto}. Quisiera coordinar la seña.`,
+                )}`}
+                target="_blank"
+                rel="noreferrer"
+                className="btn-fill mt-6 inline-flex"
+              >
+                CONFIRMAR POR WHATSAPP <ArrowUpRight size={15} strokeWidth={2} />
+              </a>
+            )}
+          </div>
+        ) : (
+          <div className="mx-auto mt-12 flex max-w-3xl flex-col gap-5 rounded-card bg-dark-spice p-6 sm:p-8">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="flex flex-col gap-1.5">
+                <span className="eyebrow">Fecha y hora</span>
+                <input
+                  type="datetime-local"
+                  value={fecha}
+                  onChange={(evento) => setFecha(evento.target.value)}
+                  className="rounded-button border border-cardamom-brown bg-charred-clove px-4 py-2 text-[14px] text-tiger-gold"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="eyebrow">Personas</span>
+                <input
+                  type="number"
+                  min={1}
+                  value={personas}
+                  onChange={(evento) => setPersonas(evento.target.value)}
+                  className="rounded-button border border-cardamom-brown bg-charred-clove px-4 py-2 text-[14px] text-tiger-gold"
+                />
+              </label>
+            </div>
+
+            <div>
+              <span className="eyebrow">Mesas disponibles</span>
+              <div className="mt-2 flex flex-col gap-3">
+                {Object.entries(porZona).map(([zona, mesasZona]) => (
+                  <div key={zona}>
+                    <p className="text-[11px] uppercase tracking-[0.2em] text-tiger-gold/50">{zona}</p>
+                    <div className="mt-1.5 flex flex-wrap gap-2">
+                      {mesasZona.map((mesa) => {
+                        const activa = seleccion.includes(mesa.id);
+                        return (
+                          <button
+                            key={mesa.id}
+                            type="button"
+                            onClick={() => toggleMesa(mesa.id)}
+                            aria-pressed={activa}
+                            className={`rounded-button border px-3 py-1.5 text-[12px] uppercase tracking-[0.1em] transition ${
+                              activa
+                                ? 'border-tiger-gold bg-tiger-gold text-charred-clove'
+                                : 'border-tiger-gold/50 text-tiger-gold/80 hover:border-tiger-gold'
+                            }`}
+                          >
+                            {mesa.numero} · {mesa.capacidad}p
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                {(mesas.data?.length ?? 0) === 0 && (
+                  <p className="text-[13px] text-tiger-gold/60">Consultamos disponibilidad por WhatsApp.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="flex flex-col gap-1.5">
+                <span className="eyebrow">Nombre</span>
+                <input
+                  value={nombre}
+                  onChange={(evento) => setNombre(evento.target.value)}
+                  className="rounded-button border border-cardamom-brown bg-charred-clove px-4 py-2 text-[14px] text-tiger-gold"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="eyebrow">Teléfono</span>
+                <input
+                  value={telefono}
+                  onChange={(evento) => setTelefono(evento.target.value)}
+                  className="rounded-button border border-cardamom-brown bg-charred-clove px-4 py-2 text-[14px] text-tiger-gold"
+                />
+              </label>
+            </div>
+
+            <label className="flex flex-col gap-1.5">
+              <span className="eyebrow">Notas (opcional)</span>
+              <input
+                value={notas}
+                onChange={(evento) => setNotas(evento.target.value)}
+                className="rounded-button border border-cardamom-brown bg-charred-clove px-4 py-2 text-[14px] text-tiger-gold"
+              />
+            </label>
+
+            <div className="rounded-card border border-dotted border-cardamom-brown p-4">
+              <label className="flex items-center gap-2 text-[13px] text-tiger-gold/80">
+                <input type="checkbox" checked={conSena} onChange={(evento) => setConSena(evento.target.checked)} />
+                Pagar seña ahora
+              </label>
+              {conSena && (
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <label className="flex flex-col gap-1.5">
+                    <span className="eyebrow">Método</span>
+                    <select
+                      value={metodoPagoId}
+                      onChange={(evento) => setMetodoPagoId(evento.target.value)}
+                      className="rounded-button border border-cardamom-brown bg-charred-clove px-4 py-2 text-[14px] text-tiger-gold"
+                    >
+                      <option value="">Selecciona…</option>
+                      {metodos.data?.map((metodo: MetodoPago) => (
+                        <option key={metodo.id} value={metodo.id}>
+                          {metodo.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex flex-col gap-1.5">
+                    <span className="eyebrow">Monto (USD)</span>
+                    <input
+                      type="number"
+                      min={0}
+                      value={monto}
+                      onChange={(evento) => setMonto(evento.target.value)}
+                      className="rounded-button border border-cardamom-brown bg-charred-clove px-4 py-2 text-[14px] text-tiger-gold"
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
+
+            {reservar.isError && (
+              <p className="text-[13px] text-chili-red">
+                No pudimos registrar la reserva. Verifica los datos o escríbenos por WhatsApp.
+              </p>
+            )}
+
+            <button
+              type="button"
+              disabled={!puedeEnviar || reservar.isPending}
+              onClick={() => reservar.mutate()}
+              className="btn-fill self-start disabled:opacity-40"
+            >
+              {reservar.isPending ? 'ENVIANDO…' : 'RESERVAR MESA'} <ArrowUpRight size={15} strokeWidth={2} />
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );

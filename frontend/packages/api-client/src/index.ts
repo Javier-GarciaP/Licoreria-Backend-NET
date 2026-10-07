@@ -248,6 +248,12 @@ export const publicApi = {
   horarios: () => apiFetch<Record<string, unknown>>('/api/v1/horarios'),
   tasaActual: (tipo: 'BCV' | 'Paralelo' = 'Paralelo') =>
     apiFetch<TasaCambio>('/api/v1/tasas-cambio/actual', { query: { tipo } }),
+  zonas: () => apiFetch<Zona[]>('/api/v1/zonas'),
+  mesas: () => apiFetch<Mesa[]>('/api/v1/mesas'),
+  metodosPago: () => apiFetch<MetodoPago[]>('/api/v1/metodos-pago'),
+  crearReserva: (body: unknown) => apiFetch<Reserva>('/api/v1/reservas', { method: 'POST', body }),
+  registrarPagoReserva: (id: string, body: unknown) =>
+    apiFetch<Reserva>(`/api/v1/reservas/${id}/pagos`, { method: 'POST', body }),
 };
 
 /* ===================== Compras ===================== */
