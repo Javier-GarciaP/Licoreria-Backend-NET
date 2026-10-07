@@ -59,6 +59,24 @@ public class ReservaRepository : IReservaRepository
     public async Task AgregarPagoAsync(ReservaPago pago, CancellationToken cancellationToken = default)
         => await _context.ReservaPagos.AddAsync(pago, cancellationToken);
 
+    public async Task<IReadOnlyList<Guid>> ObtenerMesasReservadasAsync(
+        DateTime desde,
+        DateTime hasta,
+        CancellationToken cancellationToken = default)
+    {
+        var mesas = await _context.ReservaMesas
+            .AsNoTracking()
+            .Where(rm => !rm.IsDeleted
+                && !rm.Reserva.IsDeleted
+                && rm.Reserva.FechaHora >= desde
+                && rm.Reserva.FechaHora <= hasta
+                && (rm.Reserva.Estado == EstadoReserva.Pendiente || rm.Reserva.Estado == EstadoReserva.Confirmada))
+            .Select(rm => rm.MesaId)
+            .ToListAsync(cancellationToken);
+
+        return mesas.Distinct().ToList();
+    }
+
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => _context.SaveChangesAsync(cancellationToken);
 }

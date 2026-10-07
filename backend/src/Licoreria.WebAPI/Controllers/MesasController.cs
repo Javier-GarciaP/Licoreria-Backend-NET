@@ -42,4 +42,13 @@ public class MesasController : ControllerBase
     [Authorize(Policy = Permisos.ClubGestionar)]
     public async Task<IActionResult> Eliminar(Guid id, CancellationToken cancellationToken)
         => await _servicio.EliminarMesaAsync(id, cancellationToken) ? NoContent() : NotFound();
+
+    /// <summary>
+    /// Marca la mesa como desalojada. Cierra la sesión, deja la cuenta pendiente de cobro
+    /// si tiene saldo y notifica por SignalR que la mesa quedó libre para ser ocupada.
+    /// </summary>
+    [HttpPost("{id:guid}/desalojar")]
+    [Authorize(Policy = Permisos.VentasEscribir)]
+    public async Task<IActionResult> Desalojar(Guid id, CancellationToken cancellationToken)
+        => await _servicio.DesalojarMesaAsync(id, cancellationToken) ? NoContent() : NotFound();
 }

@@ -11,6 +11,7 @@ namespace Licoreria.WebAPI.Services;
 public sealed class NotificadorComandasSignalR : INotificadorComandas
 {
     private const string GrupoMeseros = "meseros";
+    private const string GrupoMesas = "mesas";
 
     private readonly IHubContext<ComandasHub> _hub;
 
@@ -47,5 +48,18 @@ public sealed class NotificadorComandasSignalR : INotificadorComandas
         return Task.WhenAll(
             _hub.Clients.Group(grupoArea).SendAsync(evento, payload, cancellationToken),
             _hub.Clients.Group(GrupoMeseros).SendAsync(evento, payload, cancellationToken));
+    }
+
+    public Task MesaActualizadaAsync(
+        Guid mesaId,
+        string estado,
+        Guid? cuentaId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var payload = new { mesaId, estado, cuentaId };
+
+        return Task.WhenAll(
+            _hub.Clients.Group(GrupoMeseros).SendAsync("mesa:actualizada", payload, cancellationToken),
+            _hub.Clients.Group(GrupoMesas).SendAsync("mesa:actualizada", payload, cancellationToken));
     }
 }

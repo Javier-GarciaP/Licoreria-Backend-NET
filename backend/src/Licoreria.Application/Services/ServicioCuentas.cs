@@ -49,6 +49,11 @@ public sealed class ServicioCuentas : IServicioCuentas
         await _cuentaRepository.AgregarAsync(cuenta, cancellationToken);
         await _cuentaRepository.SaveChangesAsync(cancellationToken);
 
+        if (dto.MesaId is Guid mesaId)
+        {
+            await _notificador.MesaActualizadaAsync(mesaId, "Ocupada", cuenta.Id, cancellationToken);
+        }
+
         return Mapear(cuenta);
     }
 
@@ -284,6 +289,11 @@ public sealed class ServicioCuentas : IServicioCuentas
         cuenta.Cerrar();
         cuenta.SesionMesa.CerradaEn = _reloj.UtcNow;
         await _cuentaRepository.SaveChangesAsync(cancellationToken);
+
+        if (cuenta.SesionMesa.MesaId is Guid mesaId)
+        {
+            await _notificador.MesaActualizadaAsync(mesaId, "Libre", cuenta.Id, cancellationToken);
+        }
 
         return venta;
     }

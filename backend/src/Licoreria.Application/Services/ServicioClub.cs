@@ -21,6 +21,7 @@ public sealed class ServicioClub : IServicioClub
     private readonly IReservaRepository _reservas;
     private readonly ICuentaRepository _cuentas;
     private readonly IRelojSistema _reloj;
+    private readonly INotificadorComandas _notificador;
 
     public ServicioClub(
         IRepository<Zona> zonas,
@@ -34,7 +35,8 @@ public sealed class ServicioClub : IServicioClub
         IRepository<ProductoVariante> variantes,
         IReservaRepository reservas,
         ICuentaRepository cuentas,
-        IRelojSistema reloj)
+        IRelojSistema reloj,
+        INotificadorComandas notificador)
     {
         _zonas = zonas;
         _mesas = mesas;
@@ -48,6 +50,7 @@ public sealed class ServicioClub : IServicioClub
         _reservas = reservas;
         _cuentas = cuentas;
         _reloj = reloj;
+        _notificador = notificador;
     }
 
     // ================= Zonas =================
@@ -102,10 +105,25 @@ public sealed class ServicioClub : IServicioClub
     {
         var mesas = await _mesas.FindAsync(m => !m.IsDeleted && (zonaId == null || m.ZonaId == zonaId), cancellationToken);
         var zonas = (await _zonas.GetAllAsync(cancellationToken)).ToDictionary(z => z.Id, z => z.Nombre);
-        var ocupadas = (await _cuentas.ObtenerMesasOcupadasAsync(cancellationToken)).ToHashSet();
+        var cuentasPorMesa = await _cuentas.ObtenerCuentasAbiertasPorMesaAsync(cancellationToken);
+
+        var ahora = _reloj.UtcNow;
+        var reservadas = (await _reservas.ObtenerMesasReservadasAsync(
+            ahora.AddHours(-2),
+            ahora.AddHours(12),
+            cancellationToken)).ToHashSet();
 
         return mesas
-            .Select(m => MapearMesa(m, zonas.GetValueOrDefault(m.ZonaId, string.Empty), !ocupadas.Contains(m.Id)))
+            .Select(m =>
+            {
+                var tieneCuenta = cuentasPorMesa.TryGetValue(m.Id, out var cuentaId);
+                return MapearMesa(
+                    m,
+                    zonas.GetValueOrDefault(m.ZonaId, string.Empty),
+                    !tieneCuenta,
+                    tieneCuenta ? cuentaId : null,
+                    reservadas.Contains(m.Id));
+            })
             .ToList();
     }
 
@@ -167,6 +185,25 @@ public sealed class ServicioClub : IServicioClub
         mesa.EliminarLogico();
         _mesas.Update(mesa);
         await _mesas.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    public async Task<bool> DesalojarMesaAsync(Guid mesaId, CancellationToken cancellationToken = default)
+    {
+        var cuenta = await _cuentas.ObtenerCuentaAbiertaPorMesaAsync(mesaId, cancellationToken);
+        if (cuenta is null)
+        {
+            return false;
+        }
+
+        cuenta.SesionMesa.CerradaEn = _reloj.UtcNow;
+        if (cuenta.Saldo > 0m && cuenta.Estado != EstadoCuenta.Cerrada)
+        {
+            cuenta.Estado = EstadoCuenta.PorCobrar;
+        }
+
+        await _cuentas.SaveChangesAsync(cancellationToken);
+        await _notificador.MesaActualizadaAsync(mesaId, "Libre", cuenta.Id, cancellationToken);
         return true;
     }
 
@@ -716,8 +753,8 @@ public sealed class ServicioClub : IServicioClub
 
     private static ZonaDto MapearZona(Zona z) => new(z.Id, z.Nombre, z.Tipo, z.Activo);
 
-    private static MesaDto MapearMesa(Mesa m, string zonaNombre, bool disponible)
-        => new(m.Id, m.ZonaId, zonaNombre, m.Numero, m.Capacidad, m.Forma, m.PosX, m.PosY, m.Ancho, m.Alto, m.Activa, disponible);
+    private static MesaDto MapearMesa(Mesa m, string zonaNombre, bool disponible, Guid? cuentaId = null, bool reservada = false)
+        => new(m.Id, m.ZonaId, zonaNombre, m.Numero, m.Capacidad, m.Forma, m.PosX, m.PosY, m.Ancho, m.Alto, m.Activa, disponible, cuentaId, reservada);
 
     private static PlanoDto MapearPlano(Plano p)
         => new(p.Id, p.Nombre, p.Version, p.Activo,

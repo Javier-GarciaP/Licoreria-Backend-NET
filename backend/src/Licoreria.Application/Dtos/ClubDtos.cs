@@ -20,7 +20,9 @@ public sealed record MesaDto(
     decimal Ancho,
     decimal Alto,
     bool Activa,
-    bool Disponible);
+    bool Disponible,
+    Guid? CuentaId = null,
+    bool Reservada = false);
 
 public sealed record MesaCrearDto(
     Guid ZonaId,

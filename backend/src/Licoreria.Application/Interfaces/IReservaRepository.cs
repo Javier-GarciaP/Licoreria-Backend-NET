@@ -21,5 +21,11 @@ public interface IReservaRepository
 
     Task AgregarPagoAsync(ReservaPago pago, CancellationToken cancellationToken = default);
 
+    /// <summary>Mesas con reserva vigente (pendiente o confirmada) dentro de la ventana dada.</summary>
+    Task<IReadOnlyList<Guid>> ObtenerMesasReservadasAsync(
+        DateTime desde,
+        DateTime hasta,
+        CancellationToken cancellationToken = default);
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

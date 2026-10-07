@@ -38,6 +38,14 @@ public class CuentaRepository : ICuentaRepository
     public Task<Cuenta?> ObtenerConDetalleAsync(Guid id, CancellationToken cancellationToken = default)
         => ConDetalle().FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted, cancellationToken);
 
+    public Task<Cuenta?> ObtenerCuentaAbiertaPorMesaAsync(Guid mesaId, CancellationToken cancellationToken = default)
+        => ConDetalle().FirstOrDefaultAsync(
+            c => !c.IsDeleted
+                && c.SesionMesa.MesaId == mesaId
+                && c.SesionMesa.CerradaEn == null
+                && c.Estado != EstadoCuenta.Cerrada,
+            cancellationToken);
+
     public async Task AgregarAsync(Cuenta cuenta, CancellationToken cancellationToken = default)
         => await _context.Cuentas.AddAsync(cuenta, cancellationToken);
 
@@ -58,6 +66,23 @@ public class CuentaRepository : ICuentaRepository
             .Where(s => !s.IsDeleted && s.MesaId != null && s.CerradaEn == null)
             .Select(s => s.MesaId!.Value)
             .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyDictionary<Guid, Guid>> ObtenerCuentasAbiertasPorMesaAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var filas = await _context.Cuentas
+            .AsNoTracking()
+            .Where(c => !c.IsDeleted
+                && c.Estado != EstadoCuenta.Cerrada
+                && c.SesionMesa.MesaId != null
+                && c.SesionMesa.CerradaEn == null)
+            .Select(c => new { MesaId = c.SesionMesa.MesaId!.Value, CuentaId = c.Id })
+            .ToListAsync(cancellationToken);
+
+        return filas
+            .GroupBy(f => f.MesaId)
+            .ToDictionary(g => g.Key, g => g.First().CuentaId);
+    }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => _context.SaveChangesAsync(cancellationToken);

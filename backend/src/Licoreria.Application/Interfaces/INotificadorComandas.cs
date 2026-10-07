@@ -17,4 +17,14 @@ public interface INotificadorComandas
         string estado,
         string area,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Notifica el cambio de estado de una mesa (Libre, Ocupada, Reservada) para que
+    /// los planos de todos los clientes conectados se refresquen en tiempo real.
+    /// </summary>
+    Task MesaActualizadaAsync(
+        Guid mesaId,
+        string estado,
+        Guid? cuentaId = null,
+        CancellationToken cancellationToken = default);
 }

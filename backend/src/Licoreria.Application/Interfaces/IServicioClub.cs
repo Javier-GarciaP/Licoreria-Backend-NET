@@ -19,6 +19,12 @@ public interface IServicioClub
     Task<MesaDto?> EditarMesaAsync(MesaEditarDto dto, CancellationToken cancellationToken = default);
     Task<bool> EliminarMesaAsync(Guid id, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Marca la mesa como desalojada: cierra la sesión de mesa, deja la cuenta en
+    /// <c>PorCobrar</c> si tiene saldo y notifica en tiempo real que la mesa quedó libre.
+    /// </summary>
+    Task<bool> DesalojarMesaAsync(Guid mesaId, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<PlanoDto>> ObtenerPlanosAsync(CancellationToken cancellationToken = default);
     Task<PlanoDto?> ObtenerPlanoAsync(Guid id, CancellationToken cancellationToken = default);
     Task<PlanoDto> CrearPlanoAsync(PlanoCrearDto dto, CancellationToken cancellationToken = default);
