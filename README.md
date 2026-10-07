@@ -202,7 +202,7 @@ La API v1 está implementada sobre PostgreSQL con Onion Architecture. Incluye:
 | 1 | Fundamentos, DI, RFC 7807 y dominio | Completada |
 | 2 | Persistencia PostgreSQL 15 y seeding | Completada |
 | 3 | Seguridad JWT / RBAC y validación | Completada |
-| 4 | Frontend React | Pendiente |
+| 4 | Frontend React | Completada (núcleo) |
 | 5 | Despliegue | Pendiente |
 
 > **Nota:** Las fases de desarrollo académico se rigen por lo indicado por el docente.

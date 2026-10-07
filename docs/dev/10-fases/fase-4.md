@@ -64,6 +64,25 @@ refrescan el plano, de modo que la mesa queda **Libre** para el resto del person
 - `POST /api/v1/mesas/{id}/desalojar` + evento `mesa:actualizada`.
 - `MesaDto` enriquecido con `cuentaId` y `reservada`.
 
+## Web pública · tema "Hungry Tiger"
+
+`apps/public-web` no usa el tema operativo: es un póster tipográfico *spice-label*
+(paleta dorado-sobre-óxido, tipografía display `Antonio`) con **vitrina 3D** de la
+botella de vino (glTF renderizado con React Three Fiber, cargado de forma diferida).
+Detalle de tokens en [`frontend/DESIGN.md`](../../../frontend/DESIGN.md) §8.
+
+## Administración (CRUD)
+
+Además de la operación, el panel interno incorpora gestión completa de:
+
+- **Catálogo:** productos con variantes (crear/editar/eliminar), categorías y marcas.
+- **Usuarios:** alta/edición, cambio de contraseña, revocación de sesiones y baja lógica.
+- **Clientes (CRM):** CRUD y acumular/canjear puntos.
+- **Caja:** apertura, movimientos, arqueo/cierre (Z) e historial de sesiones.
+
+Pendiente para siguientes iteraciones: Inventario avanzado (kardex, lotes, tomas),
+Compras, Contenido, Finanzas, IA, editor de plano con `dnd-kit` y la reserva web con seña.
+
 ## Pruebas
 
 - **Backend:** xUnit + Moq (`ServicioCatalogoProductoTests`) y pruebas de integración.

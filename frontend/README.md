@@ -117,48 +117,49 @@ Credenciales de prueba: `admin@licoreria.com / admin123` (Admin) y
 
 Leyenda: `[ ]` pendiente · `[~]` en progreso · `[x]` hecho.
 
-> **Estado actual:** 7.1–7.5 y 7.8 implementados (incluye validación con Zod,
-> accesibilidad básica de modales/tablas y code-splitting). 7.6 es parcial (listados,
-> falta CRUD completo). 7.7 cubre menú, tasas y eventos (falta reserva con seña).
+> **Estado (cierre Fase 4):** 7.1–7.5 y 7.8 completos. 7.6 cubre Catálogo, Usuarios,
+> Clientes y Caja (restan Inventario avanzado, Compras, Contenido, Finanzas, IA y el
+> editor de plano). 7.7 incluye el rediseño "Hungry Tiger" con vitrina 3D, menú, tasas
+> y eventos (resta la reserva web con seña). El backend de la §8 ya está implementado.
 
 ### 7.1 Andamiaje
-- [ ] workspaces, `tsconfig.base`, ESLint/Prettier, Tailwind con token `#003366`
-- [ ] `packages/types` (DTOs), `packages/api-client`, `packages/ui`
-- [ ] `.env.local`, fuentes, layout responsive (Mobile First)
+- [x] workspaces, `tsconfig.base`, ESLint/Prettier, Tailwind con token `#003366`
+- [x] `packages/types` (DTOs), `packages/api-client`, `packages/ui`
+- [x] `.env.local`, fuentes, layout responsive (Mobile First)
 
 ### 7.2 `admin` — Núcleo
-- [ ] `LoginPage` (`POST /api/auth/login`) + AuthContext + interceptor refresh
-- [ ] `AuthContext`, `ThemeContext`, `ModoContext` con persistencia
-- [ ] Layout (sidebar/header), selector de tema, selector de modo
-- [ ] Guards RBAC y ocultamiento de rutas admin
-- [ ] Toast global para RFC 7807
+- [x] `LoginPage` (`POST /api/auth/login`) + AuthContext + interceptor refresh
+- [x] `AuthContext`, `ThemeContext`, `ModoContext` con persistencia
+- [x] Layout (sidebar/header), selector de tema, selector de modo
+- [x] Guards RBAC y ocultamiento de rutas admin
+- [x] Toast global para RFC 7807
 
 ### 7.3 `admin` — Dashboard KPI  (`overflow-x-auto`)
-- [ ] Tarjetas KPI (`GET /api/v1/reportes/dashboard`)
-- [ ] **Mapa de calor de consumo por franja horaria** (`GET /api/v1/reportes/heatmap`)
-- [ ] **Diagnóstico de inventario** mín/máx con alertas (`GET /api/v1/reportes/inventario-salud`)
-- [ ] **Mermas vs ventas** (`GET /api/v1/reportes/mermas-vs-ventas`)
-- [ ] Skeletons y manejo de error
+- [x] Tarjetas KPI (`GET /api/v1/reportes/dashboard`)
+- [x] **Mapa de calor de consumo por franja horaria** (`GET /api/v1/reportes/heatmap`)
+- [x] **Diagnóstico de inventario** mín/máx con alertas (`GET /api/v1/reportes/inventario-salud`)
+- [x] **Mermas vs ventas** (`GET /api/v1/reportes/mermas-vs-ventas`)
+- [x] Skeletons y manejo de error
 
 ### 7.4 `admin` — Operación (Modo Discoteca)
-- [ ] **Plano interactivo SVG**: mesas/VIP desde `GET /api/v1/planos` + `/mesas`,
+- [x] **Plano interactivo SVG**: mesas/VIP desde `GET /api/v1/planos` + `/mesas`,
       color por estado (Libre/Reservada/Ocupada/En limpieza)
-- [ ] Abrir mesa (`POST /api/v1/cuentas`), asignar mesero
-- [ ] **Desalojo de mesa en tiempo real**: `POST /api/v1/mesas/{id}/desalojar` +
+- [x] Abrir mesa (`POST /api/v1/cuentas`)
+- [x] **Desalojo de mesa en tiempo real**: `POST /api/v1/mesas/{id}/desalojar` +
       evento `mesa:actualizada` → el resto de clientes ven la mesa **Libre**
-- [ ] Cuenta: comandas (`POST /cuentas/{id}/comandas`), máquina de estados
+- [x] Cuenta: comandas (`POST /cuentas/{id}/comandas`), máquina de estados
       Recibido→Preparado→Entregado (`PUT .../detalles/{detalleId}/estado`)
-- [ ] Abonos y **pagos mixtos USD/Bs** (`POST /cuentas/{id}/abonos`, `.../cerrar`),
+- [x] Abonos y **pagos mixtos USD/Bs** (`POST /cuentas/{id}/abonos`, `.../cerrar`),
       sincronizados con `GET /api/v1/tasas-cambio/actual`
-- [ ] Dividir cuenta (`POST /cuentas/{id}/dividir`)
-- [ ] **KDS Barra** en tiempo real (`/hubs/comandas`, área `barra`), tiempo transcurrido
+- [x] Dividir cuenta (`POST /cuentas/{id}/dividir`)
+- [x] **KDS Barra** en tiempo real (`/hubs/comandas`, área `barra`), tiempo transcurrido
       y botón "Marcar Preparado"
-- [ ] Reservas VIP: crear/gestionar, validar señas, **conflictos** (`409/422` → Toast)
-- [ ] Mermas y cortesías (`GET/POST /api/v1/mermas`)
+- [x] Reservas VIP: crear/gestionar, validar señas y pedidos anticipados
+- [x] Mermas y cortesías (`GET/POST /api/v1/mermas`)
 
 ### 7.5 `admin` — POS (Modo Licorería)
-- [ ] Venta rápida de mostrador: búsqueda de productos, carrito, cobro mixto
-      (`POST /api/v1/ventas`), comprobante, propina
+- [x] Venta rápida de mostrador: búsqueda de productos, carrito, cobro mixto
+      (`POST /api/v1/ventas`), comprobante, propina y descuento
 
 ### 7.6 `admin` — Catálogo / Inventario / Administración
 - [x] Productos con variantes (crear/editar/eliminar), paginación server-side y búsqueda
@@ -169,28 +170,26 @@ Leyenda: `[ ]` pendiente · `[~]` en progreso · `[x]` hecho.
 - [ ] Inventario: stock, kardex, ajustes, lotes, tomas físicas
 - [ ] Compras, contenido, finanzas, IA y editor de plano (dnd-kit)
 
-### 7.7 `public-web` (alcance secundario)
-- [ ] Catálogo y menú digital, tasas del día, eventos, contacto WhatsApp
+### 7.7 `public-web`
+- [x] Menú digital, tasas del día y eventos (API pública, sin datos estáticos)
+- [x] Rediseño "Hungry Tiger" (paleta dorado-sobre-óxido) y vitrina 3D del producto
 - [ ] Reserva web con selección de mesa en plano y seña (`POST /api/v1/reservas`)
 
 ### 7.8 Calidad (definición de terminado)
-- [ ] Diseño **Mobile First** en todas las vistas
-- [ ] **Skeletons** en toda carga asíncrona
-- [ ] **Paginación en servidor** reutilizable
-- [ ] **Validación de formularios** en cliente (Zod) + errores del servidor por campo
-- [ ] Toasts amigables para RFC 7807
-- [ ] **Docker**: `Dockerfile` de cada app (node build → nginx) + servicio en `docker-compose.yml`
+- [x] Diseño **Mobile First** en todas las vistas
+- [x] **Skeletons** en toda carga asíncrona
+- [x] **Paginación en servidor** reutilizable
+- [x] **Validación de formularios** en cliente (Zod) + errores del servidor por campo
+- [x] Toasts amigables para RFC 7807
+- [x] **Docker**: `Dockerfile` de cada app (node build → nginx) + servicio en `docker-compose.yml`
 
-## 8. Backend pendiente para Fase 4 (coordinar con el equipo .NET)
+## 8. Backend añadido para la Fase 4 (ya implementado)
 
-- [ ] `GET /api/v1/reportes/heatmap` (consumo por día/hora)
-- [ ] `GET /api/v1/reportes/inventario-salud` (mín/máx + unidades de compra)
-- [ ] `GET /api/v1/reportes/mermas-vs-ventas`
-- [ ] `POST /api/v1/mesas/{id}/desalojar` + evento **`mesa:actualizada`**
-- [ ] Actualizar `openapi/licoreria.yaml` y `docs/dev/04-api/endpoints.md`
-
-> Mientras estos endpoints no existan, **no inventar datos**: dejar la vista con
-> estado "pendiente de API" o feature flag, nunca mock estático en producción.
+- [x] `GET /api/v1/reportes/heatmap` (consumo por día/hora)
+- [x] `GET /api/v1/reportes/inventario-salud` (mín/máx + unidades de compra)
+- [x] `GET /api/v1/reportes/mermas-vs-ventas`
+- [x] `POST /api/v1/mesas/{id}/desalojar` + evento **`mesa:actualizada`**
+- [x] `openapi/licoreria.yaml` y `docs/dev/04-api/endpoints.md` actualizados
 
 ## 9. Convenciones de contribución
 
