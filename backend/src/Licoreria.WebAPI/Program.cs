@@ -48,6 +48,43 @@ builder.Services.AddControllers(options => options.Filters.AddService<Validation
 builder.Services.AddScoped<ValidationFilter>();
 builder.Services.AddEndpointsApiExplorer();
 
+// Generación del documento OpenAPI directamente desde el código (build-time)
+// y publicación en /openapi/v1.json para consumirlo en desarrollo.
+builder.Services.AddOpenApi("v1", options =>
+{
+    options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0;
+
+    // Personaliza metadatos y declara el esquema de seguridad Bearer (JWT).
+    options.AddDocumentTransformer((document, _, _) =>
+    {
+        document.Info.Title = "API Licorería / Discoteca";
+        document.Info.Version = "v1";
+        document.Info.Description =
+            "Contrato generado desde el código de la API del sistema de licorería y "
+            + "discoteca (sucursal única). Los errores se devuelven conforme a RFC 7807.";
+
+        document.Components ??= new OpenApiComponents();
+        document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+        document.Components.SecuritySchemes["Bearer"] = new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header,
+            Description = "Ingrese el token JWT. Ejemplo: Bearer {token}"
+        };
+
+        document.Security ??= [];
+        document.Security.Add(new OpenApiSecurityRequirement
+        {
+            [new OpenApiSecuritySchemeReference("Bearer")] = []
+        });
+
+        return Task.CompletedTask;
+    });
+});
+
 // Swagger / OpenAPI con soporte de autenticación Bearer (JWT).
 builder.Services.AddSwaggerGen(options =>
 {
@@ -169,20 +206,29 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Aplicar las migraciones pendientes al arrancar la API (PostgreSQL).
-using (var scope = app.Services.CreateScope())
+// La generación del contrato OpenAPI (dotnet-getdocument / GetDocument.Insider)
+// y las herramientas de EF inician la aplicación desde el ensamblado compilado.
+// En ese contexto no se aplican migraciones para no depender de la base de datos.
+var esGeneracionEnTiempoDeDiseno = AppDomain.CurrentDomain.GetAssemblies()
+    .Any(a => a.GetName().Name is "GetDocument.Insider" or "ef" or "dotnet-ef");
+
+if (!esGeneracionEnTiempoDeDiseno)
 {
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    try
+    // Aplicar las migraciones pendientes al arrancar la API (PostgreSQL).
+    using (var scope = app.Services.CreateScope())
     {
-        var context = scope.ServiceProvider.GetRequiredService<LicoreriaDbContext>();
-        await context.Database.MigrateAsync();
-        logger.LogInformation("Migraciones aplicadas correctamente.");
-    }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "Error al aplicar las migraciones de la base de datos.");
-        throw;
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        try
+        {
+            var context = scope.ServiceProvider.GetRequiredService<LicoreriaDbContext>();
+            await context.Database.MigrateAsync();
+            logger.LogInformation("Migraciones aplicadas correctamente.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error al aplicar las migraciones de la base de datos.");
+            throw;
+        }
     }
 }
 
@@ -194,6 +240,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.MapOpenApi();
 
 app.UseHttpsRedirection();
 

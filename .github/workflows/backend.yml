@@ -39,6 +39,17 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install OpenAPI tools
+        run: npm install --prefix scripts/openapi --no-audit --no-fund
+
+      - name: Verify OpenAPI contract parity
+        run: node scripts/openapi/verificar-paridad.mjs
+
       - name: Restore
         run: dotnet restore backend/Licoreria.slnx
 

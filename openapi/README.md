@@ -5,11 +5,22 @@ frontend (`frontend/packages/api-client`).
 
 ## Archivo
 
-- [`licoreria.yaml`](licoreria.yaml) — especificación OpenAPI 3.0 **generada desde el
-  código** (Swagger) y versionada. Contiene todos los endpoints de la API v1.
+- [`licoreria.yaml`](licoreria.yaml) — especificación OpenAPI **generada desde el
+  código** (OpenAPI nativo de ASP.NET Core) y versionada. Contiene todos los endpoints de la API v1.
 
-> Para regenerarla: ejecutar la API en desarrollo y descargar
-> `http://localhost:5190/swagger/v1/swagger.json` (o exportar desde Swagger UI).
+## Regeneración
+
+El documento se genera durante `dotnet build` (`Microsoft.AspNetCore.OpenApi`,
+`OpenApiGenerateDocuments`) como `openapi/generated/Licoreria.WebAPI.json`, y se
+exporta a YAML con una tarea:
+
+```bash
+task backend:openapi        # genera el JSON y escribe openapi/licoreria.yaml
+task backend:openapi:check  # verifica que el YAML esté sincronizado con los controladores
+```
+
+> El directorio `openapi/generated/` es un artefacto de build (ignorado por git);
+> solo se versiona `licoreria.yaml`.
 
 ## Uso
 

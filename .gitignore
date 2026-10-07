@@ -405,3 +405,7 @@ __pycache__/
 # Archivos subidos por la API (almacenamiento local)
 # ==========================================
 backend/src/Licoreria.WebAPI/wwwroot/uploads/
+# ==========================================
+# Contrato OpenAPI generado en build (se versiona solo el YAML exportado)
+# ==========================================
+openapi/generated/
