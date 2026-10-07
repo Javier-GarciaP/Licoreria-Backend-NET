@@ -60,4 +60,14 @@ public interface IServicioCatalogo
     Task<PrecioVarianteDto> EstablecerPrecioAsync(EstablecerPrecioDto dto, CancellationToken cancellationToken = default);
     Task<bool> EliminarPrecioAsync(Guid id, CancellationToken cancellationToken = default);
     Task<decimal?> ObtenerPrecioAsync(Guid varianteId, Guid listaPrecioId, Moneda moneda, CancellationToken cancellationToken = default);
+
+    // Modificadores / extras por producto
+    Task<IReadOnlyList<ModificadorDto>> ObtenerModificadoresAsync(CancellationToken cancellationToken = default);
+    Task<ModificadorDto> CrearModificadorAsync(ModificadorCrearDto dto, CancellationToken cancellationToken = default);
+    Task<ModificadorDto?> EditarModificadorAsync(ModificadorEditarDto dto, CancellationToken cancellationToken = default);
+    Task<bool> EliminarModificadorAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<ProductoModificadorDto>> ObtenerModificadoresProductoAsync(Guid productoId, CancellationToken cancellationToken = default);
+    Task<ProductoModificadorDto> AsignarModificadorAsync(Guid productoId, AsignarModificadorDto dto, CancellationToken cancellationToken = default);
+    Task<bool> QuitarModificadorAsync(Guid productoId, Guid productoModificadorId, CancellationToken cancellationToken = default);
 }

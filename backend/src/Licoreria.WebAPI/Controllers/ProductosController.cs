@@ -82,4 +82,21 @@ public class ProductosController : ControllerBase
     [Authorize(Policy = Permisos.CatalogoEscribir)]
     public async Task<IActionResult> EliminarReceta(Guid id, Guid recetaId, CancellationToken cancellationToken)
         => await _servicio.EliminarRecetaAsync(id, recetaId, cancellationToken) ? NoContent() : NotFound();
+
+    [HttpGet("{id:guid}/modificadores")]
+    public async Task<ActionResult<IReadOnlyList<ProductoModificadorDto>>> ObtenerModificadores(Guid id, CancellationToken cancellationToken)
+        => Ok(await _servicio.ObtenerModificadoresProductoAsync(id, cancellationToken));
+
+    [HttpPost("{id:guid}/modificadores")]
+    [Authorize(Policy = Permisos.CatalogoEscribir)]
+    public async Task<ActionResult<ProductoModificadorDto>> AsignarModificador(
+        Guid id,
+        [FromBody] AsignarModificadorDto dto,
+        CancellationToken cancellationToken)
+        => StatusCode(StatusCodes.Status201Created, await _servicio.AsignarModificadorAsync(id, dto, cancellationToken));
+
+    [HttpDelete("{id:guid}/modificadores/{productoModificadorId:guid}")]
+    [Authorize(Policy = Permisos.CatalogoEscribir)]
+    public async Task<IActionResult> QuitarModificador(Guid id, Guid productoModificadorId, CancellationToken cancellationToken)
+        => await _servicio.QuitarModificadorAsync(id, productoModificadorId, cancellationToken) ? NoContent() : NotFound();
 }

@@ -27,6 +27,7 @@ public class Producto : BaseEntity
 
     public ICollection<ProductoVariante> Variantes { get; set; } = new List<ProductoVariante>();
     public ICollection<Receta> Recetas { get; set; } = new List<Receta>();
+    public ICollection<ProductoModificador> Modificadores { get; set; } = new List<ProductoModificador>();
 
     public void ActualizarDatos(
         string nombre,

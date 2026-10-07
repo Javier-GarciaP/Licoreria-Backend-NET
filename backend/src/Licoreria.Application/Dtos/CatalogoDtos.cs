@@ -95,3 +95,35 @@ public sealed record EstablecerPrecioDto(
     Guid ListaPrecioId,
     Moneda Moneda,
     decimal Precio);
+
+public sealed record ModificadorDto(
+    Guid Id,
+    string Nombre,
+    decimal PrecioAdicional,
+    bool Activo);
+
+public sealed record ModificadorCrearDto(
+    string Nombre,
+    decimal PrecioAdicional,
+    bool Activo = true);
+
+public sealed record ModificadorEditarDto(
+    Guid Id,
+    string Nombre,
+    decimal PrecioAdicional,
+    bool Activo);
+
+public sealed record ProductoModificadorDto(
+    Guid Id,
+    Guid ModificadorId,
+    string ModificadorNombre,
+    decimal PrecioAdicional,
+    int Minimo,
+    int Maximo,
+    bool Requerido);
+
+public sealed record AsignarModificadorDto(
+    Guid ModificadorId,
+    int Minimo = 0,
+    int Maximo = 1,
+    bool Requerido = false);

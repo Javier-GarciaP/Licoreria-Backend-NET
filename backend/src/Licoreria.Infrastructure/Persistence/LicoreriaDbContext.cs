@@ -21,6 +21,8 @@ public class LicoreriaDbContext : DbContext
     public DbSet<ListaPrecio> ListasPrecio => Set<ListaPrecio>();
     public DbSet<PrecioProducto> PreciosProducto => Set<PrecioProducto>();
     public DbSet<Receta> Recetas => Set<Receta>();
+    public DbSet<Modificador> Modificadores => Set<Modificador>();
+    public DbSet<ProductoModificador> ProductoModificadores => Set<ProductoModificador>();
     public DbSet<StockProducto> StockProductos => Set<StockProducto>();
     public DbSet<MovimientoInventario> MovimientosInventario => Set<MovimientoInventario>();
     public DbSet<Merma> Mermas => Set<Merma>();

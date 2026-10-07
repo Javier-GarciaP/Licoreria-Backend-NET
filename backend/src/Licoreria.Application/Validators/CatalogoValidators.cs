@@ -106,3 +106,37 @@ public sealed class EstablecerPrecioDtoValidator : AbstractValidator<EstablecerP
         RuleFor(x => x.Precio).GreaterThanOrEqualTo(0).WithMessage("El precio no puede ser negativo.");
     }
 }
+
+public sealed class ModificadorCrearDtoValidator : AbstractValidator<ModificadorCrearDto>
+{
+    public ModificadorCrearDtoValidator()
+    {
+        RuleFor(x => x.Nombre).NotEmpty().WithMessage("El nombre es obligatorio.")
+            .MaximumLength(100).WithMessage("El nombre no puede superar los 100 caracteres.");
+        RuleFor(x => x.PrecioAdicional).GreaterThanOrEqualTo(0).WithMessage("El precio adicional no puede ser negativo.");
+    }
+}
+
+public sealed class ModificadorEditarDtoValidator : AbstractValidator<ModificadorEditarDto>
+{
+    public ModificadorEditarDtoValidator()
+    {
+        RuleFor(x => x.Id).NotEmpty().WithMessage("El identificador es obligatorio.");
+        RuleFor(x => x.Nombre).NotEmpty().WithMessage("El nombre es obligatorio.")
+            .MaximumLength(100).WithMessage("El nombre no puede superar los 100 caracteres.");
+        RuleFor(x => x.PrecioAdicional).GreaterThanOrEqualTo(0).WithMessage("El precio adicional no puede ser negativo.");
+    }
+}
+
+public sealed class AsignarModificadorDtoValidator : AbstractValidator<AsignarModificadorDto>
+{
+    public AsignarModificadorDtoValidator()
+    {
+        RuleFor(x => x.ModificadorId).NotEmpty().WithMessage("El modificador es obligatorio.");
+        RuleFor(x => x.Minimo).GreaterThanOrEqualTo(0).WithMessage("El mínimo no puede ser negativo.");
+        RuleFor(x => x.Maximo).GreaterThanOrEqualTo(1).WithMessage("El máximo debe ser al menos 1.");
+        RuleFor(x => x)
+            .Must(x => x.Maximo >= x.Minimo)
+            .WithMessage("El máximo no puede ser menor que el mínimo.");
+    }
+}

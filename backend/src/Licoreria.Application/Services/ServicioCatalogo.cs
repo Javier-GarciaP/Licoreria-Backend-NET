@@ -17,6 +17,8 @@ public sealed class ServicioCatalogo : IServicioCatalogo
     private readonly IRepository<ListaPrecio> _listaPrecioRepository;
     private readonly IRepository<PrecioProducto> _precioRepository;
     private readonly IRepository<ProductoVariante> _variantes;
+    private readonly IRepository<Modificador> _modificadorRepository;
+    private readonly IRepository<ProductoModificador> _productoModificadorRepository;
 
     public ServicioCatalogo(
         IProductoRepository productoRepository,
@@ -26,7 +28,9 @@ public sealed class ServicioCatalogo : IServicioCatalogo
         IRepository<Impuesto> impuestoRepository,
         IRepository<ListaPrecio> listaPrecioRepository,
         IRepository<PrecioProducto> precioRepository,
-        IRepository<ProductoVariante> variantes)
+        IRepository<ProductoVariante> variantes,
+        IRepository<Modificador> modificadorRepository,
+        IRepository<ProductoModificador> productoModificadorRepository)
     {
         _productoRepository = productoRepository;
         _categoriaRepository = categoriaRepository;
@@ -36,6 +40,8 @@ public sealed class ServicioCatalogo : IServicioCatalogo
         _listaPrecioRepository = listaPrecioRepository;
         _precioRepository = precioRepository;
         _variantes = variantes;
+        _modificadorRepository = modificadorRepository;
+        _productoModificadorRepository = productoModificadorRepository;
     }
 
     // ================= Categorías =================
@@ -561,6 +567,156 @@ public sealed class ServicioCatalogo : IServicioCatalogo
         return precios.FirstOrDefault()?.Precio;
     }
 
+    // ================= Modificadores / extras =================
+
+    public async Task<IReadOnlyList<ModificadorDto>> ObtenerModificadoresAsync(CancellationToken cancellationToken = default)
+    {
+        var modificadores = await _modificadorRepository.GetAllAsync(cancellationToken);
+        return modificadores.Where(m => !m.IsDeleted).Select(MapearModificador).ToList();
+    }
+
+    public async Task<ModificadorDto> CrearModificadorAsync(ModificadorCrearDto dto, CancellationToken cancellationToken = default)
+    {
+        if (dto.PrecioAdicional < 0)
+        {
+            throw new ReglaNegocioException("El precio adicional no puede ser negativo.");
+        }
+
+        var modificador = new Modificador
+        {
+            Nombre = dto.Nombre,
+            PrecioAdicional = dto.PrecioAdicional,
+            Activo = dto.Activo
+        };
+
+        await _modificadorRepository.AddAsync(modificador, cancellationToken);
+        await _modificadorRepository.SaveChangesAsync(cancellationToken);
+        return MapearModificador(modificador);
+    }
+
+    public async Task<ModificadorDto?> EditarModificadorAsync(ModificadorEditarDto dto, CancellationToken cancellationToken = default)
+    {
+        var modificador = await _modificadorRepository.GetByIdAsync(dto.Id, cancellationToken);
+        if (modificador is null || modificador.IsDeleted)
+        {
+            return null;
+        }
+
+        modificador.Actualizar(dto.Nombre, dto.PrecioAdicional, dto.Activo);
+        _modificadorRepository.Update(modificador);
+        await _modificadorRepository.SaveChangesAsync(cancellationToken);
+        return MapearModificador(modificador);
+    }
+
+    public async Task<bool> EliminarModificadorAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var modificador = await _modificadorRepository.GetByIdAsync(id, cancellationToken);
+        if (modificador is null || modificador.IsDeleted)
+        {
+            return false;
+        }
+
+        modificador.EliminarLogico();
+        _modificadorRepository.Update(modificador);
+        await _modificadorRepository.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    public async Task<IReadOnlyList<ProductoModificadorDto>> ObtenerModificadoresProductoAsync(Guid productoId, CancellationToken cancellationToken = default)
+    {
+        var asignaciones = await _productoModificadorRepository.FindAsync(
+            pm => !pm.IsDeleted && pm.ProductoId == productoId,
+            cancellationToken);
+
+        if (asignaciones.Count == 0)
+        {
+            return [];
+        }
+
+        var modificadores = (await _modificadorRepository.GetAllAsync(cancellationToken))
+            .ToDictionary(m => m.Id);
+
+        return asignaciones
+            .Where(pm => modificadores.ContainsKey(pm.ModificadorId))
+            .Select(pm =>
+            {
+                var modificador = modificadores[pm.ModificadorId];
+                return new ProductoModificadorDto(
+                    pm.Id,
+                    modificador.Id,
+                    modificador.Nombre,
+                    modificador.PrecioAdicional,
+                    pm.Minimo,
+                    pm.Maximo,
+                    pm.Requerido);
+            })
+            .ToList();
+    }
+
+    public async Task<ProductoModificadorDto> AsignarModificadorAsync(Guid productoId, AsignarModificadorDto dto, CancellationToken cancellationToken = default)
+    {
+        var producto = await _productoRepository.GetByIdAsync(productoId, cancellationToken);
+        if (producto is null || producto.IsDeleted)
+        {
+            throw new NoEncontradoException($"No existe el producto {productoId}.");
+        }
+
+        var modificador = await _modificadorRepository.GetByIdAsync(dto.ModificadorId, cancellationToken);
+        if (modificador is null || modificador.IsDeleted)
+        {
+            throw new NoEncontradoException($"No existe el modificador {dto.ModificadorId}.");
+        }
+
+        if (dto.Minimo < 0 || dto.Maximo < 1 || dto.Maximo < dto.Minimo)
+        {
+            throw new ReglaNegocioException("Los límites de selección del modificador no son válidos.");
+        }
+
+        var existentes = await _productoModificadorRepository.FindAsync(
+            pm => !pm.IsDeleted && pm.ProductoId == productoId && pm.ModificadorId == dto.ModificadorId,
+            cancellationToken);
+
+        if (existentes.Count > 0)
+        {
+            throw new ConflictoException($"El modificador '{modificador.Nombre}' ya está asignado al producto.");
+        }
+
+        var asignacion = new ProductoModificador
+        {
+            ProductoId = productoId,
+            ModificadorId = dto.ModificadorId,
+            Minimo = dto.Minimo,
+            Maximo = dto.Maximo,
+            Requerido = dto.Requerido
+        };
+
+        await _productoModificadorRepository.AddAsync(asignacion, cancellationToken);
+        await _productoModificadorRepository.SaveChangesAsync(cancellationToken);
+
+        return new ProductoModificadorDto(
+            asignacion.Id,
+            modificador.Id,
+            modificador.Nombre,
+            modificador.PrecioAdicional,
+            asignacion.Minimo,
+            asignacion.Maximo,
+            asignacion.Requerido);
+    }
+
+    public async Task<bool> QuitarModificadorAsync(Guid productoId, Guid productoModificadorId, CancellationToken cancellationToken = default)
+    {
+        var asignacion = await _productoModificadorRepository.GetByIdAsync(productoModificadorId, cancellationToken);
+        if (asignacion is null || asignacion.IsDeleted || asignacion.ProductoId != productoId)
+        {
+            return false;
+        }
+
+        asignacion.EliminarLogico();
+        _productoModificadorRepository.Update(asignacion);
+        await _productoModificadorRepository.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
     // ================= Auxiliares =================
 
     private async Task ValidarCategoriaAsync(Guid categoriaId, CancellationToken cancellationToken)
@@ -667,6 +823,9 @@ public sealed class ServicioCatalogo : IServicioCatalogo
 
     private static ListaPrecioDto MapearListaPrecio(ListaPrecio l)
         => new(l.Id, l.Nombre, l.Descripcion, l.EsPredeterminada, l.Activo);
+
+    private static ModificadorDto MapearModificador(Modificador m)
+        => new(m.Id, m.Nombre, m.PrecioAdicional, m.Activo);
 
     private static ProductoDto MapearProducto(Producto p)
         => new(
