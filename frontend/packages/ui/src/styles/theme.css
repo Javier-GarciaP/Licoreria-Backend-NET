@@ -1,9 +1,57 @@
 /* =========================================================
    Tokens de tema · Licorería / Discoteca
-   Oscuro (por defecto) y Azul UNET. Ver frontend/DESIGN.md.
+   Tema claro "Claro" (por defecto) y "Oscuro". Ver frontend/DESIGN.md.
+   Dirección visual: vidrio opaco (glass) + acentos pastel.
    ========================================================= */
 
+/* Tema claro (por defecto). */
 :root,
+[data-theme='claro'] {
+  --color-canvas: 242 244 245;   /* #f2f4f5 */
+  --color-surface: 255 255 255;  /* #ffffff */
+  --color-elevated: 255 255 255; /* #ffffff */
+  --color-hairline: 235 235 235; /* #ebebeb */
+  --color-ink: 11 13 16;         /* #0b0d10 */
+  --color-muted: 120 117 116;    /* #787574 */
+  --color-stone: 204 204 204;    /* #cccccc */
+
+  /* Acento pastel (lavanda). */
+  --color-accent: 201 184 240;      /* #c9b8f0 */
+  --color-accent-soft: 227 219 250; /* #e3dbfa (wash) */
+  --color-accent-ink: 107 79 201;   /* #6b4fc9 (texto/ícono sobre el tema) */
+  --color-violet: 201 184 240;      /* alias de acento */
+
+  /* Familias pastel: fill + variante de texto legible. */
+  --color-success: 168 230 207;      /* menta */
+  --color-success-ink: 31 92 70;
+  --color-warning: 247 201 166;      /* durazno */
+  --color-warning-ink: 122 67 24;
+  --color-danger: 243 182 196;       /* rosa */
+  --color-danger-ink: 122 36 54;
+  --color-info: 169 214 245;         /* cielo */
+  --color-info-ink: 30 76 110;
+  --color-butter: 244 225 161;       /* mantequilla (caja) */
+  --color-butter-ink: 107 87 20;
+
+  /* Texto sobre un fill pastel (siempre oscuro). */
+  --color-on-pastel: 36 30 58; /* #241e3a */
+
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.1);
+  --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-glow: 0 8px 30px rgba(107, 79, 201, 0.18);
+
+  /* Vidrio opaco. */
+  --glass-bg: 255 255 255;
+  --glass-alpha: 0.72;
+  --glass-panel-alpha: 0.62;
+  --glass-bar-alpha: 0.82;
+  --glass-edge: inset 0 1px 0 #ffffff;
+  --glass-blur: 20px;
+
+  color-scheme: light;
+}
+
+/* Tema oscuro: mismo vidrio, en oscuro. */
 [data-theme='dark'] {
   --color-canvas: 11 13 16;      /* #0b0d10 */
   --color-surface: 20 23 28;     /* #14171c */
@@ -12,42 +60,37 @@
   --color-ink: 245 247 250;      /* #f5f7fa */
   --color-muted: 154 163 178;    /* #9aa3b2 */
   --color-stone: 58 65 80;       /* #3a4150 */
-  --color-accent: 84 51 235;     /* #5433eb */
-  --color-accent-soft: 192 181 243; /* #c0b5f3 */
-  --color-violet: 84 51 235;     /* #5433eb */
-  --color-success: 47 191 113;   /* #2fbf71 */
-  --color-warning: 245 165 36;   /* #f5a524 */
-  --color-danger: 239 68 68;     /* #ef4444 */
-  --color-info: 59 130 246;      /* #3b82f6 */
+
+  --color-accent: 201 184 240;      /* #c9b8f0 */
+  --color-accent-soft: 227 219 250; /* #e3dbfa */
+  --color-accent-ink: 227 219 250;  /* texto claro sobre oscuro */
+  --color-violet: 201 184 240;
+
+  --color-success: 168 230 207;
+  --color-success-ink: 190 240 219;
+  --color-warning: 247 201 166;
+  --color-warning-ink: 251 220 195;
+  --color-danger: 243 182 196;
+  --color-danger-ink: 248 205 214;
+  --color-info: 169 214 245;
+  --color-info-ink: 197 228 250;
+  --color-butter: 244 225 161;
+  --color-butter-ink: 248 236 187;
+
+  --color-on-pastel: 36 30 58; /* #241e3a */
 
   --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.45);
   --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.35);
-  --shadow-glow: 0 4px 24px rgba(69, 36, 219, 0.34);
+  --shadow-glow: 0 8px 30px rgba(201, 184, 240, 0.28);
+
+  --glass-bg: 255 255 255;
+  --glass-alpha: 0.07;
+  --glass-panel-alpha: 0.05;
+  --glass-bar-alpha: 0.09;
+  --glass-edge: inset 0 1px 0 rgb(255 255 255 / 0.1);
+  --glass-blur: 24px;
 
   color-scheme: dark;
-}
-
-[data-theme='unet'] {
-  --color-canvas: 242 244 245;   /* #f2f4f5 */
-  --color-surface: 255 255 255;  /* #ffffff */
-  --color-elevated: 255 255 255; /* #ffffff */
-  --color-hairline: 235 235 235; /* #ebebeb */
-  --color-ink: 11 13 16;         /* #0b0d10 */
-  --color-muted: 120 117 116;    /* #787574 */
-  --color-stone: 204 204 204;    /* #cccccc */
-  --color-accent: 0 51 102;      /* #003366 (Azul UNET) */
-  --color-accent-soft: 0 75 143; /* #004b8f */
-  --color-violet: 84 51 235;
-  --color-success: 22 163 74;
-  --color-warning: 217 119 6;
-  --color-danger: 220 38 38;
-  --color-info: 37 99 235;
-
-  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.12);
-  --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --shadow-glow: 0 4px 24px rgba(0, 51, 102, 0.28);
-
-  color-scheme: light;
 }
 
 html,
@@ -81,4 +124,121 @@ body {
 
 ::-webkit-scrollbar-track {
   background: transparent;
+}
+
+/* =========================================================
+   Superficies de vidrio (glass) · toda la app
+   Vidrio opaco: blanco translúcido + blur, borde hairline y un
+   canto interior de 1px que da "peso". Sin sombras de elevación.
+   Consumido por Card, Modal, menús, toasts y el shell del admin.
+   ========================================================= */
+.glass-panel,
+.glass-bar,
+.glass-card {
+  border: 1px solid rgb(var(--color-ink) / 0.06);
+  box-shadow: var(--glass-edge);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+}
+
+.glass-panel {
+  background-color: rgb(var(--glass-bg) / var(--glass-panel-alpha));
+}
+
+.glass-bar {
+  background-color: rgb(var(--glass-bg) / var(--glass-bar-alpha));
+}
+
+.glass-card {
+  background-color: rgb(var(--glass-bg) / var(--glass-alpha));
+}
+
+/* Sin soporte de backdrop-filter: caer a la superficie del tema. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-panel,
+  .glass-bar,
+  .glass-card {
+    background-color: rgb(var(--color-surface) / 0.96);
+  }
+}
+
+/* Preferencia del usuario por menos transparencia (iOS/macOS). */
+@media (prefers-reduced-transparency: reduce) {
+  .glass-panel,
+  .glass-bar,
+  .glass-card {
+    background-color: rgb(var(--color-surface) / 0.98);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Voz de libro mayor: cifras (dinero, cantidades, códigos) en mono tabular. */
+.num {
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Salto horizontal de las pestañas tipo carpeta (estilo Apple). */
+@keyframes salto-der {
+  0% {
+    transform: translateX(-10px);
+  }
+  60% {
+    transform: translateX(3px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes salto-izq {
+  0% {
+    transform: translateX(10px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.salto-der {
+  animation: salto-der 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.salto-izq {
+  animation: salto-izq 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .salto-der,
+  .salto-izq {
+    animation: none;
+  }
+}
+
+/* Impresión de tickets: solo el comprobante (.ticket-print) llega al papel. */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .ticket-print,
+  .ticket-print * {
+    visibility: visible;
+  }
+  .ticket-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    max-width: 80mm;
+    box-shadow: none !important;
+    filter: none !important;
+  }
 }

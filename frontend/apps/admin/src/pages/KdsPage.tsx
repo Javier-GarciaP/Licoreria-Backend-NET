@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Button, Card, CardBody, CardHeader, CardTitle, PageHeader, Pill, Skeleton, StatusBadge } from '@licoreria/ui';
+import { Button, Card, CardBody, CardHeader, CardTitle, cn, PageHeader, Pill, Skeleton, StatusBadge } from '@licoreria/ui';
 import { cuentasApi } from '@licoreria/api-client';
 import { mensajeDeError } from '../lib/api';
 import { minutosTranscurridos } from '../lib/format';
+import { useAuth } from '../context/AuthContext';
 import { useRealtime } from '../hooks/useRealtime';
 
 interface ItemKds {
@@ -21,20 +23,26 @@ interface ItemKds {
 export function KdsPage() {
   const queryClient = useQueryClient();
   const [tick, setTick] = useState(0);
+  const [params, setParams] = useSearchParams();
+  const { rolDominio } = useAuth() as { rolDominio?: string };
+
+  const areaParam = params.get('area');
+  const area = areaParam === 'cocina' || areaParam === 'barra' ? areaParam : rolDominio === 'Cocina' ? 'cocina' : 'barra';
+  const areaApi = area === 'cocina' ? 'Cocina' : 'Barra';
 
   useEffect(() => {
     const intervalo = setInterval(() => setTick((valor) => valor + 1), 30_000);
     return () => clearInterval(intervalo);
   }, []);
 
-  useRealtime('barra', {
+  useRealtime(area, {
     'comanda:creada': () => queryClient.invalidateQueries({ queryKey: ['kds'] }),
     'comanda:actualizada': () => queryClient.invalidateQueries({ queryKey: ['kds'] }),
     'item:actualizado': () => queryClient.invalidateQueries({ queryKey: ['kds'] }),
   });
 
   const cuentas = useQuery({
-    queryKey: ['kds', 'cuentas'],
+    queryKey: ['kds', 'cuentas', area],
     queryFn: () => cuentasApi.listar({ estado: 'Abierta', pageSize: 100 }),
     refetchInterval: 60_000,
   });
@@ -51,7 +59,7 @@ export function KdsPage() {
   const items: ItemKds[] =
     cuentas.data?.items.flatMap((cuenta) =>
       cuenta.comandas
-        .filter((comanda) => comanda.area === 'Barra')
+        .filter((comanda) => comanda.area === areaApi)
         .flatMap((comanda) =>
           comanda.detalles
             .filter((detalle) => detalle.estado === 'Recibido' || detalle.estado === 'Preparado')
@@ -68,12 +76,35 @@ export function KdsPage() {
         ),
     ) ?? [];
 
+  const cambiarArea = (nueva: 'barra' | 'cocina') => {
+    setParams(nueva === 'barra' ? {} : { area: 'cocina' }, { replace: true });
+  };
+
   return (
     <div className="mx-auto flex max-w-page flex-col gap-6">
       <PageHeader
-        title="KDS · Barra"
+        title={`KDS · ${area === 'cocina' ? 'Cocina' : 'Barra'}`}
         subtitle="Comandas pendientes en tiempo real."
-        actions={<Pill tone="accent">{items.length} pendientes</Pill>}
+        actions={
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-pill border border-hairline p-0.5">
+              {(['barra', 'cocina'] as const).map((valor) => (
+                <button
+                  key={valor}
+                  type="button"
+                  onClick={() => cambiarArea(valor)}
+                  className={cn(
+                    'rounded-pill px-3 py-1 text-xs capitalize transition',
+                    area === valor ? 'bg-accent/20 font-medium text-accent-ink' : 'text-muted hover:text-ink',
+                  )}
+                >
+                  {valor}
+                </button>
+              ))}
+            </div>
+            <Pill tone="accent">{items.length} pendientes</Pill>
+          </div>
+        }
       />
 
       {cuentas.isLoading ? (
@@ -100,8 +131,8 @@ export function KdsPage() {
                     {item.cantidad} × {item.nombre}
                   </p>
                   <div className="flex items-center justify-between">
-                    <span className={urgente ? 'text-sm text-danger' : 'text-sm text-muted'}>
-                      {minutos < 1 ? 'recién recibido' : `${minutos} min`}
+                    <span className={urgente ? 'text-sm text-danger-ink' : 'text-sm text-muted'}>
+                      {minutos < 1 ? 'recién recibido' : <span className="num">{minutos} min</span>}
                     </span>
                     <Button size="sm" loading={marcar.isPending} onClick={() => marcar.mutate(item)}>
                       Marcar preparado

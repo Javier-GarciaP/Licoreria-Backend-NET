@@ -17,7 +17,7 @@ export function FinanzasTabs() {
           className={({ isActive }) =>
             cn(
               'rounded-pill border px-4 py-1.5 text-sm transition',
-              isActive ? 'border-accent text-accent-soft' : 'border-hairline text-muted hover:text-ink',
+              isActive ? 'border-accent text-accent-ink' : 'border-hairline text-muted hover:text-ink',
             )
           }
         >

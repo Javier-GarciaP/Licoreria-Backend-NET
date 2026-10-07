@@ -20,7 +20,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
         id={selectId}
         ref={ref}
         className={cn(
-          'h-10 w-full rounded-pill border bg-surface px-4 text-sm text-ink transition',
+          'h-10 w-full rounded-control border bg-surface px-4 text-sm text-ink transition',
           'focus:outline-none focus:ring-2 focus:ring-accent/50',
           error ? 'border-danger' : 'border-hairline',
           className,
@@ -30,7 +30,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
         {children}
       </select>
       {error ? (
-        <span className="text-xs text-danger">{error}</span>
+        <span className="text-xs text-danger-ink">{error}</span>
       ) : hint ? (
         <span className="text-xs text-muted">{hint}</span>
       ) : null}

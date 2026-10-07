@@ -304,7 +304,7 @@ export function ReservasPage() {
                   onClick={() => toggleMesa(mesa.id)}
                   className={`rounded-pill border px-3 py-1.5 text-xs transition ${
                     mesasSeleccionadas.includes(mesa.id)
-                      ? 'border-accent text-accent-soft'
+                      ? 'border-accent text-accent-ink'
                       : 'border-hairline text-muted'
                   }`}
                 >
@@ -370,7 +370,7 @@ export function ReservasPage() {
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="text-muted">{formatUSD(pedido.subtotalUSD)}</span>
-                  <button className="text-danger" onClick={() => quitarPedido.mutate(pedido.id)}>
+                  <button className="text-danger-ink" onClick={() => quitarPedido.mutate(pedido.id)}>
                     Quitar
                   </button>
                 </div>

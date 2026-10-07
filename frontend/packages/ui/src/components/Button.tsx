@@ -6,13 +6,13 @@ type Size = 'sm' | 'md' | 'lg' | 'icon';
 
 const variants: Record<Variant, string> = {
   primary:
-    'bg-accent text-white shadow-glow hover:brightness-110 active:brightness-95',
+    'bg-accent text-on-pastel shadow-glow hover:brightness-105 active:brightness-95',
   ghost:
     'bg-transparent text-ink border border-hairline hover:bg-elevated',
   subtle:
     'bg-elevated text-ink hover:brightness-110',
   danger:
-    'bg-danger text-white hover:brightness-110',
+    'bg-danger text-on-pastel hover:brightness-105',
 };
 
 const sizes: Record<Size, string> = {

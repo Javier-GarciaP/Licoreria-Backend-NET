@@ -237,7 +237,7 @@ export function ComprasPage() {
 
           <div className="rounded-2xl border border-hairline p-3">
             <div className="mb-2 flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase tracking-tighter2 text-muted">Líneas</p>
+              <p className="text-xs font-medium uppercase tracking-tighter2 text-muted">Líneas</p>
               <Button
                 type="button"
                 size="sm"
@@ -248,7 +248,7 @@ export function ComprasPage() {
               </Button>
             </div>
             {ordenForm.formState.errors.detalles?.message && (
-              <p className="mb-2 text-xs text-danger">{ordenForm.formState.errors.detalles.message}</p>
+              <p className="mb-2 text-xs text-danger-ink">{ordenForm.formState.errors.detalles.message}</p>
             )}
             <div className="flex flex-col gap-2">
               {fields.map((field, indice) => (
@@ -357,7 +357,7 @@ export function ComprasPage() {
                           [item.id]: String(Math.min(pendiente, Math.max(0, Number(evento.target.value)))),
                         }))
                       }
-                      className="h-9 w-24 rounded-pill border border-hairline bg-surface px-3 text-sm text-ink"
+                      className="h-9 w-24 rounded-control border border-hairline bg-surface px-3 text-sm text-ink"
                     />
                   </div>
                 );

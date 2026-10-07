@@ -13,14 +13,12 @@ import {
   DataTable,
   Input,
   Modal,
-  PageHeader,
   Pill,
   Select,
 } from '@licoreria/ui';
 import type { Mesa, Zona } from '@licoreria/types';
 import { clubApi } from '@licoreria/api-client';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { SalonTabs } from '../components/SalonTabs';
 import { mensajeDeError } from '../lib/api';
 
 const TIPOS_ZONA = ['Barra', 'Mesas', 'Juegos', 'Pista', 'Vip'] as const;
@@ -29,6 +27,11 @@ const esquemaZona = z.object({
   nombre: z.string().min(2, 'Ingresa el nombre'),
   tipo: z.enum(TIPOS_ZONA),
   activo: z.boolean(),
+  color: z.string().optional(),
+  posX: z.coerce.number().min(0),
+  posY: z.coerce.number().min(0),
+  ancho: z.coerce.number().min(0),
+  alto: z.coerce.number().min(0),
 });
 
 const esquemaMesa = z.object({
@@ -46,7 +49,7 @@ const esquemaMesa = z.object({
 type FormularioZona = z.infer<typeof esquemaZona>;
 type FormularioMesa = z.infer<typeof esquemaMesa>;
 
-const ZONA_VACIA: FormularioZona = { nombre: '', tipo: 'Mesas', activo: true };
+const ZONA_VACIA: FormularioZona = { nombre: '', tipo: 'Mesas', activo: true, color: '', posX: 0, posY: 0, ancho: 0, alto: 0 };
 const MESA_VACIA: FormularioMesa = {
   zonaId: '',
   numero: '',
@@ -80,10 +83,12 @@ export function ZonasMesasPage() {
   };
 
   const guardarZona = useMutation({
-    mutationFn: (datos: FormularioZona) =>
-      zonaEditando
-        ? clubApi.actualizarZona(zonaEditando.id, { id: zonaEditando.id, ...datos })
-        : clubApi.crearZona(datos),
+    mutationFn: (datos: FormularioZona) => {
+      const body = { ...datos, color: datos.color ? datos.color : null };
+      return zonaEditando
+        ? clubApi.actualizarZona(zonaEditando.id, { id: zonaEditando.id, ...body })
+        : clubApi.crearZona(body);
+    },
     onSuccess: () => {
       toast.success(zonaEditando ? 'Zona actualizada' : 'Zona creada');
       setZonaCreando(false);
@@ -130,10 +135,7 @@ export function ZonasMesasPage() {
   });
 
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader title="Salón" subtitle="Zonas y mesas del local." />
-      <SalonTabs />
-
+    <div className="flex flex-col gap-6">
       <Card>
         <CardHeader>
           <CardTitle>Zonas</CardTitle>
@@ -171,7 +173,16 @@ export function ZonasMesasPage() {
                       size="sm"
                       variant="ghost"
                       onClick={() => {
-                        zonaForm.reset({ nombre: zona.nombre, tipo: zona.tipo, activo: zona.activo });
+                        zonaForm.reset({
+                          nombre: zona.nombre,
+                          tipo: zona.tipo,
+                          activo: zona.activo,
+                          color: zona.color ?? '',
+                          posX: zona.posX,
+                          posY: zona.posY,
+                          ancho: zona.ancho,
+                          alto: zona.alto,
+                        });
                         setZonaEditando(zona);
                       }}
                     >
@@ -281,6 +292,14 @@ export function ZonasMesasPage() {
               </option>
             ))}
           </Select>
+          <Input label="Color (hex)" placeholder="#c9b8f0" {...zonaForm.register('color')} />
+          <p className="text-xs text-muted">Región en el mapa (unidades de rejilla)</p>
+          <div className="grid grid-cols-4 gap-3">
+            <Input label="X" type="number" step="0.5" {...zonaForm.register('posX')} />
+            <Input label="Y" type="number" step="0.5" {...zonaForm.register('posY')} />
+            <Input label="Ancho" type="number" step="0.5" {...zonaForm.register('ancho')} />
+            <Input label="Alto" type="number" step="0.5" {...zonaForm.register('alto')} />
+          </div>
           <label className="flex items-center gap-2 text-sm text-muted">
             <input type="checkbox" {...zonaForm.register('activo')} />
             Activa

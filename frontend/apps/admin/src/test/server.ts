@@ -12,6 +12,7 @@ export const handlers = [
         nombreCompleto: 'Administrador',
         email: 'admin@licoreria.com',
         rol: 'Admin',
+        rolDominio: 'Administrador',
         permisos: ['sales:read', 'sales:write'],
         accessToken: 'test-access-token',
         refreshToken: 'test-refresh-token',

@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { authApi } from '@licoreria/api-client';
 import { tokens } from '../lib/api';
+import { inicioDeRol } from '../lib/roles';
 
 const AuthContext = createContext(null);
 
@@ -44,6 +45,7 @@ export function AuthProvider({ children }) {
       nombreCompleto: respuesta.nombreCompleto,
       email: respuesta.email,
       rol: respuesta.rol,
+      rolDominio: respuesta.rolDominio,
       permisos: respuesta.permisos,
     });
     return respuesta;
@@ -67,7 +69,10 @@ export function AuthProvider({ children }) {
       inicializando,
       login,
       logout,
-      esAdmin: usuario?.rol === 'Admin' || usuario?.rol === 'Administrador',
+      rolDominio: usuario?.rolDominio,
+      inicio: inicioDeRol(usuario?.rolDominio),
+      esAdmin:
+        usuario?.rolDominio === 'Administrador' || usuario?.rol === 'Admin' || usuario?.rol === 'Administrador',
       tienePermiso: (clave) => Boolean(usuario?.permisos?.includes(clave)),
       tieneAlguno: (claves) => claves.some((clave) => Boolean(usuario?.permisos?.includes(clave))),
     }),

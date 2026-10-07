@@ -4,11 +4,15 @@ const ThemeContext = createContext(null);
 const STORAGE_KEY = 'licoreria.tema';
 
 /**
- * Selector de tema visual persistente: "Oscuro" (por defecto) y "Azul UNET".
+ * Selector de tema visual persistente: "Claro" (por defecto) y "Oscuro".
  * Aplica data-theme en <html> para que los tokens CSS cambien en caliente.
  */
 export function ThemeProvider({ children }) {
-  const [tema, setTemaState] = useState(() => localStorage.getItem(STORAGE_KEY) || 'dark');
+  const [tema, setTemaState] = useState(() => {
+    const guardado = localStorage.getItem(STORAGE_KEY);
+    if (guardado === 'unet' || !guardado) return 'claro';
+    return guardado;
+  });
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', tema);
@@ -17,7 +21,7 @@ export function ThemeProvider({ children }) {
 
   const setTema = useCallback((nuevo) => setTemaState(nuevo), []);
   const alternarTema = useCallback(
-    () => setTemaState((actual) => (actual === 'dark' ? 'unet' : 'dark')),
+    () => setTemaState((actual) => (actual === 'dark' ? 'claro' : 'dark')),
     [],
   );
 

@@ -144,7 +144,7 @@ export function TomasFisicasPage() {
                         aria-label={`Contado ${item.sku}`}
                         value={conteos[item.varianteId] ?? ''}
                         onChange={(evento) => setConteos((actuales) => ({ ...actuales, [item.varianteId]: evento.target.value }))}
-                        className="h-9 w-24 rounded-pill border border-hairline bg-surface px-3 text-sm text-ink"
+                        className="h-9 w-24 rounded-control border border-hairline bg-surface px-3 text-sm text-ink"
                       />
                     </td>
                   </tr>
@@ -181,7 +181,7 @@ export function TomasFisicasPage() {
                       <td className="py-2 text-right text-muted">{formatNumber(item.cantidadContada)}</td>
                       <td
                         className={`py-2 text-right ${
-                          item.diferencia === 0 ? 'text-muted' : item.diferencia > 0 ? 'text-success' : 'text-danger'
+                          item.diferencia === 0 ? 'text-muted' : item.diferencia > 0 ? 'text-success-ink' : 'text-danger-ink'
                         }`}
                       >
                         {item.diferencia > 0 ? '+' : ''}

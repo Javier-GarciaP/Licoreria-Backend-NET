@@ -201,7 +201,7 @@ export function CuentaPage() {
                         <div className="min-w-0">
                           <p className="truncate text-sm text-ink">
                             {detalle.cantidad} × {detalle.nombre}
-                            {detalle.esCortesia && <span className="ml-2 text-xs text-warning">cortesía</span>}
+                            {detalle.esCortesia && <span className="ml-2 text-xs text-warning-ink">cortesía</span>}
                           </p>
                           <p className="text-xs text-muted">{formatUSD(detalle.subtotalUSD)}</p>
                         </div>
@@ -241,7 +241,7 @@ export function CuentaPage() {
                     key={valor}
                     onClick={() => setArea(valor)}
                     className={`flex-1 rounded-pill border px-3 py-2 text-sm transition ${
-                      area === valor ? 'border-accent text-accent-soft' : 'border-hairline text-muted'
+                      area === valor ? 'border-accent text-accent-ink' : 'border-hairline text-muted'
                     }`}
                   >
                     {valor}
@@ -341,7 +341,7 @@ export function CuentaPage() {
                   {datos.divisiones.map((division) => (
                     <div key={division.id} className="flex justify-between text-sm">
                       <span className="text-muted">Parte {division.indice}</span>
-                      <span className={division.pagada ? 'text-success' : 'text-ink'}>{formatUSD(division.monto)}</span>
+                      <span className={division.pagada ? 'text-success-ink' : 'text-ink'}>{formatUSD(division.monto)}</span>
                     </div>
                   ))}
                 </div>
@@ -357,12 +357,14 @@ export function CuentaPage() {
           <Card>
             <CardHeader>
               <CardTitle>Cerrar cuenta</CardTitle>
-              <span className="text-xs text-muted">Total {formatUSD(datos.total)}</span>
+              <span className="text-xs text-muted">
+                Total <span className="num">{formatUSD(datos.total)}</span>
+              </span>
             </CardHeader>
             <CardBody className="flex flex-col gap-3">
               <div className="grid grid-cols-2 gap-2">
                 <select
-                  className="h-10 rounded-pill border border-hairline bg-surface px-3 text-sm text-ink"
+                  className="h-10 rounded-control border border-hairline bg-surface px-3 text-sm text-ink"
                   value={cierreMetodo}
                   onChange={(evento) => setCierreMetodo(evento.target.value)}
                 >
@@ -372,7 +374,7 @@ export function CuentaPage() {
                   ))}
                 </select>
                 <select
-                  className="h-10 rounded-pill border border-hairline bg-surface px-3 text-sm text-ink"
+                  className="h-10 rounded-control border border-hairline bg-surface px-3 text-sm text-ink"
                   value={cierreMoneda}
                   onChange={(evento) => setCierreMoneda(evento.target.value as 'USD' | 'BS')}
                 >

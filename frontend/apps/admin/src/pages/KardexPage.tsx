@@ -40,7 +40,7 @@ export function KardexPage() {
             <label className="flex flex-col gap-1.5">
               <span className="text-xs text-muted">Tipo</span>
               <select
-                className="h-10 rounded-pill border border-hairline bg-surface px-3 text-sm text-ink"
+                className="h-10 rounded-control border border-hairline bg-surface px-3 text-sm text-ink"
                 value={tipo}
                 onChange={(evento) => {
                   setTipo(evento.target.value);
@@ -94,7 +94,7 @@ export function KardexPage() {
                 header: 'Cantidad',
                 align: 'right',
                 render: (movimiento) => (
-                  <span className={movimiento.cantidad < 0 ? 'text-danger' : 'text-success'}>
+                  <span className={movimiento.cantidad < 0 ? 'text-danger-ink' : 'text-success-ink'}>
                     {movimiento.cantidad > 0 ? '+' : ''}
                     {formatNumber(movimiento.cantidad)}
                   </span>

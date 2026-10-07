@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -52,7 +53,8 @@ const VACIO: FormularioCliente = {
 
 export function ClientesPage() {
   const [page, setPage] = useState(1);
-  const [busqueda, setBusqueda] = useState('');
+  const [params] = useSearchParams();
+  const [busqueda, setBusqueda] = useState(params.get('busqueda') ?? '');
   const [creando, setCreando] = useState(false);
   const [editando, setEditando] = useState<Cliente | null>(null);
   const [puntosDe, setPuntosDe] = useState<Cliente | null>(null);

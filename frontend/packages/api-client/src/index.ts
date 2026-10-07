@@ -1,13 +1,20 @@
 import type {
+  AuditLog,
   AuthResponse,
   Categoria,
   Cliente,
   Cuenta,
+  CuentaPorCobrar,
   CuentaPorPagar,
   Denominacion,
   DiagnosticoInventario,
   Dashboard,
+  Entrada,
   Horario,
+  Impuesto,
+  InventarioValorizado,
+  ListaPrecio,
+  ListaVip,
   LoginRequest,
   LocalInfo,
   Lote,
@@ -17,6 +24,7 @@ import type {
   Mesa,
   MetodoPago,
   Merma,
+  Modificador,
   MonedaInfo,
   MovimientoKardex,
   MovimientoTesoreria,
@@ -25,12 +33,17 @@ import type {
   PedidoAnticipado,
   Plano,
   Producto,
+  ProductoModificador,
   Promocion,
   Proveedor,
   QrMenu,
+  Receta,
   Recepcion,
+  ReporteCompras,
   ReporteHeatmap,
   ReporteMermasVsVentas,
+  ReportePropinas,
+  ReporteVentas,
   RegistrarVentaRequest,
   Reserva,
   ResultadoPaginado,
@@ -68,6 +81,9 @@ export const catalogoApi = {
   productos: (query: PaginaQuery & { busqueda?: string; categoriaId?: string; activo?: boolean } = {}) =>
     apiFetch<ResultadoPaginado<Producto>>('/api/v1/productos', { query }),
   producto: (id: string) => apiFetch<Producto>(`/api/v1/productos/${id}`),
+  recetas: (id: string) => apiFetch<Receta[]>(`/api/v1/productos/${id}/recetas`),
+  productoModificadores: (id: string) =>
+    apiFetch<ProductoModificador[]>(`/api/v1/productos/${id}/modificadores`),
   crear: (body: unknown) => apiFetch<Producto>('/api/v1/productos', { method: 'POST', body }),
   actualizar: (id: string, body: unknown) =>
     apiFetch<Producto>(`/api/v1/productos/${id}`, { method: 'PUT', body }),
@@ -95,6 +111,9 @@ export const ventasApi = {
 
 export const promocionesApi = {
   listar: () => apiFetch<Promocion[]>('/api/v1/promociones'),
+  crear: (body: unknown) => apiFetch<Promocion>('/api/v1/promociones', { method: 'POST', body }),
+  actualizar: (id: string, body: unknown) => apiFetch<Promocion>(`/api/v1/promociones/${id}`, { method: 'PUT', body }),
+  eliminar: (id: string) => apiFetch<void>(`/api/v1/promociones/${id}`, { method: 'DELETE' }),
 };
 
 export const cuentasApi = {
@@ -194,6 +213,40 @@ export const reportesApi = {
   inventarioSalud: () => apiFetch<DiagnosticoInventario>('/api/v1/reportes/inventario-salud'),
   mermasVsVentas: (desde?: string, hasta?: string) =>
     apiFetch<ReporteMermasVsVentas>('/api/v1/reportes/mermas-vs-ventas', { query: { desde, hasta } }),
+  ventas: (desde?: string, hasta?: string) =>
+    apiFetch<ReporteVentas>('/api/v1/reportes/ventas', { query: { desde, hasta } }),
+  propinas: (desde?: string, hasta?: string) =>
+    apiFetch<ReportePropinas>('/api/v1/reportes/propinas', { query: { desde, hasta } }),
+  inventario: () => apiFetch<InventarioValorizado>('/api/v1/reportes/inventario'),
+  compras: (desde?: string, hasta?: string) =>
+    apiFetch<ReporteCompras>('/api/v1/reportes/compras', { query: { desde, hasta } }),
+};
+
+export const auditoriaApi = {
+  listar: (query: PaginaQuery & { entidad?: string; usuarioId?: string } = {}) =>
+    apiFetch<ResultadoPaginado<AuditLog>>('/api/v1/auditoria', { query }),
+};
+
+export const cuentasPorCobrarApi = {
+  listar: (query: PaginaQuery & { clienteId?: string; soloPendientes?: boolean } = {}) =>
+    apiFetch<ResultadoPaginado<CuentaPorCobrar>>('/api/v1/cuentas-por-cobrar', { query }),
+  crear: (body: unknown) => apiFetch<CuentaPorCobrar>('/api/v1/cuentas-por-cobrar', { method: 'POST', body }),
+  registrarPago: (id: string, body: unknown) =>
+    apiFetch<CuentaPorCobrar>(`/api/v1/cuentas-por-cobrar/${id}/pagos`, { method: 'POST', body }),
+};
+
+export const listaVipApi = {
+  listar: () => apiFetch<ListaVip[]>('/api/v1/lista-vip'),
+  crear: (body: unknown) => apiFetch<ListaVip>('/api/v1/lista-vip', { method: 'POST', body }),
+  actualizar: (id: string, body: unknown) => apiFetch<ListaVip>(`/api/v1/lista-vip/${id}`, { method: 'PUT', body }),
+  eliminar: (id: string) => apiFetch<void>(`/api/v1/lista-vip/${id}`, { method: 'DELETE' }),
+};
+
+export const entradasApi = {
+  listar: (query: { eventoId?: string } = {}) => apiFetch<Entrada[]>('/api/v1/entradas', { query }),
+  emitir: (body: unknown) => apiFetch<Entrada>('/api/v1/entradas', { method: 'POST', body }),
+  validar: (codigo: string) => apiFetch<Entrada>(`/api/v1/entradas/${codigo}/validar`, { method: 'POST' }),
+  cancelar: (id: string) => apiFetch<Entrada>(`/api/v1/entradas/${id}/cancelar`, { method: 'POST' }),
 };
 
 export const usuariosApi = {
@@ -313,4 +366,37 @@ export const contenidoApi = {
 
   menuDigital: () => apiFetch<MenuDigital>('/api/v1/menu-digital'),
   qrMenu: (baseUrl?: string) => apiFetch<QrMenu>('/api/v1/menu-digital/qr', { query: { baseUrl } }),
+};
+
+/* ===================== Catálogo avanzado ===================== */
+
+export const unidadesApi = {
+  listar: () => apiFetch<UnidadMedida[]>('/api/v1/unidades-medida'),
+  crear: (body: unknown) => apiFetch<UnidadMedida>('/api/v1/unidades-medida', { method: 'POST', body }),
+  actualizar: (id: string, body: unknown) =>
+    apiFetch<UnidadMedida>(`/api/v1/unidades-medida/${id}`, { method: 'PUT', body }),
+  eliminar: (id: string) => apiFetch<void>(`/api/v1/unidades-medida/${id}`, { method: 'DELETE' }),
+};
+
+export const impuestosApi = {
+  listar: () => apiFetch<Impuesto[]>('/api/v1/impuestos'),
+  crear: (body: unknown) => apiFetch<Impuesto>('/api/v1/impuestos', { method: 'POST', body }),
+  actualizar: (id: string, body: unknown) => apiFetch<Impuesto>(`/api/v1/impuestos/${id}`, { method: 'PUT', body }),
+  eliminar: (id: string) => apiFetch<void>(`/api/v1/impuestos/${id}`, { method: 'DELETE' }),
+};
+
+export const listasPrecioApi = {
+  listar: () => apiFetch<ListaPrecio[]>('/api/v1/listas-precio'),
+  crear: (body: unknown) => apiFetch<ListaPrecio>('/api/v1/listas-precio', { method: 'POST', body }),
+  actualizar: (id: string, body: unknown) =>
+    apiFetch<ListaPrecio>(`/api/v1/listas-precio/${id}`, { method: 'PUT', body }),
+  eliminar: (id: string) => apiFetch<void>(`/api/v1/listas-precio/${id}`, { method: 'DELETE' }),
+};
+
+export const modificadoresApi = {
+  listar: () => apiFetch<Modificador[]>('/api/v1/modificadores'),
+  crear: (body: unknown) => apiFetch<Modificador>('/api/v1/modificadores', { method: 'POST', body }),
+  actualizar: (id: string, body: unknown) =>
+    apiFetch<Modificador>(`/api/v1/modificadores/${id}`, { method: 'PUT', body }),
+  eliminar: (id: string) => apiFetch<void>(`/api/v1/modificadores/${id}`, { method: 'DELETE' }),
 };

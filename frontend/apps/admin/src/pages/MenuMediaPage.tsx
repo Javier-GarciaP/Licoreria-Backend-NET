@@ -76,7 +76,7 @@ export function MenuMediaPage() {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {menu.data?.secciones.map((seccion) => (
                   <div key={seccion.categoriaId} className="rounded-2xl border border-hairline p-3">
-                    <p className="text-sm font-semibold text-ink">{seccion.nombre}</p>
+                    <p className="text-sm font-medium text-ink">{seccion.nombre}</p>
                     <div className="mt-2 flex flex-col gap-1">
                       {seccion.items.map((item) => (
                         <div key={item.varianteId} className="flex justify-between text-sm">
@@ -123,7 +123,7 @@ export function MenuMediaPage() {
                 key: 'nombre',
                 header: 'Archivo',
                 render: (asset) => (
-                  <a href={asset.url} target="_blank" rel="noreferrer" className="text-ink hover:text-accent-soft">
+                  <a href={asset.url} target="_blank" rel="noreferrer" className="text-ink hover:text-accent-ink">
                     {asset.nombre}
                   </a>
                 ),

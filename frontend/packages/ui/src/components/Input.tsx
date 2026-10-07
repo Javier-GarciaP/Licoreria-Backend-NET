@@ -21,7 +21,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           id={inputId}
           ref={ref}
           className={cn(
-            'h-10 w-full rounded-pill border bg-surface px-4 text-sm text-ink transition',
+            'h-10 w-full rounded-control border bg-surface px-4 text-sm text-ink transition',
             'placeholder:text-stone focus:outline-none focus:ring-2 focus:ring-accent/50',
             rightSlot && 'pr-11',
             error ? 'border-danger' : 'border-hairline',
@@ -32,7 +32,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         {rightSlot && <span className="absolute right-3 flex items-center">{rightSlot}</span>}
       </span>
       {error ? (
-        <span className="text-xs text-danger">{error}</span>
+        <span className="text-xs text-danger-ink">{error}</span>
       ) : hint ? (
         <span className="text-xs text-muted">{hint}</span>
       ) : null}

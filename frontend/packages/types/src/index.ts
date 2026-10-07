@@ -32,6 +32,7 @@ export interface AuthResponse {
   nombreCompleto: string;
   email: string;
   rol: string;
+  rolDominio: string;
   permisos: string[];
   accessToken: string;
   refreshToken: string;
@@ -43,6 +44,7 @@ export interface UsuarioActual {
   nombreCompleto: string;
   email: string;
   rol: string;
+  rolDominio: string;
   permisos: string[];
 }
 
@@ -435,6 +437,16 @@ export interface ComandaDetalle {
   estado: EstadoItemComanda;
   esCortesia: boolean;
   subtotalUSD: number;
+  /** Monto ya cubierto por abonos (pago por consumo). Opcional hasta que el backend lo exponga. */
+  pagadoUSD?: number;
+  /** Saldo pendiente del consumo (`subtotalUSD - pagadoUSD`). */
+  saldoUSD?: number;
+}
+
+/** Ítem que un abono cubre, para el pago por consumo. */
+export interface AbonoItem {
+  comandaDetalleId: string;
+  monto: number;
 }
 
 export interface Comanda {
@@ -484,6 +496,11 @@ export interface Zona {
   nombre: string;
   tipo: TipoZona;
   activo: boolean;
+  color: string | null;
+  posX: number;
+  posY: number;
+  ancho: number;
+  alto: number;
 }
 
 export interface Mesa {
@@ -506,8 +523,12 @@ export interface Mesa {
 export interface PlanoElemento {
   id: string;
   zonaId: string | null;
+  mesaId: string | null;
   tipo: string;
+  forma: string | null;
+  color: string | null;
   etiqueta: string | null;
+  z: number;
   posX: number;
   posY: number;
   ancho: number;
@@ -520,6 +541,10 @@ export interface Plano {
   nombre: string;
   version: number;
   activo: boolean;
+  anchoFondo: number;
+  altoFondo: number;
+  rejilla: number;
+  piso: string;
   elementos: PlanoElemento[];
 }
 
@@ -754,4 +779,142 @@ export interface PedidoAnticipado {
   cantidad: number;
   precioUnitarioUSD: number;
   subtotalUSD: number;
+}
+
+/* ===================== Gerencia (R0) ===================== */
+
+export interface AuditLog {
+  id: string;
+  usuarioId: string | null;
+  usuario: string | null;
+  accion: string;
+  entidad: string;
+  entidadId: string | null;
+  datos: string | null;
+  ip: string | null;
+  fecha: string;
+}
+
+export interface CuentaPorCobrar {
+  id: string;
+  clienteId: string;
+  clienteNombre: string;
+  montoUSD: number;
+  saldoUSD: number;
+  vencimiento: string;
+  estado: string;
+}
+
+export interface ListaVip {
+  id: string;
+  clienteId: string | null;
+  nombre: string;
+  documento: string | null;
+  telefono: string | null;
+  notas: string | null;
+  activo: boolean;
+}
+
+export interface Entrada {
+  id: string;
+  codigo: string;
+  eventoId: string | null;
+  eventoTitulo: string | null;
+  reservaId: string | null;
+  clienteId: string | null;
+  precio: number;
+  moneda: Moneda;
+  estado: string;
+  emitidaEn: string;
+  usadaEn: string | null;
+}
+
+export interface ReporteVentas {
+  desde: string;
+  hasta: string;
+  totalUSD: number;
+  totalBS: number;
+  cantidad: number;
+  ticketPromedioUSD: number;
+  porDia: { fecha: string; totalUSD: number; cantidad: number }[];
+  porUsuario: { usuarioId: string; usuarioNombre: string; totalUSD: number; cantidad: number }[];
+  porMetodoPago: { metodoPagoId: string; metodoPagoNombre: string; moneda: Moneda; monto: number; pagos: number }[];
+}
+
+export interface ReportePropinas {
+  desde: string;
+  hasta: string;
+  totalPropinaUSD: number;
+  porUsuario: { usuarioId: string; usuarioNombre: string; ventas: number; totalPropinaUSD: number }[];
+}
+
+export interface InventarioValorizado {
+  variantes: number;
+  unidadesTotales: number;
+  costoTotalUSD: number;
+  valorVentaTotalUSD: number;
+  bajoMinimo: number;
+  items: {
+    varianteId: string;
+    sku: string;
+    productoNombre: string;
+    varianteNombre: string;
+    cantidad: number;
+    costoUnitarioUSD: number;
+    costoTotalUSD: number;
+    valorVentaUSD: number;
+    bajoMinimo: boolean;
+  }[];
+}
+
+export interface ReporteCompras {
+  desde: string;
+  hasta: string;
+  recepciones: number;
+  totalCompradoUSD: number;
+  totalPorPagarUSD: number;
+  totalPagadoUSD: number;
+  cuentasPendientes: number;
+}
+
+export interface Impuesto {
+  id: string;
+  nombre: string;
+  porcentaje: number;
+  activo: boolean;
+}
+
+export interface ListaPrecio {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  esPredeterminada: boolean;
+  activo: boolean;
+}
+
+export interface Modificador {
+  id: string;
+  nombre: string;
+  precioAdicional: number;
+  activo: boolean;
+}
+
+/** Modificador asignado a un producto, con sus límites de selección en el POS. */
+export interface ProductoModificador {
+  id: string;
+  modificadorId: string;
+  modificadorNombre: string;
+  precioAdicional: number;
+  minimo: number;
+  maximo: number;
+  requerido: boolean;
+}
+
+/** Insumo de la receta de un producto preparado. */
+export interface Receta {
+  id: string;
+  varianteInsumoId: string;
+  varianteInsumoNombre: string;
+  sku: string;
+  cantidad: number;
 }

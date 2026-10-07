@@ -52,7 +52,7 @@ export function DataTable<T>({
                 key={column.key}
                 scope="col"
                 className={cn(
-                  'whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-tighter2 text-muted',
+                  'whitespace-nowrap px-4 py-3 text-xs font-medium uppercase tracking-tighter2 text-muted',
                   alignClass(column.align),
                 )}
               >
@@ -74,7 +74,12 @@ export function DataTable<T>({
               {columns.map((column) => (
                 <td
                   key={column.key}
-                  className={cn('px-4 py-3 text-ink', alignClass(column.align), column.className)}
+                  className={cn(
+                    'px-4 py-3 text-ink',
+                    alignClass(column.align),
+                    column.align === 'right' && 'num',
+                    column.className,
+                  )}
                 >
                   {column.render(row)}
                 </td>

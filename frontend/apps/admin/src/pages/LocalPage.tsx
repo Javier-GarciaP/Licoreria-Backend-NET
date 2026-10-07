@@ -60,14 +60,14 @@ function HorarioRow({ horario, onSave, guardando }: { horario: Horario; onSave: 
       <input
         type="time"
         aria-label="Apertura"
-        className="h-9 rounded-pill border border-hairline bg-surface px-3 text-sm text-ink"
+        className="h-9 rounded-control border border-hairline bg-surface px-3 text-sm text-ink"
         {...form.register('apertura')}
       />
       <div className="flex items-center gap-2">
         <input
           type="time"
           aria-label="Cierre"
-          className="h-9 w-full rounded-pill border border-hairline bg-surface px-3 text-sm text-ink"
+          className="h-9 w-full rounded-control border border-hairline bg-surface px-3 text-sm text-ink"
           {...form.register('cierre')}
         />
         <Button type="submit" size="sm" variant="ghost" loading={guardando}>

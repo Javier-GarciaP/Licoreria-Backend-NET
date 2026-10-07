@@ -3,9 +3,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Button, Card, Input } from '@licoreria/ui';
+import { Button, Card, cn, Input } from '@licoreria/ui';
 import { useAuth } from '../context/AuthContext';
 import { mensajeDeError } from '../lib/api';
+import { CUENTAS_DEMO, inicioDeRol } from '../lib/roles';
 
 const esquema = z.object({
   username: z.string().min(3, 'Ingresa tu correo o usuario'),
@@ -14,36 +15,49 @@ const esquema = z.object({
 
 type Formulario = z.infer<typeof esquema>;
 
+interface RespuestaLogin {
+  rolDominio?: string;
+}
+
 export function LoginPage() {
-  const { login } = useAuth() as { login: (u: string, p: string) => Promise<unknown> };
+  const { login } = useAuth() as { login: (u: string, p: string) => Promise<RespuestaLogin> };
   const navigate = useNavigate();
   const location = useLocation();
-  const destino = (location.state as { from?: { pathname: string } } | null)?.from?.pathname ?? '/';
+  const destino = (location.state as { from?: { pathname: string } } | null)?.from?.pathname;
 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<Formulario>({ resolver: zodResolver(esquema), defaultValues: { username: '', password: '' } });
 
-  const enviar = async (datos: Formulario) => {
+  const autenticar = async (username: string, password: string) => {
     try {
-      await login(datos.username, datos.password);
+      const respuesta = await login(username, password);
       toast.success('Sesión iniciada');
-      navigate(destino, { replace: true });
+      navigate(destino ?? inicioDeRol(respuesta.rolDominio), { replace: true });
     } catch (error) {
       toast.error('No se pudo iniciar sesión', { description: mensajeDeError(error) });
     }
   };
 
+  const enviar = (datos: Formulario) => autenticar(datos.username, datos.password);
+
+  const usarCuenta = (cuenta: (typeof CUENTAS_DEMO)[number]) => {
+    setValue('username', cuenta.email);
+    setValue('password', cuenta.password);
+    void autenticar(cuenta.email, cuenta.password);
+  };
+
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-canvas px-4">
+    <div className="flex min-h-dvh items-center justify-center bg-canvas px-4 py-10">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-card bg-accent text-2xl text-white shadow-glow">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-card bg-accent text-2xl text-on-pastel shadow-glow">
             &#127863;
           </div>
-          <h1 className="text-xl font-semibold tracking-tightest text-ink">Panel interno</h1>
+          <h1 className="text-xl font-medium tracking-tightest text-ink">Panel interno</h1>
           <p className="mt-1 text-sm text-muted">Licorería · Discoteca</p>
         </div>
 
@@ -71,9 +85,25 @@ export function LoginPage() {
           </form>
         </Card>
 
-        <p className="mt-6 text-center text-xs text-muted">
-          Demo: <span className="text-ink">admin@licoreria.com</span> / <span className="text-ink">admin123</span>
-        </p>
+        <div className="mt-6">
+          <p className="mb-2 text-center text-xs text-muted">Entrar como</p>
+          <div className="flex flex-wrap justify-center gap-1.5">
+            {CUENTAS_DEMO.map((cuenta) => (
+              <button
+                key={cuenta.email}
+                type="button"
+                onClick={() => usarCuenta(cuenta)}
+                className={cn(
+                  'rounded-pill border border-hairline px-3 py-1.5 text-xs text-muted transition',
+                  'hover:border-accent hover:bg-accent/15 hover:text-accent-ink',
+                )}
+              >
+                {cuenta.rol}
+              </button>
+            ))}
+          </div>
+          <p className="mt-3 text-center text-[11px] text-muted">Contraseña demo: <span className="num text-ink">demo123</span></p>
+        </div>
       </div>
     </div>
   );

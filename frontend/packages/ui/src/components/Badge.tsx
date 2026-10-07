@@ -4,16 +4,17 @@ import { cn } from '../lib/cn';
 export interface PillProps {
   children: ReactNode;
   className?: string;
-  tone?: 'neutral' | 'accent' | 'success' | 'warning' | 'danger' | 'info';
+  tone?: 'neutral' | 'accent' | 'success' | 'warning' | 'danger' | 'info' | 'butter';
 }
 
 const tones: Record<NonNullable<PillProps['tone']>, string> = {
   neutral: 'bg-elevated text-muted',
-  accent: 'bg-accent/15 text-accent-soft',
-  success: 'bg-success/15 text-success',
-  warning: 'bg-warning/15 text-warning',
-  danger: 'bg-danger/15 text-danger',
-  info: 'bg-info/15 text-info',
+  accent: 'bg-accent/25 text-accent-ink',
+  success: 'bg-success/25 text-success-ink',
+  warning: 'bg-warning/25 text-warning-ink',
+  danger: 'bg-danger/25 text-danger-ink',
+  info: 'bg-info/25 text-info-ink',
+  butter: 'bg-butter/25 text-butter-ink',
 };
 
 export function Pill({ children, className, tone = 'neutral' }: PillProps) {

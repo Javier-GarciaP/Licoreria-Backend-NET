@@ -294,7 +294,7 @@ export function PaginasPage() {
 
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase tracking-tighter2 text-muted">Secciones</p>
+              <p className="text-xs font-medium uppercase tracking-tighter2 text-muted">Secciones</p>
               <Button
                 type="button"
                 size="sm"

@@ -1,8 +1,10 @@
 import { lazy, Suspense } from 'react';
-import { Outlet, Route, Routes } from 'react-router-dom';
+import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import { Spinner } from '@licoreria/ui';
 import { AppShell } from './components/AppShell';
 import { ProtectedRoute } from './components/Rbac';
+import { useAuth } from './context/AuthContext';
+import { itemDeRuta, puedeAcceder, filtrarGrupos } from './lib/navigation';
 import { LoginPage } from './pages/LoginPage';
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
@@ -30,12 +32,28 @@ const TasasPage = lazy(() => import('./pages/TasasPage').then((m) => ({ default:
 const TesoreriaPage = lazy(() => import('./pages/TesoreriaPage').then((m) => ({ default: m.TesoreriaPage })));
 const PlanosPage = lazy(() => import('./pages/PlanosPage').then((m) => ({ default: m.PlanosPage })));
 const ZonasMesasPage = lazy(() => import('./pages/ZonasMesasPage').then((m) => ({ default: m.ZonasMesasPage })));
+const SalonLayout = lazy(() => import('./pages/SalonLayout').then((m) => ({ default: m.SalonLayout })));
+const EditorMapaPage = lazy(() => import('./pages/EditorMapaPage').then((m) => ({ default: m.EditorMapaPage })));
+const ReportesPage = lazy(() => import('./pages/ReportesPage').then((m) => ({ default: m.ReportesPage })));
+const AuditoriaPage = lazy(() => import('./pages/AuditoriaPage').then((m) => ({ default: m.AuditoriaPage })));
+const PromocionesPage = lazy(() => import('./pages/PromocionesPage').then((m) => ({ default: m.PromocionesPage })));
+const CuentasPorCobrarPage = lazy(() =>
+  import('./pages/CuentasPorCobrarPage').then((m) => ({ default: m.CuentasPorCobrarPage })),
+);
+const EntradasPage = lazy(() => import('./pages/EntradasPage').then((m) => ({ default: m.EntradasPage })));
+const ListaVipPage = lazy(() => import('./pages/ListaVipPage').then((m) => ({ default: m.ListaVipPage })));
 const ProductosPage = lazy(() => import('./pages/ProductosPage').then((m) => ({ default: m.ProductosPage })));
 const CatalogosPage = lazy(() => import('./pages/CatalogosPage').then((m) => ({ default: m.CatalogosPage })));
+const CatalogoAvanzadoPage = lazy(() =>
+  import('./pages/CatalogoAvanzadoPage').then((m) => ({ default: m.CatalogoAvanzadoPage })),
+);
 const ClientesPage = lazy(() => import('./pages/ClientesPage').then((m) => ({ default: m.ClientesPage })));
 const CajaPage = lazy(() => import('./pages/CajaPage').then((m) => ({ default: m.CajaPage })));
 const UsuariosPage = lazy(() => import('./pages/UsuariosPage').then((m) => ({ default: m.UsuariosPage })));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
+const SalonOperacionPage = lazy(() =>
+  import('./pages/SalonOperacionPage').then((m) => ({ default: m.SalonOperacionPage })),
+);
 
 function Cargando() {
   return (
@@ -45,13 +63,38 @@ function Cargando() {
   );
 }
 
+/** Comprueba que el rol tenga permiso para la ruta actual; si no, va a su inicio. */
+function ContenidoProtegido() {
+  const { esAdmin, tienePermiso, inicio, rolDominio } = useAuth() as {
+    esAdmin: boolean;
+    tienePermiso: (clave: string) => boolean;
+    inicio: string;
+    rolDominio?: string;
+  };
+  const location = useLocation();
+  const item = itemDeRuta(location.pathname);
+
+  const permitido = puedeAcceder(item, esAdmin, tienePermiso, rolDominio);
+
+  if (!permitido) {
+    // Redirige al primer destino permitido (evita bucles si el inicio no aplica).
+    const destino = filtrarGrupos(esAdmin, tienePermiso, rolDominio)[0]?.items[0]?.to ?? inicio;
+    if (destino !== location.pathname) return <Navigate to={destino} replace />;
+    return <div className="p-8 text-center text-sm text-muted">No tienes acceso a esta sección.</div>;
+  }
+
+  return (
+    <Suspense fallback={<Cargando />}>
+      <Outlet />
+    </Suspense>
+  );
+}
+
 function LayoutProtegido() {
   return (
     <ProtectedRoute>
       <AppShell>
-        <Suspense fallback={<Cargando />}>
-          <Outlet />
-        </Suspense>
+        <ContenidoProtegido />
       </AppShell>
     </ProtectedRoute>
   );
@@ -65,6 +108,7 @@ export default function App() {
         <Route index element={<DashboardPage />} />
         <Route path="/pos" element={<PosPage />} />
         <Route path="/plano" element={<PlanoPage />} />
+        <Route path="/mesonero" element={<SalonOperacionPage />} />
         <Route path="/cuentas" element={<CuentasPage />} />
         <Route path="/cuentas/:id" element={<CuentaPage />} />
         <Route path="/ventas" element={<VentasPage />} />
@@ -85,11 +129,21 @@ export default function App() {
         <Route path="/contenido/menu" element={<MenuMediaPage />} />
         <Route path="/finanzas" element={<TasasPage />} />
         <Route path="/finanzas/tesoreria" element={<TesoreriaPage />} />
-        <Route path="/salon" element={<PlanosPage />} />
-        <Route path="/salon/zonas" element={<ZonasMesasPage />} />
+        <Route path="/salon" element={<SalonLayout />}>
+          <Route index element={<PlanosPage />} />
+          <Route path="zonas" element={<ZonasMesasPage />} />
+        </Route>
+        <Route path="/salon/planos/:id" element={<EditorMapaPage />} />
+        <Route path="/entradas" element={<EntradasPage />} />
+        <Route path="/vip" element={<ListaVipPage />} />
         <Route path="/productos" element={<ProductosPage />} />
         <Route path="/catalogos" element={<CatalogosPage />} />
+        <Route path="/catalogos-avanzado" element={<CatalogoAvanzadoPage />} />
         <Route path="/clientes" element={<ClientesPage />} />
+        <Route path="/cxc" element={<CuentasPorCobrarPage />} />
+        <Route path="/promociones" element={<PromocionesPage />} />
+        <Route path="/reportes" element={<ReportesPage />} />
+        <Route path="/auditoria" element={<AuditoriaPage />} />
         <Route path="/caja" element={<CajaPage />} />
         <Route path="/usuarios" element={<UsuariosPage />} />
         <Route path="*" element={<NotFoundPage />} />

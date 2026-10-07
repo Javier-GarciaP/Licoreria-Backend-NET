@@ -125,15 +125,15 @@ export function CajaPage() {
             <CardBody className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               <div>
                 <p className="text-xs text-muted">Fondo inicial</p>
-                <p className="text-lg font-semibold text-ink">{formatUSD(sesion.fondoInicial)}</p>
+                <p className="text-lg font-medium text-ink">{formatUSD(sesion.fondoInicial)}</p>
               </div>
               <div>
                 <p className="text-xs text-muted">Esperado</p>
-                <p className="text-lg font-semibold text-ink">{formatUSD(sesion.montoEsperado)}</p>
+                <p className="text-lg font-medium text-ink">{formatUSD(sesion.montoEsperado)}</p>
               </div>
               <div>
                 <p className="text-xs text-muted">Movimientos</p>
-                <p className="text-lg font-semibold text-ink">{sesion.movimientos.length}</p>
+                <p className="text-lg font-medium text-ink">{sesion.movimientos.length}</p>
               </div>
               <div>
                 <p className="text-xs text-muted">Estado</p>
@@ -189,7 +189,7 @@ export function CajaPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Arqueo y cierre</CardTitle>
-                <span className="text-sm font-semibold text-ink">Contado {formatUSD(contado)}</span>
+                <span className="text-sm font-medium text-ink">Contado {formatUSD(contado)}</span>
               </CardHeader>
               <CardBody className="flex flex-col gap-3">
                 <div className="grid grid-cols-2 gap-2">
@@ -209,7 +209,7 @@ export function CajaPage() {
                             [denominacion.id]: Math.max(0, Number(evento.target.value)),
                           }))
                         }
-                        className="h-9 w-20 rounded-pill border border-hairline bg-surface px-3 text-sm text-ink"
+                        className="h-9 w-20 rounded-control border border-hairline bg-surface px-3 text-sm text-ink"
                       />
                     </div>
                   ))}
@@ -267,7 +267,7 @@ export function CajaPage() {
                 header: 'Descuadre',
                 align: 'right',
                 render: (item) => (
-                  <span className={item.descuadre === 0 ? 'text-success' : 'text-danger'}>{formatUSD(item.descuadre)}</span>
+                  <span className={item.descuadre === 0 ? 'text-success-ink' : 'text-danger-ink'}>{formatUSD(item.descuadre)}</span>
                 ),
               },
             ]}

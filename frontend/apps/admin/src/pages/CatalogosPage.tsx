@@ -8,6 +8,7 @@ import { Button, Card, CardBody, CardHeader, CardTitle, Input, Modal, PageHeader
 import type { Categoria, Marca } from '@licoreria/types';
 import { catalogoApi } from '@licoreria/api-client';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { CatalogoTabs } from '../components/CatalogoTabs';
 import { mensajeDeError } from '../lib/api';
 
 const esquemaSimple = z.object({
@@ -111,7 +112,8 @@ export function CatalogosPage() {
 
   return (
     <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader title="Catálogo base" subtitle="Categorías y marcas de productos." />
+      <PageHeader title="Catálogo" subtitle="Productos, categorías, marcas y precios." />
+      <CatalogoTabs />
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <Card>

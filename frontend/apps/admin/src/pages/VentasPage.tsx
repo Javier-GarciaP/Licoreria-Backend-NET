@@ -123,7 +123,7 @@ export function VentasPage() {
               {detalle.detalles.map((linea) => (
                 <div key={linea.id} className="flex justify-between text-sm">
                   <span className="text-ink">
-                    {linea.cantidad} × {linea.nombre} {linea.esCortesia && <span className="text-warning">(cortesía)</span>}
+                    {linea.cantidad} × {linea.nombre} {linea.esCortesia && <span className="text-warning-ink">(cortesía)</span>}
                   </span>
                   <span className="text-muted">{formatUSD(linea.subtotalUSD)}</span>
                 </div>
@@ -192,7 +192,7 @@ export function VentasPage() {
                           [linea.varianteId]: Math.min(linea.cantidad, Math.max(0, Number(evento.target.value))),
                         }))
                       }
-                      className="h-9 w-20 rounded-pill border border-hairline bg-surface px-3 text-sm text-ink"
+                      className="h-9 w-20 rounded-control border border-hairline bg-surface px-3 text-sm text-ink"
                     />
                   </div>
                 </div>

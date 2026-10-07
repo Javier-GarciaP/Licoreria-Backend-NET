@@ -37,7 +37,7 @@ export function CuentasPage() {
                 key: 'saldo',
                 header: 'Saldo',
                 align: 'right',
-                render: (cuenta) => <span className="font-medium text-accent-soft">{formatUSD(cuenta.saldo)}</span>,
+                render: (cuenta) => <span className="font-medium text-accent-ink">{formatUSD(cuenta.saldo)}</span>,
               },
               { key: 'tiempo', header: 'Abierta', align: 'right', render: (cuenta) => haceCuanto(cuenta.abiertaEn) },
             ]}

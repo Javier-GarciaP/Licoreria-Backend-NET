@@ -15,7 +15,7 @@ export function PageHeader({
   return (
     <header className={cn('flex flex-wrap items-end justify-between gap-4', className)}>
       <div>
-        <h1 className="text-xl font-semibold tracking-tightest text-ink">{title}</h1>
+        <h1 className="text-xl font-medium tracking-tightest text-ink">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-muted">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
@@ -25,8 +25,8 @@ export function PageHeader({
 
 export function EmptyState({ title, description, action }: { title: string; description?: string; action?: ReactNode }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-card bg-surface px-6 py-12 text-center shadow-card">
-      <p className="text-base font-semibold text-ink">{title}</p>
+    <div className="flex flex-col items-center gap-3 rounded-card border border-hairline bg-surface px-6 py-12 text-center">
+      <p className="text-base font-medium text-ink">{title}</p>
       {description && <p className="max-w-md text-sm text-muted">{description}</p>}
       {action}
     </div>

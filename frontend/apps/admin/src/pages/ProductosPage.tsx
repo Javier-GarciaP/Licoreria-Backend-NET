@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -21,6 +22,7 @@ import {
 import type { Producto } from '@licoreria/types';
 import { catalogoApi } from '@licoreria/api-client';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { CatalogoTabs } from '../components/CatalogoTabs';
 import { mensajeDeError } from '../lib/api';
 import { formatUSD } from '../lib/format';
 
@@ -61,7 +63,8 @@ const VACIO: FormularioProducto = {
 
 export function ProductosPage() {
   const [page, setPage] = useState(1);
-  const [busqueda, setBusqueda] = useState('');
+  const [params] = useSearchParams();
+  const [busqueda, setBusqueda] = useState(params.get('busqueda') ?? '');
   const [editando, setEditando] = useState<Producto | null>(null);
   const [creando, setCreando] = useState(false);
   const [porEliminar, setPorEliminar] = useState<Producto | null>(null);
@@ -162,6 +165,7 @@ export function ProductosPage() {
         subtitle="Productos y variantes con precios."
         actions={<Button onClick={abrirCrear}>Nuevo producto</Button>}
       />
+      <CatalogoTabs />
       <Card>
         <CardHeader>
           <CardTitle>Productos</CardTitle>
@@ -291,7 +295,7 @@ export function ProductosPage() {
 
           <div className="rounded-2xl border border-hairline p-3">
             <div className="mb-2 flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase tracking-tighter2 text-muted">Variantes</p>
+              <p className="text-xs font-medium uppercase tracking-tighter2 text-muted">Variantes</p>
               <Button
                 type="button"
                 size="sm"
@@ -302,7 +306,7 @@ export function ProductosPage() {
               </Button>
             </div>
             {productoForm.formState.errors.variantes?.message && (
-              <p className="mb-2 text-xs text-danger">{productoForm.formState.errors.variantes.message}</p>
+              <p className="mb-2 text-xs text-danger-ink">{productoForm.formState.errors.variantes.message}</p>
             )}
             <div className="flex flex-col gap-3">
               {fields.map((field, indice) => (
