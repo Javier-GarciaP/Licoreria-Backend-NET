@@ -83,9 +83,11 @@ Además de la operación, el panel interno incorpora gestión completa de:
   vencimientos y tomas físicas con diferencias; registro e historial de mermas.
 - **Compras:** proveedores (CRUD), órdenes de compra con ciclo de aprobación, recepciones
   que actualizan inventario y cuentas por pagar con registro de pagos.
+- **Contenido:** páginas con secciones y bloques, eventos, horarios de atención,
+  información del local, menú digital con QR y subida de archivos.
 
-Pendiente para siguientes iteraciones: Contenido, Finanzas, IA, editor de plano con
-`dnd-kit` y la reserva web con seña.
+Pendiente para siguientes iteraciones: Finanzas, IA, editor de plano con `dnd-kit` y la
+reserva web con seña.
 
 ## Pruebas
 
