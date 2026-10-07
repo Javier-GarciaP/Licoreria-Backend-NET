@@ -79,9 +79,11 @@ Además de la operación, el panel interno incorpora gestión completa de:
 - **Usuarios:** alta/edición, cambio de contraseña, revocación de sesiones y baja lógica.
 - **Clientes (CRM):** CRUD y acumular/canjear puntos.
 - **Caja:** apertura, movimientos, arqueo/cierre (Z) e historial de sesiones.
+- **Inventario:** existencias con filtros de mínimo, kardex filtrable, ajustes, lotes con
+  vencimientos y tomas físicas con diferencias; registro e historial de mermas.
 
-Pendiente para siguientes iteraciones: Inventario avanzado (kardex, lotes, tomas),
-Compras, Contenido, Finanzas, IA, editor de plano con `dnd-kit` y la reserva web con seña.
+Pendiente para siguientes iteraciones: Compras, Contenido, Finanzas, IA, editor de plano
+con `dnd-kit` y la reserva web con seña.
 
 ## Pruebas
 

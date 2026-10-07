@@ -118,9 +118,9 @@ Credenciales de prueba: `admin@licoreria.com / admin123` (Admin) y
 Leyenda: `[ ]` pendiente · `[~]` en progreso · `[x]` hecho.
 
 > **Estado (cierre Fase 4):** 7.1–7.5 y 7.8 completos. 7.6 cubre Catálogo, Usuarios,
-> Clientes y Caja (restan Inventario avanzado, Compras, Contenido, Finanzas, IA y el
-> editor de plano). 7.7 incluye el rediseño "Hungry Tiger" con vitrina 3D, menú, tasas
-> y eventos (resta la reserva web con seña). El backend de la §8 ya está implementado.
+> Clientes, Caja e Inventario (restan Compras, Contenido, Finanzas, IA y el editor de
+> plano). 7.7 incluye el rediseño "Hungry Tiger" con vitrina 3D, menú, tasas y eventos
+> (resta la reserva web con seña). El backend de la §8 ya está implementado.
 
 ### 7.1 Andamiaje
 - [x] workspaces, `tsconfig.base`, ESLint/Prettier, Tailwind con token `#003366`
@@ -167,7 +167,8 @@ Leyenda: `[ ]` pendiente · `[~]` en progreso · `[x]` hecho.
 - [x] Usuarios: crear/editar, cambio de contraseña, revocar sesiones, baja lógica
 - [x] Clientes (CRM): CRUD y acumular/canjear puntos
 - [x] Caja: abrir, movimientos, arqueo y cierre (Z), historial
-- [ ] Inventario: stock, kardex, ajustes, lotes, tomas físicas
+- [x] Inventario: existencias, kardex, ajustes, lotes y tomas físicas
+- [x] Mermas y cortesías: registro e historial
 - [ ] Compras, contenido, finanzas, IA y editor de plano (dnd-kit)
 
 ### 7.7 `public-web`
