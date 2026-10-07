@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Map as MapIcon, Plus, Trash2 } from 'lucide-react';
+import { Map as MapIcon, Plus, Star, Trash2 } from 'lucide-react';
 import { Button, Input, Modal, Skeleton } from '@licoreria/ui';
 import type { Plano } from '@licoreria/types';
 import { clubApi } from '@licoreria/api-client';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { mensajeDeError } from '../lib/api';
+import { planoAPayload } from '../lib/plano';
 
 export function PlanosPage() {
   const navigate = useNavigate();
@@ -38,6 +39,15 @@ export function PlanosPage() {
       invalidar();
     },
     onError: (error) => toast.error('No se pudo eliminar', { description: mensajeDeError(error) }),
+  });
+
+  const activar = useMutation({
+    mutationFn: (plano: Plano) => clubApi.actualizarPlano(plano.id, planoAPayload({ ...plano, activo: true })),
+    onSuccess: () => {
+      toast.success('Plano establecido como activo');
+      invalidar();
+    },
+    onError: (error) => toast.error('No se pudo activar', { description: mensajeDeError(error) }),
   });
 
   return (
@@ -106,7 +116,30 @@ export function PlanosPage() {
                   v{plano.version} · {plano.elementos.length} elementos
                 </p>
               </div>
-              {plano.activo && <span className="text-[11px] text-success-ink">Activo</span>}
+              {plano.activo ? (
+                <span className="inline-flex items-center gap-1 text-[11px] text-success-ink">
+                  <Star size={12} /> Activo
+                </span>
+              ) : (
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(evento) => {
+                    evento.stopPropagation();
+                    activar.mutate(plano);
+                  }}
+                  onKeyDown={(evento) => {
+                    if (evento.key === 'Enter') {
+                      evento.stopPropagation();
+                      activar.mutate(plano);
+                    }
+                  }}
+                  className="inline-flex items-center gap-1 rounded-full px-2 text-[11px] text-accent-ink opacity-0 transition group-hover:opacity-100 hover:bg-accent/15"
+                  aria-label="Establecer como activo"
+                >
+                  <Star size={12} /> Establecer como activo
+                </span>
+              )}
             </button>
           ))}
         </div>

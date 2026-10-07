@@ -7,6 +7,7 @@ import type { Mesa, Plano, PlanoElemento } from '@licoreria/types';
 import { clubApi, cuentasApi } from '@licoreria/api-client';
 import { MapaView, type EstadoMesaPlano } from '../components/mapa/MapaView';
 import { mensajeDeError } from '../lib/api';
+import { estadoDeMesa, planoVisible } from '../lib/plano';
 
 const LEYENDA: { estado: EstadoMesaPlano; label: string; color: string }[] = [
   { estado: 'Libre', label: 'Libre', color: '#2fbf71' },
@@ -14,45 +15,6 @@ const LEYENDA: { estado: EstadoMesaPlano; label: string; color: string }[] = [
   { estado: 'Reservada', label: 'Reservada', color: '#f5a524' },
   { estado: 'EnLimpieza', label: 'En limpieza', color: '#3b82f6' },
 ];
-
-function estadoDeMesa(mesa: Mesa): EstadoMesaPlano {
-  if (!mesa.activa) return 'EnLimpieza';
-  if (mesa.cuentaId) return 'Ocupada';
-  if (mesa.reservada) return 'Reservada';
-  return 'Libre';
-}
-
-/** Plano sintético a partir de las mesas cuando aún no hay un mapa diseñado. */
-function planoDesdeMesas(mesas: Mesa[]): Plano {
-  const maxX = Math.max(6, ...mesas.map((m) => m.posX + m.ancho + 1));
-  const maxY = Math.max(4, ...mesas.map((m) => m.posY + m.alto + 1));
-  const elementos: PlanoElemento[] = mesas.map((m, i) => ({
-    id: `mesa-${m.id}`,
-    zonaId: m.zonaId,
-    mesaId: m.id,
-    tipo: 'mesa',
-    forma: m.forma === 'cuadrada' ? 'mesa_cuadrada' : m.forma === 'rectangular' ? 'mesa_rectangular' : 'mesa_redonda',
-    color: null,
-    etiqueta: m.numero,
-    z: i,
-    posX: m.posX,
-    posY: m.posY,
-    ancho: Math.max(1, m.ancho),
-    alto: Math.max(1, m.alto),
-    rotacion: 0,
-  }));
-  return {
-    id: 'sintetico',
-    nombre: 'Salón',
-    version: 1,
-    activo: true,
-    anchoFondo: maxX,
-    altoFondo: maxY,
-    rejilla: 0.5,
-    piso: 'madera',
-    elementos,
-  };
-}
 
 export function PlanoPage() {
   const navigate = useNavigate();
@@ -93,11 +55,7 @@ export function PlanoPage() {
   );
   const numeroPorMesa = useMemo(() => Object.fromEntries(lista.map((m) => [m.id, m.numero])), [lista]);
 
-  const plano = useMemo<Plano>(() => {
-    const disenado = planos.data?.find((p) => p.activo) ?? planos.data?.[0];
-    if (disenado && disenado.activo !== undefined) return disenado;
-    return planoDesdeMesas(lista);
-  }, [planos.data, lista]);
+  const plano = useMemo<Plano>(() => planoVisible(planos.data ?? [], lista), [planos.data, lista]);
 
   const manejarElemento = (_evento: unknown, elemento: PlanoElemento) => {
     if (!elemento.mesaId) return;

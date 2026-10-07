@@ -4,6 +4,7 @@ import { cn } from '@licoreria/ui';
 import type { Cuenta, Mesa, Plano, PlanoElemento, Zona } from '@licoreria/types';
 import { MapaView, type EstadoMesaPlano } from '../mapa/MapaView';
 import { formatUSD, haceCuanto } from '../../lib/format';
+import { estadoDeMesa, planoVisible } from '../../lib/plano';
 
 const LEYENDA: { estado: EstadoMesaPlano; label: string; color: string }[] = [
   { estado: 'Libre', label: 'Libre', color: '#2fbf71' },
@@ -18,45 +19,6 @@ const COLOR_ESTADO: Record<EstadoMesaPlano, string> = {
   Reservada: '#f5a524',
   EnLimpieza: '#3b82f6',
 };
-
-export function estadoDeMesa(mesa: Mesa): EstadoMesaPlano {
-  if (!mesa.activa) return 'EnLimpieza';
-  if (mesa.cuentaId) return 'Ocupada';
-  if (mesa.reservada) return 'Reservada';
-  return 'Libre';
-}
-
-/** Plano sintético a partir de las mesas cuando aún no hay un mapa diseñado. */
-function planoDesdeMesas(mesas: Mesa[]): Plano {
-  const maxX = Math.max(6, ...mesas.map((m) => m.posX + m.ancho + 1));
-  const maxY = Math.max(4, ...mesas.map((m) => m.posY + m.alto + 1));
-  const elementos: PlanoElemento[] = mesas.map((m, i) => ({
-    id: `mesa-${m.id}`,
-    zonaId: m.zonaId,
-    mesaId: m.id,
-    tipo: 'mesa',
-    forma: m.forma === 'cuadrada' ? 'mesa_cuadrada' : m.forma === 'rectangular' ? 'mesa_rectangular' : 'mesa_redonda',
-    color: null,
-    etiqueta: m.numero,
-    z: i,
-    posX: m.posX,
-    posY: m.posY,
-    ancho: Math.max(1, m.ancho),
-    alto: Math.max(1, m.alto),
-    rotacion: 0,
-  }));
-  return {
-    id: 'sintetico',
-    nombre: 'Salón',
-    version: 1,
-    activo: true,
-    anchoFondo: maxX,
-    altoFondo: maxY,
-    rejilla: 0.5,
-    piso: 'madera',
-    elementos,
-  };
-}
 
 export function MesasPanel({
   mesas,
@@ -76,11 +38,7 @@ export function MesasPanel({
   const [vista, setVista] = useState<'mapa' | 'grilla'>('mapa');
   const [zonaId, setZonaId] = useState<string | null>(null);
 
-  const plano = useMemo<Plano>(() => {
-    const disenado = planos.find((p) => p.activo) ?? planos[0];
-    if (disenado) return disenado;
-    return planoDesdeMesas(mesas);
-  }, [planos, mesas]);
+  const plano = useMemo<Plano>(() => planoVisible(planos, mesas), [planos, mesas]);
 
   const estadoPorMesa = useMemo(
     () => Object.fromEntries(mesas.map((m) => [m.id, estadoDeMesa(m)])) as Record<string, EstadoMesaPlano>,

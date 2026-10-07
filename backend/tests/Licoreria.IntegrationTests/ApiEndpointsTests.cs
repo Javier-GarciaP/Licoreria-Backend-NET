@@ -190,6 +190,87 @@ public class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Plano_ConElementos_SeCreaYSeRecuperaConSusElementos()
+    {
+        var creado = await CrearPlanoAsync("Plano Integración");
+        var creadoId = creado.GetProperty("id").GetGuid();
+
+        var planos = await ObtenerPlanosAsync();
+        var enLista = BuscarEnArray(planos, creadoId);
+        Assert.Equal(1, enLista.GetProperty("elementos").GetArrayLength());
+        Assert.Equal("mesa_redonda", enLista.GetProperty("elementos")[0].GetProperty("forma").GetString());
+
+        var obtenido = await _factory.Client.GetAsync($"/api/v1/planos/{creadoId}");
+        Assert.Equal(HttpStatusCode.OK, obtenido.StatusCode);
+        var body = await JsonAsync(obtenido);
+        Assert.Equal(1, body.GetProperty("elementos").GetArrayLength());
+    }
+
+    [Fact]
+    public async Task Plano_AlCrearUnoNuevo_DesactivaElAnterior()
+    {
+        var primero = await CrearPlanoAsync("Plano Activo Anterior");
+        var segundo = await CrearPlanoAsync("Plano Activo Nuevo");
+        var primeroId = primero.GetProperty("id").GetGuid();
+        var segundoId = segundo.GetProperty("id").GetGuid();
+
+        var planos = await ObtenerPlanosAsync();
+        var p1 = BuscarEnArray(planos, primeroId);
+        var p2 = BuscarEnArray(planos, segundoId);
+        Assert.False(p1.GetProperty("activo").GetBoolean());
+        Assert.True(p2.GetProperty("activo").GetBoolean());
+    }
+
+    private async Task<JsonElement> ObtenerPlanosAsync()
+    {
+        var response = await _factory.Client.GetAsync("/api/v1/planos");
+        response.EnsureSuccessStatusCode();
+        return await JsonAsync(response);
+    }
+
+    private static JsonElement BuscarEnArray(JsonElement array, Guid id)
+    {
+        for (var i = 0; i < array.GetArrayLength(); i += 1)
+        {
+            if (array[i].GetProperty("id").GetGuid() == id)
+            {
+                return array[i];
+            }
+        }
+
+        throw new Exception("Plano no encontrado en el listado");
+    }
+
+    private async Task<JsonElement> CrearPlanoAsync(string nombre)
+    {
+        var response = await _factory.Client.PostAsJsonAsync("/api/v1/planos", new
+        {
+            nombre,
+            elementos = new[]
+            {
+                new
+                {
+                    zonaId = (Guid?)null,
+                    mesaId = (Guid?)null,
+                    tipo = "mesa",
+                    forma = "mesa_redonda",
+                    color = (string?)null,
+                    etiqueta = (string?)null,
+                    z = 0,
+                    posX = 4.0,
+                    posY = 4.0,
+                    ancho = 2.0,
+                    alto = 2.0,
+                    rotacion = 0
+                }
+            }
+        });
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var json = await JsonAsync(response);
+        return json;
+    }
+
     private async Task<Guid> ObtenerPrimerIdAsync(string url)
     {
         var response = await _factory.Client.GetAsync(url);

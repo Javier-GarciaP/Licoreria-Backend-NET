@@ -23,11 +23,9 @@ import { dibujarElemento, ELEMENTOS, ELEMENTOS_POR_FORMA, UNIT } from '../compon
 import { MapaView } from '../components/mapa/MapaView';
 import { EditorOverlay } from '../components/mapa/EditorOverlay';
 import { mensajeDeError } from '../lib/api';
+import { planoAPayload } from '../lib/plano';
 
 const OFFSET = 16;
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const esIdServidor = (id: string) => UUID_RE.test(id);
 
 interface Borrador {
   nombre: string;
@@ -153,34 +151,11 @@ export function EditorMapaPage() {
   const guardar = useMutation({
     mutationFn: () => {
       if (!draft || !id) throw new Error('Nada que guardar');
-      return clubApi.actualizarPlano(id, {
-        id,
-        nombre: draft.nombre,
-        activo: draft.activo,
-        anchoFondo: draft.anchoFondo,
-        altoFondo: draft.altoFondo,
-        rejilla: draft.rejilla,
-        piso: draft.piso,
-        elementos: draft.elementos.map((e) => ({
-          id: esIdServidor(e.id) ? e.id : undefined,
-          zonaId: e.zonaId,
-          mesaId: e.mesaId,
-          tipo: e.tipo,
-          forma: e.forma,
-          color: e.color,
-          etiqueta: e.etiqueta,
-          z: e.z,
-          posX: e.posX,
-          posY: e.posY,
-          ancho: e.ancho,
-          alto: e.alto,
-          rotacion: e.rotacion,
-        })),
-      });
+      return clubApi.actualizarPlano(id, planoAPayload({ ...draft, id }));
     },
     onSuccess: (plano: Plano) => {
       toast.success('Mapa guardado');
-      setDraft(desdePlano(plano));
+      if (plano.elementos.length > 0) setDraft(desdePlano(plano));
       setPast([]);
       setFuture([]);
       setSeleccion(null);

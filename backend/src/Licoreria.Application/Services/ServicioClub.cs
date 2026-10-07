@@ -227,23 +227,31 @@ public sealed class ServicioClub : IServicioClub
     public async Task<IReadOnlyList<PlanoDto>> ObtenerPlanosAsync(CancellationToken cancellationToken = default)
     {
         var planos = await _planos.FindAsync(p => !p.IsDeleted, cancellationToken);
-        var resultado = new List<PlanoDto>();
-        foreach (var plano in planos)
+        if (planos.Count == 0)
         {
-            var completo = await _planos.GetByIdAsync(plano.Id, cancellationToken);
-            if (completo is not null)
-            {
-                resultado.Add(MapearPlano(completo));
-            }
+            return [];
         }
 
-        return resultado;
+        // Carga explícita de los elementos (evita depender del lazy-load de la colección).
+        var ids = planos.Select(p => p.Id).ToList();
+        var elementos = await _planoElementos.FindAsync(e => !e.IsDeleted && ids.Contains(e.PlanoId), cancellationToken);
+        var porPlano = elementos
+            .GroupBy(e => e.PlanoId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        return planos.Select(p => MapearPlano(p, porPlano.GetValueOrDefault(p.Id) ?? [])).ToList();
     }
 
     public async Task<PlanoDto?> ObtenerPlanoAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var plano = await _planos.GetByIdAsync(id, cancellationToken);
-        return plano is null || plano.IsDeleted ? null : MapearPlano(plano);
+        if (plano is null || plano.IsDeleted)
+        {
+            return null;
+        }
+
+        var elementos = await ElementosDelPlanoAsync(id, cancellationToken);
+        return MapearPlano(plano, elementos);
     }
 
     public async Task<PlanoDto> CrearPlanoAsync(PlanoCrearDto dto, CancellationToken cancellationToken = default)
@@ -264,9 +272,14 @@ public sealed class ServicioClub : IServicioClub
             plano.Elementos.Add(CrearElemento(elemento));
         }
 
+        // Plano activo único: un plano nuevo activo desactiva a los demás.
+        await DesactivarOtrosPlanosAsync(plano.Id, cancellationToken);
+
         await _planos.AddAsync(plano, cancellationToken);
         await _planos.SaveChangesAsync(cancellationToken);
-        return MapearPlano(plano);
+
+        var elementos = await ElementosDelPlanoAsync(plano.Id, cancellationToken);
+        return MapearPlano(plano, elementos);
     }
 
     public async Task<PlanoDto?> EditarPlanoAsync(PlanoEditarDto dto, CancellationToken cancellationToken = default)
@@ -286,18 +299,23 @@ public sealed class ServicioClub : IServicioClub
         plano.Version += 1;
 
         var existentes = await _planoElementos.FindAsync(e => e.PlanoId == dto.Id, cancellationToken);
-        var existentesPorId = existentes.ToDictionary(e => e.Id);
+        var idsExistentes = existentes.Select(e => e.Id).ToHashSet();
 
         // Upsert: actualiza los elementos que llegan con Id conocido, crea los
         // nuevos (Id nulo o generado por el cliente) y elimina los que ya no vienen.
+        // Se re-traen con GetByIdAsync (trackeados) para que los cambios persistan.
         var idsRecibidos = new HashSet<Guid>();
         foreach (var elemento in dto.Elementos)
         {
-            if (elemento.Id is Guid id && existentesPorId.TryGetValue(id, out var existente))
+            if (elemento.Id is Guid id && idsExistentes.Contains(id))
             {
-                AplicarElemento(existente, elemento);
-                _planoElementos.Update(existente);
-                idsRecibidos.Add(id);
+                var tracked = await _planoElementos.GetByIdAsync(id, cancellationToken);
+                if (tracked is not null)
+                {
+                    AplicarElemento(tracked, elemento);
+                    _planoElementos.Update(tracked);
+                    idsRecibidos.Add(id);
+                }
                 continue;
             }
 
@@ -320,11 +338,23 @@ public sealed class ServicioClub : IServicioClub
             }
         }
 
+        // Plano activo único: al activar este, los demás quedan inactivos.
+        if (dto.Activo)
+        {
+            await DesactivarOtrosPlanosAsync(dto.Id, cancellationToken);
+        }
+
         _planos.Update(plano);
         await _planos.SaveChangesAsync(cancellationToken);
 
         var actualizado = await _planos.GetByIdAsync(dto.Id, cancellationToken);
-        return actualizado is null ? null : MapearPlano(actualizado);
+        if (actualizado is null)
+        {
+            return null;
+        }
+
+        var elementosFinales = await ElementosDelPlanoAsync(dto.Id, cancellationToken);
+        return MapearPlano(actualizado, elementosFinales);
     }
 
     public async Task<bool> EliminarPlanoAsync(Guid id, CancellationToken cancellationToken = default)
@@ -813,10 +843,30 @@ public sealed class ServicioClub : IServicioClub
     private static MesaDto MapearMesa(Mesa m, string zonaNombre, bool disponible, Guid? cuentaId = null, bool reservada = false)
         => new(m.Id, m.ZonaId, zonaNombre, m.Numero, m.Capacidad, m.Forma, m.PosX, m.PosY, m.Ancho, m.Alto, m.Activa, disponible, cuentaId, reservada);
 
-    private static PlanoDto MapearPlano(Plano p)
+    private static PlanoDto MapearPlano(Plano p, IReadOnlyList<PlanoElemento> elementos)
         => new(p.Id, p.Nombre, p.Version, p.Activo, p.AnchoFondo, p.AltoFondo, p.Rejilla, p.Piso,
-            p.Elementos.Where(e => !e.IsDeleted).OrderBy(e => e.Z).Select(e => new PlanoElementoDto(
+            elementos.OrderBy(e => e.Z).Select(e => new PlanoElementoDto(
                 e.Id, e.ZonaId, e.MesaId, e.Tipo, e.Forma, e.Color, e.Etiqueta, e.Z, e.PosX, e.PosY, e.Ancho, e.Alto, e.Rotacion)).ToList());
+
+    private static PlanoDto MapearPlano(Plano p) => MapearPlano(p, p.Elementos.ToList());
+
+    private async Task<IReadOnlyList<PlanoElemento>> ElementosDelPlanoAsync(Guid planoId, CancellationToken cancellationToken)
+        => await _planoElementos.FindAsync(e => !e.IsDeleted && e.PlanoId == planoId, cancellationToken);
+
+    /// <summary>Desactiva los demás planos para garantizar un único plano activo.</summary>
+    private async Task DesactivarOtrosPlanosAsync(Guid exceptoId, CancellationToken cancellationToken)
+    {
+        var otros = await _planos.FindAsync(p => !p.IsDeleted && p.Id != exceptoId, cancellationToken);
+        foreach (var otro in otros)
+        {
+            var tracked = await _planos.GetByIdAsync(otro.Id, cancellationToken);
+            if (tracked is not null && tracked.Activo)
+            {
+                tracked.Activo = false;
+                _planos.Update(tracked);
+            }
+        }
+    }
 
     private static ReservaDto MapearReserva(Reserva r)
         => new(
