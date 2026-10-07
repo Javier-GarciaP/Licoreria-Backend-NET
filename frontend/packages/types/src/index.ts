@@ -184,6 +184,90 @@ export interface Merma {
   fecha: string;
 }
 
+/* ===================== Compras ===================== */
+
+export interface Proveedor {
+  id: string;
+  nombre: string;
+  rif: string | null;
+  contacto: string | null;
+  telefono: string | null;
+  email: string | null;
+  direccion: string | null;
+  diasCredito: number;
+  activo: boolean;
+}
+
+export type EstadoOrdenCompra =
+  | 'Borrador'
+  | 'Aprobada'
+  | 'Enviada'
+  | 'RecibidaParcial'
+  | 'Recibida'
+  | 'Cancelada';
+
+export interface OrdenCompraDetalle {
+  id: string;
+  varianteId: string;
+  sku: string;
+  nombre: string;
+  cantidad: number;
+  costoUnitarioUSD: number;
+  cantidadRecibida: number;
+  subtotalUSD: number;
+}
+
+export interface OrdenCompra {
+  id: string;
+  numero: string;
+  proveedorId: string;
+  proveedorNombre: string;
+  fecha: string;
+  estado: EstadoOrdenCompra;
+  observaciones: string | null;
+  totalUSD: number;
+  detalles: OrdenCompraDetalle[];
+}
+
+export interface RecepcionDetalle {
+  id: string;
+  ordenCompraDetalleId: string;
+  varianteId: string;
+  sku: string;
+  cantidad: number;
+  costoUnitarioUSD: number;
+}
+
+export interface Recepcion {
+  id: string;
+  ordenCompraId: string;
+  numeroOrden: string;
+  fecha: string;
+  totalUSD: number;
+  observaciones: string | null;
+  detalles: RecepcionDetalle[];
+}
+
+export interface CuentaPorPagar {
+  id: string;
+  proveedorId: string;
+  proveedorNombre: string;
+  ordenCompraId: string | null;
+  montoUSD: number;
+  saldoUSD: number;
+  vencimiento: string;
+  estado: string;
+}
+
+export interface PagoProveedor {
+  id: string;
+  cuentaPorPagarId: string;
+  monto: number;
+  moneda: Moneda;
+  referencia: string | null;
+  fecha: string;
+}
+
 /* ===================== Ventas / Pagos ===================== */
 
 export interface MetodoPago {

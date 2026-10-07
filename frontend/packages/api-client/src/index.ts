@@ -3,6 +3,7 @@ import type {
   Categoria,
   Cliente,
   Cuenta,
+  CuentaPorPagar,
   Denominacion,
   DiagnosticoInventario,
   Dashboard,
@@ -14,10 +15,13 @@ import type {
   MetodoPago,
   Merma,
   MovimientoKardex,
+  OrdenCompra,
   PedidoAnticipado,
   Plano,
   Producto,
   Promocion,
+  Proveedor,
+  Recepcion,
   ReporteHeatmap,
   ReporteMermasVsVentas,
   RegistrarVentaRequest,
@@ -220,4 +224,31 @@ export const publicApi = {
   horarios: () => apiFetch<Record<string, unknown>>('/api/v1/horarios'),
   tasaActual: (tipo: 'BCV' | 'Paralelo' = 'Paralelo') =>
     apiFetch<TasaCambio>('/api/v1/tasas-cambio/actual', { query: { tipo } }),
+};
+
+/* ===================== Compras ===================== */
+
+export const proveedoresApi = {
+  listar: (busqueda?: string) => apiFetch<Proveedor[]>('/api/v1/proveedores', { query: { busqueda } }),
+  crear: (body: unknown) => apiFetch<Proveedor>('/api/v1/proveedores', { method: 'POST', body }),
+  actualizar: (id: string, body: unknown) => apiFetch<Proveedor>(`/api/v1/proveedores/${id}`, { method: 'PUT', body }),
+  eliminar: (id: string) => apiFetch<void>(`/api/v1/proveedores/${id}`, { method: 'DELETE' }),
+};
+
+export const comprasApi = {
+  ordenes: (query: PaginaQuery & { estado?: string; proveedorId?: string } = {}) =>
+    apiFetch<ResultadoPaginado<OrdenCompra>>('/api/v1/ordenes-compra', { query }),
+  orden: (id: string) => apiFetch<OrdenCompra>(`/api/v1/ordenes-compra/${id}`),
+  crear: (body: unknown) => apiFetch<OrdenCompra>('/api/v1/ordenes-compra', { method: 'POST', body }),
+  aprobar: (id: string) => apiFetch<OrdenCompra>(`/api/v1/ordenes-compra/${id}/aprobar`, { method: 'POST' }),
+  enviar: (id: string) => apiFetch<OrdenCompra>(`/api/v1/ordenes-compra/${id}/enviar`, { method: 'POST' }),
+  cancelar: (id: string) => apiFetch<OrdenCompra>(`/api/v1/ordenes-compra/${id}/cancelar`, { method: 'POST' }),
+  recepciones: (query: PaginaQuery & { ordenCompraId?: string } = {}) =>
+    apiFetch<ResultadoPaginado<Recepcion>>('/api/v1/recepciones', { query }),
+  recepcion: (id: string) => apiFetch<Recepcion>(`/api/v1/recepciones/${id}`),
+  registrarRecepcion: (body: unknown) => apiFetch<Recepcion>('/api/v1/recepciones', { method: 'POST', body }),
+  cuentasPorPagar: (query: PaginaQuery & { proveedorId?: string; soloPendientes?: boolean } = {}) =>
+    apiFetch<ResultadoPaginado<CuentaPorPagar>>('/api/v1/cuentas-por-pagar', { query }),
+  registrarPago: (id: string, body: unknown) =>
+    apiFetch<CuentaPorPagar>(`/api/v1/cuentas-por-pagar/${id}/pagos`, { method: 'POST', body }),
 };
