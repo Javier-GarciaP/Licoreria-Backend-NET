@@ -22,6 +22,10 @@ const ComprasPage = lazy(() => import('./pages/ComprasPage').then((m) => ({ defa
 const ProveedoresPage = lazy(() => import('./pages/ProveedoresPage').then((m) => ({ default: m.ProveedoresPage })));
 const RecepcionesPage = lazy(() => import('./pages/RecepcionesPage').then((m) => ({ default: m.RecepcionesPage })));
 const CuentasPorPagarPage = lazy(() => import('./pages/CuentasPorPagarPage').then((m) => ({ default: m.CuentasPorPagarPage })));
+const PaginasPage = lazy(() => import('./pages/PaginasPage').then((m) => ({ default: m.PaginasPage })));
+const EventosPage = lazy(() => import('./pages/EventosPage').then((m) => ({ default: m.EventosPage })));
+const LocalPage = lazy(() => import('./pages/LocalPage').then((m) => ({ default: m.LocalPage })));
+const MenuMediaPage = lazy(() => import('./pages/MenuMediaPage').then((m) => ({ default: m.MenuMediaPage })));
 const ProductosPage = lazy(() => import('./pages/ProductosPage').then((m) => ({ default: m.ProductosPage })));
 const CatalogosPage = lazy(() => import('./pages/CatalogosPage').then((m) => ({ default: m.CatalogosPage })));
 const ClientesPage = lazy(() => import('./pages/ClientesPage').then((m) => ({ default: m.ClientesPage })));
@@ -71,6 +75,10 @@ export default function App() {
         <Route path="/compras/proveedores" element={<ProveedoresPage />} />
         <Route path="/compras/recepciones" element={<RecepcionesPage />} />
         <Route path="/compras/cuentas" element={<CuentasPorPagarPage />} />
+        <Route path="/contenido" element={<PaginasPage />} />
+        <Route path="/contenido/eventos" element={<EventosPage />} />
+        <Route path="/contenido/local" element={<LocalPage />} />
+        <Route path="/contenido/menu" element={<MenuMediaPage />} />
         <Route path="/productos" element={<ProductosPage />} />
         <Route path="/catalogos" element={<CatalogosPage />} />
         <Route path="/clientes" element={<ClientesPage />} />
