@@ -262,7 +262,8 @@ function EventosSection({ eventos, cargando }: { eventos: Evento[]; cargando: bo
             </h2>
           </div>
           <span className="tag-outline">
-            <CalendarDays size={13} className="mr-2" strokeWidth={1.8} /> {eventos.length} EVENTOS
+            <CalendarDays size={13} className="mr-2" strokeWidth={1.8} /> {eventos.length}{' '}
+            {eventos.length === 1 ? 'EVENTO' : 'EVENTOS'}
           </span>
         </div>
 
@@ -321,7 +322,7 @@ function HoySection({
           {cargando ? (
             <div className="mt-4 h-24 w-64 animate-pulse rounded-card bg-dark-spice" />
           ) : (
-            <p className="display-type mt-3 text-[clamp(3.5rem,10vw,9rem)]">{formatBS(tasa ?? 0)}</p>
+            <p className="display-type mt-3 pb-5 text-[clamp(3.5rem,10vw,9rem)]">{formatBS(tasa ?? 0)}</p>
           )}
           <p className="mt-3 flex items-center gap-2 text-[12px] uppercase tracking-[0.18em] text-tiger-gold/60">
             <Clock size={14} strokeWidth={1.6} />
