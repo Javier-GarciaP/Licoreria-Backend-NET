@@ -42,6 +42,8 @@ flowchart LR
 | `DELETE` | `/api/v1/productos/{id}` | Borrado lógico. |
 | `GET` | `/api/v1/categorias` | Categorías jerárquicas. |
 | `GET` | `/api/v1/marcas` | Marcas. |
+| `GET` | `/api/v1/modificadores` | Modificadores/extras del catálogo. |
+| `GET` | `/api/v1/productos/{id}/modificadores` | Modificadores asignados a un producto. |
 
 ## Interfaz
 

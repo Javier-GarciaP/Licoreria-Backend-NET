@@ -57,15 +57,32 @@ Documentada en [Fase 3](fase-3.md).
 - [x] 401 sin token y 403 con rol insuficiente.
 - [x] Validación defensiva con FluentValidation y 400 estructurado.
 - [x] Colección Postman con los 4 escenarios.
-- [ ] Refresco de token e interceptor de auditoría (`created_by`/`updated_by`).
+- [x] Refresco de token (`POST /api/auth/refresh`) e interceptor de auditoría
+      (`created_by`/`updated_by`).
 
 ## Fase 4 · Frontend
+
+Documentada en [Fase 4](fase-4.md) y [guía de contribución del frontend](../../../frontend/README.md).
 
 **Alcance**
 
 - App pública: catálogo, menú, tasas, reservas y contacto.
 - App interna: dashboard, operación, POS, plano y administración.
 - Design system compartido.
+
+- [x] Monorepo de frontend (workspaces): `apps/admin`, `apps/public-web` y paquetes
+      `types`, `api-client`, `ui`, `config`.
+- [x] Context API: `AuthContext`, `ThemeContext` (Azul UNET / Oscuro) y `ModoContext`
+      (Licorería / Discoteca).
+- [x] Cliente API tipado con JWT, refresh automático y manejo de RFC 7807.
+- [x] Guards de RBAC (`ProtectedRoute`, `Can`) y ocultamiento de rutas admin a `Employee`.
+- [x] Dashboard KPI con mapa de calor, salud de inventario y mermas vs. ventas.
+- [x] Plano interactivo SVG, cuentas/comandas, pagos mixtos y **desalojo de mesa en
+      tiempo real** (evento SignalR `mesa:actualizada`).
+- [x] KDS de barra en tiempo real con SignalR.
+- [x] Web pública mínima (menú digital, tasas, eventos).
+- [x] Orquestación Docker completa (api, admin, public-web, edge nginx y postgres).
+- [ ] Cobertura de pruebas de UI (Vitest) y reserva web con seña.
 
 ## Fase 5 · Despliegue
 

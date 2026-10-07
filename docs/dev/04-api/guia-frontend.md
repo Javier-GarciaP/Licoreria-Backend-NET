@@ -117,8 +117,11 @@ Los listados aceptan `?page=1&pageSize=20` y devuelven:
 ## Tiempo real (SignalR)
 
 - Hub: `/hubs/comandas` (requiere JWT; envíalo como `access_token` en la query al conectar).
-- Método `UnirseArea(area)` con `"barra"`, `"cocina"` o `"meseros"`.
-- Eventos: `comanda:creada`, `comanda:actualizada`, `item:actualizado`.
+- Método `UnirseArea(area)` con `"barra"`, `"cocina"`, `"meseros"` o `"mesas"`.
+- Eventos: `comanda:creada`, `comanda:actualizada`, `item:actualizado`,
+  `mesa:actualizada` (`{ mesaId, estado, cuentaId }`).
+- El desalojo de una mesa (`POST /api/v1/mesas/{id}/desalojar`) emite `mesa:actualizada`
+  con `estado: "Libre"` para que los planos de todos los clientes se refresquen al instante.
 
 ## Subida de archivos
 

@@ -199,12 +199,22 @@ Las rutas marcadas como **publica** no requieren token.
 | `POST` | `/api/v1/mesas` | token |
 | `DELETE` | `/api/v1/mesas/{id}` | token |
 | `PUT` | `/api/v1/mesas/{id}` | token |
+| `POST` | `/api/v1/mesas/{id}/desalojar` | token |
 
 ## MetodosPago
 
 | Metodo | Ruta | Acceso |
 | :--- | :--- | :--- |
 | `GET` | `/api/v1/metodos-pago` | token |
+
+## Modificadores
+
+| Metodo | Ruta | Acceso |
+| :--- | :--- | :--- |
+| `GET` | `/api/v1/modificadores` | token |
+| `POST` | `/api/v1/modificadores` | token |
+| `DELETE` | `/api/v1/modificadores/{id}` | token |
+| `PUT` | `/api/v1/modificadores/{id}` | token |
 
 ## Monedas
 
@@ -284,6 +294,9 @@ Las rutas marcadas como **publica** no requieren token.
 | `GET` | `/api/v1/productos/{id}/recetas` | token |
 | `POST` | `/api/v1/productos/{id}/recetas` | token |
 | `DELETE` | `/api/v1/productos/{id}/recetas/{recetaId}` | token |
+| `GET` | `/api/v1/productos/{id}/modificadores` | token |
+| `POST` | `/api/v1/productos/{id}/modificadores` | token |
+| `DELETE` | `/api/v1/productos/{id}/modificadores/{productoModificadorId}` | token |
 
 ## Promociones
 
@@ -318,6 +331,13 @@ Las rutas marcadas como **publica** no requieren token.
 | :--- | :--- | :--- |
 | `GET` | `/api/v1/reportes/dashboard` | token |
 | `GET` | `/api/v1/reportes/mermas` | token |
+| `GET` | `/api/v1/reportes/ventas` | token |
+| `GET` | `/api/v1/reportes/inventario` | token |
+| `GET` | `/api/v1/reportes/compras` | token |
+| `GET` | `/api/v1/reportes/propinas` | token |
+| `GET` | `/api/v1/reportes/heatmap` | token |
+| `GET` | `/api/v1/reportes/inventario-salud` | token |
+| `GET` | `/api/v1/reportes/mermas-vs-ventas` | token |
 
 ## Reservas
 
@@ -425,4 +445,4 @@ Las rutas marcadas como **publica** no requieren token.
 | `DELETE` | `/api/v1/zonas/{id}` | token |
 | `PUT` | `/api/v1/zonas/{id}` | token |
 
-> Total: 185 endpoints.
+> Total: 200 endpoints.

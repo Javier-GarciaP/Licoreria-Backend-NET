@@ -13,6 +13,26 @@ y el proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
 ### Agregado
 
+- **Frontend (Fase 4):** monorepo de workspaces con `apps/admin` (SPA interna),
+  `apps/public-web` (web pública) y paquetes `types`, `api-client`, `ui` y `config`.
+  Context API (`AuthContext`, `ThemeContext` Azul UNET/Oscuro, `ModoContext`
+  Licorería/Discoteca), guards de RBAC, dashboard KPI (mapa de calor, salud de
+  inventario, mermas vs. ventas), plano interactivo SVG, cuentas con pagos mixtos,
+  KDS de barra en tiempo real y cliente API tipado con refresh de JWT y RFC 7807.
+- **Reportes de operación:** `GET /api/v1/reportes/heatmap`,
+  `/inventario-salud` y `/mermas-vs-ventas`.
+- **Desalojo de mesa en tiempo real:** `POST /api/v1/mesas/{id}/desalojar` y evento
+  SignalR `mesa:actualizada` para sincronizar el plano de mesas entre clientes.
+- **Orquestación Docker completa:** `Dockerfile` de la API y de las SPA, servicios
+  `api`, `admin`, `public-web` y `edge` (nginx) en `docker-compose.yml`.
+- **Pruebas con Moq:** `ServicioCatalogoProductoTests` aísla `IProductoRepository`.
+- **Modificadores/extras:** entidades `modificador` y `producto_modificadores`, CRUD del
+  catálogo y asignación a productos con límites de selección (min/max/requerido).
+- **Reportes:** ventas por período/usuario/método de pago, inventario valorizado,
+  compras y cuentas por pagar, y propinas por usuario (`/api/v1/reportes/*`).
+- **Contrato OpenAPI generado en build:** `Microsoft.AspNetCore.OpenApi`
+  (`OpenApiGenerateDocuments`) exporta `openapi/licoreria.yaml`; tareas
+  `task backend:openapi` y `task backend:openapi:check` y verificación de paridad en CI.
 - **Completitud de la API:** compras (proveedores, órdenes, recepciones y cuentas por
   pagar), precios por lista y moneda, tablero de KPIs, menú PDF (QuestPDF) y contacto
   por WhatsApp, división de cuentas y promociones, lotes/vencimientos y tomas físicas,

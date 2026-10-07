@@ -174,15 +174,18 @@ Colección: [`Licoreria_Fase3_Postman_Collection.json`](docs/assets/evidencias/L
 La API v1 está implementada sobre PostgreSQL con Onion Architecture. Incluye:
 
 - **Seguridad:** refresh tokens, `/auth/me`, RBAC con permisos `modulo:accion` y gestión de usuarios.
-- **Catálogo:** productos con variantes, códigos de barras, precios por lista y recetas.
+- **Catálogo:** productos con variantes, códigos de barras, precios por lista, recetas y
+  modificadores/extras por producto.
 - **Inventario:** kardex inmutable, mermas/cortesías, ajustes, lotes/vencimientos y tomas físicas.
 - **Compras:** proveedores, órdenes, recepciones (actualizan inventario/costos) y cuentas por pagar.
 - **Operación:** ventas con pago mixto y comprobante, cuentas/comandas, caja con arqueo (Z),
   club/reservas, lista VIP, entradas y CRM.
+- **Reportes:** tablero de KPIs, ventas por período/usuario/método de pago, inventario
+  valorizado, compras y propinas por usuario.
 - **Web pública:** contenido, menú digital, QR, menú PDF, WhatsApp, tasas y eventos.
 - **Tiempo real:** SignalR en `/hubs/comandas`. **IA:** módulo simulado con aprobación.
 - **Calidad:** concurrencia optimista (`xmin`), auditoría, rate limiting, pruebas unitarias
-  y de integración, y contrato OpenAPI generado desde el código.
+  y de integración, y contrato OpenAPI generado desde el código (`task backend:openapi`).
 
 | Recurso | Descripción |
 | :--- | :--- |
