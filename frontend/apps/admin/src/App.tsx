@@ -14,6 +14,10 @@ const VentasPage = lazy(() => import('./pages/VentasPage').then((m) => ({ defaul
 const KdsPage = lazy(() => import('./pages/KdsPage').then((m) => ({ default: m.KdsPage })));
 const ReservasPage = lazy(() => import('./pages/ReservasPage').then((m) => ({ default: m.ReservasPage })));
 const MermasPage = lazy(() => import('./pages/MermasPage').then((m) => ({ default: m.MermasPage })));
+const InventarioPage = lazy(() => import('./pages/InventarioPage').then((m) => ({ default: m.InventarioPage })));
+const KardexPage = lazy(() => import('./pages/KardexPage').then((m) => ({ default: m.KardexPage })));
+const LotesPage = lazy(() => import('./pages/LotesPage').then((m) => ({ default: m.LotesPage })));
+const TomasFisicasPage = lazy(() => import('./pages/TomasFisicasPage').then((m) => ({ default: m.TomasFisicasPage })));
 const ProductosPage = lazy(() => import('./pages/ProductosPage').then((m) => ({ default: m.ProductosPage })));
 const CatalogosPage = lazy(() => import('./pages/CatalogosPage').then((m) => ({ default: m.CatalogosPage })));
 const ClientesPage = lazy(() => import('./pages/ClientesPage').then((m) => ({ default: m.ClientesPage })));
@@ -55,6 +59,10 @@ export default function App() {
         <Route path="/kds" element={<KdsPage />} />
         <Route path="/reservas" element={<ReservasPage />} />
         <Route path="/mermas" element={<MermasPage />} />
+        <Route path="/inventario" element={<InventarioPage />} />
+        <Route path="/inventario/kardex" element={<KardexPage />} />
+        <Route path="/inventario/lotes" element={<LotesPage />} />
+        <Route path="/inventario/tomas" element={<TomasFisicasPage />} />
         <Route path="/productos" element={<ProductosPage />} />
         <Route path="/catalogos" element={<CatalogosPage />} />
         <Route path="/clientes" element={<ClientesPage />} />

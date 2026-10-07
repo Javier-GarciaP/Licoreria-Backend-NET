@@ -50,6 +50,9 @@ export const handlers = [
   http.get(`${BASE}/api/v1/usuarios`, () =>
     HttpResponse.json({ items: [], page: 1, pageSize: 15, totalItems: 0, totalPages: 0 }),
   ),
+  http.get(`${BASE}/api/v1/mermas`, () =>
+    HttpResponse.json({ items: [], page: 1, pageSize: 10, totalItems: 0, totalPages: 0 }),
+  ),
 ];
 
 export const server = setupServer(...handlers);

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   BarChart3,
+  Boxes,
   CalendarClock,
   ChefHat,
   CircleUser,
@@ -41,6 +42,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/ventas', label: 'Ventas', icon: <Receipt size={20} />, permiso: 'sales:read' },
   { to: '/reservas', label: 'Reservas', icon: <CalendarClock size={20} />, permiso: 'reservation:manage' },
   { to: '/mermas', label: 'Mermas', icon: <Trash2 size={20} />, permiso: 'inventory:merma' },
+  { to: '/inventario', label: 'Inventario', icon: <Boxes size={20} />, permiso: 'inventory:read' },
   { to: '/productos', label: 'Catálogo', icon: <Package size={20} />, permiso: 'catalog:read' },
   { to: '/catalogos', label: 'Catálogo base', icon: <Tags size={20} />, permiso: 'catalog:read' },
   { to: '/caja', label: 'Caja', icon: <Wallet size={20} />, permiso: 'cash:movement' },
