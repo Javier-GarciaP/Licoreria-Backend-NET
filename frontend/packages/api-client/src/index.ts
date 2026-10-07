@@ -17,7 +17,9 @@ import type {
   Mesa,
   MetodoPago,
   Merma,
+  MonedaInfo,
   MovimientoKardex,
+  MovimientoTesoreria,
   OrdenCompra,
   Pagina,
   PedidoAnticipado,
@@ -123,10 +125,19 @@ export const cuentasApi = {
 
 export const clubApi = {
   zonas: () => apiFetch<Zona[]>('/api/v1/zonas'),
+  crearZona: (body: unknown) => apiFetch<Zona>('/api/v1/zonas', { method: 'POST', body }),
+  actualizarZona: (id: string, body: unknown) => apiFetch<Zona>(`/api/v1/zonas/${id}`, { method: 'PUT', body }),
+  eliminarZona: (id: string) => apiFetch<void>(`/api/v1/zonas/${id}`, { method: 'DELETE' }),
   mesas: (zonaId?: string) => apiFetch<Mesa[]>('/api/v1/mesas', { query: { zonaId } }),
+  crearMesa: (body: unknown) => apiFetch<Mesa>('/api/v1/mesas', { method: 'POST', body }),
+  actualizarMesa: (id: string, body: unknown) => apiFetch<Mesa>(`/api/v1/mesas/${id}`, { method: 'PUT', body }),
+  eliminarMesa: (id: string) => apiFetch<void>(`/api/v1/mesas/${id}`, { method: 'DELETE' }),
   desalojar: (mesaId: string) => apiFetch<void>(`/api/v1/mesas/${mesaId}/desalojar`, { method: 'POST' }),
   planos: () => apiFetch<Plano[]>('/api/v1/planos'),
   plano: (id: string) => apiFetch<Plano>(`/api/v1/planos/${id}`),
+  crearPlano: (body: unknown) => apiFetch<Plano>('/api/v1/planos', { method: 'POST', body }),
+  actualizarPlano: (id: string, body: unknown) => apiFetch<Plano>(`/api/v1/planos/${id}`, { method: 'PUT', body }),
+  eliminarPlano: (id: string) => apiFetch<void>(`/api/v1/planos/${id}`, { method: 'DELETE' }),
   reservas: (query: PaginaQuery & { estado?: string } = {}) =>
     apiFetch<ResultadoPaginado<Reserva>>('/api/v1/reservas', { query }),
   reserva: (id: string) => apiFetch<Reserva>(`/api/v1/reservas/${id}`),
@@ -166,6 +177,14 @@ export const inventarioApi = {
 export const finanzasApi = {
   tasaActual: (tipo: 'BCV' | 'Paralelo' = 'Paralelo') =>
     apiFetch<TasaCambio>('/api/v1/tasas-cambio/actual', { query: { tipo } }),
+  tasas: (query: { desde?: string; hasta?: string; tipo?: string } = {}) =>
+    apiFetch<TasaCambio[]>('/api/v1/tasas-cambio', { query }),
+  registrarTasa: (body: unknown) => apiFetch<TasaCambio>('/api/v1/tasas-cambio', { method: 'POST', body }),
+  movimientos: (query: PaginaQuery & { tipo?: string; desde?: string; hasta?: string } = {}) =>
+    apiFetch<ResultadoPaginado<MovimientoTesoreria>>('/api/v1/movimientos-tesoreria', { query }),
+  registrarMovimiento: (body: unknown) =>
+    apiFetch<MovimientoTesoreria>('/api/v1/movimientos-tesoreria', { method: 'POST', body }),
+  monedas: () => apiFetch<MonedaInfo[]>('/api/v1/monedas'),
 };
 
 export const reportesApi = {

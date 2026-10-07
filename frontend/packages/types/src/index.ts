@@ -331,6 +331,26 @@ export interface QrMenu {
   contenido: string;
 }
 
+/* ===================== Finanzas ===================== */
+
+export interface MonedaInfo {
+  codigo: string;
+  nombre: string;
+}
+
+export type TipoMovimientoTesoreria = 'Ingreso' | 'Egreso';
+
+export interface MovimientoTesoreria {
+  id: string;
+  tipo: TipoMovimientoTesoreria;
+  monto: number;
+  moneda: Moneda;
+  motivo: string;
+  referenciaTipo: string | null;
+  referenciaId: string | null;
+  fecha: string;
+}
+
 /* ===================== Ventas / Pagos ===================== */
 
 export interface MetodoPago {
