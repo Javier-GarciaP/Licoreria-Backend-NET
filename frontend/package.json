@@ -1,0 +1,32 @@
+{
+  "name": "licoreria-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev:admin",
+    "dev:admin": "npm run dev -w @licoreria/admin",
+    "dev:public": "npm run dev -w @licoreria/public-web",
+    "build": "npm run build -w @licoreria/admin && npm run build -w @licoreria/public-web",
+    "build:admin": "npm run build -w @licoreria/admin",
+    "build:public": "npm run build -w @licoreria/public-web",
+    "typecheck": "npm run typecheck -w @licoreria/admin",
+    "test": "npm run test -w @licoreria/admin",
+    "lint": "eslint \"apps/**/src/**/*.{ts,tsx,js,jsx}\" \"packages/**/src/**/*.{ts,tsx,js,jsx}\"",
+    "lint:fix": "npm run lint -- --fix",
+    "format": "prettier --write \"apps/**/src/**/*.{ts,tsx,js,jsx,css,json}\" \"packages/**/*.{ts,tsx,css,json}\""
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.12.0",
+    "eslint": "^9.12.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.12",
+    "globals": "^15.10.0",
+    "prettier": "^3.3.3",
+    "typescript-eslint": "^8.8.0"
+  }
+}

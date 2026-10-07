@@ -1,0 +1,84 @@
+/* =========================================================
+   Tokens de tema · Licorería / Discoteca
+   Oscuro (por defecto) y Azul UNET. Ver frontend/DESIGN.md.
+   ========================================================= */
+
+:root,
+[data-theme='dark'] {
+  --color-canvas: 11 13 16;      /* #0b0d10 */
+  --color-surface: 20 23 28;     /* #14171c */
+  --color-elevated: 27 31 38;    /* #1b1f26 */
+  --color-hairline: 38 43 51;    /* #262b33 */
+  --color-ink: 245 247 250;      /* #f5f7fa */
+  --color-muted: 154 163 178;    /* #9aa3b2 */
+  --color-stone: 58 65 80;       /* #3a4150 */
+  --color-accent: 84 51 235;     /* #5433eb */
+  --color-accent-soft: 192 181 243; /* #c0b5f3 */
+  --color-violet: 84 51 235;     /* #5433eb */
+  --color-success: 47 191 113;   /* #2fbf71 */
+  --color-warning: 245 165 36;   /* #f5a524 */
+  --color-danger: 239 68 68;     /* #ef4444 */
+  --color-info: 59 130 246;      /* #3b82f6 */
+
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.45);
+  --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-glow: 0 4px 24px rgba(69, 36, 219, 0.34);
+
+  color-scheme: dark;
+}
+
+[data-theme='unet'] {
+  --color-canvas: 242 244 245;   /* #f2f4f5 */
+  --color-surface: 255 255 255;  /* #ffffff */
+  --color-elevated: 255 255 255; /* #ffffff */
+  --color-hairline: 235 235 235; /* #ebebeb */
+  --color-ink: 11 13 16;         /* #0b0d10 */
+  --color-muted: 120 117 116;    /* #787574 */
+  --color-stone: 204 204 204;    /* #cccccc */
+  --color-accent: 0 51 102;      /* #003366 (Azul UNET) */
+  --color-accent-soft: 0 75 143; /* #004b8f */
+  --color-violet: 84 51 235;
+  --color-success: 22 163 74;
+  --color-warning: 217 119 6;
+  --color-danger: 220 38 38;
+  --color-info: 37 99 235;
+
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.12);
+  --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-glow: 0 4px 24px rgba(0, 51, 102, 0.28);
+
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: rgb(var(--color-canvas));
+  color: rgb(var(--color-ink));
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.014em;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--color-stone));
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
