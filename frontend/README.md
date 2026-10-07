@@ -64,8 +64,17 @@ VITE_API_URL=http://localhost:5190
 VITE_HUB_URL=http://localhost:5190/hubs/comandas
 ```
 
-Credenciales de prueba: `admin@licoreria.com / admin123` (Admin) y
-`cajero1@licoreria.com / cajero123` (Employee).
+Credenciales de prueba (una cuenta por rol, sembradas en la BD):
+
+| Rol | Correo | Contraseña |
+| :-- | :-- | :-- |
+| Administrador | `admin@licoreria.com` | `admin123` |
+| Cajero | `cajero1@licoreria.com` | `cajero123` |
+| Mesero | `mesero1@licoreria.com` | `demo123` |
+| Barra | `barra1@licoreria.com` | `demo123` |
+| Cocina | `cocina1@licoreria.com` | `demo123` |
+| Host | `host1@licoreria.com` | `demo123` |
+| Editor de contenido | `editor1@licoreria.com` | `demo123` |
 
 ## 4. Contratos clave de la API
 
@@ -84,9 +93,9 @@ Credenciales de prueba: `admin@licoreria.com / admin123` (Admin) y
 
 ```jsx
 // AuthContext.jsx
-{ usuario, rol, permisos, token,
+{ usuario, rol, rolDominio, permisos, token,
   login(username, password), logout(), refrescar(),
-  tienePermiso(clave), esAdmin }
+  tienePermiso(clave), esAdmin, inicio }
 ```
 
 - Guarda `accessToken`/`refreshToken` en `localStorage`; al montar, llama a `GET /api/auth/me`.
@@ -101,6 +110,7 @@ Credenciales de prueba: `admin@licoreria.com / admin123` (Admin) y
 ```jsx
 // ModoContext.jsx
 { modo: 'licoreria' | 'discoteca', setModo(m) }
+// El modo filtra la navegación: discoteca = Mesas/Cuentas/KDS/Reservas/Salón; licorería = venta de mostrador.
 ```
 
 ## 6. RBAC (guards)
@@ -122,6 +132,13 @@ Leyenda: `[ ]` pendiente · `[~]` en progreso · `[x]` hecho.
 > dnd-kit); solo queda el módulo de IA. 7.7 incluye el rediseño "Hungry Tiger" con
 > vitrina 3D, menú, tasas, eventos y **reserva web con seña**. El backend de la §8 ya
 > está implementado.
+>
+> **Núcleo mínimo (R1):** la navegación expone solo el núcleo operativo (Operación,
+> Salón, Catálogo y almacén, Dinero, Sistema). Los módulos secundarios (Compras,
+> Clientes/CxC, Contenido, Reportes/Auditoría, Promociones, Entradas/VIP, Tesorería)
+> quedan **ocultos** con el flag `oculto` en `apps/admin/src/lib/navigation.tsx`
+> (reversible: quitar el flag). El toggle **Modo Licorería/Discoteca** se retiró; el
+> acceso se rige por rol + permisos.
 
 ### 7.1 Andamiaje
 - [x] workspaces, `tsconfig.base`, ESLint/Prettier, Tailwind con token `#003366`
@@ -132,7 +149,9 @@ Leyenda: `[ ]` pendiente · `[~]` en progreso · `[x]` hecho.
 - [x] `LoginPage` (`POST /api/auth/login`) + AuthContext + interceptor refresh
 - [x] `AuthContext`, `ThemeContext`, `ModoContext` con persistencia
 - [x] Layout (sidebar/header), selector de tema, selector de modo
-- [x] Guards RBAC y ocultamiento de rutas admin
+- [x] Guards RBAC reales: rutas protegidas por permiso/rol (`ContenidoProtegido` en
+      `App.tsx`) + ocultamiento de rutas en la nav; el login resuelve el **rol de
+      dominio** (`rolDominio`) y aterriza en el inicio de cada rol.
 - [x] Toast global para RFC 7807
 
 ### 7.3 `admin` — Dashboard KPI  (`overflow-x-auto`)
@@ -159,8 +178,18 @@ Leyenda: `[ ]` pendiente · `[~]` en progreso · `[x]` hecho.
 - [x] Mermas y cortesías (`GET/POST /api/v1/mermas`)
 
 ### 7.5 `admin` — POS (Modo Licorería)
-- [x] Venta rápida de mostrador: búsqueda de productos, carrito, cobro mixto
-      (`POST /api/v1/ventas`), comprobante, propina y descuento
+- [x] Layout de mostrador: categorías arriba, grilla de productos al centro (única
+      zona con scroll) y panel de la orden a la derecha; sin scroll de página.
+- [x] Manejo rápido solo con teclado: al pulsar una letra se enfoca el buscador y
+      arranca la búsqueda; `F2` buscar, flechas moverse, `Enter` agregar, `+`/`-`
+      cantidad, `Supr` quitar, `F8` descuento, `F4` cobrar total, `Ctrl+N` nueva
+      orden, `Alt+1…9` órdenes en espera, `F1` ayuda de atajos.
+- [x] Propina sumada al total a cobrar y **ticket térmico** (`TicketVenta`) con el
+      detalle de ítems, extras, pagos y código de barras; botón Imprimir (80 mm).
+- [x] Selección por variante y modificadores (extras) con receta informativa para
+      productos `Preparado`; el precio de los extras se consolida por ítem.
+- [x] Varias órdenes en espera (pestañas), propina, descuento y promoción;
+      `POST /api/v1/ventas` cobrando siempre el total con el método predeterminado.
 
 ### 7.6 `admin` — Catálogo / Inventario / Administración
 - [x] Productos con variantes (crear/editar/eliminar), paginación server-side y búsqueda
@@ -174,6 +203,13 @@ Leyenda: `[ ]` pendiente · `[~]` en progreso · `[x]` hecho.
 - [x] Contenido: páginas (secciones/bloques), eventos, horarios, local, menú y archivos
 - [x] Finanzas: tasas de cambio y tesorería
 - [x] Salón: editor de planos (dnd-kit) y CRUD de zonas y mesas
+- [x] **Catálogo avanzado**: unidades de medida, impuestos, listas de precio y modificadores
+- [x] **Promociones**: CRUD (tipo porcentaje / monto fijo)
+- [x] **Cuentas por cobrar de clientes**: registrar y cobrar
+- [x] **Entradas y Lista VIP**: emisión, validación por código y control de acceso
+- [x] **Reportes**: ventas, inventario valorizado, compras y propinas
+- [x] **Auditoría**: bitácora de acciones sensibles (solo Admin)
+- [x] **Por rol**: workspaces (nav curada por rol), KDS por área (barra/cocina), breadcrumbs y paleta de comandos ⌘K
 - [ ] Módulo de IA (generaciones y aprobación)
 
 ### 7.7 `public-web`
