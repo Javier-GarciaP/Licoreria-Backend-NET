@@ -1,11 +1,13 @@
 import type { ReactNode } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
+  Armchair,
   BarChart3,
   Boxes,
   CalendarClock,
   ChefHat,
   CircleUser,
+  Coins,
   FileText,
   Grid2x2,
   LayoutGrid,
@@ -47,6 +49,8 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/inventario', label: 'Inventario', icon: <Boxes size={20} />, permiso: 'inventory:read' },
   { to: '/compras', label: 'Compras', icon: <ShoppingBag size={20} />, permiso: 'purchasing:read' },
   { to: '/contenido', label: 'Contenido', icon: <FileText size={20} />, permiso: 'content:read' },
+  { to: '/finanzas', label: 'Finanzas', icon: <Coins size={20} />, permiso: 'finance:read' },
+  { to: '/salon', label: 'Salón', icon: <Armchair size={20} />, permiso: 'club:manage' },
   { to: '/productos', label: 'Catálogo', icon: <Package size={20} />, permiso: 'catalog:read' },
   { to: '/catalogos', label: 'Catálogo base', icon: <Tags size={20} />, permiso: 'catalog:read' },
   { to: '/caja', label: 'Caja', icon: <Wallet size={20} />, permiso: 'cash:movement' },

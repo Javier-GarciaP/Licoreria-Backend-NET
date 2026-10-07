@@ -26,6 +26,10 @@ const PaginasPage = lazy(() => import('./pages/PaginasPage').then((m) => ({ defa
 const EventosPage = lazy(() => import('./pages/EventosPage').then((m) => ({ default: m.EventosPage })));
 const LocalPage = lazy(() => import('./pages/LocalPage').then((m) => ({ default: m.LocalPage })));
 const MenuMediaPage = lazy(() => import('./pages/MenuMediaPage').then((m) => ({ default: m.MenuMediaPage })));
+const TasasPage = lazy(() => import('./pages/TasasPage').then((m) => ({ default: m.TasasPage })));
+const TesoreriaPage = lazy(() => import('./pages/TesoreriaPage').then((m) => ({ default: m.TesoreriaPage })));
+const PlanosPage = lazy(() => import('./pages/PlanosPage').then((m) => ({ default: m.PlanosPage })));
+const ZonasMesasPage = lazy(() => import('./pages/ZonasMesasPage').then((m) => ({ default: m.ZonasMesasPage })));
 const ProductosPage = lazy(() => import('./pages/ProductosPage').then((m) => ({ default: m.ProductosPage })));
 const CatalogosPage = lazy(() => import('./pages/CatalogosPage').then((m) => ({ default: m.CatalogosPage })));
 const ClientesPage = lazy(() => import('./pages/ClientesPage').then((m) => ({ default: m.ClientesPage })));
@@ -79,6 +83,10 @@ export default function App() {
         <Route path="/contenido/eventos" element={<EventosPage />} />
         <Route path="/contenido/local" element={<LocalPage />} />
         <Route path="/contenido/menu" element={<MenuMediaPage />} />
+        <Route path="/finanzas" element={<TasasPage />} />
+        <Route path="/finanzas/tesoreria" element={<TesoreriaPage />} />
+        <Route path="/salon" element={<PlanosPage />} />
+        <Route path="/salon/zonas" element={<ZonasMesasPage />} />
         <Route path="/productos" element={<ProductosPage />} />
         <Route path="/catalogos" element={<CatalogosPage />} />
         <Route path="/clientes" element={<ClientesPage />} />
