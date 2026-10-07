@@ -63,7 +63,17 @@ public sealed class ServicioClub : IServicioClub
 
     public async Task<ZonaDto> CrearZonaAsync(ZonaCrearDto dto, CancellationToken cancellationToken = default)
     {
-        var zona = new Zona { Nombre = dto.Nombre, Tipo = dto.Tipo, Activo = dto.Activo };
+        var zona = new Zona
+        {
+            Nombre = dto.Nombre,
+            Tipo = dto.Tipo,
+            Activo = dto.Activo,
+            Color = dto.Color,
+            PosX = dto.PosX,
+            PosY = dto.PosY,
+            Ancho = dto.Ancho,
+            Alto = dto.Alto
+        };
         await _zonas.AddAsync(zona, cancellationToken);
         await _zonas.SaveChangesAsync(cancellationToken);
         return MapearZona(zona);
@@ -80,6 +90,11 @@ public sealed class ServicioClub : IServicioClub
         zona.Nombre = dto.Nombre;
         zona.Tipo = dto.Tipo;
         zona.Activo = dto.Activo;
+        zona.Color = dto.Color;
+        zona.PosX = dto.PosX;
+        zona.PosY = dto.PosY;
+        zona.Ancho = dto.Ancho;
+        zona.Alto = dto.Alto;
         _zonas.Update(zona);
         await _zonas.SaveChangesAsync(cancellationToken);
         return MapearZona(zona);
@@ -233,7 +248,16 @@ public sealed class ServicioClub : IServicioClub
 
     public async Task<PlanoDto> CrearPlanoAsync(PlanoCrearDto dto, CancellationToken cancellationToken = default)
     {
-        var plano = new Plano { Nombre = dto.Nombre, Version = 1, Activo = true };
+        var plano = new Plano
+        {
+            Nombre = dto.Nombre,
+            Version = 1,
+            Activo = true,
+            AnchoFondo = dto.AnchoFondo,
+            AltoFondo = dto.AltoFondo,
+            Rejilla = dto.Rejilla,
+            Piso = dto.Piso
+        };
 
         foreach (var elemento in dto.Elementos)
         {
@@ -255,6 +279,10 @@ public sealed class ServicioClub : IServicioClub
 
         plano.Nombre = dto.Nombre;
         plano.Activo = dto.Activo;
+        plano.AnchoFondo = dto.AnchoFondo;
+        plano.AltoFondo = dto.AltoFondo;
+        plano.Rejilla = dto.Rejilla;
+        plano.Piso = dto.Piso;
         plano.Version += 1;
 
         var existentes = await _planoElementos.FindAsync(e => e.PlanoId == dto.Id, cancellationToken);
@@ -742,8 +770,12 @@ public sealed class ServicioClub : IServicioClub
     private static PlanoElemento CrearElemento(PlanoElementoCrearDto dto) => new()
     {
         ZonaId = dto.ZonaId,
+        MesaId = dto.MesaId,
         Tipo = dto.Tipo,
+        Forma = dto.Forma,
+        Color = dto.Color,
         Etiqueta = dto.Etiqueta,
+        Z = dto.Z,
         PosX = dto.PosX,
         PosY = dto.PosY,
         Ancho = dto.Ancho,
@@ -751,15 +783,15 @@ public sealed class ServicioClub : IServicioClub
         Rotacion = dto.Rotacion
     };
 
-    private static ZonaDto MapearZona(Zona z) => new(z.Id, z.Nombre, z.Tipo, z.Activo);
+    private static ZonaDto MapearZona(Zona z) => new(z.Id, z.Nombre, z.Tipo, z.Activo, z.Color, z.PosX, z.PosY, z.Ancho, z.Alto);
 
     private static MesaDto MapearMesa(Mesa m, string zonaNombre, bool disponible, Guid? cuentaId = null, bool reservada = false)
         => new(m.Id, m.ZonaId, zonaNombre, m.Numero, m.Capacidad, m.Forma, m.PosX, m.PosY, m.Ancho, m.Alto, m.Activa, disponible, cuentaId, reservada);
 
     private static PlanoDto MapearPlano(Plano p)
-        => new(p.Id, p.Nombre, p.Version, p.Activo,
-            p.Elementos.Where(e => !e.IsDeleted).Select(e => new PlanoElementoDto(
-                e.Id, e.ZonaId, e.Tipo, e.Etiqueta, e.PosX, e.PosY, e.Ancho, e.Alto, e.Rotacion)).ToList());
+        => new(p.Id, p.Nombre, p.Version, p.Activo, p.AnchoFondo, p.AltoFondo, p.Rejilla, p.Piso,
+            p.Elementos.Where(e => !e.IsDeleted).OrderBy(e => e.Z).Select(e => new PlanoElementoDto(
+                e.Id, e.ZonaId, e.MesaId, e.Tipo, e.Forma, e.Color, e.Etiqueta, e.Z, e.PosX, e.PosY, e.Ancho, e.Alto, e.Rotacion)).ToList());
 
     private static ReservaDto MapearReserva(Reserva r)
         => new(

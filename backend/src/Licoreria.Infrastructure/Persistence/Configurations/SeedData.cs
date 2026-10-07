@@ -37,6 +37,11 @@ internal static class SeedData
     // --- Usuarios ---
     public static readonly Guid UsuarioAdmin = Guid.Parse("20000000-0000-0000-0000-000000000001");
     public static readonly Guid UsuarioCajero = Guid.Parse("20000000-0000-0000-0000-000000000002");
+    public static readonly Guid UsuarioMesero = Guid.Parse("20000000-0000-0000-0000-000000000003");
+    public static readonly Guid UsuarioBarra = Guid.Parse("20000000-0000-0000-0000-000000000004");
+    public static readonly Guid UsuarioCocina = Guid.Parse("20000000-0000-0000-0000-000000000005");
+    public static readonly Guid UsuarioHost = Guid.Parse("20000000-0000-0000-0000-000000000006");
+    public static readonly Guid UsuarioEditor = Guid.Parse("20000000-0000-0000-0000-000000000007");
 
     // --- Tasas de cambio ---
     public static readonly Guid TasaBcv = Guid.Parse("aaaa0000-0000-0000-0000-000000000001");

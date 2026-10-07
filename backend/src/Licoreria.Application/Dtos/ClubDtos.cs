@@ -2,11 +2,37 @@ using Licoreria.Domain.Enums;
 
 namespace Licoreria.Application.Dtos;
 
-public sealed record ZonaDto(Guid Id, string Nombre, TipoZona Tipo, bool Activo);
+public sealed record ZonaDto(
+    Guid Id,
+    string Nombre,
+    TipoZona Tipo,
+    bool Activo,
+    string? Color,
+    decimal PosX,
+    decimal PosY,
+    decimal Ancho,
+    decimal Alto);
 
-public sealed record ZonaCrearDto(string Nombre, TipoZona Tipo, bool Activo = true);
+public sealed record ZonaCrearDto(
+    string Nombre,
+    TipoZona Tipo,
+    bool Activo = true,
+    string? Color = null,
+    decimal PosX = 0,
+    decimal PosY = 0,
+    decimal Ancho = 0,
+    decimal Alto = 0);
 
-public sealed record ZonaEditarDto(Guid Id, string Nombre, TipoZona Tipo, bool Activo);
+public sealed record ZonaEditarDto(
+    Guid Id,
+    string Nombre,
+    TipoZona Tipo,
+    bool Activo,
+    string? Color = null,
+    decimal PosX = 0,
+    decimal PosY = 0,
+    decimal Ancho = 0,
+    decimal Alto = 0);
 
 public sealed record MesaDto(
     Guid Id,
@@ -49,8 +75,12 @@ public sealed record MesaEditarDto(
 public sealed record PlanoElementoDto(
     Guid Id,
     Guid? ZonaId,
+    Guid? MesaId,
     string Tipo,
+    string? Forma,
+    string? Color,
     string? Etiqueta,
+    int Z,
     decimal PosX,
     decimal PosY,
     decimal Ancho,
@@ -65,24 +95,40 @@ public sealed record PlanoElementoCrearDto(
     decimal PosY,
     decimal Ancho,
     decimal Alto,
-    decimal Rotacion = 0);
+    decimal Rotacion = 0,
+    string? Forma = null,
+    string? Color = null,
+    int Z = 0,
+    Guid? MesaId = null);
 
 public sealed record PlanoDto(
     Guid Id,
     string Nombre,
     int Version,
     bool Activo,
+    decimal AnchoFondo,
+    decimal AltoFondo,
+    decimal Rejilla,
+    string Piso,
     IReadOnlyList<PlanoElementoDto> Elementos);
 
 public sealed record PlanoCrearDto(
     string Nombre,
-    IReadOnlyList<PlanoElementoCrearDto> Elementos);
+    IReadOnlyList<PlanoElementoCrearDto> Elementos,
+    decimal AnchoFondo = 24m,
+    decimal AltoFondo = 16m,
+    decimal Rejilla = 0.5m,
+    string Piso = "madera");
 
 public sealed record PlanoEditarDto(
     Guid Id,
     string Nombre,
     bool Activo,
-    IReadOnlyList<PlanoElementoCrearDto> Elementos);
+    IReadOnlyList<PlanoElementoCrearDto> Elementos,
+    decimal AnchoFondo = 24m,
+    decimal AltoFondo = 16m,
+    decimal Rejilla = 0.5m,
+    string Piso = "madera");
 
 public sealed record ReservaMesaResumenDto(Guid MesaId, string Numero, string Zona);
 

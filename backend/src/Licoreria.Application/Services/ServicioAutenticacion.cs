@@ -113,6 +113,7 @@ public sealed class ServicioAutenticacion : IServicioAutenticacion
             usuario.NombreCompleto,
             usuario.Email,
             usuario.Rol.ObtenerRoles().First(),
+            usuario.Rol.ToString(),
             usuario.Rol.ObtenerPermisos());
     }
 
@@ -134,6 +135,7 @@ public sealed class ServicioAutenticacion : IServicioAutenticacion
             usuario.NombreCompleto,
             usuario.Email,
             usuario.Rol.ObtenerRoles().First(),
+            usuario.Rol.ToString(),
             usuario.Rol.ObtenerPermisos(),
             accessToken,
             refreshToken,

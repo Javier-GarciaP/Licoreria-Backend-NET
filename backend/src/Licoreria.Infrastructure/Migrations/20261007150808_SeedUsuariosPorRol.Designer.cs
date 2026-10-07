@@ -3,6 +3,7 @@ using System;
 using Licoreria.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Licoreria.Infrastructure.Migrations
 {
     [DbContext(typeof(LicoreriaDbContext))]
-    partial class LicoreriaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261007150808_SeedUsuariosPorRol")]
+    partial class SeedUsuariosPorRol
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2666,14 +2669,6 @@ namespace Licoreria.Infrastructure.Migrations
                     b.Property<bool>("Activo")
                         .HasColumnType("boolean");
 
-                    b.Property<decimal>("AltoFondo")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("numeric(10,2)");
-
-                    b.Property<decimal>("AnchoFondo")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("numeric(10,2)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -2690,15 +2685,6 @@ namespace Licoreria.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(60)
                         .HasColumnType("character varying(60)");
-
-                    b.Property<string>("Piso")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<decimal>("Rejilla")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("numeric(10,2)");
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uuid");
@@ -2731,10 +2717,6 @@ namespace Licoreria.Infrastructure.Migrations
                         .HasPrecision(10, 2)
                         .HasColumnType("numeric(10,2)");
 
-                    b.Property<string>("Color")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -2745,18 +2727,11 @@ namespace Licoreria.Infrastructure.Migrations
                         .HasMaxLength(60)
                         .HasColumnType("character varying(60)");
 
-                    b.Property<string>("Forma")
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
                     b.Property<DateTime?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("MesaId")
-                        .HasColumnType("uuid");
 
                     b.Property<Guid>("PlanoId")
                         .HasColumnType("uuid");
@@ -2781,9 +2756,6 @@ namespace Licoreria.Infrastructure.Migrations
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("Z")
-                        .HasColumnType("integer");
-
                     b.Property<Guid?>("ZonaId")
                         .HasColumnType("uuid");
 
@@ -2794,8 +2766,6 @@ namespace Licoreria.Infrastructure.Migrations
                         .HasColumnName("xmin");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("MesaId");
 
                     b.HasIndex("PlanoId");
 
@@ -4515,18 +4485,6 @@ namespace Licoreria.Infrastructure.Migrations
                     b.Property<bool>("Activo")
                         .HasColumnType("boolean");
 
-                    b.Property<decimal>("Alto")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("numeric(10,2)");
-
-                    b.Property<decimal>("Ancho")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("numeric(10,2)");
-
-                    b.Property<string>("Color")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -4543,14 +4501,6 @@ namespace Licoreria.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(60)
                         .HasColumnType("character varying(60)");
-
-                    b.Property<decimal>("PosX")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("numeric(10,2)");
-
-                    b.Property<decimal>("PosY")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("numeric(10,2)");
 
                     b.Property<string>("Tipo")
                         .IsRequired()
@@ -4945,11 +4895,6 @@ namespace Licoreria.Infrastructure.Migrations
 
             modelBuilder.Entity("Licoreria.Domain.Entities.PlanoElemento", b =>
                 {
-                    b.HasOne("Licoreria.Domain.Entities.Mesa", "Mesa")
-                        .WithMany()
-                        .HasForeignKey("MesaId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("Licoreria.Domain.Entities.Plano", "Plano")
                         .WithMany("Elementos")
                         .HasForeignKey("PlanoId")
@@ -4960,8 +4905,6 @@ namespace Licoreria.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("ZonaId")
                         .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Mesa");
 
                     b.Navigation("Plano");
 

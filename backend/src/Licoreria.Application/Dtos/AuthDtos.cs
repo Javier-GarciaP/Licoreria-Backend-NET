@@ -12,6 +12,7 @@ public sealed record AuthResponseDto(
     string NombreCompleto,
     string Email,
     string Rol,
+    string RolDominio,
     IReadOnlyList<string> Permisos,
     string AccessToken,
     string RefreshToken,
@@ -22,4 +23,5 @@ public sealed record UsuarioActualDto(
     string NombreCompleto,
     string Email,
     string Rol,
+    string RolDominio,
     IReadOnlyList<string> Permisos);

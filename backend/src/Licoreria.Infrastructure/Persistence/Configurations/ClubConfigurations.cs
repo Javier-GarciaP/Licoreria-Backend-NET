@@ -12,6 +12,11 @@ public class ZonaConfiguration : IEntityTypeConfiguration<Zona>
         builder.HasKey(z => z.Id);
         builder.Property(z => z.Nombre).IsRequired().HasMaxLength(60);
         builder.Property(z => z.Tipo).HasConversion<string>().HasMaxLength(20);
+        builder.Property(z => z.Color).HasMaxLength(20);
+        builder.Property(z => z.PosX).HasPrecision(10, 2);
+        builder.Property(z => z.PosY).HasPrecision(10, 2);
+        builder.Property(z => z.Ancho).HasPrecision(10, 2);
+        builder.Property(z => z.Alto).HasPrecision(10, 2);
     }
 }
 
@@ -42,6 +47,10 @@ public class PlanoConfiguration : IEntityTypeConfiguration<Plano>
         builder.ToTable("planos");
         builder.HasKey(p => p.Id);
         builder.Property(p => p.Nombre).IsRequired().HasMaxLength(60);
+        builder.Property(p => p.AnchoFondo).HasPrecision(10, 2);
+        builder.Property(p => p.AltoFondo).HasPrecision(10, 2);
+        builder.Property(p => p.Rejilla).HasPrecision(10, 2);
+        builder.Property(p => p.Piso).HasMaxLength(20);
     }
 }
 
@@ -52,6 +61,8 @@ public class PlanoElementoConfiguration : IEntityTypeConfiguration<PlanoElemento
         builder.ToTable("plano_elementos");
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Tipo).IsRequired().HasMaxLength(30);
+        builder.Property(e => e.Forma).HasMaxLength(30);
+        builder.Property(e => e.Color).HasMaxLength(20);
         builder.Property(e => e.Etiqueta).HasMaxLength(60);
         builder.Property(e => e.PosX).HasPrecision(10, 2);
         builder.Property(e => e.PosY).HasPrecision(10, 2);
@@ -67,6 +78,11 @@ public class PlanoElementoConfiguration : IEntityTypeConfiguration<PlanoElemento
         builder.HasOne(e => e.Zona)
                .WithMany()
                .HasForeignKey(e => e.ZonaId)
+               .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(e => e.Mesa)
+               .WithMany()
+               .HasForeignKey(e => e.MesaId)
                .OnDelete(DeleteBehavior.SetNull);
     }
 }

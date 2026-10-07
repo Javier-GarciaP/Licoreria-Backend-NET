@@ -10,6 +10,15 @@ public class Zona : BaseEntity
     public TipoZona Tipo { get; set; }
     public bool Activo { get; set; } = true;
 
+    /// <summary>Color de la región en el mapa (hex o token).</summary>
+    public string? Color { get; set; }
+
+    // Región visual de la zona dentro del mapa (unidades de rejilla).
+    public decimal PosX { get; set; }
+    public decimal PosY { get; set; }
+    public decimal Ancho { get; set; }
+    public decimal Alto { get; set; }
+
     public ICollection<Mesa> Mesas { get; set; } = new List<Mesa>();
 }
 
@@ -36,6 +45,12 @@ public class Plano : BaseEntity
     public int Version { get; set; } = 1;
     public bool Activo { get; set; } = true;
 
+    // Lienzo del mapa en unidades de rejilla.
+    public decimal AnchoFondo { get; set; } = 24m;
+    public decimal AltoFondo { get; set; } = 16m;
+    public decimal Rejilla { get; set; } = 0.5m;
+    public string Piso { get; set; } = "madera";
+
     public ICollection<PlanoElemento> Elementos { get; set; } = new List<PlanoElemento>();
 }
 
@@ -48,8 +63,16 @@ public class PlanoElemento : BaseEntity
     public Guid? ZonaId { get; set; }
     public Zona? Zona { get; set; }
 
+    /// <summary>Mesa operativa enlazada (solo para elementos de tipo mesa).</summary>
+    public Guid? MesaId { get; set; }
+    public Mesa? Mesa { get; set; }
+
+    /// <summary>Tipo/forma semántica: mesa, barra, pista, muro, etc.</summary>
     public string Tipo { get; set; } = "mesa";
+    public string? Forma { get; set; }
+    public string? Color { get; set; }
     public string? Etiqueta { get; set; }
+    public int Z { get; set; }
     public decimal PosX { get; set; }
     public decimal PosY { get; set; }
     public decimal Ancho { get; set; } = 1m;

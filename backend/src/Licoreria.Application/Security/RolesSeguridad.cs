@@ -78,7 +78,10 @@ public static class RolesSeguridad
                 Permisos.CatalogoLeer,
                 Permisos.InventarioLeer,
                 Permisos.InventarioMerma,
+                Permisos.VentasLeer,
                 Permisos.VentasEscribir,
+                Permisos.CuentasLeer,
+                Permisos.ClubLeer,
                 Permisos.ReservasGestionar
             ],
             RolUsuario.Barra =>
