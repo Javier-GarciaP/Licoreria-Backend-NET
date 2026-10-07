@@ -81,9 +81,11 @@ Además de la operación, el panel interno incorpora gestión completa de:
 - **Caja:** apertura, movimientos, arqueo/cierre (Z) e historial de sesiones.
 - **Inventario:** existencias con filtros de mínimo, kardex filtrable, ajustes, lotes con
   vencimientos y tomas físicas con diferencias; registro e historial de mermas.
+- **Compras:** proveedores (CRUD), órdenes de compra con ciclo de aprobación, recepciones
+  que actualizan inventario y cuentas por pagar con registro de pagos.
 
-Pendiente para siguientes iteraciones: Compras, Contenido, Finanzas, IA, editor de plano
-con `dnd-kit` y la reserva web con seña.
+Pendiente para siguientes iteraciones: Contenido, Finanzas, IA, editor de plano con
+`dnd-kit` y la reserva web con seña.
 
 ## Pruebas
 
