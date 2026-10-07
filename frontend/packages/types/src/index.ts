@@ -120,6 +120,70 @@ export interface StockItem {
   bajoMinimo: boolean;
 }
 
+export type TipoMovimientoInventario =
+  | 'Compra'
+  | 'Venta'
+  | 'Ajuste'
+  | 'Merma'
+  | 'Cortesia'
+  | 'ConsumoInterno';
+
+export interface MovimientoKardex {
+  id: string;
+  varianteId: string;
+  sku: string;
+  tipo: TipoMovimientoInventario;
+  cantidad: number;
+  costoUnitario: number | null;
+  referenciaTipo: string | null;
+  referenciaId: string | null;
+  motivo: string | null;
+  fecha: string;
+}
+
+export interface AjusteInventario {
+  varianteId: string;
+  cantidad: number;
+  motivo: string;
+}
+
+export interface Lote {
+  id: string;
+  varianteId: string;
+  sku: string;
+  codigo: string;
+  fechaVencimiento: string | null;
+  cantidad: number;
+  activo: boolean;
+}
+
+export interface TomaFisicaDetalle {
+  varianteId: string;
+  sku: string;
+  cantidadSistema: number;
+  cantidadContada: number;
+  diferencia: number;
+}
+
+export interface TomaFisica {
+  id: string;
+  fecha: string;
+  estado: string;
+  observaciones: string | null;
+  detalles: TomaFisicaDetalle[];
+}
+
+export interface Merma {
+  id: string;
+  movimientoId: string;
+  varianteId: string;
+  sku: string;
+  cantidad: number;
+  motivo: string;
+  repuesto: boolean;
+  fecha: string;
+}
+
 /* ===================== Ventas / Pagos ===================== */
 
 export interface MetodoPago {

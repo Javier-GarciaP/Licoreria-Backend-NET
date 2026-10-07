@@ -20,7 +20,7 @@ import {
   StatusBadge,
 } from '@licoreria/ui';
 import type { Mesa, Reserva } from '@licoreria/types';
-import { catalogoApi, clubApi, ventasApi } from '@licoreria/api-client';
+import { clubApi, inventarioApi, ventasApi } from '@licoreria/api-client';
 import { mensajeDeError } from '../lib/api';
 import { formatDateTime, formatUSD } from '../lib/format';
 
@@ -81,7 +81,7 @@ export function ReservasPage() {
   const reservas = useQuery({ queryKey: ['reservas', page], queryFn: () => clubApi.reservas({ page, pageSize: 15 }) });
   const mesas = useQuery({ queryKey: ['mesas'], queryFn: () => clubApi.mesas(), enabled: crearOpen });
   const metodos = useQuery({ queryKey: ['metodos-pago'], queryFn: ventasApi.metodosPago, enabled: crearOpen });
-  const variantes = useQuery({ queryKey: ['stock'], queryFn: () => catalogoApi.stock(), enabled: Boolean(pedidosDe) });
+  const variantes = useQuery({ queryKey: ['stock'], queryFn: () => inventarioApi.stock(), enabled: Boolean(pedidosDe) });
   const pedidos = useQuery({
     queryKey: ['pedidos', pedidosDe?.id],
     queryFn: () => clubApi.pedidos(pedidosDe!.id),

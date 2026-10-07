@@ -7,10 +7,13 @@ import type {
   DiagnosticoInventario,
   Dashboard,
   LoginRequest,
+  Lote,
   Marca,
   MenuDigital,
   Mesa,
   MetodoPago,
+  Merma,
+  MovimientoKardex,
   PedidoAnticipado,
   Plano,
   Producto,
@@ -23,6 +26,7 @@ import type {
   SesionCaja,
   StockItem,
   TasaCambio,
+  TomaFisica,
   UnidadMedida,
   Usuario,
   UsuarioActual,
@@ -67,8 +71,6 @@ export const catalogoApi = {
   actualizarMarca: (id: string, body: unknown) => apiFetch<Marca>(`/api/v1/marcas/${id}`, { method: 'PUT', body }),
   eliminarMarca: (id: string) => apiFetch<void>(`/api/v1/marcas/${id}`, { method: 'DELETE' }),
   unidades: () => apiFetch<UnidadMedida[]>('/api/v1/unidades-medida'),
-  stock: (query: PaginaQuery = {}) =>
-    apiFetch<ResultadoPaginado<StockItem>>('/api/v1/stock', { query: { pageSize: 100, ...query } }),
 };
 
 export const ventasApi = {
@@ -134,10 +136,22 @@ export const clubApi = {
 };
 
 export const inventarioApi = {
-  mermas: (query: { desde?: string; hasta?: string } = {}) =>
-    apiFetch<unknown>('/api/v1/mermas', { query }),
-  registrarMerma: (body: unknown) => apiFetch<unknown>('/api/v1/mermas', { method: 'POST', body }),
-  ajustar: (body: unknown) => apiFetch<void>('/api/v1/ajustes-inventario', { method: 'POST', body }),
+  stock: (query: PaginaQuery & { soloBajoMinimo?: boolean; busqueda?: string } = {}) =>
+    apiFetch<ResultadoPaginado<StockItem>>('/api/v1/stock', { query: { pageSize: 100, ...query } }),
+  kardex: (query: PaginaQuery & { varianteId?: string; tipo?: string; desde?: string; hasta?: string } = {}) =>
+    apiFetch<ResultadoPaginado<MovimientoKardex>>('/api/v1/movimientos-inventario', { query }),
+  ajustar: (body: unknown) => apiFetch<MovimientoKardex>('/api/v1/ajustes-inventario', { method: 'POST', body }),
+  lotes: (varianteId?: string) => apiFetch<Lote[]>('/api/v1/lotes', { query: { varianteId } }),
+  crearLote: (body: unknown) => apiFetch<Lote>('/api/v1/lotes', { method: 'POST', body }),
+  editarLote: (id: string, body: unknown) => apiFetch<Lote>(`/api/v1/lotes/${id}`, { method: 'PUT', body }),
+  eliminarLote: (id: string) => apiFetch<void>(`/api/v1/lotes/${id}`, { method: 'DELETE' }),
+  tomas: (query: PaginaQuery = {}) =>
+    apiFetch<ResultadoPaginado<TomaFisica>>('/api/v1/tomas-fisicas', { query }),
+  toma: (id: string) => apiFetch<TomaFisica>(`/api/v1/tomas-fisicas/${id}`),
+  registrarToma: (body: unknown) => apiFetch<TomaFisica>('/api/v1/tomas-fisicas', { method: 'POST', body }),
+  mermas: (query: PaginaQuery & { desde?: string; hasta?: string } = {}) =>
+    apiFetch<ResultadoPaginado<Merma>>('/api/v1/mermas', { query }),
+  registrarMerma: (body: unknown) => apiFetch<Merma>('/api/v1/mermas', { method: 'POST', body }),
 };
 
 export const finanzasApi = {

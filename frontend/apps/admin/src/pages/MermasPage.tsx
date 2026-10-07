@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button, Card, CardBody, CardHeader, CardTitle, Input, PageHeader, Select } from '@licoreria/ui';
-import { catalogoApi, inventarioApi } from '@licoreria/api-client';
+import { inventarioApi } from '@licoreria/api-client';
 import { mensajeDeError } from '../lib/api';
 
 const MOTIVOS = ['Danado', 'Partido', 'Vencido'] as const;
@@ -19,7 +19,7 @@ const esquema = z.object({
 type Formulario = z.infer<typeof esquema>;
 
 export function MermasPage() {
-  const stock = useQuery({ queryKey: ['stock'], queryFn: () => catalogoApi.stock() });
+  const stock = useQuery({ queryKey: ['stock'], queryFn: () => inventarioApi.stock() });
 
   const {
     register,
