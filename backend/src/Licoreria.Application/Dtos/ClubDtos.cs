@@ -99,7 +99,8 @@ public sealed record PlanoElementoCrearDto(
     string? Forma = null,
     string? Color = null,
     int Z = 0,
-    Guid? MesaId = null);
+    Guid? MesaId = null,
+    Guid? Id = null);
 
 public sealed record PlanoDto(
     Guid Id,

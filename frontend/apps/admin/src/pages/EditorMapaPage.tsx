@@ -26,6 +26,9 @@ import { mensajeDeError } from '../lib/api';
 
 const OFFSET = 16;
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const esIdServidor = (id: string) => UUID_RE.test(id);
+
 interface Borrador {
   nombre: string;
   activo: boolean;
@@ -159,6 +162,7 @@ export function EditorMapaPage() {
         rejilla: draft.rejilla,
         piso: draft.piso,
         elementos: draft.elementos.map((e) => ({
+          id: esIdServidor(e.id) ? e.id : undefined,
           zonaId: e.zonaId,
           mesaId: e.mesaId,
           tipo: e.tipo,
@@ -174,8 +178,12 @@ export function EditorMapaPage() {
         })),
       });
     },
-    onSuccess: () => {
+    onSuccess: (plano: Plano) => {
       toast.success('Mapa guardado');
+      setDraft(desdePlano(plano));
+      setPast([]);
+      setFuture([]);
+      setSeleccion(null);
       setDirty(false);
       queryClient.invalidateQueries({ queryKey: ['planos'] });
     },
@@ -495,6 +503,21 @@ export function EditorMapaPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seleccion, past, future, draft, colocandoForma]);
 
+  const salir = () => {
+    if (dirty && !window.confirm('Tienes cambios sin guardar en el mapa. ¿Salir de todos modos?')) return;
+    navigate('/salon');
+  };
+
+  useEffect(() => {
+    const alSalir = (evento: BeforeUnloadEvent) => {
+      if (!dirty) return;
+      evento.preventDefault();
+      evento.returnValue = '';
+    };
+    window.addEventListener('beforeunload', alSalir);
+    return () => window.removeEventListener('beforeunload', alSalir);
+  }, [dirty]);
+
   const elemento = draft?.elementos.find((e) => e.id === seleccion) ?? null;
 
   if (planos.isLoading) {
@@ -522,7 +545,7 @@ export function EditorMapaPage() {
     <div className="absolute inset-0 flex min-h-0 flex-col overflow-hidden p-3 pb-24 lg:p-4 lg:pb-4">
       {/* ===== Barra de opciones (top) ===== */}
       <div className="flex flex-wrap items-center gap-2 border-b border-hairline pb-3">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/salon')} aria-label="Volver">
+        <Button variant="ghost" size="sm" onClick={salir} aria-label="Volver">
           <ArrowLeft size={16} />
         </Button>
         <input

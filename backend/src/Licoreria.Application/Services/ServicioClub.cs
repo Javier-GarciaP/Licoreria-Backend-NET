@@ -286,20 +286,38 @@ public sealed class ServicioClub : IServicioClub
         plano.Version += 1;
 
         var existentes = await _planoElementos.FindAsync(e => e.PlanoId == dto.Id, cancellationToken);
-        foreach (var elemento in existentes)
+        var existentesPorId = existentes.ToDictionary(e => e.Id);
+
+        // Upsert: actualiza los elementos que llegan con Id conocido, crea los
+        // nuevos (Id nulo o generado por el cliente) y elimina los que ya no vienen.
+        var idsRecibidos = new HashSet<Guid>();
+        foreach (var elemento in dto.Elementos)
         {
-            var tracked = await _planoElementos.GetByIdAsync(elemento.Id, cancellationToken);
+            if (elemento.Id is Guid id && existentesPorId.TryGetValue(id, out var existente))
+            {
+                AplicarElemento(existente, elemento);
+                _planoElementos.Update(existente);
+                idsRecibidos.Add(id);
+                continue;
+            }
+
+            var nuevo = CrearElemento(elemento);
+            nuevo.PlanoId = dto.Id;
+            await _planoElementos.AddAsync(nuevo, cancellationToken);
+        }
+
+        foreach (var existente in existentes)
+        {
+            if (idsRecibidos.Contains(existente.Id))
+            {
+                continue;
+            }
+
+            var tracked = await _planoElementos.GetByIdAsync(existente.Id, cancellationToken);
             if (tracked is not null)
             {
                 _planoElementos.Remove(tracked);
             }
-        }
-
-        foreach (var elemento in dto.Elementos)
-        {
-            var nuevo = CrearElemento(elemento);
-            nuevo.PlanoId = dto.Id;
-            await _planoElementos.AddAsync(nuevo, cancellationToken);
         }
 
         _planos.Update(plano);
@@ -767,21 +785,28 @@ public sealed class ServicioClub : IServicioClub
 
     // ================= Mapeos =================
 
-    private static PlanoElemento CrearElemento(PlanoElementoCrearDto dto) => new()
+    private static void AplicarElemento(PlanoElemento destino, PlanoElementoCrearDto dto)
     {
-        ZonaId = dto.ZonaId,
-        MesaId = dto.MesaId,
-        Tipo = dto.Tipo,
-        Forma = dto.Forma,
-        Color = dto.Color,
-        Etiqueta = dto.Etiqueta,
-        Z = dto.Z,
-        PosX = dto.PosX,
-        PosY = dto.PosY,
-        Ancho = dto.Ancho,
-        Alto = dto.Alto,
-        Rotacion = dto.Rotacion
-    };
+        destino.ZonaId = dto.ZonaId;
+        destino.MesaId = dto.MesaId;
+        destino.Tipo = dto.Tipo;
+        destino.Forma = dto.Forma;
+        destino.Color = dto.Color;
+        destino.Etiqueta = dto.Etiqueta;
+        destino.Z = dto.Z;
+        destino.PosX = dto.PosX;
+        destino.PosY = dto.PosY;
+        destino.Ancho = dto.Ancho;
+        destino.Alto = dto.Alto;
+        destino.Rotacion = dto.Rotacion;
+    }
+
+    private static PlanoElemento CrearElemento(PlanoElementoCrearDto dto)
+    {
+        var elemento = new PlanoElemento();
+        AplicarElemento(elemento, dto);
+        return elemento;
+    }
 
     private static ZonaDto MapearZona(Zona z) => new(z.Id, z.Nombre, z.Tipo, z.Activo, z.Color, z.PosX, z.PosY, z.Ancho, z.Alto);
 
