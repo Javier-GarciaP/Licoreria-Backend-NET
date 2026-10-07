@@ -122,3 +122,30 @@ adaptado a una **tema oscuro** de operación (POS, KDS, mesas) con el **Azul UNE
 - No esquinas rectas en tarjetas/botones/inputs.
 - No bordes en tarjetas elevadas.
 - No gradientes/ilustraciones decorativas: las imágenes de producto dan el color.
+
+---
+
+## 8. Web pública · tema "Hungry Tiger"
+
+El sitio público (`apps/public-web`) **no** usa el tema operativo de arriba: es un
+póster tipográfico de inspiración *spice-label*. Aquí está el resumen; los tokens
+viven en `apps/public-web/tailwind.config.cjs` y el remapeo de variables en
+`apps/public-web/src/styles/index.css`.
+
+- **Paleta dorado-sobre-óxido:** Ember Rust `#823513` (lienzo), Dark Spice `#402011`
+  (tarjetas), Charred Clove `#281006` (fondo profundo), Tiger Gold `#faae33`
+  (texto/acento), Cardamom Brown `#6b2e12` (bordes), Chili Red `#d1255c` (solo
+  badges de picante). Sin blancos, azules ni neutros fríos.
+- **Tipografía póster:** `Antonio` (sustituto de Salmond) para titulares a
+  `clamp(3.75rem, 12.5vw, 12.1875rem)`, `line-height 0.82`, tracking negativo;
+  `Inter` para microcopy y labels.
+- **Formas:** botones/badges/inputs píldora (`9999px`); tarjetas `6px`. Sin sombras:
+  la profundidad viene del salto entre los tres marrones.
+- **Ritmo:** reglas punteadas doradas entre secciones y marcas de agua botánicas en
+  SVG (`.botanical-layer`, opacidad 6%).
+- **Producto:** vitrina 3D de la botella de vino tinto (glTF en
+  `public/models/vino-tinto/`) renderizada con React Three Fiber, **sin marco ni
+  tarjeta**, iluminada con luces cálidas. El chunk de `three` se carga de forma
+  diferida (`React.lazy`) para no pesar en el primer render.
+- **Atribución:** modelo «Vino Tinto Castaño Colección» · *anaa_ggarcia* · CC BY 4.0
+  (acreditado en el pie de página).
