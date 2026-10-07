@@ -205,7 +205,7 @@ Las rutas marcadas como **publica** no requieren token.
 
 | Metodo | Ruta | Acceso |
 | :--- | :--- | :--- |
-| `GET` | `/api/v1/metodos-pago` | token |
+| `GET` | `/api/v1/metodos-pago` | pública |
 
 ## Modificadores
 

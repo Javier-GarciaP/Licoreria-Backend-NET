@@ -94,7 +94,8 @@ Los listados aceptan `?page=1&pageSize=20` y devuelven:
 - `GET /api/v1/tasas-cambio/actual?tipo=Paralelo`
 - `GET /api/v1/eventos`
 - `GET /api/v1/paginas`, `GET /api/v1/horarios`, `GET /api/v1/local-info`
-- `GET /api/v1/mesas`, `GET /api/v1/planos`
+- `GET /api/v1/mesas`, `GET /api/v1/planos`, `GET /api/v1/zonas`
+- `GET /api/v1/metodos-pago`
 - `POST /api/v1/reservas` y `POST /api/v1/reservas/{id}/pagos` (reserva web con seña)
 
 ## Mapa de módulos

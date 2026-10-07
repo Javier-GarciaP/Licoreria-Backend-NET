@@ -17,6 +17,7 @@ public class MetodosPagoController : ControllerBase
     public MetodosPagoController(IServicioVentas servicio) => _servicio = servicio;
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<ActionResult<IReadOnlyList<MetodoPagoDto>>> ObtenerTodos(CancellationToken cancellationToken)
         => Ok(await _servicio.ObtenerMetodosPagoAsync(cancellationToken));
 }

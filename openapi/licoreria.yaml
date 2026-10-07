@@ -8285,6 +8285,14 @@ components:
           type: boolean
         disponible:
           type: boolean
+        cuentaId:
+          type:
+            - 'null'
+            - string
+          format: uuid
+        reservada:
+          type: boolean
+          default: false
     MesaEditarDto:
       required:
         - id
