@@ -68,7 +68,8 @@ refrescan el plano, de modo que la mesa queda **Libre** para el resto del person
 
 `apps/public-web` no usa el tema operativo: es un póster tipográfico *spice-label*
 (paleta dorado-sobre-óxido, tipografía display `Antonio`) con **vitrina 3D** de la
-botella de vino (glTF renderizado con React Three Fiber, cargado de forma diferida).
+botella de vino (glTF renderizado con React Three Fiber, cargado de forma diferida) y
+**reserva web con seña** (selección de mesas y pago).
 Detalle de tokens en [`frontend/DESIGN.md`](../../../frontend/DESIGN.md) §8.
 
 ## Administración (CRUD)
@@ -85,9 +86,10 @@ Además de la operación, el panel interno incorpora gestión completa de:
   que actualizan inventario y cuentas por pagar con registro de pagos.
 - **Contenido:** páginas con secciones y bloques, eventos, horarios de atención,
   información del local, menú digital con QR y subida de archivos.
+- **Finanzas:** registro e histórico de tasas de cambio y movimientos de tesorería.
+- **Salón:** editor de planos con arrastre libre (`dnd-kit`) y CRUD de zonas y mesas.
 
-Pendiente para siguientes iteraciones: Finanzas, IA, editor de plano con `dnd-kit` y la
-reserva web con seña.
+Pendiente para siguientes iteraciones: el módulo de IA (generaciones y aprobación).
 
 ## Pruebas
 

@@ -118,9 +118,10 @@ Credenciales de prueba: `admin@licoreria.com / admin123` (Admin) y
 Leyenda: `[ ]` pendiente · `[~]` en progreso · `[x]` hecho.
 
 > **Estado (cierre Fase 4):** 7.1–7.5 y 7.8 completos. 7.6 cubre Catálogo, Usuarios,
-> Clientes, Caja, Inventario, Compras y Contenido (restan Finanzas, IA y el editor de
-> plano). 7.7 incluye el rediseño "Hungry Tiger" con vitrina 3D, menú, tasas y eventos
-> (resta la reserva web con seña). El backend de la §8 ya está implementado.
+> Clientes, Caja, Inventario, Compras, Contenido, Finanzas y Salón (editor de planos con
+> dnd-kit); solo queda el módulo de IA. 7.7 incluye el rediseño "Hungry Tiger" con
+> vitrina 3D, menú, tasas, eventos y **reserva web con seña**. El backend de la §8 ya
+> está implementado.
 
 ### 7.1 Andamiaje
 - [x] workspaces, `tsconfig.base`, ESLint/Prettier, Tailwind con token `#003366`
@@ -171,12 +172,14 @@ Leyenda: `[ ]` pendiente · `[~]` en progreso · `[x]` hecho.
 - [x] Mermas y cortesías: registro e historial
 - [x] Compras: proveedores, órdenes de compra, recepciones y cuentas por pagar
 - [x] Contenido: páginas (secciones/bloques), eventos, horarios, local, menú y archivos
-- [ ] Finanzas, IA y editor de plano (dnd-kit)
+- [x] Finanzas: tasas de cambio y tesorería
+- [x] Salón: editor de planos (dnd-kit) y CRUD de zonas y mesas
+- [ ] Módulo de IA (generaciones y aprobación)
 
 ### 7.7 `public-web`
 - [x] Menú digital, tasas del día y eventos (API pública, sin datos estáticos)
 - [x] Rediseño "Hungry Tiger" (paleta dorado-sobre-óxido) y vitrina 3D del producto
-- [ ] Reserva web con selección de mesa en plano y seña (`POST /api/v1/reservas`)
+- [x] Reserva web con selección de mesa en plano y seña (`POST /api/v1/reservas`)
 
 ### 7.8 Calidad (definición de terminado)
 - [x] Diseño **Mobile First** en todas las vistas
