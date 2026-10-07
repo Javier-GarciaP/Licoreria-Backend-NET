@@ -4,6 +4,122 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Hungry Tiger · tema público de Licorería / Discoteca.
+ * Remapea los tokens semánticos compartidos a la paleta dorada sobre óxido.
+ * Fuente de verdad del sistema visual de esta app.
+ */
+:root,
+[data-theme='dark'],
+[data-theme='unet'] {
+  --color-canvas: 130 53 19; /* Ember Rust  #823513 */
+  --color-surface: 64 32 17; /* Dark Spice  #402011 */
+  --color-elevated: 40 16 6; /* Charred Clove #281006 */
+  --color-hairline: 107 46 18; /* Cardamom Brown #6b2e12 */
+  --color-ink: 250 174 51; /* Tiger Gold  #faae33 */
+  --color-muted: 224 164 96; /* Warm Sand (legibilidad sobre óxido) */
+  --color-stone: 159 83 27; /* Saffron Glow #9f531b */
+  --color-accent: 250 174 51; /* Tiger Gold  #faae33 */
+  --color-accent-soft: 159 83 27; /* Saffron Glow #9f531b */
+  --color-violet: 250 174 51;
+  --color-success: 250 174 51;
+  --color-warning: 250 174 51;
+  --color-danger: 209 37 92; /* Chili Red #d1255c */
+  --color-info: 159 83 27;
+
+  --shadow-card: none;
+  --shadow-soft: none;
+  --shadow-glow: none;
+
+  color-scheme: dark;
+}
+
 html {
   scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  letter-spacing: -0.01em;
+  background-color: rgb(var(--color-canvas));
+  overflow-x: hidden;
+}
+
+@layer components {
+  /* Etiquetas pequeñas en versalitas con tracking positivo. */
+  .eyebrow {
+    @apply font-medium uppercase tracking-[0.22em] text-tiger-gold;
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  /* Titulares póster: display Antonio, tracking inverso al tamaño. */
+  .display-type {
+    @apply font-display font-bold text-tiger-gold;
+    line-height: 0.82;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  /* Botón fantasma tipo píldora (nav y acciones secundarias). */
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 rounded-button border border-tiger-gold/70 px-[17px] py-2 font-medium text-tiger-gold transition-colors;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    background: transparent;
+  }
+  .btn-ghost:hover {
+    background: rgba(250, 174, 51, 0.12);
+  }
+
+  /* Botón primario relleno: el único relleno del sistema. */
+  .btn-fill {
+    @apply inline-flex items-center gap-2 rounded-button border border-tiger-gold bg-tiger-gold px-5 py-[10px] font-medium text-charred-clove transition-opacity;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+  }
+  .btn-fill:hover {
+    opacity: 0.88;
+  }
+
+  /* Píldora de etiqueta. */
+  .tag {
+    @apply inline-flex items-center rounded-button bg-tiger-gold px-4 py-1 font-medium uppercase text-charred-clove;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+  .tag-outline {
+    @apply inline-flex items-center rounded-button border border-cardamom-brown bg-dark-spice px-4 py-1 font-medium uppercase text-tiger-gold;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+  .tag-heat {
+    @apply inline-flex items-center rounded-button bg-chili-red px-3 py-1 font-medium uppercase text-charred-clove;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+
+  /* Regla punteada dorada: divisor de secciones. */
+  .rule-dotted {
+    border: none;
+    border-top: 1px dotted rgb(var(--color-accent));
+    opacity: 0.75;
+  }
+}
+
+/* Capa botánica: marca de agua casi invisible salvo al fijar la mirada. */
+.botanical-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0.06;
+  color: #faae33;
+  z-index: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }

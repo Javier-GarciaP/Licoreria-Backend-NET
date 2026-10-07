@@ -14,5 +14,14 @@ export default defineConfig({
     },
   },
   server: { port: 5174, fs: { allow: [resolvePath('../..')] } },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          three: ['three', '@react-three/fiber', '@react-three/drei'],
+        },
+      },
+    },
+  },
   preview: { port: 4174 },
 });
