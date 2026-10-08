@@ -15,7 +15,6 @@ public sealed class ServicioCatalogo : IServicioCatalogo
     private readonly IRepository<UnidadMedida> _unidadRepository;
     private readonly IRepository<Impuesto> _impuestoRepository;
     private readonly IRepository<ListaPrecio> _listaPrecioRepository;
-    private readonly IRepository<PrecioProducto> _precioRepository;
     private readonly IRepository<ProductoVariante> _variantes;
     private readonly IRepository<Modificador> _modificadorRepository;
     private readonly IRepository<ProductoModificador> _productoModificadorRepository;
@@ -27,7 +26,6 @@ public sealed class ServicioCatalogo : IServicioCatalogo
         IRepository<UnidadMedida> unidadRepository,
         IRepository<Impuesto> impuestoRepository,
         IRepository<ListaPrecio> listaPrecioRepository,
-        IRepository<PrecioProducto> precioRepository,
         IRepository<ProductoVariante> variantes,
         IRepository<Modificador> modificadorRepository,
         IRepository<ProductoModificador> productoModificadorRepository)
@@ -38,7 +36,6 @@ public sealed class ServicioCatalogo : IServicioCatalogo
         _unidadRepository = unidadRepository;
         _impuestoRepository = impuestoRepository;
         _listaPrecioRepository = listaPrecioRepository;
-        _precioRepository = precioRepository;
         _variantes = variantes;
         _modificadorRepository = modificadorRepository;
         _productoModificadorRepository = productoModificadorRepository;
@@ -474,99 +471,6 @@ public sealed class ServicioCatalogo : IServicioCatalogo
         return true;
     }
 
-    // ================= Precios por lista y moneda =================
-
-    public async Task<IReadOnlyList<PrecioVarianteDto>> ObtenerPreciosAsync(
-        Guid? varianteId = null,
-        Guid? listaPrecioId = null,
-        CancellationToken cancellationToken = default)
-    {
-        var precios = await _precioRepository.FindAsync(
-            p => !p.IsDeleted
-                 && (varianteId == null || p.VarianteId == varianteId)
-                 && (listaPrecioId == null || p.ListaPrecioId == listaPrecioId),
-            cancellationToken);
-
-        var listas = (await _listaPrecioRepository.GetAllAsync(cancellationToken))
-            .ToDictionary(l => l.Id, l => l.Nombre);
-
-        return precios
-            .Select(p => new PrecioVarianteDto(
-                p.Id,
-                p.ListaPrecioId,
-                listas.GetValueOrDefault(p.ListaPrecioId, string.Empty),
-                p.Moneda,
-                p.Precio))
-            .ToList();
-    }
-
-    public async Task<PrecioVarianteDto> EstablecerPrecioAsync(EstablecerPrecioDto dto, CancellationToken cancellationToken = default)
-    {
-        if (dto.Precio < 0)
-        {
-            throw new ReglaNegocioException("El precio no puede ser negativo.");
-        }
-
-        _ = await _variantes.GetByIdAsync(dto.VarianteId, cancellationToken)
-            ?? throw new NoEncontradoException($"No existe la variante {dto.VarianteId}.");
-
-        var lista = await _listaPrecioRepository.GetByIdAsync(dto.ListaPrecioId, cancellationToken)
-            ?? throw new NoEncontradoException($"No existe la lista de precio {dto.ListaPrecioId}.");
-
-        var existentes = await _precioRepository.FindAsync(
-            p => !p.IsDeleted && p.VarianteId == dto.VarianteId && p.ListaPrecioId == dto.ListaPrecioId && p.Moneda == dto.Moneda,
-            cancellationToken);
-
-        var precio = existentes.FirstOrDefault();
-
-        if (precio is null)
-        {
-            precio = new PrecioProducto
-            {
-                VarianteId = dto.VarianteId,
-                ListaPrecioId = dto.ListaPrecioId,
-                Moneda = dto.Moneda,
-                Precio = dto.Precio,
-                Activo = true
-            };
-            await _precioRepository.AddAsync(precio, cancellationToken);
-        }
-        else
-        {
-            var tracked = await _precioRepository.GetByIdAsync(precio.Id, cancellationToken) ?? precio;
-            tracked.Precio = dto.Precio;
-            tracked.Activo = true;
-            _precioRepository.Update(tracked);
-            precio = tracked;
-        }
-
-        await _precioRepository.SaveChangesAsync(cancellationToken);
-        return new PrecioVarianteDto(precio.Id, precio.ListaPrecioId, lista.Nombre, precio.Moneda, precio.Precio);
-    }
-
-    public async Task<bool> EliminarPrecioAsync(Guid id, CancellationToken cancellationToken = default)
-    {
-        var precio = await _precioRepository.GetByIdAsync(id, cancellationToken);
-        if (precio is null || precio.IsDeleted)
-        {
-            return false;
-        }
-
-        precio.EliminarLogico();
-        _precioRepository.Update(precio);
-        await _precioRepository.SaveChangesAsync(cancellationToken);
-        return true;
-    }
-
-    public async Task<decimal?> ObtenerPrecioAsync(Guid varianteId, Guid listaPrecioId, Moneda moneda, CancellationToken cancellationToken = default)
-    {
-        var precios = await _precioRepository.FindAsync(
-            p => !p.IsDeleted && p.VarianteId == varianteId && p.ListaPrecioId == listaPrecioId && p.Moneda == moneda,
-            cancellationToken);
-
-        return precios.FirstOrDefault()?.Precio;
-    }
-
     // ================= Modificadores / extras =================
 
     public async Task<IReadOnlyList<ModificadorDto>> ObtenerModificadoresAsync(CancellationToken cancellationToken = default)
@@ -850,11 +754,5 @@ public sealed class ServicioCatalogo : IServicioCatalogo
                 v.UnidadMedidaId,
                 v.UnidadMedida?.Nombre ?? string.Empty,
                 v.Activo,
-                v.CodigosBarras.Select(c => c.Codigo).ToList(),
-                v.Precios.Select(pr => new PrecioVarianteDto(
-                    pr.Id,
-                    pr.ListaPrecioId,
-                    pr.ListaPrecio?.Nombre ?? string.Empty,
-                    pr.Moneda,
-                    pr.Precio)).ToList())).ToList());
+                v.CodigosBarras.Select(c => c.Codigo).ToList())).ToList());
 }

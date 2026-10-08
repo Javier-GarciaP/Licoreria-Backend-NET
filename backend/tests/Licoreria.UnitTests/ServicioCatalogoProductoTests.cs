@@ -27,7 +27,6 @@ public sealed class ServicioCatalogoProductoTests
         _ = new Mock<IRepository<UnidadMedida>>();
         _ = new Mock<IRepository<Impuesto>>();
         _ = new Mock<IRepository<ListaPrecio>>();
-        _ = new Mock<IRepository<PrecioProducto>>();
         _ = new Mock<IRepository<ProductoVariante>>();
         _ = new Mock<IRepository<Modificador>>();
         _ = new Mock<IRepository<ProductoModificador>>();
@@ -41,7 +40,6 @@ public sealed class ServicioCatalogoProductoTests
             Mock.Of<IRepository<UnidadMedida>>(),
             Mock.Of<IRepository<Impuesto>>(),
             Mock.Of<IRepository<ListaPrecio>>(),
-            Mock.Of<IRepository<PrecioProducto>>(),
             Mock.Of<IRepository<ProductoVariante>>(),
             Mock.Of<IRepository<Modificador>>(),
             Mock.Of<IRepository<ProductoModificador>>());

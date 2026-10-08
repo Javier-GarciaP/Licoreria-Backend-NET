@@ -56,7 +56,7 @@ body {
   /* Titulares póster: display Antonio, tracking inverso al tamaño. */
   .display-type {
     @apply font-display font-bold text-tiger-gold;
-    line-height: 0.82;
+    line-height: 0.96;
     letter-spacing: -0.02em;
     text-wrap: balance;
   }

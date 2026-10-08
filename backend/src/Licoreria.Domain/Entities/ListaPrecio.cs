@@ -11,6 +11,4 @@ public class ListaPrecio : BaseEntity
     public string? Descripcion { get; set; }
     public bool EsPredeterminada { get; set; }
     public bool Activo { get; set; } = true;
-
-    public ICollection<PrecioProducto> Precios { get; set; } = new List<PrecioProducto>();
 }

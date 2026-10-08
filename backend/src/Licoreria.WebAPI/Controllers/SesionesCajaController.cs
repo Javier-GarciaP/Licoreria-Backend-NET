@@ -36,14 +36,6 @@ public class SesionesCajaController : ControllerBase
         CancellationToken cancellationToken)
         => Ok(await _servicio.ObtenerSesionesAsync(paginacion, cancellationToken));
 
-    [HttpGet("{id:guid}")]
-    [Authorize(Policy = Permisos.CajaMovimiento)]
-    public async Task<ActionResult<SesionCajaDto>> ObtenerPorId(Guid id, CancellationToken cancellationToken)
-    {
-        var sesion = await _servicio.ObtenerSesionAsync(id, cancellationToken);
-        return sesion is null ? NotFound() : Ok(sesion);
-    }
-
     [HttpPost("{id:guid}/movimientos")]
     [Authorize(Policy = Permisos.CajaMovimiento)]
     public async Task<ActionResult<SesionCajaDto>> RegistrarMovimiento(
@@ -64,13 +56,5 @@ public class SesionesCajaController : ControllerBase
     {
         var sesion = await _servicio.CerrarSesionAsync(id, dto, cancellationToken);
         return sesion is null ? NotFound() : Ok(sesion);
-    }
-
-    [HttpGet("{id:guid}/cierre")]
-    [Authorize(Policy = Permisos.CajaCerrar)]
-    public async Task<ActionResult<CierreCajaDto>> Cierre(Guid id, CancellationToken cancellationToken)
-    {
-        var cierre = await _servicio.ObtenerCierreAsync(id, cancellationToken);
-        return cierre is null ? NotFound() : Ok(cierre);
     }
 }

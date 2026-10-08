@@ -1,6 +1,5 @@
 using Licoreria.Application.Common;
 using Licoreria.Application.Dtos;
-using Licoreria.Domain.Enums;
 
 namespace Licoreria.Application.Interfaces;
 
@@ -51,15 +50,6 @@ public interface IServicioCatalogo
     Task<IReadOnlyList<RecetaDto>> ObtenerRecetasAsync(Guid productoId, CancellationToken cancellationToken = default);
     Task<RecetaDto> AgregarRecetaAsync(Guid productoId, RecetaCrearDto dto, CancellationToken cancellationToken = default);
     Task<bool> EliminarRecetaAsync(Guid productoId, Guid recetaId, CancellationToken cancellationToken = default);
-
-    Task<IReadOnlyList<PrecioVarianteDto>> ObtenerPreciosAsync(
-        Guid? varianteId = null,
-        Guid? listaPrecioId = null,
-        CancellationToken cancellationToken = default);
-
-    Task<PrecioVarianteDto> EstablecerPrecioAsync(EstablecerPrecioDto dto, CancellationToken cancellationToken = default);
-    Task<bool> EliminarPrecioAsync(Guid id, CancellationToken cancellationToken = default);
-    Task<decimal?> ObtenerPrecioAsync(Guid varianteId, Guid listaPrecioId, Moneda moneda, CancellationToken cancellationToken = default);
 
     // Modificadores / extras por producto
     Task<IReadOnlyList<ModificadorDto>> ObtenerModificadoresAsync(CancellationToken cancellationToken = default);

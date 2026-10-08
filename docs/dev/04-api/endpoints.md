@@ -216,24 +216,11 @@ Las rutas marcadas como **publica** no requieren token.
 | `DELETE` | `/api/v1/modificadores/{id}` | token |
 | `PUT` | `/api/v1/modificadores/{id}` | token |
 
-## Monedas
-
-| Metodo | Ruta | Acceso |
-| :--- | :--- | :--- |
-| `GET` | `/api/v1/monedas` | token |
-
 ## MovimientosInventario
 
 | Metodo | Ruta | Acceso |
 | :--- | :--- | :--- |
 | `GET` | `/api/v1/movimientos-inventario` | token |
-
-## MovimientosTesoreria
-
-| Metodo | Ruta | Acceso |
-| :--- | :--- | :--- |
-| `GET` | `/api/v1/movimientos-tesoreria` | token |
-| `POST` | `/api/v1/movimientos-tesoreria` | token |
 
 ## OrdenesCompra
 
@@ -366,22 +353,8 @@ Las rutas marcadas como **publica** no requieren token.
 | `GET` | `/api/v1/sesiones-caja` | token |
 | `POST` | `/api/v1/sesiones-caja` | token |
 | `GET` | `/api/v1/sesiones-caja/activa` | token |
-| `GET` | `/api/v1/sesiones-caja/{id}` | token |
 | `POST` | `/api/v1/sesiones-caja/{id}/cerrar` | token |
-| `GET` | `/api/v1/sesiones-caja/{id}/cierre` | token |
 | `POST` | `/api/v1/sesiones-caja/{id}/movimientos` | token |
-
-## Simulacion
-
-| Metodo | Ruta | Acceso |
-| :--- | :--- | :--- |
-| `POST` | `/api/v1/simulacion/conversion` | token |
-| `POST` | `/api/v1/simulacion/cuenta` | token |
-| `POST` | `/api/v1/simulacion/merma` | token |
-| `POST` | `/api/v1/simulacion/salud-stock` | token |
-| `POST` | `/api/v1/simulacion/sku` | token |
-| `GET` | `/api/v1/simulacion/tasa` | token |
-| `PUT` | `/api/v1/simulacion/tasa` | token |
 
 ## Stock
 

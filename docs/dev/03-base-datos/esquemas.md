@@ -99,11 +99,7 @@ auditoría: `id` (uuid), `created_at`, `last_modified_at`, `is_deleted`, `row_ve
 
 | Tabla | Descripción |
 | :--- | :--- |
-| `moneda` | USD, BS. |
 | `tasa_cambio` | Tasa diaria (BCV/paralelo) por fecha. |
-| `cuenta_bancaria` | Cuentas del local. |
-| `movimiento_tesoreria` | Movimientos de tesorería. |
-| `cierre_caja` | Consolidado de cierre (Z). |
 
 ## `security`
 

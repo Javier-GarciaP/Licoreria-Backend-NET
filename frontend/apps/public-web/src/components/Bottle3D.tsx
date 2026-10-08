@@ -1,13 +1,23 @@
-import { Suspense, useRef } from 'react';
+import { Suspense, useLayoutEffect, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Center, Environment, Lightformer, useGLTF } from '@react-three/drei';
+import { Box3, Vector3 } from 'three';
 import type { Group } from 'three';
 
 const MODEL_URL = '/models/vino-tinto/scene.gltf';
+const FIT_MAX_DIM = 16.5;
 
 function Bottle() {
   const { scene } = useGLTF(MODEL_URL);
   const group = useRef<Group>(null);
+
+  useLayoutEffect(() => {
+    if (!group.current) return;
+    const box = new Box3().setFromObject(scene, true);
+    const size = box.getSize(new Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    if (maxDim > 0) group.current.scale.setScalar(FIT_MAX_DIM / maxDim);
+  }, [scene]);
 
   useFrame((_, delta) => {
     if (group.current) group.current.rotation.y += delta * 0.32;

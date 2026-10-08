@@ -1,3 +1,4 @@
+using Licoreria.Domain.Enums;
 using Licoreria.Domain.Services;
 
 namespace Licoreria.UnitTests;

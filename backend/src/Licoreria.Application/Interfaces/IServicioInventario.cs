@@ -5,15 +5,10 @@ using Licoreria.Domain.Enums;
 namespace Licoreria.Application.Interfaces;
 
 /// <summary>
-/// Casos de uso de inventario: existencias, kardex, mermas, cortesías y conversión de moneda.
+/// Casos de uso de inventario: existencias, kardex, mermas, cortesías.
 /// </summary>
 public interface IServicioInventario
 {
-    // Lógica de dominio (demostración)
-    ResultadoMermaDto EvaluarMerma(MermaRequest request);
-    decimal ConvertirAusdBolivares(decimal montoUsd, decimal tasaCambio);
-
-    // Operación real
     Task<ResultadoPaginado<StockDto>> ObtenerStockAsync(
         PaginacionRequest paginacion,
         bool soloBajoMinimo = false,

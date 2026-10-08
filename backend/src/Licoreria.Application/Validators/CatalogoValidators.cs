@@ -96,17 +96,6 @@ public sealed class RecetaCrearDtoValidator : AbstractValidator<RecetaCrearDto>
     }
 }
 
-public sealed class EstablecerPrecioDtoValidator : AbstractValidator<EstablecerPrecioDto>
-{
-    public EstablecerPrecioDtoValidator()
-    {
-        RuleFor(x => x.VarianteId).NotEmpty().WithMessage("La variante es obligatoria.");
-        RuleFor(x => x.ListaPrecioId).NotEmpty().WithMessage("La lista de precio es obligatoria.");
-        RuleFor(x => x.Moneda).IsInEnum().WithMessage("La moneda no es válida.");
-        RuleFor(x => x.Precio).GreaterThanOrEqualTo(0).WithMessage("El precio no puede ser negativo.");
-    }
-}
-
 public sealed class ModificadorCrearDtoValidator : AbstractValidator<ModificadorCrearDto>
 {
     public ModificadorCrearDtoValidator()

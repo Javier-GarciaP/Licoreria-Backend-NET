@@ -4,7 +4,6 @@ using Licoreria.Application.Interfaces;
 using Licoreria.Domain.Common;
 using Licoreria.Domain.Entities;
 using Licoreria.Domain.Enums;
-using Licoreria.Domain.Services;
 
 namespace Licoreria.Application.Services;
 
@@ -13,8 +12,6 @@ public sealed class ServicioInventario : IServicioInventario
     private readonly IInventarioRepository _inventario;
     private readonly IRepository<ProductoVariante> _variantes;
     private readonly IRepository<Lote> _lotes;
-    private readonly EvaluadorMerma _evaluadorMerma;
-    private readonly ConversorMoneda _conversorMoneda;
     private readonly IContextoUsuario _contextoUsuario;
     private readonly IRelojSistema _reloj;
     private readonly IServicioAuditoria _auditoria;
@@ -23,8 +20,6 @@ public sealed class ServicioInventario : IServicioInventario
         IInventarioRepository inventario,
         IRepository<ProductoVariante> variantes,
         IRepository<Lote> lotes,
-        EvaluadorMerma evaluadorMerma,
-        ConversorMoneda conversorMoneda,
         IContextoUsuario contextoUsuario,
         IRelojSistema reloj,
         IServicioAuditoria auditoria)
@@ -32,31 +27,10 @@ public sealed class ServicioInventario : IServicioInventario
         _inventario = inventario;
         _variantes = variantes;
         _lotes = lotes;
-        _evaluadorMerma = evaluadorMerma;
-        _conversorMoneda = conversorMoneda;
         _contextoUsuario = contextoUsuario;
         _reloj = reloj;
         _auditoria = auditoria;
     }
-
-    public ResultadoMermaDto EvaluarMerma(MermaRequest request)
-    {
-        if (!Enum.TryParse<MotivoMerma>(request.Motivo, ignoreCase: true, out var motivo))
-        {
-            throw new ReglaNegocioException($"El motivo de merma '{request.Motivo}' no es válido.");
-        }
-
-        var resultado = _evaluadorMerma.Evaluar(motivo, request.Cantidad, request.ReponerSinCobro);
-
-        var movimientos = resultado.Movimientos
-            .Select(m => new MovimientoInventarioDto(m.Tipo, m.Cantidad, m.Motivo))
-            .ToList();
-
-        return new ResultadoMermaDto(movimientos, resultado.TotalUnidadesDescontadas);
-    }
-
-    public decimal ConvertirAusdBolivares(decimal montoUsd, decimal tasaCambio)
-        => _conversorMoneda.ConvertirAusdBolivares(montoUsd, tasaCambio);
 
     public async Task<ResultadoPaginado<StockDto>> ObtenerStockAsync(
         PaginacionRequest paginacion,

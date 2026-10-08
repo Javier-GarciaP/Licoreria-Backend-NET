@@ -86,7 +86,7 @@ Además de la operación, el panel interno incorpora gestión completa de:
   que actualizan inventario y cuentas por pagar con registro de pagos.
 - **Contenido:** páginas con secciones y bloques, eventos, horarios de atención,
   información del local, menú digital con QR y subida de archivos.
-- **Finanzas:** registro e histórico de tasas de cambio y movimientos de tesorería.
+- **Finanzas:** registro e histórico de tasas de cambio.
 - **Salón:** editor de planos con arrastre libre (`dnd-kit`) y CRUD de zonas y mesas.
 
 Pendiente para siguientes iteraciones: el módulo de IA (generaciones y aprobación).

@@ -1,5 +1,5 @@
 using Licoreria.Domain.Common;
-using Licoreria.Domain.Services;
+using Licoreria.Domain.Enums;
 
 namespace Licoreria.Domain.Entities;
 

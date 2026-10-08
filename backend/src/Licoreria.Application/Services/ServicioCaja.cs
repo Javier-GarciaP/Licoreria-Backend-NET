@@ -76,12 +76,6 @@ public sealed class ServicioCaja : IServicioCaja
         return sesion is null ? null : Mapear(sesion);
     }
 
-    public async Task<SesionCajaDto?> ObtenerSesionAsync(Guid id, CancellationToken cancellationToken = default)
-    {
-        var sesion = await _sesionRepository.ObtenerConDetalleAsync(id, cancellationToken);
-        return sesion is null ? null : Mapear(sesion);
-    }
-
     public async Task<ResultadoPaginado<SesionCajaDto>> ObtenerSesionesAsync(
         PaginacionRequest paginacion,
         CancellationToken cancellationToken = default)
@@ -169,32 +163,6 @@ public sealed class ServicioCaja : IServicioCaja
 
         var cerrada = await _sesionRepository.ObtenerConDetalleAsync(sesionId, cancellationToken);
         return cerrada is null ? null : Mapear(cerrada);
-    }
-
-    public async Task<CierreCajaDto?> ObtenerCierreAsync(Guid sesionId, CancellationToken cancellationToken = default)
-    {
-        var sesion = await _sesionRepository.ObtenerConDetalleAsync(sesionId, cancellationToken);
-        if (sesion is null)
-        {
-            return null;
-        }
-
-        var movimientos = sesion.Movimientos.Select(MapearMovimiento).ToList();
-        var totalIngresos = sesion.Movimientos.Where(m => m.Tipo == TipoMovimientoCaja.Ingreso).Sum(m => m.Monto);
-        var totalEgresos = sesion.Movimientos.Where(m => m.Tipo == TipoMovimientoCaja.Egreso).Sum(m => m.Monto);
-
-        return new CierreCajaDto(
-            sesion.Id,
-            sesion.AbiertaEn,
-            sesion.CerradaEn,
-            sesion.FondoInicial,
-            totalIngresos,
-            totalEgresos,
-            sesion.MontoEsperado,
-            sesion.MontoContado,
-            sesion.Descuadre,
-            movimientos,
-            sesion.Arqueos.Select(MapearArqueo).ToList());
     }
 
     private static SesionCajaDto Mapear(SesionCaja s)

@@ -70,7 +70,6 @@ public static class RolesSeguridad
                 Permisos.CajaAbrir,
                 Permisos.CajaCerrar,
                 Permisos.CajaMovimiento,
-                Permisos.ReservasGestionar,
                 Permisos.FinanzasLeer
             ],
             RolUsuario.Mesero =>
@@ -81,18 +80,23 @@ public static class RolesSeguridad
                 Permisos.VentasLeer,
                 Permisos.VentasEscribir,
                 Permisos.CuentasLeer,
-                Permisos.ClubLeer,
-                Permisos.ReservasGestionar
+                Permisos.CuentasAbonar,
+                Permisos.CuentasCerrar,
+                Permisos.ClubLeer
             ],
             RolUsuario.Barra =>
             [
                 Permisos.CatalogoLeer,
-                Permisos.InventarioLeer
+                Permisos.InventarioLeer,
+                Permisos.VentasLeer,
+                Permisos.VentasEscribir
             ],
             RolUsuario.Cocina =>
             [
                 Permisos.CatalogoLeer,
-                Permisos.InventarioLeer
+                Permisos.InventarioLeer,
+                Permisos.VentasLeer,
+                Permisos.VentasEscribir
             ],
             RolUsuario.Host =>
             [
@@ -103,9 +107,7 @@ public static class RolesSeguridad
             ],
             RolUsuario.EditorContenido =>
             [
-                Permisos.CatalogoLeer,
-                Permisos.ContenidoLeer,
-                Permisos.ContenidoPublicar
+                Permisos.CatalogoLeer
             ],
             _ => [Permisos.CatalogoLeer]
         };

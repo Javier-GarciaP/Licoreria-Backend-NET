@@ -409,3 +409,8 @@ backend/src/Licoreria.WebAPI/wwwroot/uploads/
 # Contrato OpenAPI generado en build (se versiona solo el YAML exportado)
 # ==========================================
 openapi/generated/
+
+# ==========================================
+# Artefactos locales de la CLI de Playwright
+# ==========================================
+.playwright-cli/

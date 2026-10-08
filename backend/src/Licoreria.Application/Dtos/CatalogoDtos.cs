@@ -1,5 +1,3 @@
-using Licoreria.Domain.Enums;
-
 namespace Licoreria.Application.Dtos;
 
 public sealed record CategoriaDto(
@@ -89,12 +87,6 @@ public sealed record ListaPrecioEditarDto(
     string? Descripcion,
     bool EsPredeterminada,
     bool Activo);
-
-public sealed record EstablecerPrecioDto(
-    Guid VarianteId,
-    Guid ListaPrecioId,
-    Moneda Moneda,
-    decimal Precio);
 
 public sealed record ModificadorDto(
     Guid Id,

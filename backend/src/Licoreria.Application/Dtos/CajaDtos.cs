@@ -50,16 +50,3 @@ public sealed record SesionCajaDto(
     DateTime? CerradaEn,
     IReadOnlyList<MovimientoCajaDto> Movimientos,
     IReadOnlyList<ArqueoLineaDto> Arqueo);
-
-public sealed record CierreCajaDto(
-    Guid Id,
-    DateTime AbiertaEn,
-    DateTime? CerradaEn,
-    decimal FondoInicial,
-    decimal TotalIngresos,
-    decimal TotalEgresos,
-    decimal MontoEsperado,
-    decimal MontoContado,
-    decimal Descuadre,
-    IReadOnlyList<MovimientoCajaDto> Movimientos,
-    IReadOnlyList<ArqueoLineaDto> Arqueo);

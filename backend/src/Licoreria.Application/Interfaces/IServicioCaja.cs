@@ -14,8 +14,6 @@ public interface IServicioCaja
 
     Task<SesionCajaDto?> ObtenerSesionActivaAsync(CancellationToken cancellationToken = default);
 
-    Task<SesionCajaDto?> ObtenerSesionAsync(Guid id, CancellationToken cancellationToken = default);
-
     Task<ResultadoPaginado<SesionCajaDto>> ObtenerSesionesAsync(
         PaginacionRequest paginacion,
         CancellationToken cancellationToken = default);
@@ -29,6 +27,4 @@ public interface IServicioCaja
         Guid sesionId,
         CerrarCajaDto dto,
         CancellationToken cancellationToken = default);
-
-    Task<CierreCajaDto?> ObtenerCierreAsync(Guid sesionId, CancellationToken cancellationToken = default);
 }

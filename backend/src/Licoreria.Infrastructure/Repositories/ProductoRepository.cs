@@ -18,8 +18,7 @@ public class ProductoRepository : Repository<Producto>, IProductoRepository
             .Include(p => p.Marca)
             .Include(p => p.Impuesto)
             .Include(p => p.Variantes).ThenInclude(v => v.UnidadMedida)
-            .Include(p => p.Variantes).ThenInclude(v => v.CodigosBarras)
-            .Include(p => p.Variantes).ThenInclude(v => v.Precios).ThenInclude(pr => pr.ListaPrecio);
+            .Include(p => p.Variantes).ThenInclude(v => v.CodigosBarras);
 
     public async Task<IReadOnlyList<Producto>> ObtenerTodosConDetalleAsync(CancellationToken cancellationToken = default)
         => await ConDetalle().AsNoTracking().Where(p => !p.IsDeleted).ToListAsync(cancellationToken);

@@ -39,5 +39,4 @@ sequenceDiagram
 | `POST` | `/api/v1/sesiones-caja` | Abre una sesión de caja. |
 | `GET` | `/api/v1/sesiones-caja/activa` | Sesión abierta actual. |
 | `POST` | `/api/v1/sesiones-caja/{id}/movimientos` | Registra ingreso/egreso. |
-| `POST` | `/api/v1/sesiones-caja/{id}/cerrar` | Cierra con arqueo. |
-| `GET` | `/api/v1/sesiones-caja/{id}/cierre` | Reporte de cierre (Z). |
+| `POST` | `/api/v1/sesiones-caja/{id}/cerrar` | Cierra con arqueo (reporte Z). |

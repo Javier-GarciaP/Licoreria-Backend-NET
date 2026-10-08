@@ -106,7 +106,7 @@ Los listados aceptan `?page=1&pageSize=20` y devuelven:
 | Usuarios / roles / permisos | `/api/v1/usuarios`, `/api/v1/roles`, `/api/v1/permisos` |
 | Catálogo | `/api/v1/productos`, `/api/v1/categorias`, `/api/v1/marcas`, `/api/v1/unidades-medida`, `/api/v1/impuestos`, `/api/v1/listas-precio` |
 | Inventario | `/api/v1/stock`, `/api/v1/movimientos-inventario`, `/api/v1/mermas`, `/api/v1/ajustes-inventario`, `/api/v1/reportes/mermas` |
-| Finanzas | `/api/v1/monedas`, `/api/v1/tasas-cambio`, `/api/v1/movimientos-tesoreria` |
+| Finanzas | `/api/v1/tasas-cambio` |
 | Ventas | `/api/v1/ventas`, `/api/v1/metodos-pago` |
 | Cuentas y comandas | `/api/v1/cuentas` |
 | Caja | `/api/v1/sesiones-caja`, `/api/v1/denominaciones` |

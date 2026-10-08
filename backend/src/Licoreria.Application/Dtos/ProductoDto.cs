@@ -2,13 +2,6 @@ using Licoreria.Domain.Enums;
 
 namespace Licoreria.Application.Dtos;
 
-public sealed record PrecioVarianteDto(
-    Guid Id,
-    Guid ListaPrecioId,
-    string ListaPrecioNombre,
-    Moneda Moneda,
-    decimal Precio);
-
 public sealed record ProductoVarianteDto(
     Guid Id,
     string Nombre,
@@ -18,8 +11,7 @@ public sealed record ProductoVarianteDto(
     Guid UnidadMedidaId,
     string UnidadMedidaNombre,
     bool Activo,
-    IReadOnlyList<string> CodigosBarras,
-    IReadOnlyList<PrecioVarianteDto> Precios);
+    IReadOnlyList<string> CodigosBarras);
 
 public sealed record ProductoDto(
     Guid Id,

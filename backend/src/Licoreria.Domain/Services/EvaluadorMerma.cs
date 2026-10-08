@@ -1,14 +1,6 @@
-namespace Licoreria.Domain.Services;
+using Licoreria.Domain.Enums;
 
-/// <summary>
-/// Motivos por los que un producto deja de ser vendible.
-/// </summary>
-public enum MotivoMerma
-{
-    Danado = 1,
-    Partido = 2,
-    Vencido = 3
-}
+namespace Licoreria.Domain.Services;
 
 /// <summary>
 /// Movimiento de inventario sugerido a partir de una merma.

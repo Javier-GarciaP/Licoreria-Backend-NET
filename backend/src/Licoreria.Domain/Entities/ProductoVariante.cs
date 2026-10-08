@@ -21,7 +21,6 @@ public class ProductoVariante : BaseEntity
     public UnidadMedida UnidadMedida { get; set; } = null!;
 
     public ICollection<CodigoBarras> CodigosBarras { get; set; } = new List<CodigoBarras>();
-    public ICollection<PrecioProducto> Precios { get; set; } = new List<PrecioProducto>();
 
     public void ActualizarDatos(
         string nombre,

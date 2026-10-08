@@ -2618,29 +2618,6 @@ paths:
       responses:
         '200':
           description: OK
-  /api/v1/monedas:
-    get:
-      tags:
-        - Monedas
-      responses:
-        '200':
-          description: OK
-          content:
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/MonedaDto'
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/MonedaDto'
-            text/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/MonedaDto'
   /api/v1/movimientos-inventario:
     get:
       tags:
@@ -2710,98 +2687,6 @@ paths:
             text/json:
               schema:
                 $ref: '#/components/schemas/ResultadoPaginadoOfMovimientoKardexDto'
-  /api/v1/movimientos-tesoreria:
-    get:
-      tags:
-        - MovimientosTesoreria
-      parameters:
-        - name: Page
-          in: query
-          schema:
-            pattern: ^-?(?:0|[1-9]\d*)$
-            type:
-              - integer
-              - string
-            format: int32
-        - name: PageSize
-          in: query
-          schema:
-            pattern: ^-?(?:0|[1-9]\d*)$
-            type:
-              - integer
-              - string
-            format: int32
-        - name: PaginaNormalizada
-          in: query
-          schema:
-            pattern: ^-?(?:0|[1-9]\d*)$
-            type:
-              - integer
-              - string
-            format: int32
-        - name: TamanoNormalizado
-          in: query
-          schema:
-            pattern: ^-?(?:0|[1-9]\d*)$
-            type:
-              - integer
-              - string
-            format: int32
-        - name: tipo
-          in: query
-          schema:
-            $ref: '#/components/schemas/TipoMovimientoTesoreria'
-        - name: desde
-          in: query
-          schema:
-            type: string
-            format: date-time
-        - name: hasta
-          in: query
-          schema:
-            type: string
-            format: date-time
-      responses:
-        '200':
-          description: OK
-          content:
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/ResultadoPaginadoOfMovimientoTesoreriaDto'
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResultadoPaginadoOfMovimientoTesoreriaDto'
-            text/json:
-              schema:
-                $ref: '#/components/schemas/ResultadoPaginadoOfMovimientoTesoreriaDto'
-    post:
-      tags:
-        - MovimientosTesoreria
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RegistrarMovimientoTesoreriaDto'
-          text/json:
-            schema:
-              $ref: '#/components/schemas/RegistrarMovimientoTesoreriaDto'
-          application/*+json:
-            schema:
-              $ref: '#/components/schemas/RegistrarMovimientoTesoreriaDto'
-        required: true
-      responses:
-        '200':
-          description: OK
-          content:
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/MovimientoTesoreriaDto'
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MovimientoTesoreriaDto'
-            text/json:
-              schema:
-                $ref: '#/components/schemas/MovimientoTesoreriaDto'
   /api/v1/ordenes-compra:
     get:
       tags:
@@ -3267,104 +3152,6 @@ paths:
     delete:
       tags:
         - Planos
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: OK
-  /api/v1/precios-producto:
-    get:
-      tags:
-        - PreciosProducto
-      parameters:
-        - name: varianteId
-          in: query
-          schema:
-            type: string
-            format: uuid
-        - name: listaPrecioId
-          in: query
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: OK
-          content:
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PrecioVarianteDto'
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PrecioVarianteDto'
-            text/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PrecioVarianteDto'
-    put:
-      tags:
-        - PreciosProducto
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/EstablecerPrecioDto'
-          text/json:
-            schema:
-              $ref: '#/components/schemas/EstablecerPrecioDto'
-          application/*+json:
-            schema:
-              $ref: '#/components/schemas/EstablecerPrecioDto'
-        required: true
-      responses:
-        '200':
-          description: OK
-          content:
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/PrecioVarianteDto'
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PrecioVarianteDto'
-            text/json:
-              schema:
-                $ref: '#/components/schemas/PrecioVarianteDto'
-  /api/v1/precios-producto/vigente:
-    get:
-      tags:
-        - PreciosProducto
-      parameters:
-        - name: varianteId
-          in: query
-          schema:
-            type: string
-            format: uuid
-        - name: listaPrecioId
-          in: query
-          schema:
-            type: string
-            format: uuid
-        - name: moneda
-          in: query
-          schema:
-            $ref: '#/components/schemas/Moneda'
-      responses:
-        '200':
-          description: OK
-  /api/v1/precios-producto/{id}:
-    delete:
-      tags:
-        - PreciosProducto
       parameters:
         - name: id
           in: path
@@ -4705,30 +4492,6 @@ paths:
             text/json:
               schema:
                 $ref: '#/components/schemas/SesionCajaDto'
-  /api/v1/sesiones-caja/{id}:
-    get:
-      tags:
-        - SesionesCaja
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: OK
-          content:
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/SesionCajaDto'
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SesionCajaDto'
-            text/json:
-              schema:
-                $ref: '#/components/schemas/SesionCajaDto'
   /api/v1/sesiones-caja/{id}/movimientos:
     post:
       tags:
@@ -4801,210 +4564,6 @@ paths:
             text/json:
               schema:
                 $ref: '#/components/schemas/SesionCajaDto'
-  /api/v1/sesiones-caja/{id}/cierre:
-    get:
-      tags:
-        - SesionesCaja
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: OK
-          content:
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/CierreCajaDto'
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CierreCajaDto'
-            text/json:
-              schema:
-                $ref: '#/components/schemas/CierreCajaDto'
-  /api/v1/simulacion/salud-stock:
-    post:
-      tags:
-        - Simulacion
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SaludStockRequest'
-          text/json:
-            schema:
-              $ref: '#/components/schemas/SaludStockRequest'
-          application/*+json:
-            schema:
-              $ref: '#/components/schemas/SaludStockRequest'
-        required: true
-      responses:
-        '200':
-          description: OK
-          content:
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/InformeSaludStockDto'
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InformeSaludStockDto'
-            text/json:
-              schema:
-                $ref: '#/components/schemas/InformeSaludStockDto'
-  /api/v1/simulacion/sku:
-    post:
-      tags:
-        - Simulacion
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SkuRequest'
-          text/json:
-            schema:
-              $ref: '#/components/schemas/SkuRequest'
-          application/*+json:
-            schema:
-              $ref: '#/components/schemas/SkuRequest'
-        required: true
-      responses:
-        '200':
-          description: OK
-          content:
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/ResultadoSkuDto'
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResultadoSkuDto'
-            text/json:
-              schema:
-                $ref: '#/components/schemas/ResultadoSkuDto'
-  /api/v1/simulacion/merma:
-    post:
-      tags:
-        - Simulacion
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/MermaRequest'
-          text/json:
-            schema:
-              $ref: '#/components/schemas/MermaRequest'
-          application/*+json:
-            schema:
-              $ref: '#/components/schemas/MermaRequest'
-        required: true
-      responses:
-        '200':
-          description: OK
-          content:
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/ResultadoMermaDto'
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResultadoMermaDto'
-            text/json:
-              schema:
-                $ref: '#/components/schemas/ResultadoMermaDto'
-  /api/v1/simulacion/cuenta:
-    post:
-      tags:
-        - Simulacion
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CuentaRequest'
-          text/json:
-            schema:
-              $ref: '#/components/schemas/CuentaRequest'
-          application/*+json:
-            schema:
-              $ref: '#/components/schemas/CuentaRequest'
-        required: true
-      responses:
-        '200':
-          description: OK
-          content:
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/ResumenCuentaDto'
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResumenCuentaDto'
-            text/json:
-              schema:
-                $ref: '#/components/schemas/ResumenCuentaDto'
-  /api/v1/simulacion/tasa:
-    put:
-      tags:
-        - Simulacion
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TasaRequest'
-          text/json:
-            schema:
-              $ref: '#/components/schemas/TasaRequest'
-          application/*+json:
-            schema:
-              $ref: '#/components/schemas/TasaRequest'
-        required: true
-      responses:
-        '200':
-          description: OK
-    get:
-      tags:
-        - Simulacion
-      responses:
-        '200':
-          description: OK
-          content:
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/TasaActualDto'
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TasaActualDto'
-            text/json:
-              schema:
-                $ref: '#/components/schemas/TasaActualDto'
-  /api/v1/simulacion/conversion:
-    post:
-      tags:
-        - Simulacion
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ConversionRequest'
-          text/json:
-            schema:
-              $ref: '#/components/schemas/ConversionRequest'
-          application/*+json:
-            schema:
-              $ref: '#/components/schemas/ConversionRequest'
-        required: true
-      responses:
-        '200':
-          description: OK
-          content:
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/ConversionResultDto'
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ConversionResultDto'
-            text/json:
-              schema:
-                $ref: '#/components/schemas/ConversionResultDto'
   /api/v1/stock:
     get:
       tags:
@@ -6076,6 +5635,7 @@ components:
         - nombreCompleto
         - email
         - rol
+        - rolDominio
         - permisos
         - accessToken
         - refreshToken
@@ -6090,6 +5650,8 @@ components:
         email:
           type: string
         rol:
+          type: string
+        rolDominio:
           type: string
         permisos:
           type: array
@@ -6250,76 +5812,6 @@ components:
             - string
           format: double
           default: 0
-    CierreCajaDto:
-      required:
-        - id
-        - abiertaEn
-        - cerradaEn
-        - fondoInicial
-        - totalIngresos
-        - totalEgresos
-        - montoEsperado
-        - montoContado
-        - descuadre
-        - movimientos
-        - arqueo
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        abiertaEn:
-          type: string
-          format: date-time
-        cerradaEn:
-          type:
-            - 'null'
-            - string
-          format: date-time
-        fondoInicial:
-          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
-          type:
-            - number
-            - string
-          format: double
-        totalIngresos:
-          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
-          type:
-            - number
-            - string
-          format: double
-        totalEgresos:
-          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
-          type:
-            - number
-            - string
-          format: double
-        montoEsperado:
-          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
-          type:
-            - number
-            - string
-          format: double
-        montoContado:
-          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
-          type:
-            - number
-            - string
-          format: double
-        descuadre:
-          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
-          type:
-            - number
-            - string
-          format: double
-        movimientos:
-          type: array
-          items:
-            $ref: '#/components/schemas/MovimientoCajaDto'
-        arqueo:
-          type: array
-          items:
-            $ref: '#/components/schemas/ArqueoLineaDto'
     ClienteCrearDto:
       required:
         - nombre
@@ -6549,42 +6041,6 @@ components:
             - number
             - string
           format: double
-    ConversionRequest:
-      required:
-        - montoUsd
-      type: object
-      properties:
-        montoUsd:
-          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
-          type:
-            - number
-            - string
-          format: double
-    ConversionResultDto:
-      required:
-        - montoUsd
-        - tasaAplicada
-        - montoBs
-      type: object
-      properties:
-        montoUsd:
-          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
-          type:
-            - number
-            - string
-          format: double
-        tasaAplicada:
-          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
-          type:
-            - number
-            - string
-          format: double
-        montoBs:
-          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
-          type:
-            - number
-            - string
-          format: double
     CrearComandaDto:
       required:
         - area
@@ -6680,6 +6136,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CuentaDivisionDto'
+        abiertaPorId:
+          type:
+            - 'null'
+            - string
+          format: uuid
     CuentaPorCobrarCrearDto:
       required:
         - clienteId
@@ -6777,28 +6238,6 @@ components:
           format: date-time
         estado:
           $ref: '#/components/schemas/EstadoCuentaPorPagar'
-    CuentaRequest:
-      required:
-        - consumos
-        - abonos
-      type: object
-      properties:
-        consumos:
-          type: array
-          items:
-            pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
-            type:
-              - number
-              - string
-            format: double
-        abonos:
-          type: array
-          items:
-            pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
-            type:
-              - number
-              - string
-            format: double
     DashboardDto:
       required:
         - ventasHoyUSD
@@ -7210,28 +6649,6 @@ components:
             - 'null'
             - string
           format: date-time
-    EstablecerPrecioDto:
-      required:
-        - varianteId
-        - listaPrecioId
-        - moneda
-        - precio
-      type: object
-      properties:
-        varianteId:
-          type: string
-          format: uuid
-        listaPrecioId:
-          type: string
-          format: uuid
-        moneda:
-          $ref: '#/components/schemas/Moneda'
-        precio:
-          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
-          type:
-            - number
-            - string
-          format: double
     EstadoComanda:
       type: integer
     EstadoCuenta:
@@ -7506,47 +6923,6 @@ components:
           format: double
         activo:
           type: boolean
-    InformeSaludStockDto:
-      required:
-        - sku
-        - stockActual
-        - stockMinimo
-        - stockMaximo
-        - estado
-        - mensajeDiagnostico
-        - unidadesCompraSugeridas
-      type: object
-      properties:
-        sku:
-          type: string
-        stockActual:
-          pattern: ^-?(?:0|[1-9]\d*)$
-          type:
-            - integer
-            - string
-          format: int32
-        stockMinimo:
-          pattern: ^-?(?:0|[1-9]\d*)$
-          type:
-            - integer
-            - string
-          format: int32
-        stockMaximo:
-          pattern: ^-?(?:0|[1-9]\d*)$
-          type:
-            - integer
-            - string
-          format: int32
-        estado:
-          type: string
-        mensajeDiagnostico:
-          type: string
-        unidadesCompraSugeridas:
-          pattern: ^-?(?:0|[1-9]\d*)$
-          type:
-            - integer
-            - string
-          format: int32
     InventarioValorizadoDto:
       required:
         - variantes
@@ -8157,23 +7533,6 @@ components:
         fecha:
           type: string
           format: date-time
-    MermaRequest:
-      required:
-        - motivo
-        - cantidad
-        - reponerSinCobro
-      type: object
-      properties:
-        motivo:
-          type: string
-        cantidad:
-          pattern: ^-?(?:0|[1-9]\d*)$
-          type:
-            - integer
-            - string
-          format: int32
-        reponerSinCobro:
-          type: boolean
     MesaCrearDto:
       required:
         - zonaId
@@ -8424,16 +7783,6 @@ components:
           type: boolean
     Moneda:
       type: integer
-    MonedaDto:
-      required:
-        - codigo
-        - nombre
-      type: object
-      properties:
-        codigo:
-          type: string
-        nombre:
-          type: string
     MotivoMerma:
       type: integer
     MovimientoCajaCrearDto:
@@ -8484,23 +7833,6 @@ components:
         fecha:
           type: string
           format: date-time
-    MovimientoInventarioDto:
-      required:
-        - tipo
-        - cantidad
-        - motivo
-      type: object
-      properties:
-        tipo:
-          type: string
-        cantidad:
-          pattern: ^-?(?:0|[1-9]\d*)$
-          type:
-            - integer
-            - string
-          format: int32
-        motivo:
-          type: string
     MovimientoKardexDto:
       required:
         - id
@@ -8551,45 +7883,6 @@ components:
           type:
             - 'null'
             - string
-        fecha:
-          type: string
-          format: date-time
-    MovimientoTesoreriaDto:
-      required:
-        - id
-        - tipo
-        - monto
-        - moneda
-        - motivo
-        - referenciaTipo
-        - referenciaId
-        - fecha
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        tipo:
-          $ref: '#/components/schemas/TipoMovimientoTesoreria'
-        monto:
-          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
-          type:
-            - number
-            - string
-          format: double
-        moneda:
-          $ref: '#/components/schemas/Moneda'
-        motivo:
-          type: string
-        referenciaTipo:
-          type:
-            - 'null'
-            - string
-        referenciaId:
-          type:
-            - 'null'
-            - string
-          format: uuid
         fecha:
           type: string
           format: date-time
@@ -8887,12 +8180,40 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PlanoElementoCrearDto'
+        anchoFondo:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+          default: 24
+        altoFondo:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+          default: 16
+        rejilla:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+          default: 0.5
+        piso:
+          type: string
+          default: madera
     PlanoDto:
       required:
         - id
         - nombre
         - version
         - activo
+        - anchoFondo
+        - altoFondo
+        - rejilla
+        - piso
         - elementos
       type: object
       properties:
@@ -8909,6 +8230,26 @@ components:
           format: int32
         activo:
           type: boolean
+        anchoFondo:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        altoFondo:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        rejilla:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        piso:
+          type: string
         elementos:
           type: array
           items:
@@ -8932,6 +8273,30 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PlanoElementoCrearDto'
+        anchoFondo:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+          default: 24
+        altoFondo:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+          default: 16
+        rejilla:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+          default: 0.5
+        piso:
+          type: string
+          default: madera
     PlanoElementoCrearDto:
       required:
         - zonaId
@@ -8985,12 +8350,41 @@ components:
             - string
           format: double
           default: 0
+        forma:
+          type:
+            - 'null'
+            - string
+        color:
+          type:
+            - 'null'
+            - string
+        z:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+          default: 0
+        mesaId:
+          type:
+            - 'null'
+            - string
+          format: uuid
+        id:
+          type:
+            - 'null'
+            - string
+          format: uuid
     PlanoElementoDto:
       required:
         - id
         - zonaId
+        - mesaId
         - tipo
+        - forma
+        - color
         - etiqueta
+        - z
         - posX
         - posY
         - ancho
@@ -9006,12 +8400,31 @@ components:
             - 'null'
             - string
           format: uuid
+        mesaId:
+          type:
+            - 'null'
+            - string
+          format: uuid
         tipo:
           type: string
+        forma:
+          type:
+            - 'null'
+            - string
+        color:
+          type:
+            - 'null'
+            - string
         etiqueta:
           type:
             - 'null'
             - string
+        z:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
         posX:
           pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
           type:
@@ -9037,31 +8450,6 @@ components:
             - string
           format: double
         rotacion:
-          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
-          type:
-            - number
-            - string
-          format: double
-    PrecioVarianteDto:
-      required:
-        - id
-        - listaPrecioId
-        - listaPrecioNombre
-        - moneda
-        - precio
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        listaPrecioId:
-          type: string
-          format: uuid
-        listaPrecioNombre:
-          type: string
-        moneda:
-          $ref: '#/components/schemas/Moneda'
-        precio:
           pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
           type:
             - number
@@ -9286,7 +8674,6 @@ components:
         - unidadMedidaNombre
         - activo
         - codigosBarras
-        - precios
       type: object
       properties:
         id:
@@ -9319,10 +8706,6 @@ components:
           type: array
           items:
             type: string
-        precios:
-          type: array
-          items:
-            $ref: '#/components/schemas/PrecioVarianteDto'
     PromocionCrearDto:
       required:
         - nombre
@@ -9825,35 +9208,6 @@ components:
         reponerSinCobro:
           type: boolean
           default: false
-    RegistrarMovimientoTesoreriaDto:
-      required:
-        - tipo
-        - monto
-        - moneda
-        - motivo
-      type: object
-      properties:
-        tipo:
-          $ref: '#/components/schemas/TipoMovimientoTesoreria'
-        monto:
-          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
-          type:
-            - number
-            - string
-          format: double
-        moneda:
-          $ref: '#/components/schemas/Moneda'
-        motivo:
-          type: string
-        referenciaTipo:
-          type:
-            - 'null'
-            - string
-        referenciaId:
-          type:
-            - 'null'
-            - string
-          format: uuid
     RegistrarPagoProveedorDto:
       required:
         - monto
@@ -10361,22 +9715,6 @@ components:
             - string
         estado:
           $ref: '#/components/schemas/EstadoReservaPago'
-    ResultadoMermaDto:
-      required:
-        - movimientos
-        - totalUnidadesDescontadas
-      type: object
-      properties:
-        movimientos:
-          type: array
-          items:
-            $ref: '#/components/schemas/MovimientoInventarioDto'
-        totalUnidadesDescontadas:
-          pattern: ^-?(?:0|[1-9]\d*)$
-          type:
-            - integer
-            - string
-          format: int32
     ResultadoPaginadoOfAiGeneracionDto:
       required:
         - items
@@ -10677,42 +10015,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/MovimientoKardexDto'
-        page:
-          pattern: ^-?(?:0|[1-9]\d*)$
-          type:
-            - integer
-            - string
-          format: int32
-        pageSize:
-          pattern: ^-?(?:0|[1-9]\d*)$
-          type:
-            - integer
-            - string
-          format: int32
-        totalItems:
-          pattern: ^-?(?:0|[1-9]\d*)$
-          type:
-            - integer
-            - string
-          format: int32
-        totalPages:
-          pattern: ^-?(?:0|[1-9]\d*)$
-          type:
-            - integer
-            - string
-          format: int32
-    ResultadoPaginadoOfMovimientoTesoreriaDto:
-      required:
-        - items
-        - page
-        - pageSize
-        - totalItems
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/MovimientoTesoreriaDto'
         page:
           pattern: ^-?(?:0|[1-9]\d*)$
           type:
@@ -11061,56 +10363,6 @@ components:
             - integer
             - string
           format: int32
-    ResultadoSkuDto:
-      required:
-        - entradaOriginal
-        - categoria
-        - nombreSanitizado
-        - skuGenerado
-        - formulaSku
-        - esValidoEmpresarial
-      type: object
-      properties:
-        entradaOriginal:
-          type: string
-        categoria:
-          type: string
-        nombreSanitizado:
-          type: string
-        skuGenerado:
-          type: string
-        formulaSku:
-          type: string
-        esValidoEmpresarial:
-          type: boolean
-    ResumenCuentaDto:
-      required:
-        - total
-        - totalAbonado
-        - saldo
-        - estaSaldada
-      type: object
-      properties:
-        total:
-          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
-          type:
-            - number
-            - string
-          format: double
-        totalAbonado:
-          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
-          type:
-            - number
-            - string
-          format: double
-        saldo:
-          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
-          type:
-            - number
-            - string
-          format: double
-        estaSaldada:
-          type: boolean
     RolDto:
       required:
         - nombre
@@ -11128,34 +10380,6 @@ components:
             type: string
     RolUsuario:
       type: integer
-    SaludStockRequest:
-      required:
-        - sku
-        - stockActual
-        - stockMinimo
-        - stockMaximo
-      type: object
-      properties:
-        sku:
-          type: string
-        stockActual:
-          pattern: ^-?(?:0|[1-9]\d*)$
-          type:
-            - integer
-            - string
-          format: int32
-        stockMinimo:
-          pattern: ^-?(?:0|[1-9]\d*)$
-          type:
-            - integer
-            - string
-          format: int32
-        stockMaximo:
-          pattern: ^-?(?:0|[1-9]\d*)$
-          type:
-            - integer
-            - string
-          format: int32
     SeccionCrearDto:
       required:
         - titulo
@@ -11269,23 +10493,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ArqueoLineaDto'
-    SkuRequest:
-      required:
-        - categoria
-        - producto
-        - secuencia
-      type: object
-      properties:
-        categoria:
-          type: string
-        producto:
-          type: string
-        secuencia:
-          pattern: ^-?(?:0|[1-9]\d*)$
-          type:
-            - integer
-            - string
-          format: int32
     SolicitarImagenIaDto:
       required:
         - prompt
@@ -11356,17 +10563,6 @@ components:
           format: double
         bajoMinimo:
           type: boolean
-    TasaActualDto:
-      required:
-        - tasa
-      type: object
-      properties:
-        tasa:
-          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
-          type:
-            - number
-            - string
-          format: double
     TasaCambioDto:
       required:
         - id
@@ -11389,17 +10585,6 @@ components:
             - number
             - string
           format: double
-    TasaRequest:
-      required:
-        - tasa
-      type: object
-      properties:
-        tasa:
-          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
-          type:
-            - number
-            - string
-          format: double
     TipoDenominacion:
       type: integer
     TipoMovimientoCaja:
@@ -11407,8 +10592,6 @@ components:
     TipoMovimientoInventario:
       type: integer
     TipoMovimientoPuntos:
-      type: integer
-    TipoMovimientoTesoreria:
       type: integer
     TipoProducto:
       type: integer
@@ -11534,6 +10717,7 @@ components:
         - nombreCompleto
         - email
         - rol
+        - rolDominio
         - permisos
       type: object
       properties:
@@ -11545,6 +10729,8 @@ components:
         email:
           type: string
         rol:
+          type: string
+        rolDominio:
           type: string
         permisos:
           type: array
@@ -11954,12 +11140,49 @@ components:
         activo:
           type: boolean
           default: true
+        color:
+          type:
+            - 'null'
+            - string
+        posX:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+          default: 0
+        posY:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+          default: 0
+        ancho:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+          default: 0
+        alto:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+          default: 0
     ZonaDto:
       required:
         - id
         - nombre
         - tipo
         - activo
+        - color
+        - posX
+        - posY
+        - ancho
+        - alto
       type: object
       properties:
         id:
@@ -11971,6 +11194,34 @@ components:
           $ref: '#/components/schemas/TipoZona'
         activo:
           type: boolean
+        color:
+          type:
+            - 'null'
+            - string
+        posX:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        posY:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        ancho:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        alto:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
     ZonaEditarDto:
       required:
         - id
@@ -11988,6 +11239,38 @@ components:
           $ref: '#/components/schemas/TipoZona'
         activo:
           type: boolean
+        color:
+          type:
+            - 'null'
+            - string
+        posX:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+          default: 0
+        posY:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+          default: 0
+        ancho:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+          default: 0
+        alto:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+          default: 0
   securitySchemes:
     Bearer:
       type: http
@@ -12021,14 +11304,11 @@ tags:
   - name: Mesas
   - name: MetodosPago
   - name: Modificadores
-  - name: Monedas
   - name: MovimientosInventario
-  - name: MovimientosTesoreria
   - name: OrdenesCompra
   - name: Paginas
   - name: Permisos
   - name: Planos
-  - name: PreciosProducto
   - name: Productos
   - name: Promociones
   - name: Proveedores
@@ -12037,7 +11317,6 @@ tags:
   - name: Reservas
   - name: Roles
   - name: SesionesCaja
-  - name: Simulacion
   - name: Stock
   - name: TasasCambio
   - name: TomasFisicas
