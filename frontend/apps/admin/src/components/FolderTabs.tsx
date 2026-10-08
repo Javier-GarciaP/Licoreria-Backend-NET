@@ -8,10 +8,16 @@ export interface FolderTab {
   end?: boolean;
 }
 
+/** ¿La ruta actual pertenece a esta pestaña (respetando límites de segmento)? */
+function coincide(tab: FolderTab, pathname: string): boolean {
+  if (tab.end) return pathname === tab.to;
+  return pathname === tab.to || pathname.startsWith(`${tab.to}/`);
+}
+
 /** Pestañas tipo gestor de carpetas (estilo Salón) con salto al cambiar de carpeta. */
 export function FolderTabs({ tabs, ariaLabel }: { tabs: FolderTab[]; ariaLabel: string }) {
   const { pathname } = useLocation();
-  const idx = Math.max(0, tabs.findIndex((tab) => (tab.end ? tab.to === pathname : pathname.startsWith(tab.to))));
+  const idx = Math.max(0, tabs.findIndex((tab) => coincide(tab, pathname)));
   const previo = useRef(idx);
   const direccion = idx > previo.current ? 'salto-der' : idx < previo.current ? 'salto-izq' : '';
 
@@ -22,7 +28,7 @@ export function FolderTabs({ tabs, ariaLabel }: { tabs: FolderTab[]; ariaLabel: 
   return (
     <nav aria-label={ariaLabel} className="flex gap-1 pl-2">
       {tabs.map((tab) => {
-        const activo = tab.end ? pathname === tab.to : pathname.startsWith(tab.to);
+        const activo = coincide(tab, pathname);
         return (
           <NavLink
             key={tab.to}
