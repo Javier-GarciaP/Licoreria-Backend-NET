@@ -459,6 +459,7 @@ export interface Cuenta {
   abonos: Abono[];
   divisiones: CuentaDivision[];
   abiertaPorId: string | null;
+  cliente: string | null;
 }
 
 /* ===================== Club ===================== */
@@ -669,6 +670,15 @@ export interface Denominacion {
   moneda: Moneda;
   tipo: 'Billete' | 'Moneda' | string;
   valor: number;
+}
+
+export interface ChatMensaje {
+  id: string;
+  autorId: string;
+  autorNombre: string;
+  rol: string;
+  mensaje: string;
+  creadoEn: string;
 }
 
 export interface MovimientoCaja {

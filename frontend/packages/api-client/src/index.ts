@@ -2,6 +2,7 @@ import type {
   AuditLog,
   AuthResponse,
   Categoria,
+  ChatMensaje,
   Cliente,
   Cuenta,
   CuentaPorCobrar,
@@ -25,9 +26,7 @@ import type {
   MetodoPago,
   Merma,
   Modificador,
-  MonedaInfo,
   MovimientoKardex,
-  MovimientoTesoreria,
   OrdenCompra,
   Pagina,
   PedidoAnticipado,
@@ -117,10 +116,10 @@ export const promocionesApi = {
 };
 
 export const cuentasApi = {
-  listar: (query: PaginaQuery & { estado?: string } = {}) =>
+  listar: (query: PaginaQuery & { estado?: string; usuarioId?: string } = {}) =>
     apiFetch<ResultadoPaginado<Cuenta>>('/api/v1/cuentas', { query }),
   obtener: (id: string) => apiFetch<Cuenta>(`/api/v1/cuentas/${id}`),
-  abrir: (body: { nombreMesa: string; mesaId?: string }) =>
+  abrir: (body: { nombreMesa: string; mesaId?: string; cliente?: string; notas?: string }) =>
     apiFetch<Cuenta>('/api/v1/cuentas', { method: 'POST', body }),
   agregarComanda: (id: string, body: unknown) =>
     apiFetch<Cuenta>(`/api/v1/cuentas/${id}/comandas`, { method: 'POST', body }),
@@ -199,11 +198,6 @@ export const finanzasApi = {
   tasas: (query: { desde?: string; hasta?: string; tipo?: string } = {}) =>
     apiFetch<TasaCambio[]>('/api/v1/tasas-cambio', { query }),
   registrarTasa: (body: unknown) => apiFetch<TasaCambio>('/api/v1/tasas-cambio', { method: 'POST', body }),
-  movimientos: (query: PaginaQuery & { tipo?: string; desde?: string; hasta?: string } = {}) =>
-    apiFetch<ResultadoPaginado<MovimientoTesoreria>>('/api/v1/movimientos-tesoreria', { query }),
-  registrarMovimiento: (body: unknown) =>
-    apiFetch<MovimientoTesoreria>('/api/v1/movimientos-tesoreria', { method: 'POST', body }),
-  monedas: () => apiFetch<MonedaInfo[]>('/api/v1/monedas'),
 };
 
 export const reportesApi = {
@@ -271,6 +265,12 @@ export const clientesApi = {
     apiFetch<Cliente>(`/api/v1/clientes/${id}/puntos/acumular`, { method: 'POST', body }),
   canjearPuntos: (id: string, body: { puntos: number; motivo: string }) =>
     apiFetch<Cliente>(`/api/v1/clientes/${id}/puntos/canjear`, { method: 'POST', body }),
+};
+
+export const chatApi = {
+  listar: (limit = 50) => apiFetch<ChatMensaje[]>('/api/v1/staff/chat', { query: { limit } }),
+  enviar: (mensaje: string) =>
+    apiFetch<ChatMensaje>('/api/v1/staff/chat', { method: 'POST', body: { mensaje } }),
 };
 
 export const cajaApi = {
