@@ -42,7 +42,7 @@ function HorarioRow({ horario, onSave, guardando }: { horario: Horario; onSave: 
 
   return (
     <form
-      className="grid grid-cols-2 items-center gap-2 rounded-2xl bg-elevated/30 px-3 py-2 sm:grid-cols-4"
+      className="grid grid-cols-2 items-center gap-2 rounded-lg bg-muted/30 px-3 py-2 sm:grid-cols-4"
       onSubmit={form.handleSubmit((datos) =>
         onSave({
           diaSemana: horario.diaSemana,
@@ -52,22 +52,22 @@ function HorarioRow({ horario, onSave, guardando }: { horario: Horario; onSave: 
         }),
       )}
     >
-      <span className="text-sm text-ink">{DIAS[horario.diaSemana] ?? `Día ${horario.diaSemana}`}</span>
-      <label className="flex items-center gap-2 text-xs text-muted">
+      <span className="text-sm text-foreground">{DIAS[horario.diaSemana] ?? `Día ${horario.diaSemana}`}</span>
+      <label className="flex items-center gap-2 text-xs text-muted-foreground">
         <input type="checkbox" {...form.register('abierto')} />
         Abierto
       </label>
       <input
         type="time"
         aria-label="Apertura"
-        className="h-9 rounded-control border border-hairline bg-surface px-3 text-sm text-ink"
+        className="h-9 rounded-control border border-border bg-card px-3 text-sm text-foreground"
         {...form.register('apertura')}
       />
       <div className="flex items-center gap-2">
         <input
           type="time"
           aria-label="Cierre"
-          className="h-9 w-full rounded-control border border-hairline bg-surface px-3 text-sm text-ink"
+          className="h-9 w-full rounded-control border border-border bg-card px-3 text-sm text-foreground"
           {...form.register('cierre')}
         />
         <Button type="submit" size="sm" variant="ghost" loading={guardando}>

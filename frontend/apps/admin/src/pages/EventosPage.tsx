@@ -135,7 +135,7 @@ export function EventosPage() {
             rowKey={(evento) => evento.id}
             empty="No hay eventos."
             columns={[
-              { key: 'titulo', header: 'Título', render: (evento) => <span className="text-ink">{evento.titulo}</span> },
+              { key: 'titulo', header: 'Título', render: (evento) => <span className="text-foreground">{evento.titulo}</span> },
               { key: 'inicio', header: 'Inicio', render: (evento) => formatDateTime(evento.fechaInicio) },
               {
                 key: 'publicado',
@@ -202,12 +202,12 @@ export function EventosPage() {
           </div>
           <Input label="Imagen (URL)" {...form.register('imagenUrl')} />
           <div className="flex gap-6">
-            <label className="flex items-center gap-2 text-sm text-muted">
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
               <input type="checkbox" {...form.register('publicado')} />
               Publicado
             </label>
             {editando && (
-              <label className="flex items-center gap-2 text-sm text-muted">
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
                 <input type="checkbox" {...form.register('activo')} />
                 Activo
               </label>

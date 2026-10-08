@@ -18,8 +18,8 @@ export function ContenidoTabs() {
           end={tab.end}
           className={({ isActive }) =>
             cn(
-              'rounded-pill border px-4 py-1.5 text-sm transition',
-              isActive ? 'border-accent text-accent-ink' : 'border-hairline text-muted hover:text-ink',
+              'rounded-full border px-4 py-1.5 text-sm transition',
+              isActive ? 'border-primary text-foreground' : 'border-border text-muted-foreground hover:text-foreground',
             )
           }
         >

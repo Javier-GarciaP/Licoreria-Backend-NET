@@ -69,25 +69,25 @@ export function MenuMediaPage() {
             <Skeleton className="h-40 w-full" />
           ) : (
             <div className="flex flex-col gap-4">
-              <div className="rounded-2xl border border-hairline p-3">
-                <p className="text-xs text-muted">Enlace / contenido del QR</p>
-                <p className="mt-1 break-all text-sm text-ink">{qr.data?.contenido ?? qr.data?.url ?? '—'}</p>
+              <div className="rounded-lg border border-border p-3">
+                <p className="text-xs text-muted-foreground">Enlace / contenido del QR</p>
+                <p className="mt-1 break-all text-sm text-foreground">{qr.data?.contenido ?? qr.data?.url ?? '—'}</p>
               </div>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {menu.data?.secciones.map((seccion) => (
-                  <div key={seccion.categoriaId} className="rounded-2xl border border-hairline p-3">
-                    <p className="text-sm font-medium text-ink">{seccion.nombre}</p>
+                  <div key={seccion.categoriaId} className="rounded-lg border border-border p-3">
+                    <p className="text-sm font-medium text-foreground">{seccion.nombre}</p>
                     <div className="mt-2 flex flex-col gap-1">
                       {seccion.items.map((item) => (
                         <div key={item.varianteId} className="flex justify-between text-sm">
-                          <span className="text-muted">{item.nombre}</span>
-                          <span className="text-ink">{formatUSD(item.precioUSD)}</span>
+                          <span className="text-muted-foreground">{item.nombre}</span>
+                          <span className="text-foreground">{formatUSD(item.precioUSD)}</span>
                         </div>
                       ))}
                     </div>
                   </div>
                 ))}
-                {menu.data?.secciones.length === 0 && <p className="text-sm text-muted">El menú no tiene secciones.</p>}
+                {menu.data?.secciones.length === 0 && <p className="text-sm text-muted-foreground">El menú no tiene secciones.</p>}
               </div>
             </div>
           )}
@@ -101,7 +101,7 @@ export function MenuMediaPage() {
             <input
               ref={inputRef}
               type="file"
-              className="text-xs text-muted"
+              className="text-xs text-muted-foreground"
               onChange={(evento) => {
                 const file = evento.target.files?.[0];
                 if (file) subir.mutate(file);
@@ -123,14 +123,14 @@ export function MenuMediaPage() {
                 key: 'nombre',
                 header: 'Archivo',
                 render: (asset) => (
-                  <a href={asset.url} target="_blank" rel="noreferrer" className="text-ink hover:text-accent-ink">
+                  <a href={asset.url} target="_blank" rel="noreferrer" className="text-foreground hover:text-foreground">
                     {asset.nombre}
                   </a>
                 ),
               },
               { key: 'tipo', header: 'Tipo', render: (asset) => asset.tipo },
               { key: 'tamano', header: 'Tamaño', align: 'right', render: (asset) => peso(asset.tamano) },
-              { key: 'id', header: 'ID', render: (asset) => <span className="text-xs text-muted">{asset.id.slice(0, 8)}</span> },
+              { key: 'id', header: 'ID', render: (asset) => <span className="text-xs text-muted-foreground">{asset.id.slice(0, 8)}</span> },
               {
                 key: 'acciones',
                 header: '',

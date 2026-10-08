@@ -63,7 +63,7 @@ function SeccionEditor({
   const { fields, append, remove } = useFieldArray({ control, name: `secciones.${index}.bloques` });
 
   return (
-    <div className="rounded-2xl border border-hairline p-3">
+    <div className="rounded-lg border border-border p-3">
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Input placeholder="Título" {...register(`secciones.${index}.titulo`)} />
         <Input placeholder="Tipo" {...register(`secciones.${index}.tipo`)} />
@@ -72,7 +72,7 @@ function SeccionEditor({
           Quitar sección
         </Button>
       </div>
-      <label className="mt-2 flex items-center gap-2 text-xs text-muted">
+      <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
         <input type="checkbox" {...register(`secciones.${index}.activa`)} />
         Activa
       </label>
@@ -218,8 +218,8 @@ export function PaginasPage() {
                 header: 'Título',
                 render: (pagina) => (
                   <div>
-                    <p className="text-ink">{pagina.titulo}</p>
-                    <p className="text-xs text-muted">/{pagina.slug}</p>
+                    <p className="text-foreground">{pagina.titulo}</p>
+                    <p className="text-xs text-muted-foreground">/{pagina.slug}</p>
                   </div>
                 ),
               },
@@ -280,12 +280,12 @@ export function PaginasPage() {
             <Input label="Slug" error={form.formState.errors.slug?.message} {...form.register('slug')} />
           </div>
           <div className="flex gap-6">
-            <label className="flex items-center gap-2 text-sm text-muted">
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
               <input type="checkbox" {...form.register('publicada')} />
               Publicada
             </label>
             {editando && (
-              <label className="flex items-center gap-2 text-sm text-muted">
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
                 <input type="checkbox" {...form.register('activo')} />
                 Activa
               </label>
@@ -294,7 +294,7 @@ export function PaginasPage() {
 
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-medium uppercase tracking-tighter2 text-muted">Secciones</p>
+              <p className="text-xs font-medium uppercase tracking-tighter2 text-muted-foreground">Secciones</p>
               <Button
                 type="button"
                 size="sm"
@@ -314,7 +314,7 @@ export function PaginasPage() {
               />
             ))}
             {seccionesArray.fields.length === 0 && (
-              <p className="text-xs text-muted">Sin secciones. Agrega al menos una.</p>
+              <p className="text-xs text-muted-foreground">Sin secciones. Agrega al menos una.</p>
             )}
           </div>
         </form>
