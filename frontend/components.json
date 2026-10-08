@@ -1,0 +1,23 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "./packages/config/tailwind.preset.cjs",
+    "css": "./packages/ui/src/styles/theme.css",
+    "baseColor": "neutral",
+    "cssVariables": true
+  },
+  "aliases": {
+    "components": "@licoreria/ui",
+    "utils": "@licoreria/ui/lib",
+    "ui": "@licoreria/ui/components/ui",
+    "hooks": "@licoreria/ui/hooks",
+    "lib": "@licoreria/ui/lib",
+    "styles": "@licoreria/ui/styles"
+  },
+  "iconLibrary": "lucide",
+  "base": "radix",
+  "packageManager": "npm"
+}

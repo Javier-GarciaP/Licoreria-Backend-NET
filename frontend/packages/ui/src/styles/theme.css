@@ -1,71 +1,126 @@
 /* =========================================================
    Tokens de tema · Licorería / Discoteca
-   Tema claro "Claro" (por defecto) y "Oscuro". Ver frontend/DESIGN.md.
-   Dirección visual: vidrio opaco (glass) + acentos pastel.
+   Tema claro "Claro" (por defecto) y "Oscuro".
+   Dirección visual: superficies sólidas semánticas (esquema shadcn/ui)
+   con acento lavanda de marca y familias pastel de estado.
    ========================================================= */
 
 /* Tema claro (por defecto). */
 :root,
 [data-theme='claro'] {
-  --color-canvas: 242 244 245;   /* #f2f4f5 */
-  --color-surface: 255 255 255;  /* #ffffff */
-  --color-elevated: 255 255 255; /* #ffffff */
-  --color-hairline: 235 235 235; /* #ebebeb */
-  --color-ink: 11 13 16;         /* #0b0d10 */
-  --color-muted: 120 117 116;    /* #787574 */
-  --color-stone: 204 204 204;    /* #cccccc */
+  /* — Esquema canónico (shadcn/ui) — */
+  --background: 242 244 245;        /* #f2f4f5 lienzo */
+  --foreground: 11 13 16;           /* #0b0d10 texto */
+  --card: 255 255 255;              /* #ffffff superficie base */
+  --card-foreground: 11 13 16;
+  --popover: 255 255 255;
+  --popover-foreground: 11 13 16;
+  --primary: 201 184 240;           /* lavanda de marca */
+  --primary-foreground: 36 30 58;   /* on-pastel */
+  --secondary: 235 235 235;
+  --secondary-foreground: 11 13 16;
+  --muted: 235 235 235;
+  --muted-foreground: 120 117 116;  /* #787574 */
+  --accent: 201 184 240;
+  --accent-foreground: 36 30 58;
+  --destructive: 243 182 196;       /* rosa */
+  --destructive-foreground: 36 30 58;
+  --border: 224 224 224;
+  --input: 235 235 235;
+  --ring: 201 184 240;
 
-  /* Acento pastel (lavanda). */
-  --color-accent: 201 184 240;      /* #c9b8f0 */
-  --color-accent-soft: 227 219 250; /* #e3dbfa (wash) */
-  --color-accent-ink: 107 79 201;   /* #6b4fc9 (texto/ícono sobre el tema) */
-  --color-violet: 201 184 240;      /* alias de acento */
+  /* Familias pastel de estado. */
+  --success: 168 230 207;           /* menta */
+  --success-foreground: 31 92 70;
+  --warning: 247 201 166;           /* durazno */
+  --warning-foreground: 122 67 24;
+  --info: 169 214 245;              /* cielo */
+  --info-foreground: 30 76 110;
+  --butter: 244 225 161;            /* mantequilla */
+  --butter-foreground: 107 87 20;
 
-  /* Familias pastel: fill + variante de texto legible. */
-  --color-success: 168 230 207;      /* menta */
-  --color-success-ink: 31 92 70;
-  --color-warning: 247 201 166;      /* durazno */
-  --color-warning-ink: 122 67 24;
-  --color-danger: 243 182 196;       /* rosa */
-  --color-danger-ink: 122 36 54;
-  --color-info: 169 214 245;         /* cielo */
-  --color-info-ink: 30 76 110;
-  --color-butter: 244 225 161;       /* mantequilla (caja) */
-  --color-butter-ink: 107 87 20;
+  --radius: 0.5rem;
 
-  /* Texto sobre un fill pastel (siempre oscuro). */
-  --color-on-pastel: 36 30 58; /* #241e3a */
-
-  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.1);
-  --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.06);
-  --shadow-glow: 0 8px 30px rgba(107, 79, 201, 0.18);
-
-  /* Vidrio opaco. */
-  --glass-bg: 255 255 255;
-  --glass-alpha: 0.72;
-  --glass-panel-alpha: 0.62;
-  --glass-bar-alpha: 0.82;
-  --glass-edge: inset 0 1px 0 #ffffff;
-  --glass-blur: 20px;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-glow: 0 2px 12px rgba(107, 79, 201, 0.18);
 
   color-scheme: light;
+
+  /* — Aliases legacy (migración incremental) — */
+  --color-canvas: 242 244 245;
+  --color-surface: 255 255 255;
+  --color-elevated: 255 255 255;
+  --color-hairline: 224 224 224;
+  --color-ink: 11 13 16;
+  --color-muted: 120 117 116;
+  --color-stone: 204 204 204;
+  --color-accent: 201 184 240;
+  --color-accent-soft: 227 219 250;
+  --color-accent-ink: 107 79 201;
+  --color-violet: 201 184 240;
+  --color-success: 168 230 207;
+  --color-success-ink: 31 92 70;
+  --color-warning: 247 201 166;
+  --color-warning-ink: 122 67 24;
+  --color-danger: 243 182 196;
+  --color-danger-ink: 122 36 54;
+  --color-info: 169 214 245;
+  --color-info-ink: 30 76 110;
+  --color-butter: 244 225 161;
+  --color-butter-ink: 107 87 20;
+  --color-on-pastel: 36 30 58;
 }
 
-/* Tema oscuro: mismo vidrio, en oscuro. */
+/* Tema oscuro. */
 [data-theme='dark'] {
-  --color-canvas: 11 13 16;      /* #0b0d10 */
-  --color-surface: 20 23 28;     /* #14171c */
-  --color-elevated: 27 31 38;    /* #1b1f26 */
-  --color-hairline: 38 43 51;    /* #262b33 */
-  --color-ink: 245 247 250;      /* #f5f7fa */
-  --color-muted: 154 163 178;    /* #9aa3b2 */
-  --color-stone: 58 65 80;       /* #3a4150 */
+  --background: 11 13 16;           /* #0b0d10 */
+  --foreground: 245 247 250;        /* #f5f7fa */
+  --card: 27 31 38;                 /* #1b1f26 */
+  --card-foreground: 245 247 250;
+  --popover: 27 31 38;
+  --popover-foreground: 245 247 250;
+  --primary: 201 184 240;
+  --primary-foreground: 36 30 58;
+  --secondary: 38 43 51;
+  --secondary-foreground: 245 247 250;
+  --muted: 38 43 51;
+  --muted-foreground: 154 163 178;  /* #9aa3b2 */
+  --accent: 201 184 240;
+  --accent-foreground: 36 30 58;
+  --destructive: 243 182 196;
+  --destructive-foreground: 36 30 58;
+  --border: 38 43 51;               /* #262b33 */
+  --input: 38 43 51;
+  --ring: 201 184 240;
 
-  --color-accent: 201 184 240;      /* #c9b8f0 */
-  --color-accent-soft: 227 219 250; /* #e3dbfa */
-  --color-accent-ink: 227 219 250;  /* texto claro sobre oscuro */
+  --success: 168 230 207;
+  --success-foreground: 190 240 219;
+  --warning: 247 201 166;
+  --warning-foreground: 251 220 195;
+  --info: 169 214 245;
+  --info-foreground: 197 228 250;
+  --butter: 244 225 161;
+  --butter-foreground: 248 236 187;
+
+  --radius: 0.5rem;
+
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-glow: 0 2px 12px rgba(201, 184, 240, 0.25);
+
+  color-scheme: dark;
+
+  /* — Aliases legacy (migración incremental) — */
+  --color-canvas: 11 13 16;
+  --color-surface: 20 23 28;
+  --color-elevated: 27 31 38;
+  --color-hairline: 38 43 51;
+  --color-ink: 245 247 250;
+  --color-muted: 154 163 178;
+  --color-stone: 58 65 80;
+  --color-accent: 201 184 240;
+  --color-accent-soft: 227 219 250;
+  --color-accent-ink: 227 219 250;
   --color-violet: 201 184 240;
-
   --color-success: 168 230 207;
   --color-success-ink: 190 240 219;
   --color-warning: 247 201 166;
@@ -76,21 +131,7 @@
   --color-info-ink: 197 228 250;
   --color-butter: 244 225 161;
   --color-butter-ink: 248 236 187;
-
-  --color-on-pastel: 36 30 58; /* #241e3a */
-
-  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.45);
-  --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.35);
-  --shadow-glow: 0 8px 30px rgba(201, 184, 240, 0.28);
-
-  --glass-bg: 255 255 255;
-  --glass-alpha: 0.07;
-  --glass-panel-alpha: 0.05;
-  --glass-bar-alpha: 0.09;
-  --glass-edge: inset 0 1px 0 rgb(255 255 255 / 0.1);
-  --glass-blur: 24px;
-
-  color-scheme: dark;
+  --color-on-pastel: 36 30 58;
 }
 
 html,
@@ -101,8 +142,8 @@ body,
 
 body {
   margin: 0;
-  background-color: rgb(var(--color-canvas));
-  color: rgb(var(--color-ink));
+  background-color: rgb(var(--background));
+  color: rgb(var(--foreground));
   font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   letter-spacing: -0.014em;
@@ -118,7 +159,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgb(var(--color-stone));
+  background: rgb(var(--muted-foreground) / 0.5);
   border-radius: 9999px;
 }
 
@@ -138,50 +179,16 @@ input[type='number'] {
 }
 
 /* =========================================================
-   Superficies de vidrio (glass) · toda la app
-   Vidrio opaco: blanco translúcido + blur, borde hairline y un
-   canto interior de 1px que da "peso". Sin sombras de elevación.
-   Consumido por Card, Modal, menús, toasts y el shell del admin.
+   Superficies "glass" legacy → sólidas (migración).
+   Las clases se conservan como alias de superficie sólida para
+   que ninguna pantalla quede sin fondo durante la migración a
+   los componentes shadcn/ui. Se retiran al migrar cada página.
    ========================================================= */
 .glass-panel,
 .glass-bar,
 .glass-card {
-  border: 1px solid rgb(var(--color-ink) / 0.06);
-  box-shadow: var(--glass-edge);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%);
-  backdrop-filter: blur(var(--glass-blur)) saturate(150%);
-}
-
-.glass-panel {
-  background-color: rgb(var(--glass-bg) / var(--glass-panel-alpha));
-}
-
-.glass-bar {
-  background-color: rgb(var(--glass-bg) / var(--glass-bar-alpha));
-}
-
-.glass-card {
-  background-color: rgb(var(--glass-bg) / var(--glass-alpha));
-}
-
-/* Sin soporte de backdrop-filter: caer a la superficie del tema. */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .glass-panel,
-  .glass-bar,
-  .glass-card {
-    background-color: rgb(var(--color-surface) / 0.96);
-  }
-}
-
-/* Preferencia del usuario por menos transparencia (iOS/macOS). */
-@media (prefers-reduced-transparency: reduce) {
-  .glass-panel,
-  .glass-bar,
-  .glass-card {
-    background-color: rgb(var(--color-surface) / 0.98);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
+  background-color: rgb(var(--card));
+  border: 1px solid rgb(var(--border));
 }
 
 /* Voz de libro mayor: cifras (dinero, cantidades, códigos) en mono tabular. */

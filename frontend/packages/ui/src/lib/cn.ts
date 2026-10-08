@@ -1,16 +1,10 @@
-export type ClassValue = string | number | null | false | undefined | ClassValue[];
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
-/** Une clases condicionales sin dependencias externas. */
-export function cn(...values: ClassValue[]): string {
-  const out: string[] = [];
-  for (const value of values) {
-    if (!value) continue;
-    if (Array.isArray(value)) {
-      const nested = cn(...value);
-      if (nested) out.push(nested);
-    } else {
-      out.push(String(value));
-    }
-  }
-  return out.join(' ');
+/**
+ * Une clases condicionales con resolución de conflictos Tailwind
+ * (clsx + tailwind-merge). Firma compatible con la anterior `cn`.
+ */
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
 }
