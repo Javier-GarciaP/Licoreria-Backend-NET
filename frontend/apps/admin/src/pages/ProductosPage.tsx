@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Eye, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, Eye, Pencil, Plus, Trash2 } from 'lucide-react';
 import {
   ActionMenu,
   Button,
@@ -14,7 +14,6 @@ import {
   Input,
   Modal,
   ModalSection,
-  PageHeader,
   Pagination,
   Pill,
 } from '@licoreria/ui';
@@ -23,7 +22,6 @@ import { catalogoApi } from '@licoreria/api-client';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { CatalogoTabs } from '../components/CatalogoTabs';
 import { FolderPanel } from '../components/FolderTabs';
-import { InlineForm } from '../components/InlineForm';
 import { Can } from '../components/Rbac';
 import { FormularioProducto, type DatosProductoForm } from '../components/catalogo/FormularioProducto';
 import { mensajeDeError } from '../lib/api';
@@ -94,125 +92,136 @@ export function ProductosPage() {
     onError: (error) => toast.error('No se pudo eliminar', { description: mensajeDeError(error) }),
   });
 
+  const cerrarFormulario = () => {
+    setCreando(false);
+    setEditando(null);
+  };
+
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader
-        title="Catálogo"
-        subtitle="Productos y variantes con precios."
-        actions={
-          <Can permiso="catalog:write">
-            <Button onClick={() => { setCreando(true); setEditando(null); }}>Nuevo producto</Button>
-          </Can>
-        }
-      />
+    <div className="mx-auto flex max-w-page flex-col gap-4">
       <CatalogoTabs />
 
-      <FolderPanel className="flex flex-col gap-4">
-        {creando && (
-          <InlineForm title="Nuevo producto" onCancel={() => setCreando(false)}>
-            <FormularioProducto
-              categorias={categorias.data ?? []}
-              marcas={marcas.data ?? []}
-              unidades={unidades.data ?? []}
-              guardando={guardar.isPending}
-              onGuardar={(datos) => guardar.mutate(datos)}
-            />
-          </InlineForm>
-        )}
-
-        <Card className="border-0 bg-transparent shadow-none">
-          <CardHeader>
-            <CardTitle>Productos</CardTitle>
-            <div className="w-56">
-              <Input
-                placeholder="Buscar…"
-                value={busqueda}
-                onChange={(evento) => {
-                  setBusqueda(evento.target.value);
-                  setPage(1);
-                }}
-              />
-            </div>
-          </CardHeader>
-          <CardBody>
-            <DataTable<Producto>
-              rows={productos.data?.items ?? []}
-              loading={productos.isLoading}
-              rowKey={(producto) => producto.id}
-              empty="No hay productos."
-              expandirKey={editando?.id ?? null}
-              expandedRow={
-                editando
-                  ? (producto) =>
-                      producto.id === editando.id ? (
-                        <InlineForm title={`Editar · ${producto.nombre}`} onCancel={() => setEditando(null)}>
-                          <FormularioProducto
-                            producto={producto}
-                            categorias={categorias.data ?? []}
-                            marcas={marcas.data ?? []}
-                            unidades={unidades.data ?? []}
-                            guardando={guardar.isPending}
-                            onGuardar={(datos) => guardar.mutate(datos)}
-                          />
-                        </InlineForm>
-                      ) : null
-                  : undefined
-              }
-              columns={[
-                {
-                  key: 'nombre',
-                  header: 'Producto',
-                  render: (producto) => (
-                    <div>
-                      <p className="text-ink">{producto.nombre}</p>
-                      <p className="text-xs text-muted">{producto.categoriaNombre}</p>
-                    </div>
-                  ),
-                },
-                { key: 'tipo', header: 'Tipo', render: (producto) => <Pill>{producto.tipo}</Pill> },
-                { key: 'variantes', header: 'Variantes', align: 'center', render: (producto) => producto.variantes.length },
-                {
-                  key: 'precio',
-                  header: 'Precio venta',
-                  align: 'right',
-                  render: (producto) => {
-                    const precio = Math.min(...producto.variantes.map((variante) => variante.precioVentaUSD));
-                    return Number.isFinite(precio) ? formatUSD(precio) : '—';
-                  },
-                },
-                {
-                  key: 'acciones',
-                  header: '',
-                  align: 'right',
-                  render: (producto) => (
-                    <ActionMenu
-                      label={`Acciones de ${producto.nombre}`}
-                      options={[
-                        { label: 'Ver detalle', icon: <Eye size={15} />, onClick: () => setDetalle(producto) },
-                        {
-                          label: 'Editar',
-                          icon: <Pencil size={15} />,
-                          onClick: () => {
-                            setEditando(producto);
-                            setCreando(false);
-                          },
-                        },
-                        {
-                          label: 'Eliminar',
-                          icon: <Trash2 size={15} />,
-                          danger: true,
-                          onClick: () => setPorEliminar(producto),
-                        },
-                      ]}
+      <div className="flex flex-col">
+        <FolderPanel className="flex flex-col gap-4">
+          {creando || editando ? (
+            /* Panel independiente de producto (muchos campos, estilo editor). */
+            <section className="rounded-card border border-accent/40 bg-surface p-5 lg:p-6">
+              <div className="flex flex-wrap items-center gap-3">
+                <Button variant="ghost" size="sm" onClick={cerrarFormulario} aria-label="Volver">
+                  <ArrowLeft size={16} />
+                </Button>
+                <div>
+                  <p className="text-base font-medium tracking-tighter2 text-ink">
+                    {editando ? `Editar · ${editando.nombre}` : 'Nuevo producto'}
+                  </p>
+                  <p className="text-xs text-muted">
+                    Define el producto, su presentación y precios. La existencia parte de cero.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-5">
+                <FormularioProducto
+                  producto={editando}
+                  categorias={categorias.data ?? []}
+                  marcas={marcas.data ?? []}
+                  unidades={unidades.data ?? []}
+                  guardando={guardar.isPending}
+                  onCancelar={cerrarFormulario}
+                  onGuardar={(datos) => guardar.mutate(datos)}
+                />
+              </div>
+            </section>
+          ) : (
+            <Card className="border-0 bg-transparent shadow-none">
+              <CardHeader>
+                <CardTitle>Productos</CardTitle>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="w-56">
+                    <Input
+                      placeholder="Buscar…"
+                      value={busqueda}
+                      onChange={(evento) => {
+                        setBusqueda(evento.target.value);
+                        setPage(1);
+                      }}
                     />
-                  ),
-                },
-              ]}
-            />
-            <Pagination page={page} totalPages={productos.data?.totalPages ?? 1} onPageChange={setPage} />
-          </CardBody>
-        </Card>
-      </FolderPanel>
+                  </div>
+                  <Can permiso="catalog:write">
+                    <Button
+                      leftIcon={<Plus size={15} />}
+                      onClick={() => {
+                        setEditando(null);
+                        setCreando(true);
+                      }}
+                    >
+                      Nuevo producto
+                    </Button>
+                  </Can>
+                </div>
+              </CardHeader>
+              <CardBody>
+                <DataTable<Producto>
+                  rows={productos.data?.items ?? []}
+                  loading={productos.isLoading}
+                  rowKey={(producto) => producto.id}
+                  empty="No hay productos."
+                  columns={[
+                    {
+                      key: 'nombre',
+                      header: 'Producto',
+                      render: (producto) => (
+                        <div>
+                          <p className="text-ink">{producto.nombre}</p>
+                          <p className="text-xs text-muted">{producto.categoriaNombre}</p>
+                        </div>
+                      ),
+                    },
+                    { key: 'tipo', header: 'Tipo', render: (producto) => <Pill>{producto.tipo}</Pill> },
+                    { key: 'variantes', header: 'Variantes', align: 'center', render: (producto) => producto.variantes.length },
+                    {
+                      key: 'precio',
+                      header: 'Precio venta',
+                      align: 'right',
+                      render: (producto) => {
+                        const precio = Math.min(...producto.variantes.map((variante) => variante.precioVentaUSD));
+                        return Number.isFinite(precio) ? formatUSD(precio) : '—';
+                      },
+                    },
+                    {
+                      key: 'acciones',
+                      header: '',
+                      align: 'right',
+                      render: (producto) => (
+                        <ActionMenu
+                          label={`Acciones de ${producto.nombre}`}
+                          options={[
+                            { label: 'Ver detalle', icon: <Eye size={15} />, onClick: () => setDetalle(producto) },
+                            {
+                              label: 'Editar',
+                              icon: <Pencil size={15} />,
+                              onClick: () => {
+                                setEditando(producto);
+                                setCreando(false);
+                              },
+                            },
+                            {
+                              label: 'Eliminar',
+                              icon: <Trash2 size={15} />,
+                              danger: true,
+                              onClick: () => setPorEliminar(producto),
+                            },
+                          ]}
+                        />
+                      ),
+                    },
+                  ]}
+                />
+                <Pagination page={page} totalPages={productos.data?.totalPages ?? 1} onPageChange={setPage} />
+              </CardBody>
+            </Card>
+          )}
+        </FolderPanel>
+      </div>
 
       <Modal
         open={Boolean(detalle)}

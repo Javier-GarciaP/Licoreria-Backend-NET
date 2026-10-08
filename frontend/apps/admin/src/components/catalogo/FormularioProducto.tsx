@@ -68,6 +68,7 @@ export function FormularioProducto({
   marcas,
   unidades,
   guardando,
+  onCancelar,
   onGuardar,
 }: {
   producto?: Producto | null;
@@ -75,6 +76,7 @@ export function FormularioProducto({
   marcas: Marca[];
   unidades: UnidadMedida[];
   guardando: boolean;
+  onCancelar: () => void;
   onGuardar: (datos: FormularioProductoForm) => void;
 }) {
   const productoForm = useForm<FormularioProductoForm>({
@@ -84,48 +86,43 @@ export function FormularioProducto({
   const { fields, append, remove } = useFieldArray({ control: productoForm.control, name: 'variantes' });
 
   return (
-    <form
-      className="flex flex-col gap-3"
-      onSubmit={productoForm.handleSubmit(onGuardar)}
-      noValidate
-    >
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Input label="Nombre" error={productoForm.formState.errors.nombre?.message} {...productoForm.register('nombre')} />
-        <Input label="Descripción" {...productoForm.register('descripcion')} />
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <Select label="Categoría" error={productoForm.formState.errors.categoriaId?.message} {...productoForm.register('categoriaId')}>
-          <option value="">Selecciona…</option>
-          {categorias.map((categoria) => (
-            <option key={categoria.id} value={categoria.id}>
-              {categoria.nombre}
-            </option>
-          ))}
-        </Select>
-        <Select label="Marca" {...productoForm.register('marcaId')}>
-          <option value="">Sin marca</option>
-          {marcas.map((marca) => (
-            <option key={marca.id} value={marca.id}>
-              {marca.nombre}
-            </option>
-          ))}
-        </Select>
-      </div>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Select label="Tipo" {...productoForm.register('tipo')}>
-          <option value="Simple">Simple</option>
-          <option value="Preparado">Preparado</option>
-        </Select>
-        <Input label="Grado alcohólico" type="number" {...productoForm.register('gradoAlcoholico')} />
-        <Input label="Imagen (URL)" className="sm:col-span-2" {...productoForm.register('imagenUrl')} />
-      </div>
-      <label className="flex items-center gap-2 text-sm text-muted">
-        <input type="checkbox" {...productoForm.register('activo')} />
-        Activo
-      </label>
+    <form className="flex flex-col gap-5" onSubmit={productoForm.handleSubmit(onGuardar)} noValidate>
+      <section className="flex flex-col gap-2">
+        <p className="text-xs font-medium uppercase tracking-tighter2 text-muted">Datos generales</p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Input label="Nombre" error={productoForm.formState.errors.nombre?.message} {...productoForm.register('nombre')} />
+          <Input label="Descripción" {...productoForm.register('descripcion')} />
+          <Select label="Categoría" error={productoForm.formState.errors.categoriaId?.message} {...productoForm.register('categoriaId')}>
+            <option value="">Selecciona…</option>
+            {categorias.map((categoria) => (
+              <option key={categoria.id} value={categoria.id}>
+                {categoria.nombre}
+              </option>
+            ))}
+          </Select>
+          <Select label="Marca" {...productoForm.register('marcaId')}>
+            <option value="">Sin marca</option>
+            {marcas.map((marca) => (
+              <option key={marca.id} value={marca.id}>
+                {marca.nombre}
+              </option>
+            ))}
+          </Select>
+          <Select label="Tipo" {...productoForm.register('tipo')}>
+            <option value="Simple">Simple</option>
+            <option value="Preparado">Preparado</option>
+          </Select>
+          <Input label="Grado alcohólico" type="number" {...productoForm.register('gradoAlcoholico')} />
+          <Input label="Imagen (URL)" className="sm:col-span-2" {...productoForm.register('imagenUrl')} />
+        </div>
+        <label className="flex items-center gap-2 text-sm text-muted">
+          <input type="checkbox" {...productoForm.register('activo')} />
+          Activo
+        </label>
+      </section>
 
-      <div className="rounded-inner border border-hairline bg-elevated/30 p-3">
-        <div className="mb-2 flex items-center justify-between">
+      <section className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
           <p className="text-xs font-medium uppercase tracking-tighter2 text-muted">Variantes</p>
           <Button
             type="button"
@@ -133,15 +130,15 @@ export function FormularioProducto({
             variant="ghost"
             onClick={() => append({ nombre: '', sku: '', unidadMedidaId: '', precioCompraUSD: 0, precioVentaUSD: 0 })}
           >
-            Agregar
+            Agregar variante
           </Button>
         </div>
         {productoForm.formState.errors.variantes?.message && (
-          <p className="mb-2 text-xs text-danger-ink">{productoForm.formState.errors.variantes.message}</p>
+          <p className="text-xs text-danger-ink">{productoForm.formState.errors.variantes.message}</p>
         )}
         <div className="flex flex-col gap-2">
           {fields.map((field, indice) => (
-            <div key={field.id} className="grid grid-cols-2 gap-2 rounded-inner bg-surface p-3 sm:grid-cols-6">
+            <div key={field.id} className="grid grid-cols-2 gap-2 rounded-inner border border-hairline bg-elevated/30 p-3 sm:grid-cols-6">
               <Input placeholder="Nombre" {...productoForm.register(`variantes.${indice}.nombre`)} />
               <Input placeholder="SKU" {...productoForm.register(`variantes.${indice}.sku`)} />
               <Select aria-label="Unidad" {...productoForm.register(`variantes.${indice}.unidadMedidaId`)}>
@@ -160,9 +157,12 @@ export function FormularioProducto({
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
-      <div className="mt-1 flex justify-end gap-2">
+      <div className="flex justify-end gap-2 border-t border-hairline pt-4">
+        <Button variant="ghost" onClick={onCancelar}>
+          Cancelar
+        </Button>
         <Button type="submit" loading={guardando}>
           {producto ? 'Guardar cambios' : 'Crear producto'}
         </Button>
