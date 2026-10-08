@@ -1,5 +1,4 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
-import { cn } from '../lib/cn';
 import { Button as ButtonPrimitivo } from './ui/button';
 import { Spinner } from './ui/spinner';
 

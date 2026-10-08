@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Armchair, ArrowRight, Clock, Plus, User, Wallet } from 'lucide-react';
-import { Button, cn, Modal, Input } from '@licoreria/ui';
+import { Armchair, ArrowRight, Plus, User } from 'lucide-react';
+import { Button, Input, Modal } from '@licoreria/ui';
 import type { Cuenta, Mesa } from '@licoreria/types';
 import { clubApi, cuentasApi } from '@licoreria/api-client';
 import { useAuth } from '../../context/AuthContext';
@@ -51,7 +51,6 @@ export function AtenderView({ onEntrarCarta }: { onEntrarCarta: (cuenta: Cuenta)
   const cuentas = useMemo(() => susCuentas.data?.items ?? [], [susCuentas.data]);
 
   const mesasOcupadasPorMi = useMemo(() => {
-    const ids = new Set(cuentas.map((c) => c.sesionMesaId));
     return (mesas.data ?? []).filter((m) => m.cuentaId && cuentas.some((c) => c.id === m.cuentaId));
   }, [mesas.data, cuentas]);
 

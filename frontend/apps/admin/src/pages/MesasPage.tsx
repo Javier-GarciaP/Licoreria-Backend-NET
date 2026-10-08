@@ -20,8 +20,9 @@ import {
   UtensilsCrossed,
   Wallet,
 } from 'lucide-react';
-import { Button, cn, Pill, Skeleton } from '@licoreria/ui';
-import type { Cuenta, Mesa, Plano, PlanoElemento, Zona } from '@licoreria/types';
+import { Button, cn, Skeleton } from '@licoreria/ui';
+import type { Cuenta, Mesa, Plano, PlanoElemento } from '@licoreria/types';
+
 import { clubApi, cuentasApi, usuariosApi } from '@licoreria/api-client';
 import { MapaView, type EstadoMesaPlano } from '../components/mapa/MapaView';
 import { UNIT } from '../components/mapa/elementos';
@@ -147,10 +148,6 @@ export function MesasPage() {
   }, [listaMesas]);
 
   const saldoTotal = useMemo(() => cuentasAbiertas.reduce((acc, c) => acc + c.saldo, 0), [cuentasAbiertas]);
-  const ticketPromedio = useMemo(
-    () => (cuentasAbiertas.length > 0 ? cuentasAbiertas.reduce((acc, c) => acc + c.total, 0) / cuentasAbiertas.length : 0),
-    [cuentasAbiertas],
-  );
 
   const invalidar = () => {
     queryClient.invalidateQueries({ queryKey: ['mesas'] });
