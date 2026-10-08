@@ -126,6 +126,17 @@ body {
   background: transparent;
 }
 
+/* Inputs numéricos limpios: sin botones +/− nativos. */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 /* =========================================================
    Superficies de vidrio (glass) · toda la app
    Vidrio opaco: blanco translúcido + blur, borde hairline y un
