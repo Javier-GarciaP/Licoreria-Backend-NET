@@ -168,7 +168,7 @@ export function UsuariosPage() {
                   </option>
                 ))}
               </Select>
-              <label className="flex items-center gap-2 text-sm text-muted">
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
                 <input type="checkbox" {...usuarioForm.register('activo')} />
                 Activo
               </label>
@@ -229,7 +229,7 @@ export function UsuariosPage() {
                   error={usuarioForm.formState.errors.password?.message}
                   {...usuarioForm.register('password')}
                 />
-                <label className="flex items-center gap-2 text-sm text-muted">
+                <label className="flex items-center gap-2 text-sm text-muted-foreground">
                   <input type="checkbox" {...usuarioForm.register('activo')} />
                   Activo
                 </label>
@@ -258,8 +258,8 @@ export function UsuariosPage() {
                 header: 'Nombre',
                 render: (usuario) => (
                   <div>
-                    <p className="text-ink">{usuario.nombreCompleto}</p>
-                    <p className="text-xs text-muted">{usuario.email}</p>
+                    <p className="text-foreground">{usuario.nombreCompleto}</p>
+                    <p className="text-xs text-muted-foreground">{usuario.email}</p>
                   </div>
                 ),
               },
@@ -320,7 +320,7 @@ export function UsuariosPage() {
           </>
         }
       >
-        <p className="mb-3 text-sm text-muted">{cambiandoPassword?.nombreCompleto}</p>
+        <p className="mb-3 text-sm text-muted-foreground">{cambiandoPassword?.nombreCompleto}</p>
         <form
           id="form-password"
           onSubmit={passwordForm.handleSubmit((datos) =>
