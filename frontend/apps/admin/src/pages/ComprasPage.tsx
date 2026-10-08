@@ -4,7 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { CheckCircle2, Eye, Send, Truck, XCircle } from 'lucide-react';
 import {
+  ActionMenu,
   Button,
   Card,
   CardBody,
@@ -13,14 +15,18 @@ import {
   DataTable,
   Input,
   Modal,
+  ModalSection,
   PageHeader,
   Pagination,
   Pill,
   Select,
+  type ActionMenuOption,
 } from '@licoreria/ui';
 import type { EstadoOrdenCompra, OrdenCompra } from '@licoreria/types';
 import { comprasApi, inventarioApi, proveedoresApi } from '@licoreria/api-client';
 import { ComprasTabs } from '../components/ComprasTabs';
+import { FolderPanel } from '../components/FolderTabs';
+import { InlineForm } from '../components/InlineForm';
 import { mensajeDeError } from '../lib/api';
 import { formatDateTime, formatNumber, formatUSD } from '../lib/format';
 
@@ -145,223 +151,236 @@ export function ComprasPage() {
         }
       />
       <ComprasTabs />
+      <div className="flex flex-col">
+      <FolderPanel className="flex flex-col gap-4">
+        {creando && (
+          <InlineForm title="Nueva orden de compra" onCancel={() => setCreando(false)}>
+            <form
+              className="flex flex-col gap-3"
+              onSubmit={ordenForm.handleSubmit((d) => crear.mutate(d))}
+              noValidate
+            >
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Select label="Proveedor" error={ordenForm.formState.errors.proveedorId?.message} {...ordenForm.register('proveedorId')}>
+                  <option value="">Selecciona…</option>
+                  {proveedores.data?.map((proveedor) => (
+                    <option key={proveedor.id} value={proveedor.id}>
+                      {proveedor.nombre}
+                    </option>
+                  ))}
+                </Select>
+                <Input label="Observaciones" {...ordenForm.register('observaciones')} />
+              </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Órdenes</CardTitle>
-          <Select aria-label="Filtrar por estado" value={estado} onChange={(evento) => { setEstado(evento.target.value); setPage(1); }}>
-            <option value="">Todos los estados</option>
-            {ESTADOS.map((valor) => (
-              <option key={valor} value={valor}>
-                {valor}
-              </option>
-            ))}
-          </Select>
-        </CardHeader>
-        <CardBody>
-          <DataTable<OrdenCompra>
-            rows={ordenes.data?.items ?? []}
-            loading={ordenes.isLoading}
-            rowKey={(orden) => orden.id}
-            empty="No hay órdenes."
-            columns={[
-              { key: 'numero', header: 'Número', render: (orden) => <span className="text-ink">{orden.numero}</span> },
-              { key: 'proveedor', header: 'Proveedor', render: (orden) => orden.proveedorNombre },
-              { key: 'fecha', header: 'Fecha', render: (orden) => formatDateTime(orden.fecha) },
-              { key: 'estado', header: 'Estado', render: (orden) => <Pill tone={tono[orden.estado] ?? 'neutral'}>{orden.estado}</Pill> },
-              { key: 'total', header: 'Total', align: 'right', render: (orden) => formatUSD(orden.totalUSD) },
-              {
-                key: 'acciones',
-                header: '',
-                align: 'right',
-                render: (orden) => (
-                  <div className="flex justify-end gap-2">
-                    <Button size="sm" variant="ghost" onClick={() => setDetalle(orden)}>
-                      Ver
-                    </Button>
-                    {orden.estado === 'Borrador' && (
-                      <Button size="sm" variant="ghost" onClick={() => accion.mutate({ id: orden.id, op: 'aprobar' })}>
-                        Aprobar
-                      </Button>
-                    )}
-                    {orden.estado === 'Aprobada' && (
-                      <Button size="sm" variant="ghost" onClick={() => accion.mutate({ id: orden.id, op: 'enviar' })}>
-                        Enviar
-                      </Button>
-                    )}
-                    {(orden.estado === 'Enviada' || orden.estado === 'RecibidaParcial') && (
-                      <Button size="sm" onClick={() => abrirRecepcion(orden)}>
-                        Recepcionar
-                      </Button>
-                    )}
-                    {(orden.estado === 'Borrador' || orden.estado === 'Aprobada' || orden.estado === 'Enviada') && (
-                      <Button size="sm" variant="ghost" onClick={() => accion.mutate({ id: orden.id, op: 'cancelar' })}>
-                        Cancelar
-                      </Button>
-                    )}
-                  </div>
-                ),
-              },
-            ]}
-          />
-          <Pagination page={page} totalPages={ordenes.data?.totalPages ?? 1} onPageChange={setPage} />
-        </CardBody>
-      </Card>
-
-      <Modal
-        open={creando}
-        onClose={() => setCreando(false)}
-        title="Nueva orden de compra"
-        className="max-w-3xl"
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setCreando(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" form="form-orden" loading={crear.isPending}>
-              Crear orden
-            </Button>
-          </>
-        }
-      >
-        <form id="form-orden" className="flex flex-col gap-3" onSubmit={ordenForm.handleSubmit((d) => crear.mutate(d))} noValidate>
-          <Select label="Proveedor" error={ordenForm.formState.errors.proveedorId?.message} {...ordenForm.register('proveedorId')}>
-            <option value="">Selecciona…</option>
-            {proveedores.data?.map((proveedor) => (
-              <option key={proveedor.id} value={proveedor.id}>
-                {proveedor.nombre}
-              </option>
-            ))}
-          </Select>
-          <Input label="Observaciones" {...ordenForm.register('observaciones')} />
-
-          <div className="rounded-2xl border border-hairline p-3">
-            <div className="mb-2 flex items-center justify-between">
-              <p className="text-xs font-medium uppercase tracking-tighter2 text-muted">Líneas</p>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() => append({ varianteId: '', cantidad: 1, costoUnitarioUSD: 0 })}
-              >
-                Agregar
-              </Button>
-            </div>
-            {ordenForm.formState.errors.detalles?.message && (
-              <p className="mb-2 text-xs text-danger-ink">{ordenForm.formState.errors.detalles.message}</p>
-            )}
-            <div className="flex flex-col gap-2">
-              {fields.map((field, indice) => (
-                <div key={field.id} className="grid grid-cols-2 gap-2 rounded-2xl bg-elevated/30 p-3 sm:grid-cols-4">
-                  <Select aria-label="Variante" {...ordenForm.register(`detalles.${indice}.varianteId`)}>
-                    <option value="">Producto…</option>
-                    {stock.data?.items.map((item) => (
-                      <option key={item.varianteId} value={item.varianteId}>
-                        {item.productoNombre} · {item.sku}
-                      </option>
-                    ))}
-                  </Select>
-                  <Input type="number" placeholder="Cantidad" {...ordenForm.register(`detalles.${indice}.cantidad`)} />
-                  <Input type="number" placeholder="Costo USD" {...ordenForm.register(`detalles.${indice}.costoUnitarioUSD`)} />
-                  <Button type="button" variant="ghost" size="sm" onClick={() => remove(indice)}>
-                    Quitar
+              <div className="rounded-inner border border-hairline bg-elevated/30 p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-xs font-medium uppercase tracking-tighter2 text-muted">Líneas</p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => append({ varianteId: '', cantidad: 1, costoUnitarioUSD: 0 })}
+                  >
+                    Agregar
                   </Button>
                 </div>
-              ))}
-            </div>
-          </div>
-        </form>
-      </Modal>
-
-      <Modal open={Boolean(detalle)} onClose={() => setDetalle(null)} title={`Orden ${detalle?.numero ?? ''}`} className="max-w-2xl">
-        {detalle && (
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-3">
-              <Pill tone={tono[detalle.estado] ?? 'neutral'}>{detalle.estado}</Pill>
-              <span className="text-sm text-muted">{detalle.proveedorNombre}</span>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[520px] text-sm">
-                <thead>
-                  <tr className="text-left text-xs uppercase tracking-tighter2 text-muted">
-                    <th scope="col" className="py-2">SKU</th>
-                    <th scope="col" className="py-2 text-right">Cantidad</th>
-                    <th scope="col" className="py-2 text-right">Recibida</th>
-                    <th scope="col" className="py-2 text-right">Costo</th>
-                    <th scope="col" className="py-2 text-right">Subtotal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {detalle.detalles.map((item) => (
-                    <tr key={item.id} className="border-t border-hairline">
-                      <td className="py-2 text-ink">
-                        {item.nombre}
-                        <span className="ml-2 text-xs text-muted">{item.sku}</span>
-                      </td>
-                      <td className="py-2 text-right text-muted">{formatNumber(item.cantidad)}</td>
-                      <td className="py-2 text-right text-muted">{formatNumber(item.cantidadRecibida)}</td>
-                      <td className="py-2 text-right text-muted">{formatUSD(item.costoUnitarioUSD)}</td>
-                      <td className="py-2 text-right text-ink">{formatUSD(item.subtotalUSD)}</td>
-                    </tr>
+                {ordenForm.formState.errors.detalles?.message && (
+                  <p className="mb-2 text-xs text-danger-ink">{ordenForm.formState.errors.detalles.message}</p>
+                )}
+                <div className="flex flex-col gap-2">
+                  {fields.map((field, indice) => (
+                    <div key={field.id} className="grid grid-cols-2 gap-2 rounded-inner bg-surface p-3 sm:grid-cols-4">
+                      <Select aria-label="Variante" {...ordenForm.register(`detalles.${indice}.varianteId`)}>
+                        <option value="">Producto…</option>
+                        {stock.data?.items.map((item) => (
+                          <option key={item.varianteId} value={item.varianteId}>
+                            {item.productoNombre} · {item.sku}
+                          </option>
+                        ))}
+                      </Select>
+                      <Input type="number" placeholder="Cantidad" {...ordenForm.register(`detalles.${indice}.cantidad`)} />
+                      <Input type="number" placeholder="Costo USD" {...ordenForm.register(`detalles.${indice}.costoUnitarioUSD`)} />
+                      <Button type="button" variant="ghost" size="sm" onClick={() => remove(indice)}>
+                        Quitar
+                      </Button>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="ghost" onClick={() => setCreando(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" loading={crear.isPending}>
+                  Crear orden
+                </Button>
+              </div>
+            </form>
+          </InlineForm>
         )}
-      </Modal>
+
+        <Card className="border-0 bg-transparent shadow-none">
+          <CardHeader>
+            <CardTitle>Órdenes</CardTitle>
+            <Select aria-label="Filtrar por estado" value={estado} onChange={(evento) => { setEstado(evento.target.value); setPage(1); }}>
+              <option value="">Todos los estados</option>
+              {ESTADOS.map((valor) => (
+                <option key={valor} value={valor}>
+                  {valor}
+                </option>
+              ))}
+            </Select>
+          </CardHeader>
+          <CardBody>
+            <DataTable<OrdenCompra>
+              rows={ordenes.data?.items ?? []}
+              loading={ordenes.isLoading}
+              rowKey={(orden) => orden.id}
+              empty="No hay órdenes."
+              expandirKey={recepcionando?.id ?? null}
+              expandedRow={
+                recepcionando
+                  ? (orden) =>
+                      orden.id === recepcionando.id ? (
+                        <InlineForm title={`Recepcionar · ${orden.numero}`} onCancel={() => setRecepcionando(null)}>
+                          <div className="flex flex-col gap-3">
+                            <Input
+                              label="Observaciones"
+                              value={recepcionObs}
+                              onChange={(evento) => setRecepcionObs(evento.target.value)}
+                            />
+                            <div className="flex flex-col gap-2">
+                              {recepcionando.detalles.map((item) => {
+                                const pendiente = Math.max(0, item.cantidad - item.cantidadRecibida);
+                                return (
+                                  <div key={item.id} className="flex items-center justify-between gap-3 rounded-inner bg-elevated/40 px-3 py-2">
+                                    <div>
+                                      <p className="text-sm text-ink">
+                                        {item.nombre} <span className="text-xs text-muted">{item.sku}</span>
+                                      </p>
+                                      <p className="text-xs text-muted">Pendiente: {formatNumber(pendiente)}</p>
+                                    </div>
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      max={pendiente}
+                                      aria-label={`Recibir ${item.sku}`}
+                                      value={recepcionQty[item.id] ?? ''}
+                                      onChange={(evento) =>
+                                        setRecepcionQty((actuales) => ({
+                                          ...actuales,
+                                          [item.id]: String(Math.min(pendiente, Math.max(0, Number(evento.target.value)))),
+                                        }))
+                                      }
+                                      className="num h-9 w-24 rounded-control border border-hairline bg-surface px-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent/50"
+                                    />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <div className="flex justify-end gap-2">
+                              <Button variant="ghost" onClick={() => setRecepcionando(null)}>
+                                Cancelar
+                              </Button>
+                              <Button
+                                disabled={Object.values(recepcionQty).every((valor) => Number(valor) <= 0)}
+                                loading={recepcionar.isPending}
+                                onClick={() => recepcionando && recepcionar.mutate(recepcionando)}
+                              >
+                                Registrar recepción
+                              </Button>
+                            </div>
+                          </div>
+                        </InlineForm>
+                      ) : null
+                  : undefined
+              }
+              columns={[
+                { key: 'numero', header: 'Número', render: (orden) => <span className="text-ink">{orden.numero}</span> },
+                { key: 'proveedor', header: 'Proveedor', render: (orden) => orden.proveedorNombre },
+                { key: 'fecha', header: 'Fecha', render: (orden) => formatDateTime(orden.fecha) },
+                { key: 'estado', header: 'Estado', render: (orden) => <Pill tone={tono[orden.estado] ?? 'neutral'}>{orden.estado}</Pill> },
+                { key: 'total', header: 'Total', align: 'right', render: (orden) => formatUSD(orden.totalUSD) },
+                {
+                  key: 'acciones',
+                  header: '',
+                  align: 'right',
+                  render: (orden) => {
+                    const opciones: ActionMenuOption[] = [
+                      { label: 'Ver detalle', icon: <Eye size={15} />, onClick: () => setDetalle(orden) },
+                    ];
+                    if (orden.estado === 'Borrador') {
+                      opciones.push({ label: 'Aprobar', icon: <CheckCircle2 size={15} />, onClick: () => accion.mutate({ id: orden.id, op: 'aprobar' }) });
+                      opciones.push({ label: 'Cancelar', icon: <XCircle size={15} />, danger: true, onClick: () => accion.mutate({ id: orden.id, op: 'cancelar' }) });
+                    } else if (orden.estado === 'Aprobada') {
+                      opciones.push({ label: 'Enviar', icon: <Send size={15} />, onClick: () => accion.mutate({ id: orden.id, op: 'enviar' }) });
+                      opciones.push({ label: 'Cancelar', icon: <XCircle size={15} />, danger: true, onClick: () => accion.mutate({ id: orden.id, op: 'cancelar' }) });
+                    } else if (orden.estado === 'Enviada' || orden.estado === 'RecibidaParcial') {
+                      opciones.push({ label: 'Recepcionar', icon: <Truck size={15} />, onClick: () => abrirRecepcion(orden) });
+                      if (orden.estado === 'Enviada') {
+                        opciones.push({ label: 'Cancelar', icon: <XCircle size={15} />, danger: true, onClick: () => accion.mutate({ id: orden.id, op: 'cancelar' }) });
+                      }
+                    }
+                    return <ActionMenu label={`Acciones de ${orden.numero}`} options={opciones} />;
+                  },
+                },
+              ]}
+            />
+            <Pagination page={page} totalPages={ordenes.data?.totalPages ?? 1} onPageChange={setPage} />
+          </CardBody>
+        </Card>
+      </FolderPanel>
+      </div>
 
       <Modal
-        open={Boolean(recepcionando)}
-        onClose={() => setRecepcionando(null)}
-        title={`Recepcionar orden ${recepcionando?.numero ?? ''}`}
-        className="max-w-2xl"
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setRecepcionando(null)}>
-              Cancelar
-            </Button>
-            <Button
-              disabled={Object.values(recepcionQty).every((valor) => Number(valor) <= 0)}
-              loading={recepcionar.isPending}
-              onClick={() => recepcionando && recepcionar.mutate(recepcionando)}
-            >
-              Registrar recepción
-            </Button>
-          </>
-        }
+        open={Boolean(detalle)}
+        onClose={() => setDetalle(null)}
+        title={`Orden ${detalle?.numero ?? ''}`}
+        size="lg"
+        backdrop="none"
       >
-        {recepcionando && (
-          <div className="flex flex-col gap-3">
-            <Input label="Observaciones" value={recepcionObs} onChange={(evento) => setRecepcionObs(evento.target.value)} />
-            <div className="flex flex-col gap-2">
-              {recepcionando.detalles.map((item) => {
-                const pendiente = Math.max(0, item.cantidad - item.cantidadRecibida);
-                return (
-                  <div key={item.id} className="flex items-center justify-between gap-3 rounded-2xl bg-elevated/40 px-3 py-2">
-                    <div>
-                      <p className="text-sm text-ink">
-                        {item.nombre} <span className="text-xs text-muted">{item.sku}</span>
-                      </p>
-                      <p className="text-xs text-muted">Pendiente: {formatNumber(pendiente)}</p>
-                    </div>
-                    <input
-                      type="number"
-                      min={0}
-                      max={pendiente}
-                      aria-label={`Recibir ${item.sku}`}
-                      value={recepcionQty[item.id] ?? ''}
-                      onChange={(evento) =>
-                        setRecepcionQty((actuales) => ({
-                          ...actuales,
-                          [item.id]: String(Math.min(pendiente, Math.max(0, Number(evento.target.value)))),
-                        }))
-                      }
-                      className="h-9 w-24 rounded-control border border-hairline bg-surface px-3 text-sm text-ink"
-                    />
-                  </div>
-                );
-              })}
+        {detalle && (
+          <div className="flex flex-col gap-5">
+            <div className="flex flex-wrap items-center gap-3">
+              <Pill tone={tono[detalle.estado] ?? 'neutral'}>{detalle.estado}</Pill>
+              <span className="text-sm text-muted">{detalle.proveedorNombre}</span>
+              <span className="text-sm text-muted">{formatDateTime(detalle.fecha)}</span>
+            </div>
+            <ModalSection title="Líneas">
+              <div className="overflow-x-auto rounded-inner border border-hairline">
+                <table className="w-full min-w-[520px] text-sm">
+                  <thead>
+                    <tr className="bg-elevated/60 text-left text-xs uppercase tracking-tighter2 text-muted">
+                      <th scope="col" className="px-4 py-2.5">SKU</th>
+                      <th scope="col" className="px-4 py-2.5 text-right">Cantidad</th>
+                      <th scope="col" className="px-4 py-2.5 text-right">Recibida</th>
+                      <th scope="col" className="px-4 py-2.5 text-right">Costo</th>
+                      <th scope="col" className="px-4 py-2.5 text-right">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detalle.detalles.map((item) => (
+                      <tr key={item.id} className="border-t border-hairline">
+                        <td className="px-4 py-2.5 text-ink">
+                          {item.nombre}
+                          <span className="ml-2 text-xs text-muted">{item.sku}</span>
+                        </td>
+                        <td className="num px-4 py-2.5 text-right text-muted">{formatNumber(item.cantidad)}</td>
+                        <td className="num px-4 py-2.5 text-right text-muted">{formatNumber(item.cantidadRecibida)}</td>
+                        <td className="num px-4 py-2.5 text-right text-muted">{formatUSD(item.costoUnitarioUSD)}</td>
+                        <td className="num px-4 py-2.5 text-right text-ink">{formatUSD(item.subtotalUSD)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </ModalSection>
+            <div className="flex justify-end border-t border-hairline pt-3">
+              <div className="flex items-baseline gap-3">
+                <span className="text-sm text-muted">Total</span>
+                <span className="num text-lg font-medium text-ink">{formatUSD(detalle.totalUSD)}</span>
+              </div>
             </div>
           </div>
         )}
