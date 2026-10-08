@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import {
   ActionMenu,
+  BubbleModal,
   Button,
   Card,
   CardBody,
@@ -21,7 +22,6 @@ import { catalogoApi } from '@licoreria/api-client';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { CatalogoTabs } from '../components/CatalogoTabs';
 import { FolderPanel } from '../components/FolderTabs';
-import { InlineForm } from '../components/InlineForm';
 import { mensajeDeError } from '../lib/api';
 
 const esquemaSimple = z.object({
@@ -64,6 +64,8 @@ function FormularioSimple({
 
 export function CatalogosPage() {
   const queryClient = useQueryClient();
+  const botonCategoriaRef = useRef<HTMLSpanElement>(null);
+  const botonMarcaRef = useRef<HTMLSpanElement>(null);
   const [categoriaCreando, setCategoriaCreando] = useState(false);
   const [categoriaEditando, setCategoriaEditando] = useState<Categoria | null>(null);
   const [categoriaEliminar, setCategoriaEliminar] = useState<Categoria | null>(null);
@@ -166,37 +168,20 @@ export function CatalogosPage() {
         <Card className="border-0 bg-transparent shadow-none">
           <CardHeader>
             <CardTitle>Categorías</CardTitle>
-            <Button
-              size="sm"
-              leftIcon={<Plus size={15} />}
-              onClick={() => {
-                setCategoriaEditando(null);
-                setCategoriaCreando(true);
-              }}
-            >
-              Nueva
-            </Button>
-          </CardHeader>
-          <CardBody className="flex flex-col gap-2">
-            {(categoriaCreando || categoriaEditando) && (
-              <InlineForm
-                title={categoriaEditando ? `Editar · ${categoriaEditando.nombre}` : 'Nueva categoría'}
-                onCancel={() => {
-                  setCategoriaCreando(false);
+            <span ref={botonCategoriaRef}>
+              <Button
+                size="sm"
+                leftIcon={<Plus size={15} />}
+                onClick={() => {
                   setCategoriaEditando(null);
+                  setCategoriaCreando(true);
                 }}
               >
-                <FormularioSimple
-                  inicial={
-                    categoriaEditando
-                      ? { nombre: categoriaEditando.nombre, descripcion: categoriaEditando.descripcion ?? '', activo: categoriaEditando.activo }
-                      : VACIO
-                  }
-                  guardando={guardarCategoria.isPending}
-                  onGuardar={(datos) => guardarCategoria.mutate(datos)}
-                />
-              </InlineForm>
-            )}
+                Nueva
+              </Button>
+            </span>
+          </CardHeader>
+          <CardBody className="flex flex-col gap-2">
             {categorias.isLoading ? (
               <Skeleton className="h-24 w-full" />
             ) : (
@@ -228,37 +213,20 @@ export function CatalogosPage() {
         <Card className="border-0 bg-transparent shadow-none">
           <CardHeader>
             <CardTitle>Marcas</CardTitle>
-            <Button
-              size="sm"
-              leftIcon={<Plus size={15} />}
-              onClick={() => {
-                setMarcaEditando(null);
-                setMarcaCreando(true);
-              }}
-            >
-              Nueva
-            </Button>
-          </CardHeader>
-          <CardBody className="flex flex-col gap-2">
-            {(marcaCreando || marcaEditando) && (
-              <InlineForm
-                title={marcaEditando ? `Editar · ${marcaEditando.nombre}` : 'Nueva marca'}
-                onCancel={() => {
-                  setMarcaCreando(false);
+            <span ref={botonMarcaRef}>
+              <Button
+                size="sm"
+                leftIcon={<Plus size={15} />}
+                onClick={() => {
                   setMarcaEditando(null);
+                  setMarcaCreando(true);
                 }}
               >
-                <FormularioSimple
-                  inicial={
-                    marcaEditando
-                      ? { nombre: marcaEditando.nombre, descripcion: marcaEditando.descripcion ?? '', activo: marcaEditando.activo }
-                      : VACIO
-                  }
-                  guardando={guardarMarca.isPending}
-                  onGuardar={(datos) => guardarMarca.mutate(datos)}
-                />
-              </InlineForm>
-            )}
+                Nueva
+              </Button>
+            </span>
+          </CardHeader>
+          <CardBody className="flex flex-col gap-2">
             {marcas.isLoading ? (
               <Skeleton className="h-24 w-full" />
             ) : (
@@ -288,6 +256,46 @@ export function CatalogosPage() {
         </Card>
       </FolderPanel>
       </div>
+
+      <BubbleModal
+        open={categoriaCreando || Boolean(categoriaEditando)}
+        onClose={() => {
+          setCategoriaCreando(false);
+          setCategoriaEditando(null);
+        }}
+        title={categoriaEditando ? `Editar · ${categoriaEditando.nombre}` : 'Nueva categoría'}
+        anchor={botonCategoriaRef.current}
+      >
+        <FormularioSimple
+          inicial={
+            categoriaEditando
+              ? { nombre: categoriaEditando.nombre, descripcion: categoriaEditando.descripcion ?? '', activo: categoriaEditando.activo }
+              : VACIO
+          }
+          guardando={guardarCategoria.isPending}
+          onGuardar={(datos) => guardarCategoria.mutate(datos)}
+        />
+      </BubbleModal>
+
+      <BubbleModal
+        open={marcaCreando || Boolean(marcaEditando)}
+        onClose={() => {
+          setMarcaCreando(false);
+          setMarcaEditando(null);
+        }}
+        title={marcaEditando ? `Editar · ${marcaEditando.nombre}` : 'Nueva marca'}
+        anchor={botonMarcaRef.current}
+      >
+        <FormularioSimple
+          inicial={
+            marcaEditando
+              ? { nombre: marcaEditando.nombre, descripcion: marcaEditando.descripcion ?? '', activo: marcaEditando.activo }
+              : VACIO
+          }
+          guardando={guardarMarca.isPending}
+          onGuardar={(datos) => guardarMarca.mutate(datos)}
+        />
+      </BubbleModal>
 
       <ConfirmDialog
         open={Boolean(categoriaEliminar)}

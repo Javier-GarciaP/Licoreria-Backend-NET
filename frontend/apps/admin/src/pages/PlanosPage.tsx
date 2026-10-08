@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Map as MapIcon, Plus, Star, Trash2 } from 'lucide-react';
-import { Button, Input, Modal, Skeleton } from '@licoreria/ui';
+import { BubbleModal, Button, Input, Skeleton } from '@licoreria/ui';
 import type { Plano } from '@licoreria/types';
 import { clubApi } from '@licoreria/api-client';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -15,6 +15,8 @@ export function PlanosPage() {
   const queryClient = useQueryClient();
   const [creando, setCreando] = useState(false);
   const [porEliminar, setPorEliminar] = useState<Plano | null>(null);
+  const [nombreNuevo, setNombreNuevo] = useState('');
+  const botonNuevoRef = useRef<HTMLSpanElement>(null);
 
   const planos = useQuery({ queryKey: ['planos'], queryFn: clubApi.planos });
 
@@ -56,9 +58,11 @@ export function PlanosPage() {
         <p className="text-sm text-muted">
           {planos.data?.length ?? 0} {planos.data?.length === 1 ? 'mapa' : 'mapas'} del local
         </p>
-        <Button onClick={() => setCreando(true)}>
-          <Plus size={16} /> Nuevo plano
-        </Button>
+        <span ref={botonNuevoRef}>
+          <Button onClick={() => setCreando(true)}>
+            <Plus size={16} /> Nuevo plano
+          </Button>
+        </span>
       </div>
 
       {planos.isLoading ? (
@@ -145,7 +149,40 @@ export function PlanosPage() {
         </div>
       )}
 
-      <ModalCrearPlano open={creando} onClose={() => setCreando(false)} onCrear={(v) => crear.mutate(v)} cargando={crear.isPending} />
+      <BubbleModal
+        open={creando}
+        onClose={() => setCreando(false)}
+        title="Nuevo plano"
+        anchor={botonNuevoRef.current}
+      >
+        <div className="flex flex-col gap-2">
+          <Input
+            label="Nombre del plano"
+            value={nombreNuevo}
+            autoFocus
+            onChange={(evento) => setNombreNuevo(evento.target.value)}
+            onKeyDown={(evento) => {
+              if (evento.key === 'Enter' && nombreNuevo.trim().length >= 2) {
+                evento.preventDefault();
+                crear.mutate(nombreNuevo.trim());
+              }
+            }}
+          />
+        </div>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setCreando(false)}>
+            Cancelar
+          </Button>
+          <Button
+            size="sm"
+            disabled={nombreNuevo.trim().length < 2}
+            loading={crear.isPending}
+            onClick={() => crear.mutate(nombreNuevo.trim())}
+          >
+            Crear y abrir
+          </Button>
+        </div>
+      </BubbleModal>
       <ConfirmDialog
         open={Boolean(porEliminar)}
         title="Eliminar mapa"
@@ -156,38 +193,5 @@ export function PlanosPage() {
         onConfirm={() => porEliminar && eliminar.mutate(porEliminar.id)}
       />
     </div>
-  );
-}
-
-function ModalCrearPlano({
-  open,
-  onClose,
-  onCrear,
-  cargando,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onCrear: (nombre: string) => void;
-  cargando: boolean;
-}) {
-  const [valor, setValor] = useState('');
-  return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title="Nuevo plano"
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button disabled={valor.trim().length < 2} loading={cargando} onClick={() => onCrear(valor.trim())}>
-            Crear y abrir
-          </Button>
-        </>
-      }
-    >
-      <Input label="Nombre del plano" value={valor} onChange={(evento) => setValor(evento.target.value)} />
-    </Modal>
   );
 }
