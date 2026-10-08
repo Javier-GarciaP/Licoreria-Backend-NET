@@ -12,8 +12,8 @@ function Protegido({ children }: { children: React.ReactNode }) {
 
   if (inicializando) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-canvas">
-        <p className="text-sm text-muted">Cargando…</p>
+      <div className="flex min-h-dvh items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">Cargando…</p>
       </div>
     );
   }

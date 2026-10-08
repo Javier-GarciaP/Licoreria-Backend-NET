@@ -42,14 +42,14 @@ export function LoginPage() {
   const usarCuenta = (cuenta: (typeof CUENTAS_DEMO)[number]) => void autenticar(cuenta.email, cuenta.password);
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-canvas px-4 py-10">
+    <div className="flex min-h-dvh items-center justify-center bg-background px-4 py-10">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-card bg-accent text-2xl text-on-pastel shadow-glow">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-2xl text-primary-foreground">
             &#127863;
           </div>
-          <h1 className="text-xl font-medium tracking-tightest text-ink">Servicio</h1>
-          <p className="mt-1 text-sm text-muted">Mesoneros · Barra · Cocina</p>
+          <h1 className="text-xl font-medium tracking-tightest text-foreground">Servicio</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Mesoneros · Barra · Cocina</p>
         </div>
 
         <Card className="p-6">
@@ -63,7 +63,7 @@ export function LoginPage() {
         </Card>
 
         <div className="mt-6">
-          <p className="mb-2 text-center text-xs text-muted">Entrar como</p>
+          <p className="mb-2 text-center text-xs text-muted-foreground">Entrar como</p>
           <div className="flex flex-wrap justify-center gap-1.5">
             {CUENTAS_DEMO.map((cuenta) => (
               <button
@@ -71,16 +71,16 @@ export function LoginPage() {
                 type="button"
                 onClick={() => usarCuenta(cuenta)}
                 className={cn(
-                  'rounded-pill border border-hairline px-3 py-1.5 text-xs text-muted transition',
-                  'hover:border-accent hover:bg-accent/15 hover:text-accent-ink',
+                  'rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground transition',
+                  'hover:border-primary hover:bg-primary/15 hover:text-foreground',
                 )}
               >
                 {cuenta.rol}
               </button>
             ))}
           </div>
-          <p className="mt-3 text-center text-[11px] text-muted">
-            Contraseña demo: <span className="num text-ink">demo123</span>
+          <p className="mt-3 text-center text-[11px] text-muted-foreground">
+            Contraseña demo: <span className="num text-foreground">demo123</span>
           </p>
         </div>
       </div>

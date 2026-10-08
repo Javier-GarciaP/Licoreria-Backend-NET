@@ -48,41 +48,41 @@ export function Chat() {
         onClick={() => setAbierto((v) => !v)}
         className={cn(
           'fixed bottom-5 right-5 z-50 flex h-12 w-12 items-center justify-center rounded-full shadow-card transition',
-          abierto ? 'bg-ink text-canvas' : 'bg-accent text-on-pastel hover:bg-accent/90',
+          abierto ? 'bg-ink text-canvas' : 'bg-primary text-primary-foreground hover:bg-primary/90',
         )}
       >
         {abierto ? <X size={20} /> : <MessageCircle size={20} />}
       </button>
 
       {abierto && (
-        <div className="fixed bottom-20 right-5 z-50 flex h-[26rem] w-[20rem] flex-col overflow-hidden rounded-2xl border border-hairline bg-surface/95 shadow-card backdrop-blur">
-          <div className="flex items-center gap-2 border-b border-hairline px-4 py-3">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/25 text-accent-ink">
+        <div className="fixed bottom-20 right-5 z-50 flex h-[26rem] w-[20rem] flex-col overflow-hidden rounded-lg border border-border bg-card/95 shadow-card backdrop-blur">
+          <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/25 text-foreground">
               <MessageCircle size={14} />
             </span>
             <div>
-              <p className="text-sm font-medium text-ink">Chat del personal</p>
-              <p className="text-[10px] text-success-ink">● en vivo</p>
+              <p className="text-sm font-medium text-foreground">Chat del personal</p>
+              <p className="text-[10px] text-success-fg">● en vivo</p>
             </div>
           </div>
 
           <div ref={listaRef} className="app-scroll min-h-0 flex-1 overflow-y-auto px-3 py-3">
             {mensajes.isLoading ? (
-              <p className="py-8 text-center text-xs text-muted">Cargando…</p>
+              <p className="py-8 text-center text-xs text-muted-foreground">Cargando…</p>
             ) : (mensajes.data?.length ?? 0) === 0 ? (
-              <p className="py-8 text-center text-xs text-muted">Sin mensajes todavía.</p>
+              <p className="py-8 text-center text-xs text-muted-foreground">Sin mensajes todavía.</p>
             ) : (
               <ul className="flex flex-col gap-2">
                 {mensajes.data?.map((m) => (
                   <li key={m.id} className={cn('flex flex-col', esMio(m) ? 'items-end' : 'items-start')}>
                     <div
                       className={cn(
-                        'max-w-[85%] rounded-2xl px-3 py-2',
-                        esMio(m) ? 'rounded-br-sm bg-accent/20' : 'rounded-bl-sm bg-elevated/60',
+                        'max-w-[85%] rounded-lg px-3 py-2',
+                        esMio(m) ? 'rounded-br-sm bg-primary/20' : 'rounded-bl-sm bg-muted/60',
                       )}
                     >
-                      <p className="text-xs leading-snug text-ink">{m.mensaje}</p>
-                      <p className={cn('mt-0.5 text-[10px]', esMio(m) ? 'text-accent-ink' : 'text-muted')}>
+                      <p className="text-xs leading-snug text-foreground">{m.mensaje}</p>
+                      <p className={cn('mt-0.5 text-[10px]', esMio(m) ? 'text-foreground' : 'text-muted-foreground')}>
                         {esMio(m) ? 'Tú' : m.autorNombre} · {etiquetaRol(m.rol)} · {formatTime(m.creadoEn)}
                       </p>
                     </div>
@@ -93,7 +93,7 @@ export function Chat() {
           </div>
 
           <form
-            className="flex items-center gap-2 border-t border-hairline p-2"
+            className="flex items-center gap-2 border-t border-border p-2"
             onSubmit={(e) => {
               e.preventDefault();
               if (texto.trim().length === 0 || enviar.isPending) return;
@@ -105,13 +105,13 @@ export function Chat() {
               value={texto}
               onChange={(e) => setTexto(e.target.value)}
               placeholder="Escribe un mensaje…"
-              className="h-9 min-w-0 flex-1 rounded-control border border-hairline bg-surface px-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent/50"
+              className="h-9 min-w-0 flex-1 rounded-control border border-border bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/50"
             />
             <button
               type="submit"
               aria-label="Enviar"
               disabled={texto.trim().length === 0 || enviar.isPending}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-on-pastel transition disabled:opacity-40"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground transition disabled:opacity-40"
             >
               <Send size={15} />
             </button>

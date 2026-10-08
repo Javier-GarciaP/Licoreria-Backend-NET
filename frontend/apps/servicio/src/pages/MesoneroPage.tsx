@@ -83,31 +83,31 @@ export function MesoneroPage() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-canvas p-4 lg:p-6">
+    <div className="flex min-h-dvh flex-col bg-background p-4 lg:p-6">
       {/* Header */}
-      <header className="flex items-center gap-3 border-b border-hairline pb-4">
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/20 text-accent-ink">
+      <header className="flex items-center gap-3 border-b border-border pb-4">
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-foreground">
           <UserRound size={18} />
         </span>
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-ink">{usuario?.nombreCompleto}</p>
-          <p className="text-[11px] text-muted">{etiquetaRol(usuario?.rolDominio)}</p>
+          <p className="truncate text-sm font-medium text-foreground">{usuario?.nombreCompleto}</p>
+          <p className="text-[11px] text-muted-foreground">{etiquetaRol(usuario?.rolDominio)}</p>
         </div>
 
         <div className="ml-auto flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-pill border border-hairline bg-surface/60 px-3 py-1.5 num text-xs text-ink">
-            <Clock3 size={14} className="text-accent-ink" /> {hora}
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card/60 px-3 py-1.5 num text-xs text-foreground">
+            <Clock3 size={14} className="text-foreground" /> {hora}
           </span>
 
           <button
             type="button"
             aria-label={`Notificaciones (${notificaciones.length})`}
             onClick={() => setNotificaciones([])}
-            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-hairline text-ink transition hover:bg-ink/5"
+            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-border text-foreground transition hover:bg-accent/10"
           >
             <Bell size={17} />
             {notificaciones.length > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 num text-[10px] text-on-pastel">
+              <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 num text-[10px] text-primary-foreground">
                 {notificaciones.length}
               </span>
             )}
@@ -117,7 +117,7 @@ export function MesoneroPage() {
             type="button"
             aria-label="Salir"
             onClick={() => void logout()}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-hairline text-muted transition hover:border-danger/40 hover:text-danger-ink"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground transition hover:border-destructive/40 hover:text-destructive-fg"
           >
             <LogOut size={17} />
           </button>
@@ -126,9 +126,9 @@ export function MesoneroPage() {
 
       {/* Notificaciones desplegables */}
       {notificaciones.length > 0 && (
-        <div className="absolute right-6 top-16 z-40 flex w-72 flex-col gap-1 rounded-2xl border border-hairline bg-surface/95 p-2 shadow-card backdrop-blur">
+        <div className="absolute right-6 top-16 z-40 flex w-72 flex-col gap-1 rounded-lg border border-border bg-card/95 p-2 shadow-card backdrop-blur">
           {notificaciones.map((n) => (
-            <p key={n.id} className="rounded-inner bg-accent/10 px-3 py-2 text-xs text-ink">
+            <p key={n.id} className="rounded-inner bg-primary/10 px-3 py-2 text-xs text-foreground">
               {n.texto}
             </p>
           ))}

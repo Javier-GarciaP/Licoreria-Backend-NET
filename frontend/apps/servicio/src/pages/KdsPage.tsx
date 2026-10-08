@@ -111,31 +111,31 @@ export function KdsPage() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-canvas p-4 lg:p-6">
+    <div className="flex min-h-dvh flex-col bg-background p-4 lg:p-6">
       {/* Header */}
-      <header className="flex items-center gap-3 border-b border-hairline pb-4">
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/20 text-accent-ink">
+      <header className="flex items-center gap-3 border-b border-border pb-4">
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-foreground">
           <UserRound size={18} />
         </span>
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-ink">{usuario?.nombreCompleto}</p>
-          <p className="text-[11px] text-muted">{etiquetaRol(usuario?.rolDominio)} · Tablero</p>
+          <p className="truncate text-sm font-medium text-foreground">{usuario?.nombreCompleto}</p>
+          <p className="text-[11px] text-muted-foreground">{etiquetaRol(usuario?.rolDominio)} · Tablero</p>
         </div>
 
         <div className="ml-auto flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-pill border border-hairline bg-surface/60 px-3 py-1.5 num text-xs text-ink">
-            <Clock3 size={14} className="text-accent-ink" /> {hora}
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card/60 px-3 py-1.5 num text-xs text-foreground">
+            <Clock3 size={14} className="text-foreground" /> {hora}
           </span>
 
-          <div className="flex rounded-pill border border-hairline p-0.5">
+          <div className="flex rounded-full border border-border p-0.5">
             {(['barra', 'cocina'] as const).map((valor) => (
               <button
                 key={valor}
                 type="button"
                 onClick={() => setArea(valor)}
                 className={cn(
-                  'inline-flex items-center gap-1.5 rounded-pill px-3 py-1.5 text-xs capitalize transition',
-                  area === valor ? 'bg-accent/20 font-medium text-accent-ink' : 'text-muted hover:text-ink',
+                  'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs capitalize transition',
+                  area === valor ? 'bg-primary/20 font-medium text-foreground' : 'text-muted-foreground hover:text-foreground',
                 )}
               >
                 {valor === 'barra' ? <Martini size={14} /> : <ChefHat size={14} />}
@@ -148,7 +148,7 @@ export function KdsPage() {
             type="button"
             aria-label="Salir"
             onClick={() => void logout()}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-hairline text-muted transition hover:border-danger/40 hover:text-danger-ink"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground transition hover:border-destructive/40 hover:text-destructive-fg"
           >
             <LogOut size={17} />
           </button>
@@ -158,7 +158,7 @@ export function KdsPage() {
       {/* Kanban */}
       <div className="flex min-h-0 flex-1 flex-col pt-4">
         {cuentas.isLoading ? (
-          <p className="py-16 text-center text-sm text-muted">Cargando…</p>
+          <p className="py-16 text-center text-sm text-muted-foreground">Cargando…</p>
         ) : (
           <DndContext onDragEnd={alSoltar}>
             <div className="grid min-h-0 flex-1 grid-cols-3 gap-3">
@@ -195,18 +195,18 @@ function ColumnaKanban({
     <section
       ref={setNodeRef}
       className={cn(
-        'flex min-h-0 flex-col rounded-2xl border border-hairline bg-surface/30 p-3 transition',
-        isOver && 'border-accent bg-accent/10',
+        'flex min-h-0 flex-col rounded-lg border border-border bg-card/30 p-3 transition',
+        isOver && 'border-primary bg-primary/10',
       )}
     >
       <header className="mb-2 flex items-center justify-between px-1">
-        <p className="text-xs font-medium uppercase tracking-tighter2 text-muted">{columna.titulo}</p>
-        <span className="num rounded-pill bg-elevated/60 px-2 py-0.5 text-[10px] text-ink">{items.length}</span>
+        <p className="text-xs font-medium uppercase tracking-tighter2 text-muted-foreground">{columna.titulo}</p>
+        <span className="num rounded-full bg-muted/60 px-2 py-0.5 text-[10px] text-foreground">{items.length}</span>
       </header>
 
       <div className="app-scroll flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
         {items.length === 0 ? (
-          <p className="rounded-inner border border-dashed border-hairline py-8 text-center text-xs text-muted">Vacío</p>
+          <p className="rounded-inner border border-dashed border-border py-8 text-center text-xs text-muted-foreground">Vacío</p>
         ) : (
           items.map((item) => <TarjetaItem key={item.id} item={item} moviendo={moviendo} />)
         )}
@@ -226,24 +226,24 @@ function TarjetaItem({ item, moviendo }: { item: ItemKds; moviendo: boolean }) {
       {...listeners}
       {...attributes}
       className={cn(
-        'cursor-grab touch-none rounded-inner border border-hairline bg-surface p-3 shadow-soft transition active:cursor-grabbing',
-        isDragging && 'rotate-2 border-accent opacity-80',
+        'cursor-grab touch-none rounded-inner border border-border bg-card p-3 shadow-soft transition active:cursor-grabbing',
+        isDragging && 'rotate-2 border-primary opacity-80',
         urgente && item.columna !== 'terminado' && 'ring-1 ring-danger/60',
       )}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-ink">
+          <p className="text-sm font-medium text-foreground">
             Mesa {item.mesa} · {item.cantidad}×
           </p>
-          <p className="mt-0.5 text-sm text-ink">{item.nombre}</p>
+          <p className="mt-0.5 text-sm text-foreground">{item.nombre}</p>
         </div>
-        <GripVertical size={14} className="mt-0.5 shrink-0 text-muted" />
+        <GripVertical size={14} className="mt-0.5 shrink-0 text-muted-foreground" />
       </div>
-      <p className={cn('mt-2 text-[11px]', urgente && item.columna !== 'terminado' ? 'text-danger-ink' : 'text-muted')}>
+      <p className={cn('mt-2 text-[11px]', urgente && item.columna !== 'terminado' ? 'text-destructive-fg' : 'text-muted-foreground')}>
         {minutos < 1 ? 'recién recibido' : `${minutos} min`} · {formatTime(item.fecha)}
       </p>
-      {moviendo && <p className="mt-1 text-[10px] text-muted">actualizando…</p>}
+      {moviendo && <p className="mt-1 text-[10px] text-muted-foreground">actualizando…</p>}
     </div>
   );
 }

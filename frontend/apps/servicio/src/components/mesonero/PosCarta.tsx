@@ -198,68 +198,68 @@ export function PosCarta({
   return (
     <div className="flex h-full min-h-0 flex-col">
       {/* Header */}
-      <header className="flex items-center gap-3 border-b border-hairline pb-3">
+      <header className="flex items-center gap-3 border-b border-border pb-3">
         <button
           type="button"
           aria-label="Volver"
           onClick={onVolver}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-hairline text-ink transition hover:bg-ink/5"
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-foreground transition hover:bg-accent/10"
         >
           <ArrowLeft size={18} />
         </button>
         <div className="min-w-0">
-          <p className="truncate text-base font-medium text-ink">{cuentaViva.nombreMesa}</p>
-          <p className="truncate text-xs text-muted">
+          <p className="truncate text-base font-medium text-foreground">{cuentaViva.nombreMesa}</p>
+          <p className="truncate text-xs text-muted-foreground">
             {cuentaViva.cliente ? `Cliente: ${cuentaViva.cliente}` : 'Sin cliente'}
           </p>
         </div>
         <div className="ml-auto text-right">
-          <p className="text-[11px] text-muted">Saldo</p>
-          <p className="num text-lg font-medium text-accent-ink">{formatUSD(cuentaViva.saldo)}</p>
+          <p className="text-[11px] text-muted-foreground">Saldo</p>
+          <p className="num text-lg font-medium text-foreground">{formatUSD(cuentaViva.saldo)}</p>
         </div>
       </header>
 
       {/* Cuerpo: comanda | menú | carta por categorías */}
       <div className="grid min-h-0 flex-1 grid-cols-[18rem_minmax(0,1fr)_16rem] gap-3 pt-3">
         {/* Izquierda: comanda */}
-        <aside className="flex min-h-0 flex-col rounded-2xl border border-hairline bg-surface/40 p-3">
-          <p className="text-[11px] font-medium uppercase tracking-tighter2 text-muted">Comanda</p>
+        <aside className="flex min-h-0 flex-col rounded-lg border border-border bg-card/40 p-3">
+          <p className="text-[11px] font-medium uppercase tracking-tighter2 text-muted-foreground">Comanda</p>
           <div className="app-scroll mt-2 min-h-0 flex-1 overflow-y-auto pr-1">
             {lineas.length === 0 ? (
-              <p className="py-8 text-center text-xs text-muted">Agrega productos del menú.</p>
+              <p className="py-8 text-center text-xs text-muted-foreground">Agrega productos del menú.</p>
             ) : (
               <ul className="flex flex-col gap-2">
                 {grupos.map((grupo) => (
                   <li key={grupo}>
-                    <p className="sticky top-0 bg-surface/90 py-1 text-[10px] font-medium uppercase tracking-tighter2 text-accent-ink backdrop-blur">
+                    <p className="sticky top-0 bg-card/90 py-1 text-[10px] font-medium uppercase tracking-tighter2 text-foreground backdrop-blur">
                       {grupo}
                     </p>
                     <ul className="flex flex-col gap-1.5">
                       {lineas
                         .filter((l) => l.grupo === grupo)
                         .map((l) => (
-                          <li key={l.key} className="rounded-inner bg-elevated/40 px-2.5 py-2">
+                          <li key={l.key} className="rounded-inner bg-muted/40 px-2.5 py-2">
                             <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0">
-                                <p className="truncate text-xs text-ink">
+                                <p className="truncate text-xs text-foreground">
                                   {l.cantidad} × {l.nombre}
-                                  <span className="text-muted"> · {l.varianteNombre}</span>
+                                  <span className="text-muted-foreground"> · {l.varianteNombre}</span>
                                 </p>
                                 <div className="mt-1 flex items-center gap-2">
                                   <button
                                     type="button"
                                     onClick={() => alternarArea(l.key)}
                                     className={cn(
-                                      'rounded-pill border px-1.5 py-0.5 text-[10px]',
-                                      l.area === 'Barra' ? 'border-accent/40 text-accent-ink' : 'border-warning/40 text-warning-ink',
+                                      'rounded-full border px-1.5 py-0.5 text-[10px]',
+                                      l.area === 'Barra' ? 'border-primary/40 text-foreground' : 'border-warning/40 text-warning-fg',
                                     )}
                                   >
                                     {l.area === 'Barra' ? '🍸 Barra' : '🍽 Cocina'}
                                   </button>
                                   {l.enviada ? (
-                                    <span className="text-[10px] text-success-ink">enviada</span>
+                                    <span className="text-[10px] text-success-fg">enviada</span>
                                   ) : (
-                                    <button type="button" onClick={() => alternarCortesia(l.key)} className="text-[10px] text-muted hover:text-ink">
+                                    <button type="button" onClick={() => alternarCortesia(l.key)} className="text-[10px] text-muted-foreground hover:text-foreground">
                                       {l.esCortesia ? 'cortesía' : 'cortesía?'}
                                     </button>
                                   )}
@@ -269,7 +269,7 @@ export function PosCarta({
                                 type="button"
                                 aria-label="Quitar"
                                 onClick={() => quitar(l.key)}
-                                className="text-muted transition hover:text-danger-ink"
+                                className="text-muted-foreground transition hover:text-destructive-fg"
                               >
                                 <X size={13} />
                               </button>
@@ -279,15 +279,15 @@ export function PosCarta({
                                 <button
                                   type="button"
                                   onClick={() => cambiarCantidad(l.key, -1)}
-                                  className="flex h-6 w-6 items-center justify-center rounded-full border border-hairline text-ink"
+                                  className="flex h-6 w-6 items-center justify-center rounded-full border border-border text-foreground"
                                 >
                                   <Minus size={11} />
                                 </button>
-                                <span className="num w-5 text-center text-xs text-ink">{l.cantidad}</span>
+                                <span className="num w-5 text-center text-xs text-foreground">{l.cantidad}</span>
                                 <button
                                   type="button"
                                   onClick={() => cambiarCantidad(l.key, 1)}
-                                  className="flex h-6 w-6 items-center justify-center rounded-full border border-hairline text-ink"
+                                  className="flex h-6 w-6 items-center justify-center rounded-full border border-border text-foreground"
                                 >
                                   <Plus size={11} />
                                 </button>
@@ -301,10 +301,10 @@ export function PosCarta({
               </ul>
             )}
           </div>
-          <div className="mt-2 flex flex-col gap-2 border-t border-hairline pt-2">
+          <div className="mt-2 flex flex-col gap-2 border-t border-border pt-2">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-muted">Total</span>
-              <span className="num text-sm font-medium text-ink">{formatUSD(total)}</span>
+              <span className="text-muted-foreground">Total</span>
+              <span className="num text-sm font-medium text-foreground">{formatUSD(total)}</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <Button size="sm" variant="ghost" disabled={enviar.isPending || !lineas.some((l) => !l.enviada && l.area === 'Barra')} onClick={() => enviarArea('Barra')}>
@@ -318,25 +318,25 @@ export function PosCarta({
         </aside>
 
         {/* Centro: menú */}
-        <div className="flex min-h-0 flex-col rounded-2xl border border-hairline bg-surface/40 p-3">
+        <div className="flex min-h-0 flex-col rounded-lg border border-border bg-card/40 p-3">
           <div className="flex items-center gap-2">
             <label className="relative flex flex-1 items-center">
-              <Search size={15} className="absolute left-3 text-muted" />
+              <Search size={15} className="absolute left-3 text-muted-foreground" />
               <input
                 aria-label="Buscar producto"
                 placeholder="Buscar…"
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                className="h-9 w-full rounded-control border border-hairline bg-surface pl-9 pr-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent/50"
+                className="h-9 w-full rounded-control border border-border bg-card pl-9 pr-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/50"
               />
             </label>
-            <span className="num text-xs text-muted">{productos.data?.totalItems ?? 0}</span>
+            <span className="num text-xs text-muted-foreground">{productos.data?.totalItems ?? 0}</span>
           </div>
           <div className="app-scroll mt-2 min-h-0 flex-1 overflow-y-auto pr-1">
             {productos.isLoading ? (
-              <p className="py-10 text-center text-sm text-muted">Cargando…</p>
+              <p className="py-10 text-center text-sm text-muted-foreground">Cargando…</p>
             ) : (productos.data?.items?.length ?? 0) === 0 ? (
-              <p className="py-10 text-center text-sm text-muted">Sin productos en esta categoría.</p>
+              <p className="py-10 text-center text-sm text-muted-foreground">Sin productos en esta categoría.</p>
             ) : (
               <div className="grid grid-cols-2 gap-2 xl:grid-cols-3">
                 {productos.data?.items?.map((producto) => (
@@ -344,9 +344,9 @@ export function PosCarta({
                     key={producto.id}
                     type="button"
                     onClick={() => seleccionarProducto(producto)}
-                    className="flex flex-col overflow-hidden rounded-inner border border-hairline bg-surface transition hover:border-accent hover:bg-accent/10"
+                    className="flex flex-col overflow-hidden rounded-inner border border-border bg-card transition hover:border-primary hover:bg-primary/10"
                   >
-                    <div className="flex h-20 items-center justify-center bg-elevated/50">
+                    <div className="flex h-20 items-center justify-center bg-muted/50">
                       {producto.imagenUrl ? (
                         <img src={producto.imagenUrl} alt={producto.nombre} className="h-full w-full object-cover" loading="lazy" />
                       ) : (
@@ -354,8 +354,8 @@ export function PosCarta({
                       )}
                     </div>
                     <div className="flex flex-col gap-0.5 p-2">
-                      <p className="line-clamp-1 text-xs font-medium text-ink">{producto.nombre}</p>
-                      <p className="num text-[11px] text-accent-ink">{formatUSD(producto.variantes[0]?.precioVentaUSD ?? 0)}</p>
+                      <p className="line-clamp-1 text-xs font-medium text-foreground">{producto.nombre}</p>
+                      <p className="num text-[11px] text-foreground">{formatUSD(producto.variantes[0]?.precioVentaUSD ?? 0)}</p>
                     </div>
                   </button>
                 ))}
@@ -365,15 +365,15 @@ export function PosCarta({
         </div>
 
         {/* Derecha: carta por categorías */}
-        <aside className="app-scroll min-h-0 overflow-y-auto rounded-2xl border border-hairline bg-surface/40 p-3">
-          <p className="text-[11px] font-medium uppercase tracking-tighter2 text-muted">Carta</p>
+        <aside className="app-scroll min-h-0 overflow-y-auto rounded-lg border border-border bg-card/40 p-3">
+          <p className="text-[11px] font-medium uppercase tracking-tighter2 text-muted-foreground">Carta</p>
           <div className="mt-2 flex flex-col gap-1">
             <button
               type="button"
               onClick={() => setCategoriaId(null)}
               className={cn(
-                'rounded-pill px-3 py-1.5 text-left text-sm transition',
-                categoriaId === null ? 'bg-accent/20 font-medium text-accent-ink' : 'text-ink hover:bg-ink/5',
+                'rounded-full px-3 py-1.5 text-left text-sm transition',
+                categoriaId === null ? 'bg-primary/20 font-medium text-foreground' : 'text-foreground hover:bg-accent/10',
               )}
             >
               Todo
@@ -384,8 +384,8 @@ export function PosCarta({
                 type="button"
                 onClick={() => setCategoriaId(categoria.id)}
                 className={cn(
-                  'rounded-pill px-3 py-1.5 text-left text-sm transition',
-                  categoriaId === categoria.id ? 'bg-accent/20 font-medium text-accent-ink' : 'text-ink hover:bg-ink/5',
+                  'rounded-full px-3 py-1.5 text-left text-sm transition',
+                  categoriaId === categoria.id ? 'bg-primary/20 font-medium text-foreground' : 'text-foreground hover:bg-accent/10',
                 )}
               >
                 {categoria.nombre}
@@ -396,7 +396,7 @@ export function PosCarta({
       </div>
 
       {/* Barra inferior de acciones */}
-      <footer className="mt-3 flex items-center gap-2 border-t border-hairline pt-3">
+      <footer className="mt-3 flex items-center gap-2 border-t border-border pt-3">
         <BotonAccion icon={<Percent size={16} />} label="Descuento" onClick={() => setPanel('descuento')} />
         <BotonAccion icon={<Calculator size={16} />} label="Calculadora" onClick={() => setPanel('calculadora')} />
         <BotonAccion icon={<Banknote size={16} />} label="Cajón" onClick={() => setPanel('cobrar')} />
@@ -404,8 +404,8 @@ export function PosCarta({
         <BotonAccion icon={<Divide size={16} />} label="Dividir" onClick={() => setPanel('dividir')} />
         <BotonAccion icon={<CircleDollarSign size={16} />} label="Cobrar" onClick={() => setPanel('cobrar')} />
         <div className="ml-auto flex items-center gap-2">
-          <span className="text-[11px] text-muted">Saldo</span>
-          <span className="num text-lg font-medium text-ink">{formatUSD(cuentaViva.saldo)}</span>
+          <span className="text-[11px] text-muted-foreground">Saldo</span>
+          <span className="num text-lg font-medium text-foreground">{formatUSD(cuentaViva.saldo)}</span>
         </div>
       </footer>
 
@@ -427,9 +427,9 @@ function BotonAccion({ icon, label, onClick }: { icon: React.ReactNode; label: s
     <button
       type="button"
       onClick={onClick}
-      className="flex flex-col items-center gap-1 rounded-card border border-hairline bg-surface/60 px-3 py-2 text-[11px] text-ink transition hover:border-accent hover:bg-accent/10"
+      className="flex flex-col items-center gap-1 rounded-xl border border-border bg-card/60 px-3 py-2 text-[11px] text-foreground transition hover:border-primary hover:bg-primary/10"
     >
-      <span className="text-accent-ink">{icon}</span>
+      <span className="text-foreground">{icon}</span>
       {label}
     </button>
   );
@@ -497,7 +497,7 @@ function Modales({
             readOnly
             aria-label="Resultado"
             value={calc}
-            className="num h-12 w-full rounded-control border border-hairline bg-elevated/40 px-3 text-right text-xl text-ink"
+            className="num h-12 w-full rounded-control border border-border bg-muted/40 px-3 text-right text-xl text-foreground"
           />
           <div className="mt-3 grid grid-cols-3 gap-2">
             {['7', '8', '9', '4', '5', '6', '1', '2', '3', '0', '.', 'C'].map((tecla) => (
@@ -505,7 +505,7 @@ function Modales({
                 key={tecla}
                 type="button"
                 onClick={() => setCalc((v) => (tecla === 'C' ? '' : v + tecla))}
-                className="h-11 rounded-control border border-hairline bg-surface text-sm text-ink transition hover:bg-ink/5"
+                className="h-11 rounded-control border border-border bg-card text-sm text-foreground transition hover:bg-accent/10"
               >
                 {tecla}
               </button>
@@ -542,8 +542,8 @@ function Modales({
           footer={pie('Dividir', () => onDividir(partes))}
         >
           <Input label="Partes" type="number" min={2} value={partes} onChange={(e) => setPartes(Math.max(2, Number(e.target.value)))} />
-          <p className="mt-2 text-xs text-muted">
-            Cada parte quedará por <span className="num text-ink">{formatUSD(saldo / Math.max(1, partes))}</span>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Cada parte quedará por <span className="num text-foreground">{formatUSD(saldo / Math.max(1, partes))}</span>
           </p>
         </Modal>
       )}
@@ -557,16 +557,16 @@ function Modales({
         >
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted">Saldo</span>
-              <span className="num font-medium text-ink">{formatUSD(saldo)}</span>
+              <span className="text-muted-foreground">Saldo</span>
+              <span className="num font-medium text-foreground">{formatUSD(saldo)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted">Descuento</span>
-              <span className="num text-danger-ink">−{formatUSD(descuento)}</span>
+              <span className="text-muted-foreground">Descuento</span>
+              <span className="num text-destructive-fg">−{formatUSD(descuento)}</span>
             </div>
-            <div className="flex items-center justify-between border-t border-hairline pt-2 text-sm">
-              <span className="font-medium text-ink">Total a cobrar</span>
-              <span className="num text-lg font-medium text-accent-ink">{formatUSD(saldo - descuento)}</span>
+            <div className="flex items-center justify-between border-t border-border pt-2 text-sm">
+              <span className="font-medium text-foreground">Total a cobrar</span>
+              <span className="num text-lg font-medium text-foreground">{formatUSD(saldo - descuento)}</span>
             </div>
             <Select label="Método" value={metodo} onChange={(e) => setMetodo(e.target.value)}>
               {metodos.map((m) => (
@@ -575,7 +575,7 @@ function Modales({
                 </option>
               ))}
             </Select>
-            <label className="flex items-center gap-2 text-xs text-muted">
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
               <input type="checkbox" checked={descuento > 0} onChange={(e) => setDescuento(e.target.checked ? Math.min(10, saldo) : 0)} />
               Aplicar descuento
             </label>
