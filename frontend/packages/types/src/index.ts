@@ -52,14 +52,6 @@ export interface UsuarioActual {
 
 export type TipoProducto = 'Simple' | 'Preparado';
 
-export interface PrecioVariante {
-  id: string;
-  listaPrecioId: string;
-  listaPrecioNombre: string;
-  moneda: Moneda;
-  precio: number;
-}
-
 export interface ProductoVariante {
   id: string;
   nombre: string;
@@ -70,7 +62,6 @@ export interface ProductoVariante {
   unidadMedidaNombre: string;
   activo: boolean;
   codigosBarras: string[];
-  precios: PrecioVariante[];
 }
 
 export interface Producto {
@@ -335,24 +326,6 @@ export interface QrMenu {
 
 /* ===================== Finanzas ===================== */
 
-export interface MonedaInfo {
-  codigo: string;
-  nombre: string;
-}
-
-export type TipoMovimientoTesoreria = 'Ingreso' | 'Egreso';
-
-export interface MovimientoTesoreria {
-  id: string;
-  tipo: TipoMovimientoTesoreria;
-  monto: number;
-  moneda: Moneda;
-  motivo: string;
-  referenciaTipo: string | null;
-  referenciaId: string | null;
-  fecha: string;
-}
-
 /* ===================== Ventas / Pagos ===================== */
 
 export interface MetodoPago {
@@ -485,6 +458,7 @@ export interface Cuenta {
   comandas: Comanda[];
   abonos: Abono[];
   divisiones: CuentaDivision[];
+  abiertaPorId: string | null;
 }
 
 /* ===================== Club ===================== */

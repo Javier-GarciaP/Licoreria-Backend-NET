@@ -222,6 +222,25 @@ public class ApiEndpointsTests
         Assert.True(p2.GetProperty("activo").GetBoolean());
     }
 
+    [Fact]
+    public async Task Cuenta_AlAbrirMesa_RegistraQuienLaAbrio()
+    {
+        var yo = await _factory.Client.GetAsync("/api/auth/me");
+        Assert.Equal(HttpStatusCode.OK, yo.StatusCode);
+        var yoBody = await JsonAsync(yo);
+        var miId = yoBody.GetProperty("id").GetGuid();
+
+        var abrir = await _factory.Client.PostAsJsonAsync("/api/v1/cuentas", new { nombreMesa = "Mesa 99", mesaId = (Guid?)null });
+        Assert.Equal(HttpStatusCode.Created, abrir.StatusCode);
+        var cuenta = await JsonAsync(abrir);
+        var cuentaId = cuenta.GetProperty("id").GetGuid();
+
+        var obtenida = await _factory.Client.GetAsync($"/api/v1/cuentas/{cuentaId}");
+        Assert.Equal(HttpStatusCode.OK, obtenida.StatusCode);
+        var body = await JsonAsync(obtenida);
+        Assert.Equal(miId, body.GetProperty("abiertaPorId").GetGuid());
+    }
+
     private async Task<JsonElement> ObtenerPlanosAsync()
     {
         var response = await _factory.Client.GetAsync("/api/v1/planos");

@@ -42,6 +42,7 @@ function crearCuenta(abonado = 0) {
     totalAbonado: abonado,
     saldo: 20 - abonado,
     abiertaEn: new Date().toISOString(),
+    abiertaPorId: null,
     comandas: [
       {
         id: 'c1',
@@ -132,7 +133,6 @@ function usarHandlers(opciones: { onComanda?: (body: unknown) => void; onAbono?:
                 unidadMedidaNombre: 'Unidad',
                 activo: true,
                 codigosBarras: [],
-                precios: [],
               },
             ],
           },

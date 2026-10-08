@@ -335,5 +335,6 @@ public sealed class ServicioCuentas : IServicioCuentas
                 d.Id,
                 d.Indice,
                 d.Monto,
-                d.Pagada)).ToList());
+                d.Pagada)).ToList(),
+            cuenta.CreatedBy);
 }

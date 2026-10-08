@@ -86,7 +86,7 @@ export const GRUPOS: NavGroup[] = [
     items: [
       { to: '/', label: 'Dashboard', icon: BarChart3, permiso: 'sales:read', end: true, primario: true, corto: 'Inicio', roles: CAJA },
       { to: '/pos', label: 'POS', icon: ShoppingCart, permiso: 'sales:write', primario: true, roles: CAJA },
-      { to: '/plano', label: 'Mesas', icon: Grid2x2, permiso: 'club:read', primario: true, roles: ['Administrador', 'Mesero'] },
+      { to: '/plano', label: 'Mesas', icon: Grid2x2, permiso: 'club:read', primario: true, roles: ['Administrador'] },
       {
         to: '/mesonero',
         label: 'Mesonero',
@@ -94,7 +94,7 @@ export const GRUPOS: NavGroup[] = [
         permiso: 'account:read',
         primario: true,
         corto: 'Mesonero',
-        roles: ['Administrador', 'Mesero', 'Cajero'],
+        roles: ['Mesero'],
       },
       { to: '/cuentas', label: 'Cuentas', icon: LayoutGrid, permiso: 'sales:read', roles: ['Administrador', 'Cajero', 'Mesero'] },
       { to: '/kds', label: 'KDS', icon: ChefHat, permiso: 'catalog:read', primario: true, corto: 'KDS', roles: ['Administrador', 'Barra', 'Cocina'] },
@@ -136,7 +136,6 @@ export const GRUPOS: NavGroup[] = [
     items: [
       { to: '/caja', label: 'Caja', icon: Wallet, permiso: 'cash:movement' },
       { to: '/finanzas', label: 'Tasas de cambio', icon: Coins, permiso: 'finance:read', end: true },
-      { to: '/finanzas/tesoreria', label: 'Tesorería', icon: Landmark, permiso: 'finance:read', oculto: true },
     ],
   },
   {

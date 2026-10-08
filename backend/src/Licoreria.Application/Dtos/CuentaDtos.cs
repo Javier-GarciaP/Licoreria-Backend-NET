@@ -62,7 +62,8 @@ public sealed record CuentaDto(
     DateTime AbiertaEn,
     IReadOnlyList<ComandaDto> Comandas,
     IReadOnlyList<AbonoDto> Abonos,
-    IReadOnlyList<CuentaDivisionDto> Divisiones);
+    IReadOnlyList<CuentaDivisionDto> Divisiones,
+    Guid? AbiertaPorId = null);
 
 public sealed record CuentaDivisionDto(
     Guid Id,

@@ -9,7 +9,7 @@ import { LoginPage } from './pages/LoginPage';
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
 const PosPage = lazy(() => import('./pages/PosPage').then((m) => ({ default: m.PosPage })));
-const PlanoPage = lazy(() => import('./pages/PlanoPage').then((m) => ({ default: m.PlanoPage })));
+const MesasPage = lazy(() => import('./pages/MesasPage').then((m) => ({ default: m.MesasPage })));
 const CuentasPage = lazy(() => import('./pages/CuentasPage').then((m) => ({ default: m.CuentasPage })));
 const CuentaPage = lazy(() => import('./pages/CuentaPage').then((m) => ({ default: m.CuentaPage })));
 const VentasPage = lazy(() => import('./pages/VentasPage').then((m) => ({ default: m.VentasPage })));
@@ -29,7 +29,6 @@ const EventosPage = lazy(() => import('./pages/EventosPage').then((m) => ({ defa
 const LocalPage = lazy(() => import('./pages/LocalPage').then((m) => ({ default: m.LocalPage })));
 const MenuMediaPage = lazy(() => import('./pages/MenuMediaPage').then((m) => ({ default: m.MenuMediaPage })));
 const TasasPage = lazy(() => import('./pages/TasasPage').then((m) => ({ default: m.TasasPage })));
-const TesoreriaPage = lazy(() => import('./pages/TesoreriaPage').then((m) => ({ default: m.TesoreriaPage })));
 const PlanosPage = lazy(() => import('./pages/PlanosPage').then((m) => ({ default: m.PlanosPage })));
 const ZonasMesasPage = lazy(() => import('./pages/ZonasMesasPage').then((m) => ({ default: m.ZonasMesasPage })));
 const SalonLayout = lazy(() => import('./pages/SalonLayout').then((m) => ({ default: m.SalonLayout })));
@@ -107,7 +106,7 @@ export default function App() {
       <Route element={<LayoutProtegido />}>
         <Route index element={<DashboardPage />} />
         <Route path="/pos" element={<PosPage />} />
-        <Route path="/plano" element={<PlanoPage />} />
+        <Route path="/plano" element={<MesasPage />} />
         <Route path="/mesonero" element={<SalonOperacionPage />} />
         <Route path="/cuentas" element={<CuentasPage />} />
         <Route path="/cuentas/:id" element={<CuentaPage />} />
@@ -128,7 +127,6 @@ export default function App() {
         <Route path="/contenido/local" element={<LocalPage />} />
         <Route path="/contenido/menu" element={<MenuMediaPage />} />
         <Route path="/finanzas" element={<TasasPage />} />
-        <Route path="/finanzas/tesoreria" element={<TesoreriaPage />} />
         <Route path="/salon" element={<SalonLayout />}>
           <Route index element={<PlanosPage />} />
           <Route path="zonas" element={<ZonasMesasPage />} />

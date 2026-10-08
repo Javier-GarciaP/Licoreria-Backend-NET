@@ -6,7 +6,7 @@
 export const INICIO_POR_ROL: Record<string, string> = {
   Administrador: '/',
   Cajero: '/pos',
-  Mesero: '/plano',
+  Mesero: '/mesonero',
   Barra: '/kds',
   Cocina: '/kds',
   Host: '/reservas',
