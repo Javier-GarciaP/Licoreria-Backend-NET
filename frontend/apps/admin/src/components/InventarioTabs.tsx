@@ -1,31 +1,10 @@
-import { NavLink } from 'react-router-dom';
-import { cn } from '@licoreria/ui';
+import { FolderTabs, type FolderTab } from './FolderTabs';
 
-const TABS = [
+const TABS: FolderTab[] = [
   { to: '/inventario', label: 'Existencias', end: true },
-  { to: '/inventario/kardex', label: 'Kardex', end: false },
-  { to: '/inventario/lotes', label: 'Lotes', end: false },
-  { to: '/inventario/tomas', label: 'Tomas físicas', end: false },
+  { to: '/inventario/kardex', label: 'Kardex' },
 ];
 
 export function InventarioTabs() {
-  return (
-    <nav aria-label="Secciones de inventario" className="flex flex-wrap gap-2">
-      {TABS.map((tab) => (
-        <NavLink
-          key={tab.to}
-          to={tab.to}
-          end={tab.end}
-          className={({ isActive }) =>
-            cn(
-              'rounded-pill border px-4 py-1.5 text-sm transition',
-              isActive ? 'border-accent text-accent-ink' : 'border-hairline text-muted hover:text-ink',
-            )
-          }
-        >
-          {tab.label}
-        </NavLink>
-      ))}
-    </nav>
-  );
+  return <FolderTabs tabs={TABS} ariaLabel="Secciones de inventario" />;
 }
