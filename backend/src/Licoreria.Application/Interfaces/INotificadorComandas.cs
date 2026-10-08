@@ -27,4 +27,9 @@ public interface INotificadorComandas
         string estado,
         Guid? cuentaId = null,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Difunde un mensaje del chat del personal al grupo <c>staff</c>.
+    /// </summary>
+    Task MensajeStaffAsync(Guid autorId, string autorNombre, string rol, string mensaje, CancellationToken cancellationToken = default);
 }

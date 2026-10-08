@@ -62,4 +62,15 @@ public sealed class NotificadorComandasSignalR : INotificadorComandas
             _hub.Clients.Group(GrupoMeseros).SendAsync("mesa:actualizada", payload, cancellationToken),
             _hub.Clients.Group(GrupoMesas).SendAsync("mesa:actualizada", payload, cancellationToken));
     }
+
+    public Task MensajeStaffAsync(
+        Guid autorId,
+        string autorNombre,
+        string rol,
+        string mensaje,
+        CancellationToken cancellationToken = default)
+    {
+        var payload = new { autorId, autorNombre, rol, mensaje };
+        return _hub.Clients.Group("staff").SendAsync("chat:recibido", payload, cancellationToken);
+    }
 }

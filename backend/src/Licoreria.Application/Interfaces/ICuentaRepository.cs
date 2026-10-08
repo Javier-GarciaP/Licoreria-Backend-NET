@@ -9,6 +9,7 @@ public interface ICuentaRepository
     Task<ResultadoPaginado<Cuenta>> ObtenerPaginadoAsync(
         PaginacionRequest paginacion,
         EstadoCuenta? estado = null,
+        Guid? usuarioId = null,
         CancellationToken cancellationToken = default);
 
     Task<Cuenta?> ObtenerConDetalleAsync(Guid id, CancellationToken cancellationToken = default);

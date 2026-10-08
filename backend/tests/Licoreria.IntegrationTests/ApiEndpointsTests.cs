@@ -230,7 +230,13 @@ public class ApiEndpointsTests
         var yoBody = await JsonAsync(yo);
         var miId = yoBody.GetProperty("id").GetGuid();
 
-        var abrir = await _factory.Client.PostAsJsonAsync("/api/v1/cuentas", new { nombreMesa = "Mesa 99", mesaId = (Guid?)null });
+        var abrir = await _factory.Client.PostAsJsonAsync("/api/v1/cuentas", new
+        {
+            nombreMesa = "Mesa 99",
+            mesaId = (Guid?)null,
+            cliente = "Cliente Prueba",
+            notas = "Prefiere la esquina"
+        });
         Assert.Equal(HttpStatusCode.Created, abrir.StatusCode);
         var cuenta = await JsonAsync(abrir);
         var cuentaId = cuenta.GetProperty("id").GetGuid();
@@ -239,6 +245,58 @@ public class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.OK, obtenida.StatusCode);
         var body = await JsonAsync(obtenida);
         Assert.Equal(miId, body.GetProperty("abiertaPorId").GetGuid());
+        Assert.Equal("Cliente Prueba", body.GetProperty("cliente").GetString());
+    }
+
+    [Fact]
+    public async Task Chat_EnviaYObtieneMensaje()
+    {
+        var enviar = await _factory.Client.PostAsJsonAsync("/api/v1/staff/chat", new { mensaje = "Comanda 5 lista en barra" });
+        Assert.Equal(HttpStatusCode.Created, enviar.StatusCode);
+        var enviado = await JsonAsync(enviar);
+        Assert.Equal("Comanda 5 lista en barra", enviado.GetProperty("mensaje").GetString());
+
+        var listado = await _factory.Client.GetAsync("/api/v1/staff/chat?limit=10");
+        Assert.Equal(HttpStatusCode.OK, listado.StatusCode);
+        var body = await JsonAsync(listado);
+        var encontrado = false;
+        for (var i = 0; i < body.GetArrayLength(); i += 1)
+        {
+            if (body[i].GetProperty("mensaje").GetString() == "Comanda 5 lista en barra")
+            {
+                encontrado = true;
+                break;
+            }
+        }
+
+        Assert.True(encontrado);
+    }
+
+    [Fact]
+    public async Task Item_SePuedeMoverAEnProceso()
+    {
+        var (varianteId, _) = await CrearProductoConStockAsync(5.0m, 5);
+
+        var abrir = await _factory.Client.PostAsJsonAsync("/api/v1/cuentas", new { nombreMesa = "Mesa Kanban" });
+        var cuenta = await JsonAsync(abrir);
+        var cuentaId = cuenta.GetProperty("id").GetGuid();
+
+        var comanda = await _factory.Client.PostAsJsonAsync($"/api/v1/cuentas/{cuentaId}/comandas", new
+        {
+            area = "Cocina",
+            items = new[] { new { varianteId, cantidad = 1, esCortesia = false } }
+        });
+        Assert.Equal(HttpStatusCode.OK, comanda.StatusCode);
+        var cuerpo = await JsonAsync(comanda);
+        var comandaId = cuerpo.GetProperty("comandas")[0].GetProperty("id").GetGuid();
+        var detalleId = cuerpo.GetProperty("comandas")[0].GetProperty("detalles")[0].GetProperty("id").GetGuid();
+
+        var mover = await _factory.Client.PutAsJsonAsync(
+            $"/api/v1/cuentas/{cuentaId}/comandas/{comandaId}/detalles/{detalleId}/estado",
+            new { estado = "EnProceso" });
+        Assert.Equal(HttpStatusCode.OK, mover.StatusCode);
+        var movido = await JsonAsync(mover);
+        Assert.Equal("EnProceso", movido.GetProperty("comandas")[0].GetProperty("detalles")[0].GetProperty("estado").GetString());
     }
 
     private async Task<JsonElement> ObtenerPlanosAsync()

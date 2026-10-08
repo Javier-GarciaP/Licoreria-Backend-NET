@@ -14,6 +14,7 @@ public interface IServicioCuentas
     Task<ResultadoPaginado<CuentaDto>> ObtenerCuentasAsync(
         PaginacionRequest paginacion,
         EstadoCuenta? estado = null,
+        Guid? usuarioId = null,
         CancellationToken cancellationToken = default);
 
     Task<CuentaDto?> ObtenerCuentaAsync(Guid id, CancellationToken cancellationToken = default);

@@ -31,5 +31,6 @@ public enum EstadoItemComanda
     Recibido = 1,
     Preparado = 2,
     Entregado = 3,
-    Cancelado = 4
+    Cancelado = 4,
+    EnProceso = 5
 }

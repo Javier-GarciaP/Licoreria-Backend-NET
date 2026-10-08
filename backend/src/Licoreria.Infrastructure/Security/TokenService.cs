@@ -35,7 +35,8 @@ public sealed class TokenService : ITokenService
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
             new(ClaimTypes.Name, usuario.NombreCompleto),
-            new(ClaimTypes.Email, usuario.Email)
+            new(ClaimTypes.Email, usuario.Email),
+            new("rolDominio", usuario.Rol.ToString())
         };
 
         foreach (var rol in usuario.Rol.ObtenerRoles())

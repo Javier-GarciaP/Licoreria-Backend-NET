@@ -23,6 +23,7 @@ public class CuentaRepository : ICuentaRepository
     public Task<ResultadoPaginado<Cuenta>> ObtenerPaginadoAsync(
         PaginacionRequest paginacion,
         EstadoCuenta? estado = null,
+        Guid? usuarioId = null,
         CancellationToken cancellationToken = default)
     {
         var consulta = ConDetalle().AsNoTracking().Where(c => !c.IsDeleted);
@@ -30,6 +31,11 @@ public class CuentaRepository : ICuentaRepository
         if (estado is not null)
         {
             consulta = consulta.Where(c => c.Estado == estado);
+        }
+
+        if (usuarioId is not null)
+        {
+            consulta = consulta.Where(c => c.CreatedBy == usuarioId);
         }
 
         return consulta.OrderByDescending(c => c.CreatedAt).PaginarAsync(paginacion, cancellationToken);

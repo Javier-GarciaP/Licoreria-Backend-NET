@@ -12,5 +12,11 @@ public class SesionMesa : BaseEntity
     public DateTime AbiertaEn { get; set; } = DateTime.UtcNow;
     public DateTime? CerradaEn { get; set; }
 
+    /// <summary>Nombre del cliente sentado en la mesa (anotado por el mesonero al abrir).</summary>
+    public string? Cliente { get; set; }
+
+    /// <summary>Anotaciones de la mesa (preferencias, pedidos especiales, etc.).</summary>
+    public string? Notas { get; set; }
+
     public Cuenta? Cuenta { get; set; }
 }

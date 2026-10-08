@@ -4,7 +4,9 @@ namespace Licoreria.Application.Dtos;
 
 public sealed record AbrirMesaDto(
     string NombreMesa,
-    Guid? MesaId = null);
+    Guid? MesaId = null,
+    string? Cliente = null,
+    string? Notas = null);
 
 public sealed record ComandaItemCrearDto(
     Guid VarianteId,
@@ -63,7 +65,8 @@ public sealed record CuentaDto(
     IReadOnlyList<ComandaDto> Comandas,
     IReadOnlyList<AbonoDto> Abonos,
     IReadOnlyList<CuentaDivisionDto> Divisiones,
-    Guid? AbiertaPorId = null);
+    Guid? AbiertaPorId = null,
+    string? Cliente = null);
 
 public sealed record CuentaDivisionDto(
     Guid Id,

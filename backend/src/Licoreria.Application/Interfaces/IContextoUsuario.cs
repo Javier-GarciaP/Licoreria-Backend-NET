@@ -9,6 +9,8 @@ public interface IContextoUsuario
 
     string? Email { get; }
 
+    string? RolDominio { get; }
+
     bool EstaAutenticado { get; }
 
     string? Ip { get; }

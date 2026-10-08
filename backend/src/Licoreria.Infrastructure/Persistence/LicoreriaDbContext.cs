@@ -19,7 +19,6 @@ public class LicoreriaDbContext : DbContext
     public DbSet<ProductoVariante> ProductoVariantes => Set<ProductoVariante>();
     public DbSet<CodigoBarras> CodigosBarras => Set<CodigoBarras>();
     public DbSet<ListaPrecio> ListasPrecio => Set<ListaPrecio>();
-    public DbSet<PrecioProducto> PreciosProducto => Set<PrecioProducto>();
     public DbSet<Receta> Recetas => Set<Receta>();
     public DbSet<Modificador> Modificadores => Set<Modificador>();
     public DbSet<ProductoModificador> ProductoModificadores => Set<ProductoModificador>();
@@ -27,7 +26,6 @@ public class LicoreriaDbContext : DbContext
     public DbSet<MovimientoInventario> MovimientosInventario => Set<MovimientoInventario>();
     public DbSet<Merma> Mermas => Set<Merma>();
     public DbSet<TasaCambio> TasasCambio => Set<TasaCambio>();
-    public DbSet<MovimientoTesoreria> MovimientosTesoreria => Set<MovimientoTesoreria>();
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Venta> Ventas => Set<Venta>();
@@ -81,6 +79,7 @@ public class LicoreriaDbContext : DbContext
     public DbSet<Entrada> Entradas => Set<Entrada>();
     public DbSet<PedidoAnticipado> PedidosAnticipados => Set<PedidoAnticipado>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<ChatMensaje> ChatMensajes => Set<ChatMensaje>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -29,6 +29,9 @@ public sealed class ContextoUsuarioHttp : IContextoUsuario
         => _accessor.HttpContext?.User.FindFirstValue(ClaimTypes.Email)
            ?? _accessor.HttpContext?.User.FindFirstValue("email");
 
+    public string? RolDominio
+        => _accessor.HttpContext?.User.FindFirstValue("rolDominio");
+
     public bool EstaAutenticado
         => _accessor.HttpContext?.User.Identity?.IsAuthenticated ?? false;
 

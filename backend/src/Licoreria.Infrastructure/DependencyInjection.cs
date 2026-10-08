@@ -44,7 +44,6 @@ public static class DependencyInjection
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IInventarioRepository, InventarioRepository>();
         services.AddScoped<ITasaCambioRepository, TasaCambioRepository>();
-        services.AddScoped<IMovimientoTesoreriaRepository, MovimientoTesoreriaRepository>();
         services.AddScoped<IVentaRepository, VentaRepository>();
         services.AddScoped<ICuentaRepository, CuentaRepository>();
         services.AddScoped<ISesionCajaRepository, SesionCajaRepository>();
@@ -65,9 +64,7 @@ public static class DependencyInjection
         // Generación de PDF del menú digital.
         services.AddSingleton<IGeneradorMenuPdf, GeneradorMenuPdfQuestPdf>();
 
-        services.AddScoped<IServicioProducto, ServicioProducto>();
         services.AddScoped<IServicioInventario, ServicioInventario>();
-        services.AddScoped<IServicioCuenta, ServicioCuenta>();
         services.AddScoped<IServicioAutenticacion, ServicioAutenticacion>();
         services.AddScoped<IServicioCatalogo, ServicioCatalogo>();
         services.AddScoped<IServicioUsuarios, ServicioUsuarios>();
@@ -84,14 +81,11 @@ public static class DependencyInjection
         services.AddScoped<IServicioCompras, ServicioCompras>();
         services.AddScoped<IServicioReportes, ServicioReportes>();
         services.AddScoped<IServicioAuditoria, ServicioAuditoria>();
+        services.AddScoped<IServicioChat, ServicioChat>();
 
         // =========================================================
         // Transient: servicios ligeros sin estado (validadores).
         // =========================================================
-        services.AddTransient<IValidator<SaludStockRequest>, SaludStockRequestValidator>();
-        services.AddTransient<IValidator<SkuRequest>, SkuRequestValidator>();
-        services.AddTransient<IValidator<MermaRequest>, MermaRequestValidator>();
-        services.AddTransient<IValidator<AbonoRequest>, AbonoRequestValidator>();
         services.AddTransient<IValidator<LoginDto>, LoginDtoValidator>();
         services.AddTransient<IValidator<ProductoCrearDto>, ProductoCrearDtoValidator>();
         services.AddTransient<IValidator<ProductoEditarDto>, ProductoEditarDtoValidator>();
@@ -106,14 +100,12 @@ public static class DependencyInjection
         services.AddTransient<IValidator<ListaPrecioCrearDto>, ListaPrecioCrearDtoValidator>();
         services.AddTransient<IValidator<ListaPrecioEditarDto>, ListaPrecioEditarDtoValidator>();
         services.AddTransient<IValidator<RecetaCrearDto>, RecetaCrearDtoValidator>();
-        services.AddTransient<IValidator<EstablecerPrecioDto>, EstablecerPrecioDtoValidator>();
         services.AddTransient<IValidator<ModificadorCrearDto>, ModificadorCrearDtoValidator>();
         services.AddTransient<IValidator<ModificadorEditarDto>, ModificadorEditarDtoValidator>();
         services.AddTransient<IValidator<AsignarModificadorDto>, AsignarModificadorDtoValidator>();
         services.AddTransient<IValidator<RegistrarMermaDto>, RegistrarMermaDtoValidator>();
         services.AddTransient<IValidator<AjusteInventarioDto>, AjusteInventarioDtoValidator>();
         services.AddTransient<IValidator<RegistrarTasaDto>, RegistrarTasaDtoValidator>();
-        services.AddTransient<IValidator<RegistrarMovimientoTesoreriaDto>, RegistrarMovimientoTesoreriaDtoValidator>();
         services.AddTransient<IValidator<RegistrarVentaDto>, RegistrarVentaDtoValidator>();
         services.AddTransient<IValidator<RegistrarPagoVentaDto>, RegistrarPagoVentaDtoValidator>();
         services.AddTransient<IValidator<RegistrarDevolucionDto>, RegistrarDevolucionDtoValidator>();
@@ -172,7 +164,6 @@ public static class DependencyInjection
         services.AddSingleton<GeneradorSku>();
         services.AddSingleton<CalculadoraCuenta>();
         services.AddSingleton<EvaluadorMerma>();
-        services.AddSingleton<ConversorMoneda>();
         services.AddSingleton<MaquinaEstadosComanda>();
         services.AddSingleton<DetectorConflictosReserva>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();

@@ -41,7 +41,9 @@ public sealed class ServicioCuentas : IServicioCuentas
         {
             NombreMesa = dto.NombreMesa,
             MesaId = dto.MesaId,
-            AbiertaEn = _reloj.UtcNow
+            AbiertaEn = _reloj.UtcNow,
+            Cliente = dto.Cliente,
+            Notas = dto.Notas
         };
 
         var cuenta = new Cuenta { SesionMesa = sesion };
@@ -60,9 +62,10 @@ public sealed class ServicioCuentas : IServicioCuentas
     public async Task<ResultadoPaginado<CuentaDto>> ObtenerCuentasAsync(
         PaginacionRequest paginacion,
         EstadoCuenta? estado = null,
+        Guid? usuarioId = null,
         CancellationToken cancellationToken = default)
     {
-        var pagina = await _cuentaRepository.ObtenerPaginadoAsync(paginacion, estado, cancellationToken);
+        var pagina = await _cuentaRepository.ObtenerPaginadoAsync(paginacion, estado, usuarioId, cancellationToken);
         var items = pagina.Items.Select(Mapear).ToList();
         return ResultadoPaginado<CuentaDto>.Crear(items, pagina.Page, pagina.PageSize, pagina.TotalItems);
     }
@@ -336,5 +339,6 @@ public sealed class ServicioCuentas : IServicioCuentas
                 d.Indice,
                 d.Monto,
                 d.Pagada)).ToList(),
-            cuenta.CreatedBy);
+            cuenta.CreatedBy,
+            cuenta.SesionMesa?.Cliente);
 }

@@ -23,8 +23,9 @@ public class CuentasController : ControllerBase
     public async Task<ActionResult<ResultadoPaginado<CuentaDto>>> Obtener(
         [FromQuery] PaginacionRequest paginacion,
         [FromQuery] EstadoCuenta? estado,
+        [FromQuery] Guid? usuarioId,
         CancellationToken cancellationToken)
-        => Ok(await _servicio.ObtenerCuentasAsync(paginacion, estado, cancellationToken));
+        => Ok(await _servicio.ObtenerCuentasAsync(paginacion, estado, usuarioId, cancellationToken));
 
     [HttpGet("{id:guid}")]
     [Authorize(Policy = Permisos.VentasLeer)]
