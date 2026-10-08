@@ -4,11 +4,25 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Button, Card, CardBody, CardHeader, CardTitle, Input, Modal, PageHeader, Pill, Skeleton } from '@licoreria/ui';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
+import {
+  ActionMenu,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  Input,
+  PageHeader,
+  Pill,
+  Skeleton,
+} from '@licoreria/ui';
 import type { Categoria, Marca } from '@licoreria/types';
 import { catalogoApi } from '@licoreria/api-client';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { CatalogoTabs } from '../components/CatalogoTabs';
+import { FolderPanel } from '../components/FolderTabs';
+import { InlineForm } from '../components/InlineForm';
 import { mensajeDeError } from '../lib/api';
 
 const esquemaSimple = z.object({
@@ -20,17 +34,43 @@ const esquemaSimple = z.object({
 type FormularioSimple = z.infer<typeof esquemaSimple>;
 const VACIO: FormularioSimple = { nombre: '', descripcion: '', activo: true };
 
+function FormularioSimple({
+  inicial,
+  guardando,
+  onGuardar,
+}: {
+  inicial: FormularioSimple;
+  guardando: boolean;
+  onGuardar: (datos: FormularioSimple) => void;
+}) {
+  const form = useForm<FormularioSimple>({ resolver: zodResolver(esquemaSimple), defaultValues: inicial });
+  return (
+    <form className="flex flex-col gap-3" onSubmit={form.handleSubmit(onGuardar)} noValidate>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Input label="Nombre" error={form.formState.errors.nombre?.message} {...form.register('nombre')} />
+        <Input label="Descripción" {...form.register('descripcion')} />
+      </div>
+      <label className="flex items-center gap-2 text-sm text-muted">
+        <input type="checkbox" {...form.register('activo')} />
+        Activa
+      </label>
+      <div className="mt-1 flex justify-end">
+        <Button type="submit" loading={guardando}>
+          Guardar
+        </Button>
+      </div>
+    </form>
+  );
+}
+
 export function CatalogosPage() {
   const queryClient = useQueryClient();
-  const [categoriaEditando, setCategoriaEditando] = useState<Categoria | null>(null);
   const [categoriaCreando, setCategoriaCreando] = useState(false);
+  const [categoriaEditando, setCategoriaEditando] = useState<Categoria | null>(null);
   const [categoriaEliminar, setCategoriaEliminar] = useState<Categoria | null>(null);
-  const [marcaEditando, setMarcaEditando] = useState<Marca | null>(null);
   const [marcaCreando, setMarcaCreando] = useState(false);
+  const [marcaEditando, setMarcaEditando] = useState<Marca | null>(null);
   const [marcaEliminar, setMarcaEliminar] = useState<Marca | null>(null);
-
-  const categoriaForm = useForm<FormularioSimple>({ resolver: zodResolver(esquemaSimple), defaultValues: VACIO });
-  const marcaForm = useForm<FormularioSimple>({ resolver: zodResolver(esquemaSimple), defaultValues: VACIO });
 
   const categorias = useQuery({ queryKey: ['categorias'], queryFn: catalogoApi.categorias });
   const marcas = useQuery({ queryKey: ['marcas'], queryFn: catalogoApi.marcas });
@@ -60,7 +100,6 @@ export function CatalogosPage() {
       toast.success(categoriaEditando ? 'Categoría actualizada' : 'Categoría creada');
       setCategoriaCreando(false);
       setCategoriaEditando(null);
-      categoriaForm.reset(VACIO);
       invalidar();
     },
     onError: (error) => toast.error('No se pudo guardar', { description: mensajeDeError(error) }),
@@ -94,7 +133,6 @@ export function CatalogosPage() {
       toast.success(marcaEditando ? 'Marca actualizada' : 'Marca creada');
       setMarcaCreando(false);
       setMarcaEditando(null);
-      marcaForm.reset(VACIO);
       invalidar();
     },
     onError: (error) => toast.error('No se pudo guardar', { description: mensajeDeError(error) }),
@@ -110,19 +148,30 @@ export function CatalogosPage() {
     onError: (error) => toast.error('No se pudo eliminar', { description: mensajeDeError(error) }),
   });
 
+  const editarCategoria = (categoria: Categoria) => {
+    setCategoriaEditando(categoria);
+    setCategoriaCreando(false);
+  };
+
+  const editarMarca = (marca: Marca) => {
+    setMarcaEditando(marca);
+    setMarcaCreando(false);
+  };
+
   return (
     <div className="mx-auto flex max-w-page flex-col gap-6">
       <PageHeader title="Catálogo" subtitle="Productos, categorías, marcas y precios." />
       <CatalogoTabs />
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <Card>
+      <FolderPanel className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <Card className="border-0 bg-transparent shadow-none">
           <CardHeader>
             <CardTitle>Categorías</CardTitle>
             <Button
               size="sm"
+              leftIcon={<Plus size={15} />}
               onClick={() => {
-                categoriaForm.reset(VACIO);
+                setCategoriaEditando(null);
                 setCategoriaCreando(true);
               }}
             >
@@ -130,34 +179,46 @@ export function CatalogosPage() {
             </Button>
           </CardHeader>
           <CardBody className="flex flex-col gap-2">
+            {(categoriaCreando || categoriaEditando) && (
+              <InlineForm
+                title={categoriaEditando ? `Editar · ${categoriaEditando.nombre}` : 'Nueva categoría'}
+                onCancel={() => {
+                  setCategoriaCreando(false);
+                  setCategoriaEditando(null);
+                }}
+              >
+                <FormularioSimple
+                  inicial={
+                    categoriaEditando
+                      ? { nombre: categoriaEditando.nombre, descripcion: categoriaEditando.descripcion ?? '', activo: categoriaEditando.activo }
+                      : VACIO
+                  }
+                  guardando={guardarCategoria.isPending}
+                  onGuardar={(datos) => guardarCategoria.mutate(datos)}
+                />
+              </InlineForm>
+            )}
             {categorias.isLoading ? (
               <Skeleton className="h-24 w-full" />
             ) : (
               categorias.data?.map((categoria) => (
-                <div key={categoria.id} className="flex items-center justify-between gap-2 rounded-2xl bg-elevated/40 px-3 py-2">
+                <div
+                  key={categoria.id}
+                  className={`flex items-center justify-between gap-2 rounded-2xl bg-elevated/40 px-3 py-2 ${categoriaEditando?.id === categoria.id ? 'ring-1 ring-accent/50' : ''}`}
+                >
                   <div>
                     <p className="text-sm text-ink">{categoria.nombre}</p>
                     <p className="text-xs text-muted">{categoria.descripcion ?? '—'}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Pill tone={categoria.activo ? 'success' : 'danger'}>{categoria.activo ? 'Activa' : 'Inactiva'}</Pill>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        categoriaForm.reset({
-                          nombre: categoria.nombre,
-                          descripcion: categoria.descripcion ?? '',
-                          activo: categoria.activo,
-                        });
-                        setCategoriaEditando(categoria);
-                      }}
-                    >
-                      Editar
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setCategoriaEliminar(categoria)}>
-                      Eliminar
-                    </Button>
+                    <ActionMenu
+                      label={`Acciones de ${categoria.nombre}`}
+                      options={[
+                        { label: 'Editar', icon: <Pencil size={15} />, onClick: () => editarCategoria(categoria) },
+                        { label: 'Eliminar', icon: <Trash2 size={15} />, danger: true, onClick: () => setCategoriaEliminar(categoria) },
+                      ]}
+                    />
                   </div>
                 </div>
               ))
@@ -165,13 +226,14 @@ export function CatalogosPage() {
           </CardBody>
         </Card>
 
-        <Card>
+        <Card className="border-0 bg-transparent shadow-none">
           <CardHeader>
             <CardTitle>Marcas</CardTitle>
             <Button
               size="sm"
+              leftIcon={<Plus size={15} />}
               onClick={() => {
-                marcaForm.reset(VACIO);
+                setMarcaEditando(null);
                 setMarcaCreando(true);
               }}
             >
@@ -179,109 +241,53 @@ export function CatalogosPage() {
             </Button>
           </CardHeader>
           <CardBody className="flex flex-col gap-2">
+            {(marcaCreando || marcaEditando) && (
+              <InlineForm
+                title={marcaEditando ? `Editar · ${marcaEditando.nombre}` : 'Nueva marca'}
+                onCancel={() => {
+                  setMarcaCreando(false);
+                  setMarcaEditando(null);
+                }}
+              >
+                <FormularioSimple
+                  inicial={
+                    marcaEditando
+                      ? { nombre: marcaEditando.nombre, descripcion: marcaEditando.descripcion ?? '', activo: marcaEditando.activo }
+                      : VACIO
+                  }
+                  guardando={guardarMarca.isPending}
+                  onGuardar={(datos) => guardarMarca.mutate(datos)}
+                />
+              </InlineForm>
+            )}
             {marcas.isLoading ? (
               <Skeleton className="h-24 w-full" />
             ) : (
               marcas.data?.map((marca) => (
-                <div key={marca.id} className="flex items-center justify-between gap-2 rounded-2xl bg-elevated/40 px-3 py-2">
+                <div
+                  key={marca.id}
+                  className={`flex items-center justify-between gap-2 rounded-2xl bg-elevated/40 px-3 py-2 ${marcaEditando?.id === marca.id ? 'ring-1 ring-accent/50' : ''}`}
+                >
                   <div>
                     <p className="text-sm text-ink">{marca.nombre}</p>
                     <p className="text-xs text-muted">{marca.descripcion ?? '—'}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Pill tone={marca.activo ? 'success' : 'danger'}>{marca.activo ? 'Activa' : 'Inactiva'}</Pill>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        marcaForm.reset({
-                          nombre: marca.nombre,
-                          descripcion: marca.descripcion ?? '',
-                          activo: marca.activo,
-                        });
-                        setMarcaEditando(marca);
-                      }}
-                    >
-                      Editar
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setMarcaEliminar(marca)}>
-                      Eliminar
-                    </Button>
+                    <ActionMenu
+                      label={`Acciones de ${marca.nombre}`}
+                      options={[
+                        { label: 'Editar', icon: <Pencil size={15} />, onClick: () => editarMarca(marca) },
+                        { label: 'Eliminar', icon: <Trash2 size={15} />, danger: true, onClick: () => setMarcaEliminar(marca) },
+                      ]}
+                    />
                   </div>
                 </div>
               ))
             )}
           </CardBody>
         </Card>
-      </div>
-
-      <Modal
-        open={categoriaCreando || Boolean(categoriaEditando)}
-        onClose={() => {
-          setCategoriaCreando(false);
-          setCategoriaEditando(null);
-        }}
-        title={categoriaEditando ? 'Editar categoría' : 'Nueva categoría'}
-        footer={
-          <>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setCategoriaCreando(false);
-                setCategoriaEditando(null);
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" form="form-categoria" loading={guardarCategoria.isPending}>
-              Guardar
-            </Button>
-          </>
-        }
-      >
-        <form id="form-categoria" className="flex flex-col gap-3" onSubmit={categoriaForm.handleSubmit((d) => guardarCategoria.mutate(d))} noValidate>
-          <Input label="Nombre" error={categoriaForm.formState.errors.nombre?.message} {...categoriaForm.register('nombre')} />
-          <Input label="Descripción" {...categoriaForm.register('descripcion')} />
-          <label className="flex items-center gap-2 text-sm text-muted">
-            <input type="checkbox" {...categoriaForm.register('activo')} />
-            Activa
-          </label>
-        </form>
-      </Modal>
-
-      <Modal
-        open={marcaCreando || Boolean(marcaEditando)}
-        onClose={() => {
-          setMarcaCreando(false);
-          setMarcaEditando(null);
-        }}
-        title={marcaEditando ? 'Editar marca' : 'Nueva marca'}
-        footer={
-          <>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setMarcaCreando(false);
-                setMarcaEditando(null);
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" form="form-marca" loading={guardarMarca.isPending}>
-              Guardar
-            </Button>
-          </>
-        }
-      >
-        <form id="form-marca" className="flex flex-col gap-3" onSubmit={marcaForm.handleSubmit((d) => guardarMarca.mutate(d))} noValidate>
-          <Input label="Nombre" error={marcaForm.formState.errors.nombre?.message} {...marcaForm.register('nombre')} />
-          <Input label="Descripción" {...marcaForm.register('descripcion')} />
-          <label className="flex items-center gap-2 text-sm text-muted">
-            <input type="checkbox" {...marcaForm.register('activo')} />
-            Activa
-          </label>
-        </form>
-      </Modal>
+      </FolderPanel>
 
       <ConfirmDialog
         open={Boolean(categoriaEliminar)}

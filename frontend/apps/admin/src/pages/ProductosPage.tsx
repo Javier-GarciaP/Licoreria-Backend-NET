@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useFieldArray, useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { Eye, Pencil, Trash2 } from 'lucide-react';
 import {
+  ActionMenu,
   Button,
   Card,
   CardBody,
@@ -14,52 +13,21 @@ import {
   DataTable,
   Input,
   Modal,
+  ModalSection,
   PageHeader,
   Pagination,
   Pill,
-  Select,
 } from '@licoreria/ui';
 import type { Producto } from '@licoreria/types';
 import { catalogoApi } from '@licoreria/api-client';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { CatalogoTabs } from '../components/CatalogoTabs';
+import { FolderPanel } from '../components/FolderTabs';
+import { InlineForm } from '../components/InlineForm';
+import { Can } from '../components/Rbac';
+import { FormularioProducto, type DatosProductoForm } from '../components/catalogo/FormularioProducto';
 import { mensajeDeError } from '../lib/api';
 import { formatUSD } from '../lib/format';
-
-const esquemaVariante = z.object({
-  id: z.string().optional(),
-  nombre: z.string().min(1, 'Nombre de la variante'),
-  sku: z.string().min(1, 'SKU requerido'),
-  unidadMedidaId: z.string().min(1, 'Selecciona la unidad'),
-  precioCompraUSD: z.coerce.number({ invalid_type_error: 'Precio inválido' }).min(0, 'No puede ser negativo'),
-  precioVentaUSD: z.coerce.number({ invalid_type_error: 'Precio inválido' }).min(0, 'No puede ser negativo'),
-});
-
-const esquemaProducto = z.object({
-  nombre: z.string().min(2, 'Ingresa el nombre'),
-  descripcion: z.string().optional(),
-  categoriaId: z.string().min(1, 'Selecciona una categoría'),
-  marcaId: z.string(),
-  tipo: z.enum(['Simple', 'Preparado']),
-  gradoAlcoholico: z.coerce.number().min(0, 'Inválido').max(100, 'Inválido'),
-  imagenUrl: z.string().optional(),
-  activo: z.boolean(),
-  variantes: z.array(esquemaVariante).min(1, 'Agrega al menos una variante'),
-});
-
-type FormularioProducto = z.infer<typeof esquemaProducto>;
-
-const VACIO: FormularioProducto = {
-  nombre: '',
-  descripcion: '',
-  categoriaId: '',
-  marcaId: '',
-  tipo: 'Simple',
-  gradoAlcoholico: 0,
-  imagenUrl: '',
-  activo: true,
-  variantes: [{ nombre: '', sku: '', unidadMedidaId: '', precioCompraUSD: 0, precioVentaUSD: 0 }],
-};
 
 export function ProductosPage() {
   const [page, setPage] = useState(1);
@@ -67,11 +35,9 @@ export function ProductosPage() {
   const [busqueda, setBusqueda] = useState(params.get('busqueda') ?? '');
   const [editando, setEditando] = useState<Producto | null>(null);
   const [creando, setCreando] = useState(false);
+  const [detalle, setDetalle] = useState<Producto | null>(null);
   const [porEliminar, setPorEliminar] = useState<Producto | null>(null);
   const queryClient = useQueryClient();
-
-  const productoForm = useForm<FormularioProducto>({ resolver: zodResolver(esquemaProducto), defaultValues: VACIO });
-  const { fields, append, remove } = useFieldArray({ control: productoForm.control, name: 'variantes' });
 
   const productos = useQuery({
     queryKey: ['productos', page, busqueda],
@@ -84,7 +50,7 @@ export function ProductosPage() {
   const invalidar = () => queryClient.invalidateQueries({ queryKey: ['productos'] });
 
   const guardar = useMutation({
-    mutationFn: (datos: FormularioProducto) => {
+    mutationFn: (datos: DatosProductoForm) => {
       const body = {
         nombre: datos.nombre,
         descripcion: datos.descripcion ?? null,
@@ -113,7 +79,6 @@ export function ProductosPage() {
       toast.success(editando ? 'Producto actualizado' : 'Producto creado');
       setCreando(false);
       setEditando(null);
-      productoForm.reset(VACIO);
       invalidar();
     },
     onError: (error) => toast.error('No se pudo guardar', { description: mensajeDeError(error) }),
@@ -129,208 +94,168 @@ export function ProductosPage() {
     onError: (error) => toast.error('No se pudo eliminar', { description: mensajeDeError(error) }),
   });
 
-  const abrirCrear = () => {
-    productoForm.reset(VACIO);
-    setCreando(true);
-  };
-
-  const abrirEditar = (producto: Producto) => {
-    productoForm.reset({
-      nombre: producto.nombre,
-      descripcion: producto.descripcion ?? '',
-      categoriaId: producto.categoriaId,
-      marcaId: producto.marcaId ?? '',
-      tipo: producto.tipo,
-      gradoAlcoholico: producto.gradoAlcoholico ?? 0,
-      imagenUrl: producto.imagenUrl ?? '',
-      activo: producto.activo,
-      variantes: producto.variantes.map((variante) => ({
-        id: variante.id,
-        nombre: variante.nombre,
-        sku: variante.sku,
-        unidadMedidaId: variante.unidadMedidaId,
-        precioCompraUSD: variante.precioCompraUSD,
-        precioVentaUSD: variante.precioVentaUSD,
-      })),
-    });
-    setEditando(producto);
-  };
-
-  const formularioAbierto = creando || Boolean(editando);
-
   return (
     <div className="mx-auto flex max-w-page flex-col gap-6">
       <PageHeader
         title="Catálogo"
         subtitle="Productos y variantes con precios."
-        actions={<Button onClick={abrirCrear}>Nuevo producto</Button>}
+        actions={
+          <Can permiso="catalog:write">
+            <Button onClick={() => { setCreando(true); setEditando(null); }}>Nuevo producto</Button>
+          </Can>
+        }
       />
       <CatalogoTabs />
-      <Card>
-        <CardHeader>
-          <CardTitle>Productos</CardTitle>
-          <div className="w-56">
-            <Input
-              placeholder="Buscar…"
-              value={busqueda}
-              onChange={(evento) => {
-                setBusqueda(evento.target.value);
-                setPage(1);
-              }}
+
+      <FolderPanel className="flex flex-col gap-4">
+        {creando && (
+          <InlineForm title="Nuevo producto" onCancel={() => setCreando(false)}>
+            <FormularioProducto
+              categorias={categorias.data ?? []}
+              marcas={marcas.data ?? []}
+              unidades={unidades.data ?? []}
+              guardando={guardar.isPending}
+              onGuardar={(datos) => guardar.mutate(datos)}
             />
-          </div>
-        </CardHeader>
-        <CardBody>
-          <DataTable<Producto>
-            rows={productos.data?.items ?? []}
-            loading={productos.isLoading}
-            rowKey={(producto) => producto.id}
-            empty="No hay productos."
-            columns={[
-              {
-                key: 'nombre',
-                header: 'Producto',
-                render: (producto) => (
-                  <div>
-                    <p className="text-ink">{producto.nombre}</p>
-                    <p className="text-xs text-muted">{producto.categoriaNombre}</p>
-                  </div>
-                ),
-              },
-              { key: 'tipo', header: 'Tipo', render: (producto) => <Pill>{producto.tipo}</Pill> },
-              { key: 'variantes', header: 'Variantes', align: 'center', render: (producto) => producto.variantes.length },
-              {
-                key: 'precio',
-                header: 'Precio venta',
-                align: 'right',
-                render: (producto) => {
-                  const precio = Math.min(...producto.variantes.map((variante) => variante.precioVentaUSD));
-                  return Number.isFinite(precio) ? formatUSD(precio) : '—';
+          </InlineForm>
+        )}
+
+        <Card className="border-0 bg-transparent shadow-none">
+          <CardHeader>
+            <CardTitle>Productos</CardTitle>
+            <div className="w-56">
+              <Input
+                placeholder="Buscar…"
+                value={busqueda}
+                onChange={(evento) => {
+                  setBusqueda(evento.target.value);
+                  setPage(1);
+                }}
+              />
+            </div>
+          </CardHeader>
+          <CardBody>
+            <DataTable<Producto>
+              rows={productos.data?.items ?? []}
+              loading={productos.isLoading}
+              rowKey={(producto) => producto.id}
+              empty="No hay productos."
+              expandirKey={editando?.id ?? null}
+              expandedRow={
+                editando
+                  ? (producto) =>
+                      producto.id === editando.id ? (
+                        <InlineForm title={`Editar · ${producto.nombre}`} onCancel={() => setEditando(null)}>
+                          <FormularioProducto
+                            producto={producto}
+                            categorias={categorias.data ?? []}
+                            marcas={marcas.data ?? []}
+                            unidades={unidades.data ?? []}
+                            guardando={guardar.isPending}
+                            onGuardar={(datos) => guardar.mutate(datos)}
+                          />
+                        </InlineForm>
+                      ) : null
+                  : undefined
+              }
+              columns={[
+                {
+                  key: 'nombre',
+                  header: 'Producto',
+                  render: (producto) => (
+                    <div>
+                      <p className="text-ink">{producto.nombre}</p>
+                      <p className="text-xs text-muted">{producto.categoriaNombre}</p>
+                    </div>
+                  ),
                 },
-              },
-              {
-                key: 'acciones',
-                header: '',
-                align: 'right',
-                render: (producto) => (
-                  <div className="flex justify-end gap-2">
-                    <Button size="sm" variant="ghost" onClick={() => abrirEditar(producto)}>
-                      Editar
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setPorEliminar(producto)}>
-                      Eliminar
-                    </Button>
-                  </div>
-                ),
-              },
-            ]}
-          />
-          <Pagination page={page} totalPages={productos.data?.totalPages ?? 1} onPageChange={setPage} />
-        </CardBody>
-      </Card>
+                { key: 'tipo', header: 'Tipo', render: (producto) => <Pill>{producto.tipo}</Pill> },
+                { key: 'variantes', header: 'Variantes', align: 'center', render: (producto) => producto.variantes.length },
+                {
+                  key: 'precio',
+                  header: 'Precio venta',
+                  align: 'right',
+                  render: (producto) => {
+                    const precio = Math.min(...producto.variantes.map((variante) => variante.precioVentaUSD));
+                    return Number.isFinite(precio) ? formatUSD(precio) : '—';
+                  },
+                },
+                {
+                  key: 'acciones',
+                  header: '',
+                  align: 'right',
+                  render: (producto) => (
+                    <ActionMenu
+                      label={`Acciones de ${producto.nombre}`}
+                      options={[
+                        { label: 'Ver detalle', icon: <Eye size={15} />, onClick: () => setDetalle(producto) },
+                        {
+                          label: 'Editar',
+                          icon: <Pencil size={15} />,
+                          onClick: () => {
+                            setEditando(producto);
+                            setCreando(false);
+                          },
+                        },
+                        {
+                          label: 'Eliminar',
+                          icon: <Trash2 size={15} />,
+                          danger: true,
+                          onClick: () => setPorEliminar(producto),
+                        },
+                      ]}
+                    />
+                  ),
+                },
+              ]}
+            />
+            <Pagination page={page} totalPages={productos.data?.totalPages ?? 1} onPageChange={setPage} />
+          </CardBody>
+        </Card>
+      </FolderPanel>
 
       <Modal
-        open={formularioAbierto}
-        onClose={() => {
-          setCreando(false);
-          setEditando(null);
-        }}
-        title={editando ? 'Editar producto' : 'Nuevo producto'}
-        className="max-w-3xl"
-        footer={
-          <>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setCreando(false);
-                setEditando(null);
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" form="form-producto" loading={guardar.isPending}>
-              Guardar
-            </Button>
-          </>
-        }
+        open={Boolean(detalle)}
+        onClose={() => setDetalle(null)}
+        title={detalle?.nombre ?? ''}
+        size="lg"
+        backdrop="none"
       >
-        <form
-          id="form-producto"
-          className="flex flex-col gap-3"
-          onSubmit={productoForm.handleSubmit((datos) => guardar.mutate(datos))}
-          noValidate
-        >
-          <Input label="Nombre" error={productoForm.formState.errors.nombre?.message} {...productoForm.register('nombre')} />
-          <Input label="Descripción" {...productoForm.register('descripcion')} />
-          <div className="grid grid-cols-2 gap-3">
-            <Select label="Categoría" error={productoForm.formState.errors.categoriaId?.message} {...productoForm.register('categoriaId')}>
-              <option value="">Selecciona…</option>
-              {categorias.data?.map((categoria) => (
-                <option key={categoria.id} value={categoria.id}>
-                  {categoria.nombre}
-                </option>
-              ))}
-            </Select>
-            <Select label="Marca" {...productoForm.register('marcaId')}>
-              <option value="">Sin marca</option>
-              {marcas.data?.map((marca) => (
-                <option key={marca.id} value={marca.id}>
-                  {marca.nombre}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <Select label="Tipo" {...productoForm.register('tipo')}>
-              <option value="Simple">Simple</option>
-              <option value="Preparado">Preparado</option>
-            </Select>
-            <Input label="Grado alcohólico" type="number" {...productoForm.register('gradoAlcoholico')} />
-            <Input label="Imagen (URL)" {...productoForm.register('imagenUrl')} />
-          </div>
-          <label className="flex items-center gap-2 text-sm text-muted">
-            <input type="checkbox" {...productoForm.register('activo')} />
-            Activo
-          </label>
-
-          <div className="rounded-2xl border border-hairline p-3">
-            <div className="mb-2 flex items-center justify-between">
-              <p className="text-xs font-medium uppercase tracking-tighter2 text-muted">Variantes</p>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() => append({ nombre: '', sku: '', unidadMedidaId: '', precioCompraUSD: 0, precioVentaUSD: 0 })}
-              >
-                Agregar
-              </Button>
+        {detalle && (
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-wrap gap-2">
+              <Pill>{detalle.tipo}</Pill>
+              {detalle.categoriaNombre && <Pill tone="accent">{detalle.categoriaNombre}</Pill>}
+              {detalle.marcaNombre && <Pill tone="info">{detalle.marcaNombre}</Pill>}
+              {detalle.activo ? <Pill tone="success">Activo</Pill> : <Pill tone="danger">Inactivo</Pill>}
             </div>
-            {productoForm.formState.errors.variantes?.message && (
-              <p className="mb-2 text-xs text-danger-ink">{productoForm.formState.errors.variantes.message}</p>
-            )}
-            <div className="flex flex-col gap-3">
-              {fields.map((field, indice) => (
-                <div key={field.id} className="grid grid-cols-2 gap-2 rounded-2xl bg-elevated/30 p-3 sm:grid-cols-6">
-                  <Input placeholder="Nombre" {...productoForm.register(`variantes.${indice}.nombre`)} />
-                  <Input placeholder="SKU" {...productoForm.register(`variantes.${indice}.sku`)} />
-                  <Select aria-label="Unidad" {...productoForm.register(`variantes.${indice}.unidadMedidaId`)}>
-                    <option value="">Unidad…</option>
-                    {unidades.data?.map((unidad) => (
-                      <option key={unidad.id} value={unidad.id}>
-                        {unidad.abreviatura}
-                      </option>
+            {detalle.descripcion && <p className="text-sm text-muted">{detalle.descripcion}</p>}
+            <ModalSection title="Variantes">
+              <div className="overflow-x-auto rounded-inner border border-hairline">
+                <table className="w-full min-w-[480px] text-sm">
+                  <thead>
+                    <tr className="bg-elevated/60 text-left text-xs uppercase tracking-tighter2 text-muted">
+                      <th scope="col" className="px-4 py-2.5">Variante</th>
+                      <th scope="col" className="px-4 py-2.5">SKU</th>
+                      <th scope="col" className="px-4 py-2.5 text-right">Costo</th>
+                      <th scope="col" className="px-4 py-2.5 text-right">Venta</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detalle.variantes.map((variante) => (
+                      <tr key={variante.id} className="border-t border-hairline">
+                        <td className="px-4 py-2.5 text-ink">{variante.nombre}</td>
+                        <td className="num px-4 py-2.5 text-muted">{variante.sku}</td>
+                        <td className="num px-4 py-2.5 text-right text-muted">{formatUSD(variante.precioCompraUSD)}</td>
+                        <td className="num px-4 py-2.5 text-right text-ink">{formatUSD(variante.precioVentaUSD)}</td>
+                      </tr>
                     ))}
-                  </Select>
-                  <Input type="number" placeholder="Costo USD" {...productoForm.register(`variantes.${indice}.precioCompraUSD`)} />
-                  <Input type="number" placeholder="Venta USD" {...productoForm.register(`variantes.${indice}.precioVentaUSD`)} />
-                  <Button type="button" variant="ghost" size="sm" onClick={() => remove(indice)}>
-                    Quitar
-                  </Button>
-                </div>
-              ))}
-            </div>
+                  </tbody>
+                </table>
+              </div>
+            </ModalSection>
           </div>
-        </form>
+        )}
       </Modal>
 
       <ConfirmDialog

@@ -1,7 +1,9 @@
 import { useState, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import {
+  ActionMenu,
   Button,
   Card,
   CardBody,
@@ -10,12 +12,14 @@ import {
   cn,
   DataTable,
   Input,
-  Modal,
   PageHeader,
   Pill,
 } from '@licoreria/ui';
 import { impuestosApi, listasPrecioApi, modificadoresApi, unidadesApi } from '@licoreria/api-client';
 import { CatalogoTabs } from '../components/CatalogoTabs';
+import { ConfirmDialog } from '../components/ConfirmDialog';
+import { FolderPanel } from '../components/FolderTabs';
+import { InlineForm } from '../components/InlineForm';
 import { mensajeDeError } from '../lib/api';
 import { formatUSD } from '../lib/format';
 
@@ -103,14 +107,59 @@ function Seccion<T extends { id: string }>({
   };
 
   return (
-    <Card>
+    <Card className="border-0 bg-transparent shadow-none">
       <CardHeader>
         <CardTitle>{titulo}</CardTitle>
-        <Button size="sm" onClick={abrirCrear}>
+        <Button size="sm" leftIcon={<Plus size={15} />} onClick={abrirCrear}>
           Nuevo
         </Button>
       </CardHeader>
-      <CardBody>
+      <CardBody className="flex flex-col gap-3">
+        {abierto && (
+          <InlineForm
+            title={editando ? `Editar ${titulo.toLowerCase()}` : `Nuevo ${titulo.toLowerCase()}`}
+            onCancel={cerrar}
+          >
+            <div className="flex flex-col gap-3">
+              {campos.map((campo) =>
+                campo.tipo === 'check' ? (
+                  <label key={campo.name} className="flex items-center gap-2 text-sm text-ink">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded-control border-hairline"
+                      checked={Boolean(valores[campo.name])}
+                      onChange={(evento) => setValores((v) => ({ ...v, [campo.name]: evento.target.checked }))}
+                    />
+                    {campo.label}
+                  </label>
+                ) : (
+                  <Input
+                    key={campo.name}
+                    label={campo.label}
+                    type={campo.tipo === 'numero' ? 'number' : 'text'}
+                    step={campo.step}
+                    value={String(valores[campo.name] ?? '')}
+                    onChange={(evento) =>
+                      setValores((v) => ({
+                        ...v,
+                        [campo.name]: campo.tipo === 'numero' ? Number(evento.target.value) : evento.target.value,
+                      }))
+                    }
+                  />
+                ),
+              )}
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="ghost" onClick={cerrar}>
+                Cancelar
+              </Button>
+              <Button loading={guardar.isPending} onClick={() => guardar.mutate()}>
+                Guardar
+              </Button>
+            </div>
+          </InlineForm>
+        )}
+
         <DataTable<T>
           rows={items}
           loading={cargando}
@@ -123,83 +172,28 @@ function Seccion<T extends { id: string }>({
               header: '',
               align: 'right',
               render: (fila) => (
-                <div className="flex justify-end gap-2">
-                  <Button size="sm" variant="ghost" onClick={() => abrirEditar(fila)}>
-                    Editar
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setConfirmar({ id: fila.id })}>
-                    Eliminar
-                  </Button>
-                </div>
+                <ActionMenu
+                  label={`Acciones de ${fila.id}`}
+                  options={[
+                    { label: 'Editar', icon: <Pencil size={15} />, onClick: () => abrirEditar(fila) },
+                    { label: 'Eliminar', icon: <Trash2 size={15} />, danger: true, onClick: () => setConfirmar({ id: fila.id }) },
+                  ]}
+                />
               ),
             },
           ]}
         />
       </CardBody>
 
-      <Modal
-        open={abierto}
-        onClose={cerrar}
-        title={editando ? `Editar ${titulo.toLowerCase()}` : `Nuevo ${titulo.toLowerCase()}`}
-        footer={
-          <>
-            <Button variant="ghost" onClick={cerrar}>
-              Cancelar
-            </Button>
-            <Button loading={guardar.isPending} onClick={() => guardar.mutate()}>
-              Guardar
-            </Button>
-          </>
-        }
-      >
-        <div className="flex flex-col gap-3">
-          {campos.map((campo) =>
-            campo.tipo === 'check' ? (
-              <label key={campo.name} className="flex items-center gap-2 text-sm text-ink">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 rounded-control border-hairline"
-                  checked={Boolean(valores[campo.name])}
-                  onChange={(evento) => setValores((v) => ({ ...v, [campo.name]: evento.target.checked }))}
-                />
-                {campo.label}
-              </label>
-            ) : (
-              <Input
-                key={campo.name}
-                label={campo.label}
-                type={campo.tipo === 'numero' ? 'number' : 'text'}
-                step={campo.step}
-                value={String(valores[campo.name] ?? '')}
-                onChange={(evento) =>
-                  setValores((v) => ({
-                    ...v,
-                    [campo.name]: campo.tipo === 'numero' ? Number(evento.target.value) : evento.target.value,
-                  }))
-                }
-              />
-            ),
-          )}
-        </div>
-      </Modal>
-
-      <Modal
+      <ConfirmDialog
         open={Boolean(confirmar)}
-        onClose={() => setConfirmar(null)}
         title={`Eliminar ${titulo.toLowerCase()}`}
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setConfirmar(null)}>
-              Cancelar
-            </Button>
-            <Button variant="danger" loading={borrar.isPending} onClick={() => confirmar && borrar.mutate(confirmar.id)}>
-              Eliminar
-            </Button>
-          </>
-        }
-      >
-        <p className="text-sm text-muted">¿Confirmas eliminar este registro?</p>
-      </Modal>
+        description={`¿Confirmas eliminar este registro de ${titulo.toLowerCase()}?`}
+        confirmLabel="Eliminar"
+        loading={borrar.isPending}
+        onClose={() => setConfirmar(null)}
+        onConfirm={() => confirmar && borrar.mutate(confirmar.id)}
+      />
     </Card>
   );
 }
@@ -217,138 +211,140 @@ export function CatalogoAvanzadoPage() {
       <PageHeader title="Catálogo" subtitle="Productos, categorías, marcas y precios." />
       <CatalogoTabs />
 
-      <nav aria-label="Secciones de catálogo avanzado" className="flex flex-wrap gap-2">
-        {PESTANAS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => setPestana(item.id)}
-            className={cn(
-              'rounded-pill border px-4 py-1.5 text-sm transition',
-              pestana === item.id ? 'border-accent text-accent-ink' : 'border-hairline text-muted hover:text-ink',
-            )}
-          >
-            {item.label}
-          </button>
-        ))}
-      </nav>
+      <FolderPanel className="flex flex-col gap-4">
+        <nav aria-label="Secciones de catálogo avanzado" className="flex flex-wrap gap-2">
+          {PESTANAS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setPestana(item.id)}
+              className={cn(
+                'rounded-pill border px-4 py-1.5 text-sm transition',
+                pestana === item.id ? 'border-accent bg-accent/15 text-accent-ink' : 'border-hairline text-muted hover:text-ink',
+              )}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
 
-      {pestana === 'unidades' && (
-        <Seccion
-          titulo="Unidad de medida"
-          items={unidades.data ?? []}
-          cargando={unidades.isLoading}
-          campos={[
-            { name: 'nombre', label: 'Nombre' },
-            { name: 'abreviatura', label: 'Abreviatura' },
-          ]}
-          valorInicial={{ nombre: '', abreviatura: '' }}
-          aValores={(item) => ({ nombre: item.nombre, abreviatura: item.abreviatura })}
-          aBody={(valores) => valores}
-          api={unidadesApi}
-          invalidarKeys={['unidades']}
-          columnas={[
-            { key: 'nombre', header: 'Nombre', render: (fila) => String(fila.nombre) },
-            { key: 'abreviatura', header: 'Abreviatura', render: (fila) => String(fila.abreviatura) },
-          ]}
-        />
-      )}
+        {pestana === 'unidades' && (
+          <Seccion
+            titulo="Unidad de medida"
+            items={unidades.data ?? []}
+            cargando={unidades.isLoading}
+            campos={[
+              { name: 'nombre', label: 'Nombre' },
+              { name: 'abreviatura', label: 'Abreviatura' },
+            ]}
+            valorInicial={{ nombre: '', abreviatura: '' }}
+            aValores={(item) => ({ nombre: item.nombre, abreviatura: item.abreviatura })}
+            aBody={(valores) => valores}
+            api={unidadesApi}
+            invalidarKeys={['unidades']}
+            columnas={[
+              { key: 'nombre', header: 'Nombre', render: (fila) => String(fila.nombre) },
+              { key: 'abreviatura', header: 'Abreviatura', render: (fila) => String(fila.abreviatura) },
+            ]}
+          />
+        )}
 
-      {pestana === 'impuestos' && (
-        <Seccion
-          titulo="Impuesto"
-          items={impuestos.data ?? []}
-          cargando={impuestos.isLoading}
-          campos={[
-            { name: 'nombre', label: 'Nombre' },
-            { name: 'porcentaje', label: 'Porcentaje', tipo: 'numero', step: '0.01' },
-            { name: 'activo', label: 'Activo', tipo: 'check' },
-          ]}
-          valorInicial={{ nombre: '', porcentaje: 0, activo: true }}
-          aValores={(item) => ({ nombre: item.nombre, porcentaje: item.porcentaje, activo: item.activo })}
-          aBody={(valores, id) => (id ? { ...valores, id } : valores)}
-          api={impuestosApi}
-          invalidarKeys={['impuestos']}
-          columnas={[
-            { key: 'nombre', header: 'Nombre', render: (fila) => String(fila.nombre) },
-            { key: 'porcentaje', header: '%', align: 'right', render: (fila) => `${Number(fila.porcentaje)}%` },
-            {
-              key: 'activo',
-              header: 'Estado',
-              render: (fila) => <Pill tone={fila.activo ? 'success' : 'neutral'}>{fila.activo ? 'Activo' : 'Inactivo'}</Pill>,
-            },
-          ]}
-        />
-      )}
+        {pestana === 'impuestos' && (
+          <Seccion
+            titulo="Impuesto"
+            items={impuestos.data ?? []}
+            cargando={impuestos.isLoading}
+            campos={[
+              { name: 'nombre', label: 'Nombre' },
+              { name: 'porcentaje', label: 'Porcentaje', tipo: 'numero', step: '0.01' },
+              { name: 'activo', label: 'Activo', tipo: 'check' },
+            ]}
+            valorInicial={{ nombre: '', porcentaje: 0, activo: true }}
+            aValores={(item) => ({ nombre: item.nombre, porcentaje: item.porcentaje, activo: item.activo })}
+            aBody={(valores, id) => (id ? { ...valores, id } : valores)}
+            api={impuestosApi}
+            invalidarKeys={['impuestos']}
+            columnas={[
+              { key: 'nombre', header: 'Nombre', render: (fila) => String(fila.nombre) },
+              { key: 'porcentaje', header: '%', align: 'right', render: (fila) => `${Number(fila.porcentaje)}%` },
+              {
+                key: 'activo',
+                header: 'Estado',
+                render: (fila) => <Pill tone={fila.activo ? 'success' : 'neutral'}>{fila.activo ? 'Activo' : 'Inactivo'}</Pill>,
+              },
+            ]}
+          />
+        )}
 
-      {pestana === 'listas' && (
-        <Seccion
-          titulo="Lista de precio"
-          items={listas.data ?? []}
-          cargando={listas.isLoading}
-          campos={[
-            { name: 'nombre', label: 'Nombre' },
-            { name: 'descripcion', label: 'Descripción' },
-            { name: 'esPredeterminada', label: 'Predeterminada', tipo: 'check' },
-            { name: 'activo', label: 'Activa', tipo: 'check' },
-          ]}
-          valorInicial={{ nombre: '', descripcion: '', esPredeterminada: false, activo: true }}
-          aValores={(item) => ({
-            nombre: item.nombre,
-            descripcion: item.descripcion ?? '',
-            esPredeterminada: item.esPredeterminada,
-            activo: item.activo,
-          })}
-          aBody={(valores, id) => (id ? { ...valores, id } : valores)}
-          api={listasPrecioApi}
-          invalidarKeys={['listas-precio']}
-          columnas={[
-            { key: 'nombre', header: 'Nombre', render: (fila) => String(fila.nombre) },
-            {
-              key: 'predeterminada',
-              header: 'Predeterminada',
-              render: (fila) => (fila.esPredeterminada ? <Pill tone="accent">Sí</Pill> : '—'),
-            },
-            {
-              key: 'activo',
-              header: 'Estado',
-              render: (fila) => <Pill tone={fila.activo ? 'success' : 'neutral'}>{fila.activo ? 'Activa' : 'Inactiva'}</Pill>,
-            },
-          ]}
-        />
-      )}
+        {pestana === 'listas' && (
+          <Seccion
+            titulo="Lista de precio"
+            items={listas.data ?? []}
+            cargando={listas.isLoading}
+            campos={[
+              { name: 'nombre', label: 'Nombre' },
+              { name: 'descripcion', label: 'Descripción' },
+              { name: 'esPredeterminada', label: 'Predeterminada', tipo: 'check' },
+              { name: 'activo', label: 'Activa', tipo: 'check' },
+            ]}
+            valorInicial={{ nombre: '', descripcion: '', esPredeterminada: false, activo: true }}
+            aValores={(item) => ({
+              nombre: item.nombre,
+              descripcion: item.descripcion ?? '',
+              esPredeterminada: item.esPredeterminada,
+              activo: item.activo,
+            })}
+            aBody={(valores, id) => (id ? { ...valores, id } : valores)}
+            api={listasPrecioApi}
+            invalidarKeys={['listas-precio']}
+            columnas={[
+              { key: 'nombre', header: 'Nombre', render: (fila) => String(fila.nombre) },
+              {
+                key: 'predeterminada',
+                header: 'Predeterminada',
+                render: (fila) => (fila.esPredeterminada ? <Pill tone="accent">Sí</Pill> : '—'),
+              },
+              {
+                key: 'activo',
+                header: 'Estado',
+                render: (fila) => <Pill tone={fila.activo ? 'success' : 'neutral'}>{fila.activo ? 'Activa' : 'Inactiva'}</Pill>,
+              },
+            ]}
+          />
+        )}
 
-      {pestana === 'modificadores' && (
-        <Seccion
-          titulo="Modificador"
-          items={modificadores.data ?? []}
-          cargando={modificadores.isLoading}
-          campos={[
-            { name: 'nombre', label: 'Nombre' },
-            { name: 'precioAdicional', label: 'Precio adicional USD', tipo: 'numero', step: '0.01' },
-            { name: 'activo', label: 'Activo', tipo: 'check' },
-          ]}
-          valorInicial={{ nombre: '', precioAdicional: 0, activo: true }}
-          aValores={(item) => ({ nombre: item.nombre, precioAdicional: item.precioAdicional, activo: item.activo })}
-          aBody={(valores, id) => (id ? { ...valores, id } : valores)}
-          api={modificadoresApi}
-          invalidarKeys={['modificadores']}
-          columnas={[
-            { key: 'nombre', header: 'Nombre', render: (fila) => String(fila.nombre) },
-            {
-              key: 'precio',
-              header: 'Precio',
-              align: 'right',
-              render: (fila) => formatUSD(Number(fila.precioAdicional)),
-            },
-            {
-              key: 'activo',
-              header: 'Estado',
-              render: (fila) => <Pill tone={fila.activo ? 'success' : 'neutral'}>{fila.activo ? 'Activo' : 'Inactivo'}</Pill>,
-            },
-          ]}
-        />
-      )}
+        {pestana === 'modificadores' && (
+          <Seccion
+            titulo="Modificador"
+            items={modificadores.data ?? []}
+            cargando={modificadores.isLoading}
+            campos={[
+              { name: 'nombre', label: 'Nombre' },
+              { name: 'precioAdicional', label: 'Precio adicional USD', tipo: 'numero', step: '0.01' },
+              { name: 'activo', label: 'Activo', tipo: 'check' },
+            ]}
+            valorInicial={{ nombre: '', precioAdicional: 0, activo: true }}
+            aValores={(item) => ({ nombre: item.nombre, precioAdicional: item.precioAdicional, activo: item.activo })}
+            aBody={(valores, id) => (id ? { ...valores, id } : valores)}
+            api={modificadoresApi}
+            invalidarKeys={['modificadores']}
+            columnas={[
+              { key: 'nombre', header: 'Nombre', render: (fila) => String(fila.nombre) },
+              {
+                key: 'precio',
+                header: 'Precio',
+                align: 'right',
+                render: (fila) => formatUSD(Number(fila.precioAdicional)),
+              },
+              {
+                key: 'activo',
+                header: 'Estado',
+                render: (fila) => <Pill tone={fila.activo ? 'success' : 'neutral'}>{fila.activo ? 'Activo' : 'Inactivo'}</Pill>,
+              },
+            ]}
+          />
+        )}
+      </FolderPanel>
     </div>
   );
 }
