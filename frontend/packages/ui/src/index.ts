@@ -17,3 +17,4 @@ export { Modal, ModalSection } from './components/Modal';
 export type { ModalProps } from './components/Modal';
 export { ActionMenu } from './components/ActionMenu';
 export type { ActionMenuOption } from './components/ActionMenu';
+export { BubbleModal } from './components/BubbleModal';

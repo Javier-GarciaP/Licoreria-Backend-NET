@@ -23,13 +23,18 @@ export function ActionMenu({
   className?: string;
 }) {
   const [abierto, setAbierto] = useState(false);
-  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+  const [pos, setPos] = useState<{ top: number; right: number; abajo: boolean } | null>(null);
   const botonRef = useRef<HTMLButtonElement>(null);
 
   const medir = useCallback(() => {
     const rect = botonRef.current?.getBoundingClientRect();
     if (!rect) return;
-    setPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right });
+    const abajo = window.innerHeight - rect.bottom > 240;
+    setPos({
+      top: abajo ? rect.bottom + 8 : rect.top - 8,
+      right: window.innerWidth - rect.right,
+      abajo,
+    });
   }, []);
 
   const alternar = () => {
@@ -65,7 +70,10 @@ export function ActionMenu({
         aria-label={label}
         aria-haspopup="menu"
         aria-expanded={abierto}
-        onClick={alternar}
+        onClick={(evento) => {
+          evento.stopPropagation();
+          alternar();
+        }}
         className={cn(
           'flex h-8 w-8 items-center justify-center rounded-full text-muted transition',
           'hover:bg-ink/5 hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60',
@@ -83,7 +91,10 @@ export function ActionMenu({
             role="menu"
             aria-label={label}
             style={{ top: pos.top, right: pos.right }}
-            className="fixed z-[60] flex min-w-[10rem] flex-col rounded-2xl glass-card p-1.5 shadow-card"
+            className={cn(
+              'fixed z-[60] flex min-w-[11rem] flex-col rounded-2xl glass-card border border-hairline p-1.5 shadow-card',
+              pos.abajo ? 'translate-y-0' : '-translate-y-full',
+            )}
           >
             {options.map((opcion) => (
               <button
@@ -91,7 +102,8 @@ export function ActionMenu({
                 type="button"
                 role="menuitem"
                 disabled={opcion.disabled}
-                onClick={() => {
+                onClick={(evento) => {
+                  evento.stopPropagation();
                   setAbierto(false);
                   opcion.onClick();
                 }}
