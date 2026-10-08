@@ -109,9 +109,9 @@ export function VentasPage() {
                           <div className="flex flex-col gap-2">
                             {devolver.detalles.map((linea) => (
                               <div key={linea.id} className="flex items-center justify-between gap-3">
-                                <span className="text-sm text-ink">{linea.nombre}</span>
+                                <span className="text-sm text-foreground">{linea.nombre}</span>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-xs text-muted">de {linea.cantidad}</span>
+                                  <span className="text-xs text-muted-foreground">de {linea.cantidad}</span>
                                   <input
                                     type="number"
                                     min={0}
@@ -124,13 +124,13 @@ export function VentasPage() {
                                         [linea.varianteId]: Math.min(linea.cantidad, Math.max(0, Number(evento.target.value))),
                                       }))
                                     }
-                                    className="num h-9 w-20 rounded-control border border-hairline bg-surface px-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent/50"
+                                    className="num h-9 w-20 rounded-control border border-border bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/50"
                                   />
                                 </div>
                               </div>
                             ))}
                             {totalDevolver === 0 && (
-                              <span className="text-xs text-muted">Indica al menos una cantidad a devolver.</span>
+                              <span className="text-xs text-muted-foreground">Indica al menos una cantidad a devolver.</span>
                             )}
                           </div>
                           <Input
@@ -139,7 +139,7 @@ export function VentasPage() {
                             error={errors.motivo?.message}
                             {...register('motivo')}
                           />
-                          <label className="flex items-center gap-2 text-sm text-muted">
+                          <label className="flex items-center gap-2 text-sm text-muted-foreground">
                             <input type="checkbox" checked={reintegrar} onChange={(evento) => setReintegrar(evento.target.checked)} />
                             Reintegrar al inventario
                           </label>

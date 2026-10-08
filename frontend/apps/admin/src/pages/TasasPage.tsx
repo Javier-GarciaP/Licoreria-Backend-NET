@@ -48,7 +48,7 @@ export function TasasPage() {
   return (
     <div className="mx-auto flex max-w-page flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted">Registra la tasa del día para los cobros en Bs.</p>
+        <p className="text-sm text-muted-foreground">Registra la tasa del día para los cobros en Bs.</p>
         <div className="flex items-center gap-2">
           {actual.data && <Pill tone="accent">Paralelo: {formatUSD(actual.data.valor)}</Pill>}
           <span ref={botonRef}>

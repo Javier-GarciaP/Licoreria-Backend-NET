@@ -113,23 +113,23 @@ export function CajaPage() {
           <Card>
             <CardHeader>
               <CardTitle>Sesión activa</CardTitle>
-              <span className="text-xs text-muted">Abierta {formatDateTime(sesion.abiertaEn)}</span>
+              <span className="text-xs text-muted-foreground">Abierta {formatDateTime(sesion.abiertaEn)}</span>
             </CardHeader>
             <CardBody className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               <div>
-                <p className="text-xs text-muted">Fondo inicial</p>
-                <p className="text-lg font-medium text-ink">{formatUSD(sesion.fondoInicial)}</p>
+                <p className="text-xs text-muted-foreground">Fondo inicial</p>
+                <p className="text-lg font-medium text-foreground">{formatUSD(sesion.fondoInicial)}</p>
               </div>
               <div>
-                <p className="text-xs text-muted">Esperado</p>
-                <p className="text-lg font-medium text-ink">{formatUSD(sesion.montoEsperado)}</p>
+                <p className="text-xs text-muted-foreground">Esperado</p>
+                <p className="text-lg font-medium text-foreground">{formatUSD(sesion.montoEsperado)}</p>
               </div>
               <div>
-                <p className="text-xs text-muted">Movimientos</p>
-                <p className="text-lg font-medium text-ink">{sesion.movimientos.length}</p>
+                <p className="text-xs text-muted-foreground">Movimientos</p>
+                <p className="text-lg font-medium text-foreground">{sesion.movimientos.length}</p>
               </div>
               <div>
-                <p className="text-xs text-muted">Estado</p>
+                <p className="text-xs text-muted-foreground">Estado</p>
                 <Pill tone="success">{sesion.estado}</Pill>
               </div>
             </CardBody>
@@ -182,13 +182,13 @@ export function CajaPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Arqueo y cierre</CardTitle>
-                <span className="text-sm font-medium text-ink">Contado {formatUSD(contado)}</span>
+                <span className="text-sm font-medium text-foreground">Contado {formatUSD(contado)}</span>
               </CardHeader>
               <CardBody className="flex flex-col gap-3">
                 <div className="grid grid-cols-2 gap-2">
                   {(denominaciones.data ?? []).map((denominacion: Denominacion) => (
-                    <div key={denominacion.id} className="flex items-center justify-between gap-2 rounded-2xl bg-elevated/40 px-3 py-2">
-                      <span className="text-sm text-ink">
+                    <div key={denominacion.id} className="flex items-center justify-between gap-2 rounded-lg bg-muted/40 px-3 py-2">
+                      <span className="text-sm text-foreground">
                         {denominacion.moneda} {denominacion.valor}
                       </span>
                       <input
@@ -202,11 +202,11 @@ export function CajaPage() {
                             [denominacion.id]: Math.max(0, Number(evento.target.value)),
                           }))
                         }
-                        className="h-9 w-20 rounded-control border border-hairline bg-surface px-3 text-sm text-ink"
+                        className="h-9 w-20 rounded-control border border-border bg-card px-3 text-sm text-foreground"
                       />
                     </div>
                   ))}
-                  {(denominaciones.data ?? []).length === 0 && <p className="text-sm text-muted">Sin denominaciones.</p>}
+                  {(denominaciones.data ?? []).length === 0 && <p className="text-sm text-muted-foreground">Sin denominaciones.</p>}
                 </div>
                 <Button variant="danger" loading={cerrar.isPending} onClick={() => cerrar.mutate(sesion)}>
                   Cerrar caja (Z)
@@ -260,7 +260,7 @@ export function CajaPage() {
                 header: 'Descuadre',
                 align: 'right',
                 render: (item) => (
-                  <span className={item.descuadre === 0 ? 'text-success-ink' : 'text-danger-ink'}>{formatUSD(item.descuadre)}</span>
+                  <span className={item.descuadre === 0 ? 'text-success-fg' : 'text-destructive-fg'}>{formatUSD(item.descuadre)}</span>
                 ),
               },
             ]}
