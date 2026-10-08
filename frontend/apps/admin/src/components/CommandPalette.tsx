@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRight, Package, Search, User, Zap } from 'lucide-react';
+import { ArrowRight, Package, Search, Zap } from 'lucide-react';
 import { cn, useFocusTrap } from '@licoreria/ui';
-import { catalogoApi, clientesApi } from '@licoreria/api-client';
+import { catalogoApi } from '@licoreria/api-client';
 import type { NavGroup, NavItem } from '../lib/navigation';
 
 interface Comando {
@@ -40,11 +40,6 @@ export function CommandPalette({
     queryFn: () => catalogoApi.productos({ busqueda: debounced, pageSize: 5, activo: true }),
     enabled: open && debounced.length >= 2,
   });
-  const clientes = useQuery({
-    queryKey: ['palette', 'clientes', debounced],
-    queryFn: () => clientesApi.listar({ busqueda: debounced, pageSize: 5 }),
-    enabled: open && debounced.length >= 2,
-  });
 
   const comandos = useMemo<Comando[]>(() => {
     const deNav = grupos.flatMap((grupo) =>
@@ -66,17 +61,9 @@ export function CommandPalette({
           icon: Package,
         });
       }
-      for (const c of clientes.data?.items ?? []) {
-        recursos.push({
-          label: c.nombre,
-          sublabel: 'Cliente',
-          to: `/clientes?busqueda=${encodeURIComponent(c.nombre)}`,
-          icon: User,
-        });
-      }
     }
     return [...acciones, ...recursos, ...deNav];
-  }, [grupos, debounced, productos.data, clientes.data]);
+  }, [grupos, debounced, productos.data]);
 
   const filtrados = useMemo(() => {
     const q = consulta.trim().toLowerCase();
@@ -140,7 +127,7 @@ export function CommandPalette({
             value={consulta}
             onChange={(evento) => setConsulta(evento.target.value)}
             onKeyDown={alTeclear}
-            placeholder="Buscar módulo, producto o cliente…"
+            placeholder="Buscar módulo o producto…"
             className="w-full bg-transparent text-sm text-ink placeholder:text-stone focus:outline-none"
             aria-label="Buscar"
           />
