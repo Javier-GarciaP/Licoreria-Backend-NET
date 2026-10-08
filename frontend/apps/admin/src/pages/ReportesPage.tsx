@@ -57,14 +57,14 @@ export function ReportesPage() {
                 type="date"
                 value={rango.desde}
                 onChange={(evento) => setRango((r) => ({ ...r, desde: evento.target.value }))}
-                className="h-9 rounded-control border border-hairline bg-surface px-3 text-sm text-ink"
+                className="h-9 rounded-control border border-border bg-card px-3 text-sm text-foreground"
               />
-              <span className="text-xs text-muted">a</span>
+              <span className="text-xs text-muted-foreground">a</span>
               <input
                 type="date"
                 value={rango.hasta}
                 onChange={(evento) => setRango((r) => ({ ...r, hasta: evento.target.value }))}
-                className="h-9 rounded-control border border-hairline bg-surface px-3 text-sm text-ink"
+                className="h-9 rounded-control border border-border bg-card px-3 text-sm text-foreground"
               />
             </div>
           )
@@ -78,8 +78,8 @@ export function ReportesPage() {
             type="button"
             onClick={() => setPestana(item.id)}
             className={cn(
-              'rounded-pill border px-4 py-1.5 text-sm transition',
-              pestana === item.id ? 'border-accent text-accent-ink' : 'border-hairline text-muted hover:text-ink',
+              'rounded-full border px-4 py-1.5 text-sm transition',
+              pestana === item.id ? 'border-primary text-foreground' : 'border-border text-muted-foreground hover:text-foreground',
             )}
           >
             {item.label}
@@ -99,26 +99,26 @@ export function ReportesPage() {
             ) : (
               <>
                 <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                  <div className="rounded-card border border-hairline p-4">
-                    <p className="text-xs text-muted">Total USD</p>
-                    <p className="num mt-1 text-xl font-medium text-ink">{formatUSD(ventas.data.totalUSD)}</p>
+                  <div className="rounded-xl border border-border p-4">
+                    <p className="text-xs text-muted-foreground">Total USD</p>
+                    <p className="num mt-1 text-xl font-medium text-foreground">{formatUSD(ventas.data.totalUSD)}</p>
                   </div>
-                  <div className="rounded-card border border-hairline p-4">
-                    <p className="text-xs text-muted">Total Bs</p>
-                    <p className="num mt-1 text-xl font-medium text-ink">{formatNumber(ventas.data.totalBS)}</p>
+                  <div className="rounded-xl border border-border p-4">
+                    <p className="text-xs text-muted-foreground">Total Bs</p>
+                    <p className="num mt-1 text-xl font-medium text-foreground">{formatNumber(ventas.data.totalBS)}</p>
                   </div>
-                  <div className="rounded-card border border-hairline p-4">
-                    <p className="text-xs text-muted">Ticket promedio</p>
-                    <p className="num mt-1 text-xl font-medium text-ink">{formatUSD(ventas.data.ticketPromedioUSD)}</p>
+                  <div className="rounded-xl border border-border p-4">
+                    <p className="text-xs text-muted-foreground">Ticket promedio</p>
+                    <p className="num mt-1 text-xl font-medium text-foreground">{formatUSD(ventas.data.ticketPromedioUSD)}</p>
                   </div>
-                  <div className="rounded-card border border-hairline p-4">
-                    <p className="text-xs text-muted">Ventas</p>
-                    <p className="num mt-1 text-xl font-medium text-ink">{formatNumber(ventas.data.cantidad)}</p>
+                  <div className="rounded-xl border border-border p-4">
+                    <p className="text-xs text-muted-foreground">Ventas</p>
+                    <p className="num mt-1 text-xl font-medium text-foreground">{formatNumber(ventas.data.cantidad)}</p>
                   </div>
                 </div>
 
                 <div>
-                  <p className="mb-2 text-sm font-medium text-ink">Por día</p>
+                  <p className="mb-2 text-sm font-medium text-foreground">Por día</p>
                   <DataTable
                     rows={ventas.data.porDia}
                     rowKey={(fila) => fila.fecha}
@@ -132,7 +132,7 @@ export function ReportesPage() {
 
                 <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
                   <div>
-                    <p className="mb-2 text-sm font-medium text-ink">Por usuario</p>
+                    <p className="mb-2 text-sm font-medium text-foreground">Por usuario</p>
                     <DataTable
                       rows={ventas.data.porUsuario}
                       rowKey={(fila) => fila.usuarioId}
@@ -145,7 +145,7 @@ export function ReportesPage() {
                     />
                   </div>
                   <div>
-                    <p className="mb-2 text-sm font-medium text-ink">Por método de pago</p>
+                    <p className="mb-2 text-sm font-medium text-foreground">Por método de pago</p>
                     <DataTable
                       rows={ventas.data.porMetodoPago}
                       rowKey={(fila) => fila.metodoPagoId}
@@ -176,21 +176,21 @@ export function ReportesPage() {
             ) : (
               <>
                 <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                  <div className="rounded-card border border-hairline p-4">
-                    <p className="text-xs text-muted">Unidades</p>
-                    <p className="num mt-1 text-xl font-medium text-ink">{formatNumber(inventario.data.unidadesTotales)}</p>
+                  <div className="rounded-xl border border-border p-4">
+                    <p className="text-xs text-muted-foreground">Unidades</p>
+                    <p className="num mt-1 text-xl font-medium text-foreground">{formatNumber(inventario.data.unidadesTotales)}</p>
                   </div>
-                  <div className="rounded-card border border-hairline p-4">
-                    <p className="text-xs text-muted">Costo total</p>
-                    <p className="num mt-1 text-xl font-medium text-ink">{formatUSD(inventario.data.costoTotalUSD)}</p>
+                  <div className="rounded-xl border border-border p-4">
+                    <p className="text-xs text-muted-foreground">Costo total</p>
+                    <p className="num mt-1 text-xl font-medium text-foreground">{formatUSD(inventario.data.costoTotalUSD)}</p>
                   </div>
-                  <div className="rounded-card border border-hairline p-4">
-                    <p className="text-xs text-muted">Valor de venta</p>
-                    <p className="num mt-1 text-xl font-medium text-ink">{formatUSD(inventario.data.valorVentaTotalUSD)}</p>
+                  <div className="rounded-xl border border-border p-4">
+                    <p className="text-xs text-muted-foreground">Valor de venta</p>
+                    <p className="num mt-1 text-xl font-medium text-foreground">{formatUSD(inventario.data.valorVentaTotalUSD)}</p>
                   </div>
-                  <div className="rounded-card border border-hairline p-4">
-                    <p className="text-xs text-muted">Bajo mínimo</p>
-                    <p className="num mt-1 text-xl font-medium text-ink">{formatNumber(inventario.data.bajoMinimo)}</p>
+                  <div className="rounded-xl border border-border p-4">
+                    <p className="text-xs text-muted-foreground">Bajo mínimo</p>
+                    <p className="num mt-1 text-xl font-medium text-foreground">{formatNumber(inventario.data.bajoMinimo)}</p>
                   </div>
                 </div>
                 <DataTable
@@ -201,8 +201,8 @@ export function ReportesPage() {
                       key: 'producto',
                       header: 'Producto',
                       render: (fila) => (
-                        <span className="text-ink">
-                          {fila.productoNombre} <span className="text-xs text-muted">{fila.sku}</span>
+                        <span className="text-foreground">
+                          {fila.productoNombre} <span className="text-xs text-muted-foreground">{fila.sku}</span>
                         </span>
                       ),
                     },
@@ -228,21 +228,21 @@ export function ReportesPage() {
               <Skeleton className="h-40 w-full" />
             ) : (
               <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                <div className="rounded-card border border-hairline p-4">
-                  <p className="text-xs text-muted">Comprado</p>
-                  <p className="num mt-1 text-xl font-medium text-ink">{formatUSD(compras.data.totalCompradoUSD)}</p>
+                <div className="rounded-xl border border-border p-4">
+                  <p className="text-xs text-muted-foreground">Comprado</p>
+                  <p className="num mt-1 text-xl font-medium text-foreground">{formatUSD(compras.data.totalCompradoUSD)}</p>
                 </div>
-                <div className="rounded-card border border-hairline p-4">
-                  <p className="text-xs text-muted">Por pagar</p>
-                  <p className="num mt-1 text-xl font-medium text-ink">{formatUSD(compras.data.totalPorPagarUSD)}</p>
+                <div className="rounded-xl border border-border p-4">
+                  <p className="text-xs text-muted-foreground">Por pagar</p>
+                  <p className="num mt-1 text-xl font-medium text-foreground">{formatUSD(compras.data.totalPorPagarUSD)}</p>
                 </div>
-                <div className="rounded-card border border-hairline p-4">
-                  <p className="text-xs text-muted">Pagado</p>
-                  <p className="num mt-1 text-xl font-medium text-ink">{formatUSD(compras.data.totalPagadoUSD)}</p>
+                <div className="rounded-xl border border-border p-4">
+                  <p className="text-xs text-muted-foreground">Pagado</p>
+                  <p className="num mt-1 text-xl font-medium text-foreground">{formatUSD(compras.data.totalPagadoUSD)}</p>
                 </div>
-                <div className="rounded-card border border-hairline p-4">
-                  <p className="text-xs text-muted">Cuentas pendientes</p>
-                  <p className="num mt-1 text-xl font-medium text-ink">{formatNumber(compras.data.cuentasPendientes)}</p>
+                <div className="rounded-xl border border-border p-4">
+                  <p className="text-xs text-muted-foreground">Cuentas pendientes</p>
+                  <p className="num mt-1 text-xl font-medium text-foreground">{formatNumber(compras.data.cuentasPendientes)}</p>
                 </div>
               </div>
             )}
