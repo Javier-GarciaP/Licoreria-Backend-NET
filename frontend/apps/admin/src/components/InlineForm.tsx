@@ -17,13 +17,13 @@ export function InlineForm({
   className?: string;
 }) {
   return (
-    <div className={cn('rounded-2xl border border-accent/40 bg-surface p-4 shadow-soft', className)}>
+    <div className={cn('rounded-lg border border-primary/40 bg-card p-4 shadow-soft', className)}>
       <div className="mb-3 flex items-center justify-between gap-3">
-        <p className="text-sm font-medium text-ink">{title}</p>
+        <p className="text-sm font-medium text-foreground">{title}</p>
         <button
           type="button"
           onClick={onCancel}
-          className="flex h-7 w-7 items-center justify-center rounded-full text-muted transition hover:bg-ink/5 hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+          className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition hover:bg-accent/10 hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
           aria-label="Cerrar formulario"
         >
           <X size={14} />

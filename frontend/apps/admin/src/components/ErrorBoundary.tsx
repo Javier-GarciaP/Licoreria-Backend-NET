@@ -25,10 +25,10 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.error) {
       return (
-        <div className="flex min-h-dvh items-center justify-center bg-canvas px-4">
+        <div className="flex min-h-dvh items-center justify-center bg-background px-4">
           <Card className="w-full max-w-md p-6 text-center">
-            <h1 className="text-lg font-medium text-ink">Algo salió mal</h1>
-            <p className="mt-2 text-sm text-muted">{this.state.error.message}</p>
+            <h1 className="text-lg font-medium text-foreground">Algo salió mal</h1>
+            <p className="mt-2 text-sm text-muted-foreground">{this.state.error.message}</p>
             <Button className="mt-5" onClick={() => window.location.reload()}>
               Recargar
             </Button>

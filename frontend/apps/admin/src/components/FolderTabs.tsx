@@ -36,7 +36,7 @@ export function FolderTabs({ tabs, ariaLabel }: { tabs: FolderTab[]; ariaLabel: 
             end={tab.end}
             className={cn(
               'rounded-t-2xl border border-b-0 px-5 py-2.5 text-sm transition',
-              activo ? cn('border-hairline bg-surface text-ink', direccion) : 'border-transparent text-muted hover:bg-surface/40 hover:text-ink',
+              activo ? cn('border-border bg-card text-foreground', direccion) : 'border-transparent text-muted-foreground hover:bg-card/40 hover:text-foreground',
             )}
           >
             {tab.label}
@@ -50,7 +50,7 @@ export function FolderTabs({ tabs, ariaLabel }: { tabs: FolderTab[]; ariaLabel: 
 /** Panel que engloba el contenido bajo las pestañas carpeta. */
 export function FolderPanel({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn('rounded-b-2xl rounded-tr-2xl border border-hairline bg-surface/50 p-4 lg:p-6', className)}>
+    <div className={cn('rounded-b-2xl rounded-tr-2xl border border-border bg-card/50 p-4 lg:p-6', className)}>
       {children}
     </div>
   );
