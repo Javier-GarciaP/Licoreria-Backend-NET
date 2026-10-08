@@ -396,7 +396,7 @@ export interface Venta {
 /* ===================== Cuentas / Comandas ===================== */
 
 export type AreaDestino = 'Barra' | 'Cocina';
-export type EstadoItemComanda = 'Recibido' | 'Preparado' | 'Entregado' | 'Cancelado';
+export type EstadoItemComanda = 'Recibido' | 'Preparado' | 'Entregado' | 'Cancelado' | 'EnProceso';
 export type EstadoCuenta = 'Abierta' | 'PorCobrar' | 'Cerrada';
 
 export interface ComandaDetalle {
