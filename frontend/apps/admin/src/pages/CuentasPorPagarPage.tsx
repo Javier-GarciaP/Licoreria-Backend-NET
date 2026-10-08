@@ -84,7 +84,7 @@ export function CuentasPorPagarPage() {
         <Card className="border-0 bg-transparent shadow-none">
           <CardHeader>
             <CardTitle>Cuentas por pagar</CardTitle>
-            <label className="flex items-center gap-2 text-xs text-muted">
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
               <input
                 type="checkbox"
                 checked={soloPendientes}
@@ -113,8 +113,8 @@ export function CuentasPorPagarPage() {
                             onSubmit={pagoForm.handleSubmit((d) => pagar.mutate(d))}
                             noValidate
                           >
-                            <p className="text-xs text-muted">
-                              Saldo pendiente: <span className="num text-ink">{formatUSD(cuenta.saldoUSD)}</span>
+                            <p className="text-xs text-muted-foreground">
+                              Saldo pendiente: <span className="num text-foreground">{formatUSD(cuenta.saldoUSD)}</span>
                             </p>
                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                               <Input label="Monto" type="number" error={pagoForm.formState.errors.monto?.message} {...pagoForm.register('monto')} />
@@ -146,7 +146,7 @@ export function CuentasPorPagarPage() {
                   : undefined
               }
               columns={[
-                { key: 'proveedor', header: 'Proveedor', render: (cuenta) => <span className="text-ink">{cuenta.proveedorNombre}</span> },
+                { key: 'proveedor', header: 'Proveedor', render: (cuenta) => <span className="text-foreground">{cuenta.proveedorNombre}</span> },
                 { key: 'estado', header: 'Estado', render: (cuenta) => <StatusBadge status={cuenta.estado} /> },
                 { key: 'vencimiento', header: 'Vencimiento', render: (cuenta) => formatDateTime(cuenta.vencimiento) },
                 { key: 'monto', header: 'Monto', align: 'right', render: (cuenta) => formatUSD(cuenta.montoUSD) },

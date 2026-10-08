@@ -77,7 +77,7 @@ function FormularioProveedor({
           error={form.formState.errors.diasCredito?.message}
           {...form.register('diasCredito')}
         />
-        <label className="flex items-end gap-2 pb-2.5 text-sm text-muted">
+        <label className="flex items-end gap-2 pb-2.5 text-sm text-muted-foreground">
           <input type="checkbox" {...form.register('activo')} />
           Activo
         </label>
@@ -198,8 +198,8 @@ export function ProveedoresPage() {
                   header: 'Proveedor',
                   render: (proveedor) => (
                     <div>
-                      <p className="text-ink">{proveedor.nombre}</p>
-                      <p className="text-xs text-muted">{proveedor.contacto ?? proveedor.telefono ?? '—'}</p>
+                      <p className="text-foreground">{proveedor.nombre}</p>
+                      <p className="text-xs text-muted-foreground">{proveedor.contacto ?? proveedor.telefono ?? '—'}</p>
                     </div>
                   ),
                 },

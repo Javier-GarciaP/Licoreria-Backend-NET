@@ -34,7 +34,7 @@ export function RecepcionesPage() {
               rowKey={(recepcion) => recepcion.id}
               empty="No hay recepciones."
               columns={[
-                { key: 'orden', header: 'Orden', render: (recepcion) => <span className="text-ink">{recepcion.numeroOrden}</span> },
+                { key: 'orden', header: 'Orden', render: (recepcion) => <span className="text-foreground">{recepcion.numeroOrden}</span> },
                 { key: 'fecha', header: 'Fecha', render: (recepcion) => formatDateTime(recepcion.fecha) },
                 { key: 'lineas', header: 'Líneas', align: 'center', render: (recepcion) => recepcion.detalles.length },
                 { key: 'total', header: 'Total', align: 'right', render: (recepcion) => formatUSD(recepcion.totalUSD) },
@@ -66,13 +66,13 @@ export function RecepcionesPage() {
       >
         {detalle && (
           <div className="flex flex-col gap-5">
-            <p className="text-sm text-muted">{formatDateTime(detalle.fecha)}</p>
-            {detalle.observaciones && <p className="text-sm text-muted">{detalle.observaciones}</p>}
+            <p className="text-sm text-muted-foreground">{formatDateTime(detalle.fecha)}</p>
+            {detalle.observaciones && <p className="text-sm text-muted-foreground">{detalle.observaciones}</p>}
             <ModalSection title="Líneas recibidas">
-              <div className="overflow-x-auto rounded-inner border border-hairline">
+              <div className="overflow-x-auto rounded-inner border border-border">
                 <table className="w-full min-w-[420px] text-sm">
                   <thead>
-                    <tr className="bg-elevated/60 text-left text-xs uppercase tracking-tighter2 text-muted">
+                    <tr className="bg-muted/60 text-left text-xs uppercase tracking-tighter2 text-muted-foreground">
                       <th scope="col" className="px-4 py-2.5">SKU</th>
                       <th scope="col" className="px-4 py-2.5 text-right">Cantidad</th>
                       <th scope="col" className="px-4 py-2.5 text-right">Costo unit.</th>
@@ -81,11 +81,11 @@ export function RecepcionesPage() {
                   </thead>
                   <tbody>
                     {detalle.detalles.map((item) => (
-                      <tr key={item.id} className="border-t border-hairline">
-                        <td className="px-4 py-2.5 text-ink">{item.sku}</td>
-                        <td className="num px-4 py-2.5 text-right text-muted">{formatNumber(item.cantidad)}</td>
-                        <td className="num px-4 py-2.5 text-right text-muted">{formatUSD(item.costoUnitarioUSD)}</td>
-                        <td className="num px-4 py-2.5 text-right text-ink">
+                      <tr key={item.id} className="border-t border-border">
+                        <td className="px-4 py-2.5 text-foreground">{item.sku}</td>
+                        <td className="num px-4 py-2.5 text-right text-muted-foreground">{formatNumber(item.cantidad)}</td>
+                        <td className="num px-4 py-2.5 text-right text-muted-foreground">{formatUSD(item.costoUnitarioUSD)}</td>
+                        <td className="num px-4 py-2.5 text-right text-foreground">
                           {formatUSD(Number(item.cantidad) * Number(item.costoUnitarioUSD))}
                         </td>
                       </tr>
@@ -94,10 +94,10 @@ export function RecepcionesPage() {
                 </table>
               </div>
             </ModalSection>
-            <div className="flex justify-end border-t border-hairline pt-3">
+            <div className="flex justify-end border-t border-border pt-3">
               <div className="flex items-baseline gap-3">
-                <span className="text-sm text-muted">Total</span>
-                <span className="num text-lg font-medium text-ink">{formatUSD(detalle.totalUSD)}</span>
+                <span className="text-sm text-muted-foreground">Total</span>
+                <span className="num text-lg font-medium text-foreground">{formatUSD(detalle.totalUSD)}</span>
               </div>
             </div>
           </div>

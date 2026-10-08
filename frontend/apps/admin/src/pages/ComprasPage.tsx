@@ -157,9 +157,9 @@ export function ComprasPage() {
                 <Input label="Observaciones" {...ordenForm.register('observaciones')} />
               </div>
 
-              <div className="rounded-inner border border-hairline bg-elevated/30 p-3">
+              <div className="rounded-inner border border-border bg-muted/30 p-3">
                 <div className="mb-2 flex items-center justify-between">
-                  <p className="text-xs font-medium uppercase tracking-tighter2 text-muted">Líneas</p>
+                  <p className="text-xs font-medium uppercase tracking-tighter2 text-muted-foreground">Líneas</p>
                   <Button
                     type="button"
                     size="sm"
@@ -170,11 +170,11 @@ export function ComprasPage() {
                   </Button>
                 </div>
                 {ordenForm.formState.errors.detalles?.message && (
-                  <p className="mb-2 text-xs text-danger-ink">{ordenForm.formState.errors.detalles.message}</p>
+                  <p className="mb-2 text-xs text-destructive-fg">{ordenForm.formState.errors.detalles.message}</p>
                 )}
                 <div className="flex flex-col gap-2">
                   {fields.map((field, indice) => (
-                    <div key={field.id} className="grid grid-cols-2 gap-2 rounded-inner bg-surface p-3 sm:grid-cols-4">
+                    <div key={field.id} className="grid grid-cols-2 gap-2 rounded-inner bg-card p-3 sm:grid-cols-4">
                       <Select aria-label="Variante" {...ordenForm.register(`detalles.${indice}.varianteId`)}>
                         <option value="">Producto…</option>
                         {stock.data?.items.map((item) => (
@@ -251,12 +251,12 @@ export function ComprasPage() {
                               {recepcionando.detalles.map((item) => {
                                 const pendiente = Math.max(0, item.cantidad - item.cantidadRecibida);
                                 return (
-                                  <div key={item.id} className="flex items-center justify-between gap-3 rounded-inner bg-elevated/40 px-3 py-2">
+                                  <div key={item.id} className="flex items-center justify-between gap-3 rounded-inner bg-muted/40 px-3 py-2">
                                     <div>
-                                      <p className="text-sm text-ink">
-                                        {item.nombre} <span className="text-xs text-muted">{item.sku}</span>
+                                      <p className="text-sm text-foreground">
+                                        {item.nombre} <span className="text-xs text-muted-foreground">{item.sku}</span>
                                       </p>
-                                      <p className="text-xs text-muted">Pendiente: {formatNumber(pendiente)}</p>
+                                      <p className="text-xs text-muted-foreground">Pendiente: {formatNumber(pendiente)}</p>
                                     </div>
                                     <input
                                       type="number"
@@ -270,7 +270,7 @@ export function ComprasPage() {
                                           [item.id]: String(Math.min(pendiente, Math.max(0, Number(evento.target.value)))),
                                         }))
                                       }
-                                      className="num h-9 w-24 rounded-control border border-hairline bg-surface px-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent/50"
+                                      className="num h-9 w-24 rounded-control border border-border bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/50"
                                     />
                                   </div>
                                 );
@@ -294,7 +294,7 @@ export function ComprasPage() {
                   : undefined
               }
               columns={[
-                { key: 'numero', header: 'Número', render: (orden) => <span className="text-ink">{orden.numero}</span> },
+                { key: 'numero', header: 'Número', render: (orden) => <span className="text-foreground">{orden.numero}</span> },
                 { key: 'proveedor', header: 'Proveedor', render: (orden) => orden.proveedorNombre },
                 { key: 'fecha', header: 'Fecha', render: (orden) => formatDateTime(orden.fecha) },
                 { key: 'estado', header: 'Estado', render: (orden) => <Pill tone={tono[orden.estado] ?? 'neutral'}>{orden.estado}</Pill> },
@@ -341,14 +341,14 @@ export function ComprasPage() {
           <div className="flex flex-col gap-5">
             <div className="flex flex-wrap items-center gap-3">
               <Pill tone={tono[detalle.estado] ?? 'neutral'}>{detalle.estado}</Pill>
-              <span className="text-sm text-muted">{detalle.proveedorNombre}</span>
-              <span className="text-sm text-muted">{formatDateTime(detalle.fecha)}</span>
+              <span className="text-sm text-muted-foreground">{detalle.proveedorNombre}</span>
+              <span className="text-sm text-muted-foreground">{formatDateTime(detalle.fecha)}</span>
             </div>
             <ModalSection title="Líneas">
-              <div className="overflow-x-auto rounded-inner border border-hairline">
+              <div className="overflow-x-auto rounded-inner border border-border">
                 <table className="w-full min-w-[520px] text-sm">
                   <thead>
-                    <tr className="bg-elevated/60 text-left text-xs uppercase tracking-tighter2 text-muted">
+                    <tr className="bg-muted/60 text-left text-xs uppercase tracking-tighter2 text-muted-foreground">
                       <th scope="col" className="px-4 py-2.5">SKU</th>
                       <th scope="col" className="px-4 py-2.5 text-right">Cantidad</th>
                       <th scope="col" className="px-4 py-2.5 text-right">Recibida</th>
@@ -358,25 +358,25 @@ export function ComprasPage() {
                   </thead>
                   <tbody>
                     {detalle.detalles.map((item) => (
-                      <tr key={item.id} className="border-t border-hairline">
-                        <td className="px-4 py-2.5 text-ink">
+                      <tr key={item.id} className="border-t border-border">
+                        <td className="px-4 py-2.5 text-foreground">
                           {item.nombre}
-                          <span className="ml-2 text-xs text-muted">{item.sku}</span>
+                          <span className="ml-2 text-xs text-muted-foreground">{item.sku}</span>
                         </td>
-                        <td className="num px-4 py-2.5 text-right text-muted">{formatNumber(item.cantidad)}</td>
-                        <td className="num px-4 py-2.5 text-right text-muted">{formatNumber(item.cantidadRecibida)}</td>
-                        <td className="num px-4 py-2.5 text-right text-muted">{formatUSD(item.costoUnitarioUSD)}</td>
-                        <td className="num px-4 py-2.5 text-right text-ink">{formatUSD(item.subtotalUSD)}</td>
+                        <td className="num px-4 py-2.5 text-right text-muted-foreground">{formatNumber(item.cantidad)}</td>
+                        <td className="num px-4 py-2.5 text-right text-muted-foreground">{formatNumber(item.cantidadRecibida)}</td>
+                        <td className="num px-4 py-2.5 text-right text-muted-foreground">{formatUSD(item.costoUnitarioUSD)}</td>
+                        <td className="num px-4 py-2.5 text-right text-foreground">{formatUSD(item.subtotalUSD)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             </ModalSection>
-            <div className="flex justify-end border-t border-hairline pt-3">
+            <div className="flex justify-end border-t border-border pt-3">
               <div className="flex items-baseline gap-3">
-                <span className="text-sm text-muted">Total</span>
-                <span className="num text-lg font-medium text-ink">{formatUSD(detalle.totalUSD)}</span>
+                <span className="text-sm text-muted-foreground">Total</span>
+                <span className="num text-lg font-medium text-foreground">{formatUSD(detalle.totalUSD)}</span>
               </div>
             </div>
           </div>
