@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { Button, Card, cn, Input } from '@licoreria/ui';
 import { useAuth } from '../context/AuthContext';
 import { mensajeDeError } from '../lib/api';
-import { CUENTAS_DEMO, inicioDeRol } from '../lib/roles';
+import { CUENTAS_DEMO, esRolServicio, inicioDeRol, urlServicio } from '../lib/roles';
 
 const esquema = z.object({
   username: z.string().min(3, 'Ingresa tu correo o usuario'),
@@ -35,6 +35,10 @@ export function LoginPage() {
   const autenticar = async (username: string, password: string) => {
     try {
       const respuesta = await login(username, password);
+      if (esRolServicio(respuesta.rolDominio)) {
+        window.location.assign(urlServicio());
+        return;
+      }
       toast.success('Sesión iniciada');
       navigate(destino ?? inicioDeRol(respuesta.rolDominio), { replace: true });
     } catch (error) {

@@ -13,7 +13,6 @@ const MesasPage = lazy(() => import('./pages/MesasPage').then((m) => ({ default:
 const CuentasPage = lazy(() => import('./pages/CuentasPage').then((m) => ({ default: m.CuentasPage })));
 const CuentaPage = lazy(() => import('./pages/CuentaPage').then((m) => ({ default: m.CuentaPage })));
 const VentasPage = lazy(() => import('./pages/VentasPage').then((m) => ({ default: m.VentasPage })));
-const KdsPage = lazy(() => import('./pages/KdsPage').then((m) => ({ default: m.KdsPage })));
 const ReservasPage = lazy(() => import('./pages/ReservasPage').then((m) => ({ default: m.ReservasPage })));
 const MermasPage = lazy(() => import('./pages/MermasPage').then((m) => ({ default: m.MermasPage })));
 const InventarioPage = lazy(() => import('./pages/InventarioPage').then((m) => ({ default: m.InventarioPage })));
@@ -50,9 +49,6 @@ const ClientesPage = lazy(() => import('./pages/ClientesPage').then((m) => ({ de
 const CajaPage = lazy(() => import('./pages/CajaPage').then((m) => ({ default: m.CajaPage })));
 const UsuariosPage = lazy(() => import('./pages/UsuariosPage').then((m) => ({ default: m.UsuariosPage })));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
-const SalonOperacionPage = lazy(() =>
-  import('./pages/SalonOperacionPage').then((m) => ({ default: m.SalonOperacionPage })),
-);
 
 function Cargando() {
   return (
@@ -107,11 +103,9 @@ export default function App() {
         <Route index element={<DashboardPage />} />
         <Route path="/pos" element={<PosPage />} />
         <Route path="/plano" element={<MesasPage />} />
-        <Route path="/mesonero" element={<SalonOperacionPage />} />
         <Route path="/cuentas" element={<CuentasPage />} />
         <Route path="/cuentas/:id" element={<CuentaPage />} />
         <Route path="/ventas" element={<VentasPage />} />
-        <Route path="/kds" element={<KdsPage />} />
         <Route path="/reservas" element={<ReservasPage />} />
         <Route path="/mermas" element={<MermasPage />} />
         <Route path="/inventario" element={<InventarioPage />} />

@@ -6,9 +6,6 @@
 export const INICIO_POR_ROL: Record<string, string> = {
   Administrador: '/',
   Cajero: '/pos',
-  Mesero: '/mesonero',
-  Barra: '/kds',
-  Cocina: '/kds',
   Host: '/reservas',
   EditorContenido: '/contenido',
 };
@@ -26,6 +23,16 @@ export const ETIQUETA_ROL: Record<string, string> = {
 /** Ruta inicial sugerida para un rol de dominio. */
 export function inicioDeRol(rolDominio?: string): string {
   return (rolDominio && INICIO_POR_ROL[rolDominio]) || '/';
+}
+
+/** Roles del personal de servicio que operan en el app dedicado (5175). */
+export function esRolServicio(rolDominio?: string): boolean {
+  return rolDominio === 'Mesero' || rolDominio === 'Barra' || rolDominio === 'Cocina';
+}
+
+/** URL del app de servicio (mesonero/barra/cocina), configurable por entorno. */
+export function urlServicio(): string {
+  return (import.meta.env.VITE_SERVICIO_URL as string | undefined) ?? 'http://localhost:5175';
 }
 
 /** Etiqueta legible del rol (dominio si existe; si no, el de seguridad). */
