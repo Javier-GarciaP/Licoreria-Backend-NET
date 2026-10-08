@@ -13,9 +13,9 @@ function renderPagina() {
 }
 
 describe('UsuariosPage', () => {
-  it('renderiza el encabezado y el botón de nuevo usuario', async () => {
+  it('renderiza la tabla de cuentas y el botón de nuevo usuario', async () => {
     renderPagina();
     expect(await screen.findByRole('button', { name: 'Nuevo usuario' })).toBeInTheDocument();
-    expect(screen.getByText('Usuarios')).toBeInTheDocument();
+    expect(screen.getByText('Cuentas')).toBeInTheDocument();
   });
 });

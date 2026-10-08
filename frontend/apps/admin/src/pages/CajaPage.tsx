@@ -12,7 +12,6 @@ import {
   CardTitle,
   DataTable,
   Input,
-  PageHeader,
   Pill,
   Select,
   Skeleton,
@@ -106,13 +105,7 @@ export function CajaPage() {
   const sesion = activa.data ?? null;
 
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader
-        title="Caja"
-        subtitle="Sesiones de caja, movimientos y arqueo (Z)."
-        actions={sesion ? <StatusBadge status={sesion.estado} /> : undefined}
-      />
-
+    <div className="mx-auto flex max-w-page flex-col gap-4">
       {activa.isLoading ? (
         <Skeleton className="h-40 w-full" />
       ) : sesion ? (

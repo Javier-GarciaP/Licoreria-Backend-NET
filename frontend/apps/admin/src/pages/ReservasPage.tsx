@@ -4,7 +4,9 @@ import { z } from 'zod';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { CheckCircle2, ClipboardList, HandCoins, Plus, XCircle } from 'lucide-react';
 import {
+  ActionMenu,
   Button,
   Card,
   CardBody,
@@ -13,7 +15,6 @@ import {
   DataTable,
   Input,
   Modal,
-  PageHeader,
   Pagination,
   Pill,
   Select,
@@ -165,15 +166,13 @@ export function ReservasPage() {
   };
 
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader
-        title="Reservas VIP"
-        subtitle="Gestión de reservas, señas y pedidos anticipados."
-        actions={<Button onClick={() => setCrearOpen(true)}>Nueva reserva</Button>}
-      />
+    <div className="mx-auto flex max-w-page flex-col gap-4">
       <Card>
         <CardHeader>
           <CardTitle>Agenda</CardTitle>
+          <Button size="sm" leftIcon={<Plus size={15} />} onClick={() => setCrearOpen(true)}>
+            Nueva reserva
+          </Button>
         </CardHeader>
         <CardBody>
           <DataTable<Reserva>
@@ -216,32 +215,29 @@ export function ReservasPage() {
                 key: 'acciones',
                 header: '',
                 align: 'right',
-                render: (reserva) => (
-                  <div className="flex justify-end gap-2">
-                    {reserva.pagos.some((pago) => pago.estado === 'Pendiente') && (
-                      <Button size="sm" variant="ghost" onClick={() => setSenasDe(reserva)}>
-                        Señas
-                      </Button>
-                    )}
-                    <Button size="sm" variant="ghost" onClick={() => setPedidosDe(reserva)}>
-                      Pedidos
-                    </Button>
-                    {reserva.estado === 'Pendiente' && (
-                      <Button size="sm" onClick={() => cambiar.mutate({ id: reserva.id, estado: 'Confirmada' })}>
-                        Confirmar
-                      </Button>
-                    )}
-                    {(reserva.estado === 'Pendiente' || reserva.estado === 'Confirmada') && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => cambiar.mutate({ id: reserva.id, estado: 'Cancelada' })}
-                      >
-                        Cancelar
-                      </Button>
-                    )}
-                  </div>
-                ),
+                render: (reserva) => {
+                  const opciones = [];
+                  if (reserva.pagos.some((pago) => pago.estado === 'Pendiente')) {
+                    opciones.push({ label: 'Validar señas', icon: <HandCoins size={15} />, onClick: () => setSenasDe(reserva) });
+                  }
+                  opciones.push({ label: 'Pedidos', icon: <ClipboardList size={15} />, onClick: () => setPedidosDe(reserva) });
+                  if (reserva.estado === 'Pendiente') {
+                    opciones.push({
+                      label: 'Confirmar',
+                      icon: <CheckCircle2 size={15} />,
+                      onClick: () => cambiar.mutate({ id: reserva.id, estado: 'Confirmada' }),
+                    });
+                  }
+                  if (reserva.estado === 'Pendiente' || reserva.estado === 'Confirmada') {
+                    opciones.push({
+                      label: 'Cancelar',
+                      icon: <XCircle size={15} />,
+                      danger: true,
+                      onClick: () => cambiar.mutate({ id: reserva.id, estado: 'Cancelada' }),
+                    });
+                  }
+                  return <ActionMenu label={`Acciones de reserva ${reserva.nombreContacto}`} options={opciones} />;
+                },
               },
             ]}
           />

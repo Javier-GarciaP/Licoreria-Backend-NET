@@ -4,7 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { KeyRound, Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-react';
 import {
+  ActionMenu,
   Button,
   Card,
   CardBody,
@@ -13,7 +15,6 @@ import {
   DataTable,
   Input,
   Modal,
-  PageHeader,
   Pagination,
   Pill,
   Select,
@@ -21,6 +22,7 @@ import {
 import type { Usuario } from '@licoreria/types';
 import { usuariosApi } from '@licoreria/api-client';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { InlineForm } from '../components/InlineForm';
 import { mensajeDeError } from '../lib/api';
 import { formatDateTime } from '../lib/format';
 
@@ -124,8 +126,15 @@ export function UsuariosPage() {
     onError: (error) => toast.error('No se pudo eliminar', { description: mensajeDeError(error) }),
   });
 
+  const cerrarFormulario = () => {
+    setCreando(false);
+    setEditando(null);
+    usuarioForm.reset(VACIO);
+  };
+
   const abrirCrear = () => {
     usuarioForm.reset(VACIO);
+    setEditando(null);
     setCreando(true);
   };
 
@@ -137,38 +146,112 @@ export function UsuariosPage() {
       password: '',
       activo: usuario.activo,
     });
+    setCreando(false);
     setEditando(usuario);
   };
 
-  const formularioAbierto = creando || Boolean(editando);
+  const filaEdicion = editando
+    ? (usuario: Usuario) =>
+        usuario.id === editando.id ? (
+          <InlineForm title={`Editar · ${usuario.nombreCompleto}`} onCancel={() => setEditando(null)}>
+            <form
+              className="flex flex-col gap-3"
+              onSubmit={usuarioForm.handleSubmit((datos) => guardar.mutate(datos))}
+              noValidate
+            >
+              <Input label="Nombre completo" error={usuarioForm.formState.errors.nombreCompleto?.message} {...usuarioForm.register('nombreCompleto')} />
+              <Input label="Correo" type="email" error={usuarioForm.formState.errors.email?.message} {...usuarioForm.register('email')} />
+              <Select label="Rol" error={usuarioForm.formState.errors.rol?.message} {...usuarioForm.register('rol')}>
+                {ROLES.map((rol) => (
+                  <option key={rol} value={rol}>
+                    {rol}
+                  </option>
+                ))}
+              </Select>
+              <label className="flex items-center gap-2 text-sm text-muted">
+                <input type="checkbox" {...usuarioForm.register('activo')} />
+                Activo
+              </label>
+              <div className="flex justify-end gap-2">
+                <Button variant="ghost" onClick={() => setEditando(null)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" loading={guardar.isPending}>
+                  Guardar cambios
+                </Button>
+              </div>
+            </form>
+          </InlineForm>
+        ) : null
+    : undefined;
 
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader
-        title="Usuarios"
-        subtitle="Personal del sistema, roles y estado."
-        actions={<Button onClick={abrirCrear}>Nuevo usuario</Button>}
-      />
+    <div className="mx-auto flex max-w-page flex-col gap-4">
       <Card>
         <CardHeader>
           <CardTitle>Cuentas</CardTitle>
-          <div className="w-56">
-            <Input
-              placeholder="Buscar…"
-              value={busqueda}
-              onChange={(evento) => {
-                setBusqueda(evento.target.value);
-                setPage(1);
-              }}
-            />
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="w-56">
+              <Input
+                placeholder="Buscar…"
+                value={busqueda}
+                onChange={(evento) => {
+                  setBusqueda(evento.target.value);
+                  setPage(1);
+                }}
+              />
+            </div>
+            <Button size="sm" leftIcon={<Plus size={15} />} onClick={abrirCrear}>
+              Nuevo usuario
+            </Button>
           </div>
         </CardHeader>
-        <CardBody>
+        <CardBody className="flex flex-col gap-3">
+          {creando && (
+            <InlineForm title="Nuevo usuario" onCancel={cerrarFormulario}>
+              <form
+                className="flex flex-col gap-3"
+                onSubmit={usuarioForm.handleSubmit((datos) => guardar.mutate(datos))}
+                noValidate
+              >
+                <Input label="Nombre completo" error={usuarioForm.formState.errors.nombreCompleto?.message} {...usuarioForm.register('nombreCompleto')} />
+                <Input label="Correo" type="email" error={usuarioForm.formState.errors.email?.message} {...usuarioForm.register('email')} />
+                <Select label="Rol" error={usuarioForm.formState.errors.rol?.message} {...usuarioForm.register('rol')}>
+                  {ROLES.map((rol) => (
+                    <option key={rol} value={rol}>
+                      {rol}
+                    </option>
+                  ))}
+                </Select>
+                <Input
+                  label="Contraseña"
+                  type="password"
+                  error={usuarioForm.formState.errors.password?.message}
+                  {...usuarioForm.register('password')}
+                />
+                <label className="flex items-center gap-2 text-sm text-muted">
+                  <input type="checkbox" {...usuarioForm.register('activo')} />
+                  Activo
+                </label>
+                <div className="flex justify-end gap-2">
+                  <Button variant="ghost" onClick={cerrarFormulario}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" loading={guardar.isPending}>
+                    Crear usuario
+                  </Button>
+                </div>
+              </form>
+            </InlineForm>
+          )}
+
           <DataTable<Usuario>
             rows={usuarios.data?.items ?? []}
             loading={usuarios.isLoading}
             rowKey={(usuario) => usuario.id}
             empty="No hay usuarios."
+            expandirKey={editando?.id ?? null}
+            expandedRow={filaEdicion}
             columns={[
               {
                 key: 'nombre',
@@ -194,20 +277,24 @@ export function UsuariosPage() {
                 header: '',
                 align: 'right',
                 render: (usuario) => (
-                  <div className="flex justify-end gap-2">
-                    <Button size="sm" variant="ghost" onClick={() => abrirEditar(usuario)}>
-                      Editar
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setCambiandoPassword(usuario)}>
-                      Contraseña
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => revocar.mutate(usuario.id)}>
-                      Revocar
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setPorEliminar(usuario)}>
-                      Eliminar
-                    </Button>
-                  </div>
+                  <ActionMenu
+                    label={`Acciones de ${usuario.nombreCompleto}`}
+                    options={[
+                      { label: 'Editar', icon: <Pencil size={15} />, onClick: () => abrirEditar(usuario) },
+                      {
+                        label: 'Cambiar contraseña',
+                        icon: <KeyRound size={15} />,
+                        onClick: () => setCambiandoPassword(usuario),
+                      },
+                      { label: 'Revocar sesiones', icon: <ShieldCheck size={15} />, onClick: () => revocar.mutate(usuario.id) },
+                      {
+                        label: 'Eliminar',
+                        icon: <Trash2 size={15} />,
+                        danger: true,
+                        onClick: () => setPorEliminar(usuario),
+                      },
+                    ]}
+                  />
                 ),
               },
             ]}
@@ -217,78 +304,23 @@ export function UsuariosPage() {
       </Card>
 
       <Modal
-        open={formularioAbierto}
-        onClose={() => {
-          setCreando(false);
-          setEditando(null);
-        }}
-        title={editando ? 'Editar usuario' : 'Nuevo usuario'}
-        footer={
-          <>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setCreando(false);
-                setEditando(null);
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" form="form-usuario" loading={guardar.isPending}>
-              Guardar
-            </Button>
-          </>
-        }
-      >
-        <form
-          id="form-usuario"
-          className="flex flex-col gap-3"
-          onSubmit={usuarioForm.handleSubmit((datos) => guardar.mutate(datos))}
-          noValidate
-        >
-          <Input label="Nombre completo" error={usuarioForm.formState.errors.nombreCompleto?.message} {...usuarioForm.register('nombreCompleto')} />
-          <Input label="Correo" type="email" error={usuarioForm.formState.errors.email?.message} {...usuarioForm.register('email')} />
-          <Select label="Rol" error={usuarioForm.formState.errors.rol?.message} {...usuarioForm.register('rol')}>
-            {ROLES.map((rol) => (
-              <option key={rol} value={rol}>
-                {rol}
-              </option>
-            ))}
-          </Select>
-          {!editando && (
-            <Input
-              label="Contraseña"
-              type="password"
-              error={usuarioForm.formState.errors.password?.message}
-              {...usuarioForm.register('password')}
-            />
-          )}
-          <label className="flex items-center gap-2 text-sm text-muted">
-            <input type="checkbox" {...usuarioForm.register('activo')} />
-            Activo
-          </label>
-        </form>
-      </Modal>
-
-      <Modal
         open={Boolean(cambiandoPassword)}
         onClose={() => setCambiandoPassword(null)}
-        title={`Cambiar contraseña · ${cambiandoPassword?.nombreCompleto ?? ''}`}
+        title={`Cambiar contraseña`}
+        size="sm"
+        backdrop="none"
         footer={
           <>
             <Button variant="ghost" onClick={() => setCambiandoPassword(null)}>
               Cancelar
             </Button>
-            <Button
-              type="submit"
-              form="form-password"
-              loading={cambiarPassword.isPending}
-            >
+            <Button type="submit" form="form-password" loading={cambiarPassword.isPending}>
               Actualizar
             </Button>
           </>
         }
       >
+        <p className="mb-3 text-sm text-muted">{cambiandoPassword?.nombreCompleto}</p>
         <form
           id="form-password"
           onSubmit={passwordForm.handleSubmit((datos) =>

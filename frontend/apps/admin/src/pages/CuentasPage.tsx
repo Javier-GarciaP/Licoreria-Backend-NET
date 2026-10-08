@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardBody, CardHeader, CardTitle, DataTable, PageHeader, Pagination, StatusBadge } from '@licoreria/ui';
+import { Card, CardBody, CardHeader, CardTitle, DataTable, Pagination, StatusBadge } from '@licoreria/ui';
 import type { Cuenta } from '@licoreria/types';
 import { cuentasApi } from '@licoreria/api-client';
 import { formatUSD, haceCuanto } from '../lib/format';
@@ -15,8 +15,7 @@ export function CuentasPage() {
   });
 
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader title="Cuentas" subtitle="Cuentas abiertas y por cobrar con su saldo." />
+    <div className="mx-auto flex max-w-page flex-col gap-4">
       <Card>
         <CardHeader>
           <CardTitle>Listado</CardTitle>
