@@ -33,7 +33,7 @@ export function ConfirmDialog({
         </>
       }
     >
-      <p className="text-sm text-muted">{description}</p>
+      <p className="text-sm text-muted-foreground">{description}</p>
     </Modal>
   );
 }

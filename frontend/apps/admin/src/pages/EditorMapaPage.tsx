@@ -506,7 +506,7 @@ export function EditorMapaPage() {
   if (!planoBase || !draft) {
     return (
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-center">
-        <p className="text-sm text-muted">Este mapa no existe o fue eliminado.</p>
+        <p className="text-sm text-muted-foreground">Este mapa no existe o fue eliminado.</p>
         <Button variant="ghost" onClick={() => navigate('/salon')}>
           Volver a planos
         </Button>
@@ -519,17 +519,17 @@ export function EditorMapaPage() {
   return (
     <div className="absolute inset-0 flex min-h-0 flex-col overflow-hidden p-3 pb-24 lg:p-4 lg:pb-4">
       {/* ===== Barra de opciones (top) ===== */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-hairline pb-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-border pb-3">
         <Button variant="ghost" size="sm" onClick={salir} aria-label="Volver">
           <ArrowLeft size={16} />
         </Button>
         <input
           value={draft.nombre}
           onChange={(e) => setDraft({ ...draft, nombre: e.target.value })}
-          className="min-w-[10rem] flex-1 rounded-control bg-transparent px-2 py-1.5 text-sm font-medium text-ink hover:bg-ink/5 focus:bg-ink/5 focus:outline-none"
+          className="min-w-[10rem] flex-1 rounded-control bg-transparent px-2 py-1.5 text-sm font-medium text-foreground hover:bg-accent/10 focus:bg-muted focus:outline-none"
           aria-label="Nombre del mapa"
         />
-        <label className="flex items-center gap-1.5 text-xs text-muted">
+        <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <input type="checkbox" checked={draft.activo} onChange={(e) => { setDraft({ ...draft, activo: e.target.checked }); setDirty(true); }} />
           Activo
         </label>
@@ -559,7 +559,7 @@ export function EditorMapaPage() {
           <HerramientaBtn onClick={() => setZoom((z) => Math.max(0.4, +(z - 0.1).toFixed(2)))} label="Alejar">
             <ZoomOut size={16} />
           </HerramientaBtn>
-          <span className="num w-12 text-center text-xs text-muted">{Math.round(zoom * 100)}%</span>
+          <span className="num w-12 text-center text-xs text-muted-foreground">{Math.round(zoom * 100)}%</span>
           <HerramientaBtn onClick={() => setZoom((z) => Math.min(2.4, +(z + 0.1).toFixed(2)))} label="Acercar">
             <ZoomIn size={16} />
           </HerramientaBtn>
@@ -569,7 +569,7 @@ export function EditorMapaPage() {
           <select
             value={draft.piso}
             onChange={(e) => { setDraft({ ...draft, piso: e.target.value }); setDirty(true); }}
-            className="h-9 rounded-control border border-hairline bg-surface px-2 text-xs text-ink"
+            className="h-9 rounded-control border border-border bg-card px-2 text-xs text-foreground"
             aria-label="Piso"
           >
             {PISOS.map((piso) => (
@@ -588,7 +588,7 @@ export function EditorMapaPage() {
       {/* ===== Cuerpo: rail + lienzo ===== */}
       <div className="flex min-h-0 flex-1 gap-3 pt-3">
         {/* Rail de herramientas */}
-        <div className="app-scroll flex w-14 shrink-0 flex-col items-center gap-1 overflow-y-auto rounded-2xl border border-hairline bg-surface/50 p-1.5">
+        <div className="app-scroll flex w-14 shrink-0 flex-col items-center gap-1 overflow-y-auto rounded-lg border border-border bg-card/50 p-1.5">
           <RailBtn activa={herramienta === 'seleccionar' && !colocandoForma} onClick={() => { setHerramienta('seleccionar'); setColocandoForma(null); }} label="Seleccionar">
             <MousePointer2 size={18} />
           </RailBtn>
@@ -604,7 +604,7 @@ export function EditorMapaPage() {
         </div>
 
         {/* Lienzo */}
-        <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden rounded-2xl border border-hairline bg-elevated/30">
+        <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden rounded-lg border border-border bg-muted/30">
           <div
             ref={wrapper}
             className="relative h-full w-full touch-none overflow-hidden"
@@ -650,11 +650,11 @@ export function EditorMapaPage() {
       </div>
 
       {/* ===== Barra de estado ===== */}
-      <div className="mt-3 flex items-center gap-3 border-t border-hairline pt-2 text-[11px] text-muted">
+      <div className="mt-3 flex items-center gap-3 border-t border-border pt-2 text-[11px] text-muted-foreground">
         <span className="num">{Math.round(zoom * 100)}%</span>
         <span className="num">x {coords.x} · y {coords.y}</span>
         <span>{draft.elementos.length} elementos</span>
-        {colocandoForma && <span className="text-accent-ink">Colocando: {ELEMENTOS_POR_FORMA[colocandoForma]?.label}</span>}
+        {colocandoForma && <span className="text-foreground">Colocando: {ELEMENTOS_POR_FORMA[colocandoForma]?.label}</span>}
         <span className="ml-auto flex items-center gap-1.5">
           <span className={cn('h-2 w-2 rounded-full', dirty ? 'bg-warning' : 'bg-success')} />
           {dirty ? 'Cambios sin guardar' : 'Guardado'}
@@ -686,7 +686,7 @@ function HerramientaBtn({
       onClick={onClick}
       className={cn(
         'flex h-9 w-9 items-center justify-center rounded-xl transition disabled:opacity-40',
-        activo ? 'bg-accent/25 text-accent-ink' : 'text-muted hover:bg-ink/5 hover:text-ink',
+        activo ? 'bg-primary/25 text-foreground' : 'text-muted-foreground hover:bg-accent/10 hover:text-foreground',
       )}
     >
       {children}
@@ -713,7 +713,7 @@ function RailBtn({
       onClick={onClick}
       className={cn(
         'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition',
-        activa ? 'border-accent bg-accent/20' : 'border-transparent hover:border-hairline hover:bg-ink/5',
+        activa ? 'border-primary bg-primary/20' : 'border-transparent hover:border-border hover:bg-accent/10',
       )}
     >
       {children}

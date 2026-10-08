@@ -100,7 +100,7 @@ export function EntradasPage() {
       <Card>
         <CardHeader>
           <CardTitle>Entradas</CardTitle>
-          <span className="text-xs text-muted">{entradas.data?.length ?? 0} emitidas</span>
+          <span className="text-xs text-muted-foreground">{entradas.data?.length ?? 0} emitidas</span>
         </CardHeader>
         <CardBody>
           <DataTable<Entrada>

@@ -55,7 +55,7 @@ export function PlanosPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-muted">
+        <p className="text-sm text-muted-foreground">
           {planos.data?.length ?? 0} {planos.data?.length === 1 ? 'mapa' : 'mapas'} del local
         </p>
         <span ref={botonNuevoRef}>
@@ -72,12 +72,12 @@ export function PlanosPage() {
           ))}
         </div>
       ) : (planos.data?.length ?? 0) === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-card border border-dashed border-hairline px-6 py-14 text-center">
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 text-accent-ink">
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border px-6 py-14 text-center">
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 text-foreground">
             <MapIcon size={22} />
           </span>
-          <p className="text-sm text-ink">Aún no hay mapas</p>
-          <p className="max-w-sm text-xs text-muted">Crea el primer plano del local para distribuir mesas, barra, pista y zonas.</p>
+          <p className="text-sm text-foreground">Aún no hay mapas</p>
+          <p className="max-w-sm text-xs text-muted-foreground">Crea el primer plano del local para distribuir mesas, barra, pista y zonas.</p>
           <Button onClick={() => setCreando(true)}>
             <Plus size={16} /> Nuevo plano
           </Button>
@@ -89,10 +89,10 @@ export function PlanosPage() {
               key={plano.id}
               type="button"
               onClick={() => navigate(`/salon/planos/${plano.id}`)}
-              className="group relative flex flex-col items-start gap-3 rounded-card border border-hairline bg-surface/60 p-4 text-left transition hover:border-accent hover:bg-accent/10"
+              className="group relative flex flex-col items-start gap-3 rounded-xl border border-border bg-card/60 p-4 text-left transition hover:border-primary hover:bg-primary/10"
             >
               <div className="flex w-full items-start justify-between gap-2">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/20 text-accent-ink">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/20 text-foreground">
                   <MapIcon size={16} />
                 </span>
                 <span
@@ -108,20 +108,20 @@ export function PlanosPage() {
                       setPorEliminar(plano);
                     }
                   }}
-                  className="rounded-full p-1.5 text-muted opacity-0 transition group-hover:opacity-100 hover:text-danger-ink"
+                  className="rounded-full p-1.5 text-muted-foreground opacity-0 transition group-hover:opacity-100 hover:text-destructive-fg"
                   aria-label="Eliminar mapa"
                 >
                   <Trash2 size={15} />
                 </span>
               </div>
               <div>
-                <p className="text-sm font-medium text-ink">{plano.nombre}</p>
-                <p className="text-xs text-muted">
+                <p className="text-sm font-medium text-foreground">{plano.nombre}</p>
+                <p className="text-xs text-muted-foreground">
                   v{plano.version} · {plano.elementos.length} elementos
                 </p>
               </div>
               {plano.activo ? (
-                <span className="inline-flex items-center gap-1 text-[11px] text-success-ink">
+                <span className="inline-flex items-center gap-1 text-[11px] text-success-fg">
                   <Star size={12} /> Activo
                 </span>
               ) : (
@@ -138,7 +138,7 @@ export function PlanosPage() {
                       activar.mutate(plano);
                     }
                   }}
-                  className="inline-flex items-center gap-1 rounded-full px-2 text-[11px] text-accent-ink opacity-0 transition group-hover:opacity-100 hover:bg-accent/15"
+                  className="inline-flex items-center gap-1 rounded-full px-2 text-[11px] text-foreground opacity-0 transition group-hover:opacity-100 hover:bg-primary/15"
                   aria-label="Establecer como activo"
                 >
                   <Star size={12} /> Establecer como activo

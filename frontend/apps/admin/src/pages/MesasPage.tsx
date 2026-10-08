@@ -64,12 +64,12 @@ interface EventoMesa {
 }
 
 const EVENTO_CHIP: Record<TipoEvento, string> = {
-  apertura: 'bg-success/25 text-success-ink',
-  comanda: 'bg-accent/25 text-accent-ink',
-  item: 'bg-info/25 text-info-ink',
-  liberada: 'bg-muted/25 text-muted',
-  reservada: 'bg-warning/25 text-warning-ink',
-  limpieza: 'bg-info/25 text-info-ink',
+  apertura: 'bg-success/25 text-success-fg',
+  comanda: 'bg-primary/25 text-foreground',
+  item: 'bg-info/25 text-info-fg',
+  liberada: 'bg-muted/25 text-muted-foreground',
+  reservada: 'bg-warning/25 text-warning-fg',
+  limpieza: 'bg-info/25 text-info-fg',
 };
 
 let contador = 0;
@@ -87,11 +87,11 @@ function KpiTile({
   chip: string;
 }) {
   return (
-    <div className="glass-card flex items-center gap-3 rounded-card px-4 py-3">
+    <div className="border border-border bg-card flex items-center gap-3 rounded-xl px-4 py-3">
       <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-full', chip)}>{icon}</span>
       <div className="min-w-0">
-        <p className="num truncate text-lg font-medium leading-tight text-ink">{value}</p>
-        <p className="truncate text-[11px] text-muted">{label}</p>
+        <p className="num truncate text-lg font-medium leading-tight text-foreground">{value}</p>
+        <p className="truncate text-[11px] text-muted-foreground">{label}</p>
       </div>
     </div>
   );
@@ -257,19 +257,19 @@ export function MesasPage() {
   return (
     <div className="absolute inset-0 flex min-h-0 flex-col overflow-hidden p-3 pb-24 lg:p-4 lg:pb-4">
       {/* ===== Franja superior ===== */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-hairline pb-3">
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/20 text-accent-ink">
+      <div className="flex flex-wrap items-center gap-2 border-b border-border pb-3">
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/20 text-foreground">
           <MapIcon size={17} />
         </span>
         <div className="mr-2">
-          <p className="text-sm font-medium text-ink">Mesas · Supervisión</p>
-          <p className="text-[11px] text-muted">Movimiento del salón en tiempo real</p>
+          <p className="text-sm font-medium text-foreground">Mesas · Supervisión</p>
+          <p className="text-[11px] text-muted-foreground">Movimiento del salón en tiempo real</p>
         </div>
 
         <div className="mx-1 hidden h-6 w-px bg-hairline md:block" />
         <div className="hidden items-center gap-3 md:flex">
           {LEYENDA.map((item) => (
-            <span key={item.estado} className="inline-flex items-center gap-1.5 text-[11px] text-muted">
+            <span key={item.estado} className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
               {item.label}
             </span>
@@ -277,7 +277,7 @@ export function MesasPage() {
         </div>
 
         <div className="ml-auto flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-pill border border-hairline bg-surface/60 px-2.5 py-1 text-[11px] text-success-ink">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card/60 px-2.5 py-1 text-[11px] text-success-fg">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
@@ -292,18 +292,18 @@ export function MesasPage() {
 
       {/* ===== Tira de KPIs ===== */}
       <div className="grid grid-cols-2 gap-2 pt-3 sm:grid-cols-3 xl:grid-cols-6">
-        <KpiTile label="Ocupadas" value={porEstado.Ocupada} chip="bg-danger/25 text-danger-ink" icon={<Armchair size={16} />} />
-        <KpiTile label="Libres" value={porEstado.Libre} chip="bg-success/25 text-success-ink" icon={<CircleCheck size={16} />} />
-        <KpiTile label="Reservadas" value={porEstado.Reservada} chip="bg-warning/25 text-warning-ink" icon={<CalendarClock size={16} />} />
-        <KpiTile label="En limpieza" value={porEstado.EnLimpieza} chip="bg-info/25 text-info-ink" icon={<Brush size={16} />} />
-        <KpiTile label="Cuentas abiertas" value={cuentasAbiertas.length} chip="bg-accent/25 text-accent-ink" icon={<LayoutGrid size={16} />} />
-        <KpiTile label="Saldo total" value={formatUSD(saldoTotal)} chip="bg-butter/25 text-butter-ink" icon={<Wallet size={16} />} />
+        <KpiTile label="Ocupadas" value={porEstado.Ocupada} chip="bg-danger/25 text-destructive-fg" icon={<Armchair size={16} />} />
+        <KpiTile label="Libres" value={porEstado.Libre} chip="bg-success/25 text-success-fg" icon={<CircleCheck size={16} />} />
+        <KpiTile label="Reservadas" value={porEstado.Reservada} chip="bg-warning/25 text-warning-fg" icon={<CalendarClock size={16} />} />
+        <KpiTile label="En limpieza" value={porEstado.EnLimpieza} chip="bg-info/25 text-info-fg" icon={<Brush size={16} />} />
+        <KpiTile label="Cuentas abiertas" value={cuentasAbiertas.length} chip="bg-primary/25 text-foreground" icon={<LayoutGrid size={16} />} />
+        <KpiTile label="Saldo total" value={formatUSD(saldoTotal)} chip="bg-butter/25 text-butter-fg" icon={<Wallet size={16} />} />
       </div>
 
       {/* ===== Cuerpo: mapa + panel ===== */}
       <div className="flex min-h-0 flex-1 gap-3 pt-3">
         {/* Mapa */}
-        <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden rounded-2xl border border-hairline bg-elevated/30">
+        <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden rounded-lg border border-border bg-muted/30">
           {planos.isLoading || mesas.isLoading ? (
             <div className="absolute inset-0 flex items-center justify-center">
               <Skeleton className="h-64 w-full max-w-xl" />
@@ -327,10 +327,10 @@ export function MesasPage() {
         {/* Panel derecho */}
         <div className="flex w-72 min-h-0 shrink-0 flex-col gap-3 sm:w-80 lg:w-[22rem]">
           {/* Feed de actividad */}
-          <div className="glass-card flex min-h-0 flex-1 flex-col rounded-card p-3">
+          <div className="border border-border bg-card flex min-h-0 flex-1 flex-col rounded-xl p-3">
             <div className="flex items-center justify-between gap-2 pb-2">
-              <p className="text-xs font-medium text-ink">Actividad en vivo</p>
-              <Activity size={14} className="text-success-ink" />
+              <p className="text-xs font-medium text-foreground">Actividad en vivo</p>
+              <Activity size={14} className="text-success-fg" />
             </div>
             {zonasConMesas.length > 1 && (
               <div className="app-scroll -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-2">
@@ -346,7 +346,7 @@ export function MesasPage() {
             )}
             <div className="app-scroll min-h-0 flex-1 overflow-y-auto pr-1">
               {eventosFiltrados.length === 0 ? (
-                <p className="py-8 text-center text-xs text-muted">Sin movimientos todavía. La actividad aparecerá aquí en tiempo real.</p>
+                <p className="py-8 text-center text-xs text-muted-foreground">Sin movimientos todavía. La actividad aparecerá aquí en tiempo real.</p>
               ) : (
                 <ul className="flex flex-col gap-2">
                   {eventosFiltrados.map((evento) => (
@@ -355,11 +355,11 @@ export function MesasPage() {
                         <IconoEvento tipo={evento.tipo} />
                       </span>
                       <div className="min-w-0">
-                        <p className="text-xs leading-snug text-ink">
+                        <p className="text-xs leading-snug text-foreground">
                           {evento.mesa ? <span className="font-medium">Mesa {evento.mesa} · </span> : null}
                           {evento.texto}
                         </p>
-                        <p className="text-[10px] text-muted">
+                        <p className="text-[10px] text-muted-foreground">
                           {haceCuanto(evento.cuando.toISOString())}
                           {evento.zona ? ` · ${evento.zona}` : ''}
                         </p>
@@ -373,25 +373,25 @@ export function MesasPage() {
 
           {/* Detalle de la mesa seleccionada */}
           {mesaSeleccionada ? (
-            <div className="glass-card shrink-0 rounded-card p-4">
+            <div className="border border-border bg-card shrink-0 rounded-xl p-4">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-medium text-ink">Mesa {mesaSeleccionada.numero}</p>
+                <p className="text-sm font-medium text-foreground">Mesa {mesaSeleccionada.numero}</p>
                 <span
-                  className="inline-flex items-center gap-1.5 rounded-pill px-2 py-0.5 text-[11px] text-ink"
+                  className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] text-foreground"
                   style={{ backgroundColor: `${COLOR_ESTADO[estadoDeMesa(mesaSeleccionada)]}22`, color: COLOR_ESTADO[estadoDeMesa(mesaSeleccionada)] }}
                 >
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: COLOR_ESTADO[estadoDeMesa(mesaSeleccionada)] }} />
                   {ETIQUETA_ESTADO[estadoDeMesa(mesaSeleccionada)]}
                 </span>
               </div>
-              <p className="mt-0.5 text-xs text-muted">{mesaSeleccionada.zonaNombre}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{mesaSeleccionada.zonaNombre}</p>
 
               <div className="mt-3 flex flex-col gap-1.5 text-xs">
                 <Detalle icon={<User size={13} />} label="Atendida por" value={atendidaPor} />
                 {cuentaSeleccionada && (
                   <>
                     <Detalle icon={<Clock size={13} />} label="Abierta" value={haceCuanto(cuentaSeleccionada.abiertaEn)} />
-                    <Detalle icon={<Wallet size={13} />} label="Saldo" value={<span className="num text-accent-ink">{formatUSD(cuentaSeleccionada.saldo)}</span>} />
+                    <Detalle icon={<Wallet size={13} />} label="Saldo" value={<span className="num text-foreground">{formatUSD(cuentaSeleccionada.saldo)}</span>} />
                     <Detalle icon={<UtensilsCrossed size={13} />} label="Comandas" value={`${cuentaSeleccionada.comandas.length}`} />
                   </>
                 )}
@@ -409,9 +409,9 @@ export function MesasPage() {
               )}
             </div>
           ) : (
-            <div className="glass-card flex shrink-0 items-center justify-center gap-2 rounded-card px-4 py-6 text-center">
-              <ArrowRight size={14} className="text-muted" />
-              <p className="text-xs text-muted">Toca una mesa en el mapa para ver su detalle</p>
+            <div className="border border-border bg-card flex shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-6 text-center">
+              <ArrowRight size={14} className="text-muted-foreground" />
+              <p className="text-xs text-muted-foreground">Toca una mesa en el mapa para ver su detalle</p>
             </div>
           )}
         </div>
@@ -454,8 +454,8 @@ function ChipFeed({ activo, onClick, children }: { activo: boolean; onClick: () 
       type="button"
       onClick={onClick}
       className={cn(
-        'flex h-7 shrink-0 items-center whitespace-nowrap rounded-pill border px-2.5 text-[11px] transition',
-        activo ? 'border-accent bg-accent/15 text-accent-ink' : 'border-hairline text-muted hover:text-ink',
+        'flex h-7 shrink-0 items-center whitespace-nowrap rounded-full border px-2.5 text-[11px] transition',
+        activo ? 'border-primary bg-primary/15 text-foreground' : 'border-border text-muted-foreground hover:text-foreground',
       )}
     >
       {children}
@@ -465,10 +465,10 @@ function ChipFeed({ activo, onClick, children }: { activo: boolean; onClick: () 
 
 function Detalle({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-2 text-muted">
-      <span className="text-muted">{icon}</span>
+    <div className="flex items-center gap-2 text-muted-foreground">
+      <span className="text-muted-foreground">{icon}</span>
       <span className="w-24 shrink-0">{label}</span>
-      <span className="ml-auto text-right text-ink">{value}</span>
+      <span className="ml-auto text-right text-foreground">{value}</span>
     </div>
   );
 }

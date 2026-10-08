@@ -187,8 +187,8 @@ export function ReservasPage() {
                 header: 'Contacto',
                 render: (reserva) => (
                   <div>
-                    <p className="text-ink">{reserva.nombreContacto}</p>
-                    <p className="text-xs text-muted">{reserva.telefono}</p>
+                    <p className="text-foreground">{reserva.nombreContacto}</p>
+                    <p className="text-xs text-muted-foreground">{reserva.telefono}</p>
                   </div>
                 ),
               },
@@ -203,7 +203,7 @@ export function ReservasPage() {
                 header: 'Señas',
                 render: (reserva) =>
                   reserva.pagos.length === 0 ? (
-                    <span className="text-xs text-muted">—</span>
+                    <span className="text-xs text-muted-foreground">—</span>
                   ) : (
                     <Pill tone={reserva.pagos.some((pago) => pago.estado === 'Pendiente') ? 'warning' : 'success'}>
                       {reserva.pagos.length} pago(s)
@@ -290,7 +290,7 @@ export function ReservasPage() {
           <Input label="Nombre" error={errors.nombreContacto?.message} {...register('nombreContacto')} />
           <Input label="Teléfono" error={errors.telefono?.message} {...register('telefono')} />
           <div>
-            <p className="mb-1 text-xs font-medium text-muted">Mesas</p>
+            <p className="mb-1 text-xs font-medium text-muted-foreground">Mesas</p>
             <div className="flex flex-wrap gap-2">
               {mesas.data?.map((mesa: Mesa) => (
                 <button
@@ -298,10 +298,10 @@ export function ReservasPage() {
                   type="button"
                   aria-pressed={mesasSeleccionadas.includes(mesa.id)}
                   onClick={() => toggleMesa(mesa.id)}
-                  className={`rounded-pill border px-3 py-1.5 text-xs transition ${
+                  className={`rounded-full border px-3 py-1.5 text-xs transition ${
                     mesasSeleccionadas.includes(mesa.id)
-                      ? 'border-accent text-accent-ink'
-                      : 'border-hairline text-muted'
+                      ? 'border-primary text-foreground'
+                      : 'border-border text-muted-foreground'
                   }`}
                 >
                   {mesa.numero}
@@ -326,10 +326,10 @@ export function ReservasPage() {
       <Modal open={Boolean(senasDe)} onClose={() => setSenasDe(null)} title="Validar señas">
         <div className="flex flex-col gap-3">
           {senasDe?.pagos.map((pago) => (
-            <div key={pago.id} className="flex items-center justify-between gap-3 rounded-2xl bg-elevated/40 px-3 py-2">
+            <div key={pago.id} className="flex items-center justify-between gap-3 rounded-lg bg-muted/40 px-3 py-2">
               <div>
-                <p className="text-sm text-ink">{pago.metodoPago}</p>
-                <p className="text-xs text-muted">{formatUSD(pago.monto)}</p>
+                <p className="text-sm text-foreground">{pago.metodoPago}</p>
+                <p className="text-xs text-muted-foreground">{formatUSD(pago.monto)}</p>
               </div>
               <div className="flex items-center gap-2">
                 <StatusBadge status={pago.estado} />
@@ -361,18 +361,18 @@ export function ReservasPage() {
           <div className="flex flex-col gap-1">
             {pedidos.data?.map((pedido) => (
               <div key={pedido.id} className="flex items-center justify-between text-sm">
-                <span className="text-ink">
+                <span className="text-foreground">
                   {pedido.cantidad} × {pedido.nombre}
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className="text-muted">{formatUSD(pedido.subtotalUSD)}</span>
-                  <button className="text-danger-ink" onClick={() => quitarPedido.mutate(pedido.id)}>
+                  <span className="text-muted-foreground">{formatUSD(pedido.subtotalUSD)}</span>
+                  <button className="text-destructive-fg" onClick={() => quitarPedido.mutate(pedido.id)}>
                     Quitar
                   </button>
                 </div>
               </div>
             ))}
-            {pedidos.data?.length === 0 && <p className="text-sm text-muted">Sin pedidos.</p>}
+            {pedidos.data?.length === 0 && <p className="text-sm text-muted-foreground">Sin pedidos.</p>}
           </div>
           <div className="flex items-end gap-2">
             <Select

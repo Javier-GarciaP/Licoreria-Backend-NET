@@ -133,7 +133,7 @@ export function MapaViewBase({
       width={W}
       height={H}
       viewBox={`0 0 ${W} ${H}`}
-      className={cn('block rounded-2xl', modo === 'editor' ? 'touch-none select-none' : 'max-w-full')}
+      className={cn('block rounded-lg', modo === 'editor' ? 'touch-none select-none' : 'max-w-full')}
       onPointerDown={onFondoPointerDown}
     >
       <FondoMapa plano={plano} rejilla={rejilla} />

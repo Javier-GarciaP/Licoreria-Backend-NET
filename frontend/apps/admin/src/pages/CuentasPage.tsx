@@ -28,7 +28,7 @@ export function CuentasPage() {
             onRowClick={(cuenta) => navigate(`/cuentas/${cuenta.id}`)}
             empty="No hay cuentas."
             columns={[
-              { key: 'mesa', header: 'Mesa', render: (cuenta) => <span className="text-ink">{cuenta.nombreMesa}</span> },
+              { key: 'mesa', header: 'Mesa', render: (cuenta) => <span className="text-foreground">{cuenta.nombreMesa}</span> },
               { key: 'estado', header: 'Estado', render: (cuenta) => <StatusBadge status={cuenta.estado} /> },
               { key: 'total', header: 'Total', align: 'right', render: (cuenta) => formatUSD(cuenta.total) },
               { key: 'abonado', header: 'Abonado', align: 'right', render: (cuenta) => formatUSD(cuenta.totalAbonado) },
@@ -36,7 +36,7 @@ export function CuentasPage() {
                 key: 'saldo',
                 header: 'Saldo',
                 align: 'right',
-                render: (cuenta) => <span className="font-medium text-accent-ink">{formatUSD(cuenta.saldo)}</span>,
+                render: (cuenta) => <span className="font-medium text-foreground">{formatUSD(cuenta.saldo)}</span>,
               },
               { key: 'tiempo', header: 'Abierta', align: 'right', render: (cuenta) => haceCuanto(cuenta.abiertaEn) },
             ]}

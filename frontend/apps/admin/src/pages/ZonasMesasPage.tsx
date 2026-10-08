@@ -156,7 +156,7 @@ export function ZonasMesasPage() {
             rowKey={(zona) => zona.id}
             empty="No hay zonas."
             columns={[
-              { key: 'nombre', header: 'Nombre', render: (zona) => <span className="text-ink">{zona.nombre}</span> },
+              { key: 'nombre', header: 'Nombre', render: (zona) => <span className="text-foreground">{zona.nombre}</span> },
               { key: 'tipo', header: 'Tipo', render: (zona) => <Pill tone="accent">{zona.tipo}</Pill> },
               {
                 key: 'activo',
@@ -219,7 +219,7 @@ export function ZonasMesasPage() {
             rowKey={(mesa) => mesa.id}
             empty="No hay mesas."
             columns={[
-              { key: 'numero', header: 'Número', render: (mesa) => <span className="text-ink">{mesa.numero}</span> },
+              { key: 'numero', header: 'Número', render: (mesa) => <span className="text-foreground">{mesa.numero}</span> },
               { key: 'zona', header: 'Zona', render: (mesa) => mesa.zonaNombre },
               { key: 'capacidad', header: 'Capacidad', align: 'center', render: (mesa) => mesa.capacidad },
               { key: 'forma', header: 'Forma', render: (mesa) => mesa.forma },
@@ -293,14 +293,14 @@ export function ZonasMesasPage() {
             ))}
           </Select>
           <Input label="Color (hex)" placeholder="#c9b8f0" {...zonaForm.register('color')} />
-          <p className="text-xs text-muted">Región en el mapa (unidades de rejilla)</p>
+          <p className="text-xs text-muted-foreground">Región en el mapa (unidades de rejilla)</p>
           <div className="grid grid-cols-4 gap-3">
             <Input label="X" type="number" step="0.5" {...zonaForm.register('posX')} />
             <Input label="Y" type="number" step="0.5" {...zonaForm.register('posY')} />
             <Input label="Ancho" type="number" step="0.5" {...zonaForm.register('ancho')} />
             <Input label="Alto" type="number" step="0.5" {...zonaForm.register('alto')} />
           </div>
-          <label className="flex items-center gap-2 text-sm text-muted">
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
             <input type="checkbox" {...zonaForm.register('activo')} />
             Activa
           </label>
@@ -351,7 +351,7 @@ export function ZonasMesasPage() {
             <Input label="Ancho" type="number" step="0.1" {...mesaForm.register('ancho')} />
             <Input label="Alto" type="number" step="0.1" {...mesaForm.register('alto')} />
           </div>
-          <label className="flex items-center gap-2 text-sm text-muted">
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
             <input type="checkbox" {...mesaForm.register('activa')} />
             Activa
           </label>

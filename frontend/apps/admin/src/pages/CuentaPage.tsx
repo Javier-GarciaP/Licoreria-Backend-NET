@@ -183,27 +183,27 @@ export function CuentaPage() {
         <Card>
           <CardHeader>
             <CardTitle>Comandas</CardTitle>
-            <span className="text-xs text-muted">Recibido → Preparado → Entregado</span>
+            <span className="text-xs text-muted-foreground">Recibido → Preparado → Entregado</span>
           </CardHeader>
           <CardBody className="flex flex-col gap-4">
-            {datos.comandas.length === 0 && <p className="text-sm text-muted">Sin consumos todavía.</p>}
+            {datos.comandas.length === 0 && <p className="text-sm text-muted-foreground">Sin consumos todavía.</p>}
             {datos.comandas.map((comanda) => (
-              <div key={comanda.id} className="rounded-2xl border border-hairline p-3">
+              <div key={comanda.id} className="rounded-lg border border-border p-3">
                 <div className="mb-2 flex items-center justify-between">
                   <Pill tone={comanda.area === 'Barra' ? 'accent' : 'info'}>{comanda.area}</Pill>
-                  <span className="text-xs text-muted">{haceCuanto(comanda.fecha)}</span>
+                  <span className="text-xs text-muted-foreground">{haceCuanto(comanda.fecha)}</span>
                 </div>
                 <div className="flex flex-col gap-1">
                   {comanda.detalles.map((detalle) => {
                     const siguiente = SIGUIENTE_ESTADO[detalle.estado];
                     return (
-                      <div key={detalle.id} className="flex items-center justify-between gap-2 rounded-xl bg-elevated/40 px-3 py-2">
+                      <div key={detalle.id} className="flex items-center justify-between gap-2 rounded-xl bg-muted/40 px-3 py-2">
                         <div className="min-w-0">
-                          <p className="truncate text-sm text-ink">
+                          <p className="truncate text-sm text-foreground">
                             {detalle.cantidad} × {detalle.nombre}
-                            {detalle.esCortesia && <span className="ml-2 text-xs text-warning-ink">cortesía</span>}
+                            {detalle.esCortesia && <span className="ml-2 text-xs text-warning-fg">cortesía</span>}
                           </p>
-                          <p className="text-xs text-muted">{formatUSD(detalle.subtotalUSD)}</p>
+                          <p className="text-xs text-muted-foreground">{formatUSD(detalle.subtotalUSD)}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <StatusBadge status={detalle.estado} />
@@ -240,8 +240,8 @@ export function CuentaPage() {
                   <button
                     key={valor}
                     onClick={() => setArea(valor)}
-                    className={`flex-1 rounded-pill border px-3 py-2 text-sm transition ${
-                      area === valor ? 'border-accent text-accent-ink' : 'border-hairline text-muted'
+                    className={`flex-1 rounded-full border px-3 py-2 text-sm transition ${
+                      area === valor ? 'border-primary text-foreground' : 'border-border text-muted-foreground'
                     }`}
                   >
                     {valor}
@@ -253,21 +253,21 @@ export function CuentaPage() {
                   producto.variantes.map((variante) => (
                     <button
                       key={variante.id}
-                      className="flex items-center justify-between rounded-xl border border-hairline px-3 py-2 text-left text-sm transition hover:border-accent/50"
+                      className="flex items-center justify-between rounded-xl border border-border px-3 py-2 text-left text-sm transition hover:border-primary/50"
                       onClick={() => agregarNuevo(producto.nombre, variante.id, variante.precioVentaUSD)}
                     >
-                      <span className="text-ink">{producto.nombre}</span>
-                      <span className="text-xs text-muted">{formatUSD(variante.precioVentaUSD)}</span>
+                      <span className="text-foreground">{producto.nombre}</span>
+                      <span className="text-xs text-muted-foreground">{formatUSD(variante.precioVentaUSD)}</span>
                     </button>
                   )),
                 )}
               </div>
               {nuevos.length > 0 && (
-                <div className="rounded-2xl bg-elevated/40 p-3">
+                <div className="rounded-lg bg-muted/40 p-3">
                   {nuevos.map((item) => (
                     <div key={item.varianteId} className="flex items-center justify-between text-sm">
-                      <span className="text-ink">{item.cantidad} × {item.nombre}</span>
-                      <span className="text-muted">{formatUSD(item.precioUSD * item.cantidad)}</span>
+                      <span className="text-foreground">{item.cantidad} × {item.nombre}</span>
+                      <span className="text-muted-foreground">{formatUSD(item.precioUSD * item.cantidad)}</span>
                     </div>
                   ))}
                 </div>
@@ -281,7 +281,7 @@ export function CuentaPage() {
           <Card>
             <CardHeader>
               <CardTitle>Abonar</CardTitle>
-              <span className="text-xs text-muted">Saldo {formatUSD(datos.saldo)}</span>
+              <span className="text-xs text-muted-foreground">Saldo {formatUSD(datos.saldo)}</span>
             </CardHeader>
             <CardBody className="flex flex-col gap-3">
               <form
@@ -320,7 +320,7 @@ export function CuentaPage() {
               {datos.abonos.length > 0 && (
                 <div className="flex flex-col gap-1">
                   {datos.abonos.map((abono) => (
-                    <div key={abono.id} className="flex justify-between text-xs text-muted">
+                    <div key={abono.id} className="flex justify-between text-xs text-muted-foreground">
                       <span>{abono.metodoPago}</span>
                       <span>{abono.moneda === 'USD' ? formatUSD(abono.monto) : `Bs ${abono.monto}`}</span>
                     </div>
@@ -340,13 +340,13 @@ export function CuentaPage() {
                 <div className="flex flex-col gap-1">
                   {datos.divisiones.map((division) => (
                     <div key={division.id} className="flex justify-between text-sm">
-                      <span className="text-muted">Parte {division.indice}</span>
-                      <span className={division.pagada ? 'text-success-ink' : 'text-ink'}>{formatUSD(division.monto)}</span>
+                      <span className="text-muted-foreground">Parte {division.indice}</span>
+                      <span className={division.pagada ? 'text-success-fg' : 'text-foreground'}>{formatUSD(division.monto)}</span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted">Divide la cuenta en partes iguales para cobrar por separado.</p>
+                <p className="text-sm text-muted-foreground">Divide la cuenta en partes iguales para cobrar por separado.</p>
               )}
               <Button variant="ghost" size="sm" onClick={() => setDividirOpen(true)}>
                 Dividir en partes
@@ -357,14 +357,14 @@ export function CuentaPage() {
           <Card>
             <CardHeader>
               <CardTitle>Cerrar cuenta</CardTitle>
-              <span className="text-xs text-muted">
+              <span className="text-xs text-muted-foreground">
                 Total <span className="num">{formatUSD(datos.total)}</span>
               </span>
             </CardHeader>
             <CardBody className="flex flex-col gap-3">
               <div className="grid grid-cols-2 gap-2">
                 <select
-                  className="h-10 rounded-control border border-hairline bg-surface px-3 text-sm text-ink"
+                  className="h-10 rounded-control border border-border bg-card px-3 text-sm text-foreground"
                   value={cierreMetodo}
                   onChange={(evento) => setCierreMetodo(evento.target.value)}
                 >
@@ -374,7 +374,7 @@ export function CuentaPage() {
                   ))}
                 </select>
                 <select
-                  className="h-10 rounded-control border border-hairline bg-surface px-3 text-sm text-ink"
+                  className="h-10 rounded-control border border-border bg-card px-3 text-sm text-foreground"
                   value={cierreMoneda}
                   onChange={(evento) => setCierreMoneda(evento.target.value as 'USD' | 'BS')}
                 >
@@ -398,12 +398,12 @@ export function CuentaPage() {
               {pagosCierre.length > 0 && (
                 <div className="flex flex-col gap-1">
                   {pagosCierre.map((pago, indice) => (
-                    <div key={indice} className="flex justify-between text-xs text-muted">
+                    <div key={indice} className="flex justify-between text-xs text-muted-foreground">
                       <span>{metodos.data?.find((metodo) => metodo.id === pago.metodoPagoId)?.nombre}</span>
                       <span>{pago.moneda === 'USD' ? formatUSD(pago.monto) : `Bs ${pago.monto}`}</span>
                     </div>
                   ))}
-                  <span className="text-right text-xs text-ink">Registrado: {formatUSD(totalCierre)}</span>
+                  <span className="text-right text-xs text-foreground">Registrado: {formatUSD(totalCierre)}</span>
                 </div>
               )}
               <Button

@@ -99,7 +99,7 @@ export function EditorOverlay({
           onPointerDown={(evento) => onResizeStart(evento, esquina)}
           style={{ left: esquinas[esquina].x - 7, top: esquinas[esquina].y - 7 }}
           className={cn(
-            'pointer-events-auto absolute h-3.5 w-3.5 touch-none rounded-full border-2 border-accent bg-surface shadow-soft',
+            'pointer-events-auto absolute h-3.5 w-3.5 touch-none rounded-full border-2 border-primary bg-card shadow-soft',
             (esquina === 'nw' || esquina === 'se') ? 'cursor-nwse-resize' : 'cursor-nesw-resize',
           )}
         />
@@ -111,7 +111,7 @@ export function EditorOverlay({
         aria-label="Girar"
         onPointerDown={onRotateStart}
         style={{ left: arriba.x - 15, top: arriba.y - 15 }}
-        className="pointer-events-auto absolute flex h-[30px] w-[30px] touch-none cursor-grab items-center justify-center rounded-full border-2 border-accent bg-surface text-ink shadow-card transition hover:bg-accent/20 active:cursor-grabbing"
+        className="pointer-events-auto absolute flex h-[30px] w-[30px] touch-none cursor-grab items-center justify-center rounded-full border-2 border-primary bg-card text-foreground shadow-card transition hover:bg-primary/20 active:cursor-grabbing"
       >
         <RotateCw size={14} />
       </button>
@@ -120,7 +120,7 @@ export function EditorOverlay({
       <div
         style={{ left: centro.x, top: maxY + 14 }}
         onPointerDown={(evento) => evento.stopPropagation()}
-        className="pointer-events-auto absolute flex -translate-x-1/2 items-center gap-0.5 rounded-pill border border-hairline bg-surface/95 p-1 shadow-card backdrop-blur"
+        className="pointer-events-auto absolute flex -translate-x-1/2 items-center gap-0.5 rounded-full border border-border bg-card/95 p-1 shadow-card backdrop-blur"
       >
         <BotonOverlay label="Inspector" activo={inspectorAbierto} onClick={onToggleInspector}>
           <SlidersHorizontal size={15} />
@@ -144,15 +144,15 @@ export function EditorOverlay({
         <div
           style={{ left: centro.x, top: maxY + 14 + 42 }}
           onPointerDown={(evento) => evento.stopPropagation()}
-          className="pointer-events-auto absolute w-64 -translate-x-1/2 rounded-2xl border border-hairline bg-surface/95 p-3 shadow-card backdrop-blur"
+          className="pointer-events-auto absolute w-64 -translate-x-1/2 rounded-lg border border-border bg-card/95 p-3 shadow-card backdrop-blur"
         >
           <div className="flex flex-col gap-2.5">
-            <label className="flex flex-col gap-1 text-xs text-muted">
+            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
               Forma
               <select
                 value={elemento.forma ?? ''}
                 onChange={(e) => onUpdate({ forma: e.target.value, tipo: e.target.value.startsWith('mesa') ? 'mesa' : e.target.value })}
-                className="h-9 rounded-control border border-hairline bg-surface px-2 text-sm text-ink"
+                className="h-9 rounded-control border border-border bg-card px-2 text-sm text-foreground"
               >
                 {ELEMENTOS.map((def) => (
                   <option key={def.forma} value={def.forma}>
@@ -162,7 +162,7 @@ export function EditorOverlay({
               </select>
             </label>
 
-            <div className="flex flex-col gap-1 text-xs text-muted">
+            <div className="flex flex-col gap-1 text-xs text-muted-foreground">
               Color
               <div className="flex flex-wrap gap-1.5">
                 {PALETA.map((color) => (
@@ -174,7 +174,7 @@ export function EditorOverlay({
                     style={{ backgroundColor: color }}
                     className={cn(
                       'h-6 w-6 rounded-full border transition',
-                      elemento.color === color ? 'border-ink ring-2 ring-accent/40' : 'border-hairline',
+                      elemento.color === color ? 'border-ink ring-2 ring-ring/40' : 'border-border',
                     )}
                   />
                 ))}
@@ -186,21 +186,21 @@ export function EditorOverlay({
               <Campo label="Alto" value={elemento.alto} onChange={(v) => onUpdate({ alto: Math.max(0.5, v) })} />
             </div>
 
-            <label className="flex flex-col gap-1 text-xs text-muted">
+            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
               Etiqueta
               <input
                 value={elemento.etiqueta ?? ''}
                 onChange={(e) => onUpdate({ etiqueta: e.target.value })}
-                className="h-9 rounded-control border border-hairline bg-surface px-2 text-sm text-ink"
+                className="h-9 rounded-control border border-border bg-card px-2 text-sm text-foreground"
               />
             </label>
 
-            <label className="flex flex-col gap-1 text-xs text-muted">
+            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
               Zona
               <select
                 value={elemento.zonaId ?? ''}
                 onChange={(e) => onUpdate({ zonaId: e.target.value || null })}
-                className="h-9 rounded-control border border-hairline bg-surface px-2 text-sm text-ink"
+                className="h-9 rounded-control border border-border bg-card px-2 text-sm text-foreground"
               >
                 <option value="">Sin zona</option>
                 {zonas.map((zona) => (
@@ -212,12 +212,12 @@ export function EditorOverlay({
             </label>
 
             {(elemento.tipo === 'mesa' || elemento.forma?.startsWith('mesa')) && (
-              <label className="flex flex-col gap-1 text-xs text-muted">
+              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
                 Mesa operativa
                 <select
                   value={elemento.mesaId ?? ''}
                   onChange={(e) => onUpdate({ mesaId: e.target.value || null })}
-                  className="h-9 rounded-control border border-hairline bg-surface px-2 text-sm text-ink"
+                  className="h-9 rounded-control border border-border bg-card px-2 text-sm text-foreground"
                 >
                   <option value="">Sin enlazar</option>
                   {mesas.map((mesa) => (
@@ -254,7 +254,7 @@ function BotonOverlay({
       onClick={onClick}
       className={cn(
         'flex h-7 w-7 items-center justify-center rounded-full transition',
-        activo ? 'bg-accent/25 text-accent-ink' : 'text-muted hover:bg-ink/5 hover:text-ink',
+        activo ? 'bg-primary/25 text-foreground' : 'text-muted-foreground hover:bg-accent/10 hover:text-foreground',
       )}
     >
       {children}
@@ -264,14 +264,14 @@ function BotonOverlay({
 
 function Campo({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
   return (
-    <label className="flex flex-col gap-1 text-xs text-muted">
+    <label className="flex flex-col gap-1 text-xs text-muted-foreground">
       {label}
       <input
         type="number"
         step="0.5"
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="num h-9 rounded-control border border-hairline bg-surface px-2 text-sm text-ink"
+        className="num h-9 rounded-control border border-border bg-card px-2 text-sm text-foreground"
       />
     </label>
   );
