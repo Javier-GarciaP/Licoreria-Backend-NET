@@ -88,7 +88,7 @@ export function FormularioProducto({
   return (
     <form className="flex flex-col gap-5" onSubmit={productoForm.handleSubmit(onGuardar)} noValidate>
       <section className="flex flex-col gap-2">
-        <p className="text-xs font-medium uppercase tracking-tighter2 text-muted">Datos generales</p>
+        <p className="text-xs font-medium uppercase tracking-tighter2 text-muted-foreground">Datos generales</p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input label="Nombre" error={productoForm.formState.errors.nombre?.message} {...productoForm.register('nombre')} />
           <Input label="Descripción" {...productoForm.register('descripcion')} />
@@ -115,7 +115,7 @@ export function FormularioProducto({
           <Input label="Grado alcohólico" type="number" {...productoForm.register('gradoAlcoholico')} />
           <Input label="Imagen (URL)" className="sm:col-span-2" {...productoForm.register('imagenUrl')} />
         </div>
-        <label className="flex items-center gap-2 text-sm text-muted">
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
           <input type="checkbox" {...productoForm.register('activo')} />
           Activo
         </label>
@@ -123,7 +123,7 @@ export function FormularioProducto({
 
       <section className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-medium uppercase tracking-tighter2 text-muted">Variantes</p>
+          <p className="text-xs font-medium uppercase tracking-tighter2 text-muted-foreground">Variantes</p>
           <Button
             type="button"
             size="sm"
@@ -134,11 +134,11 @@ export function FormularioProducto({
           </Button>
         </div>
         {productoForm.formState.errors.variantes?.message && (
-          <p className="text-xs text-danger-ink">{productoForm.formState.errors.variantes.message}</p>
+          <p className="text-xs text-destructive-fg">{productoForm.formState.errors.variantes.message}</p>
         )}
         <div className="flex flex-col gap-2">
           {fields.map((field, indice) => (
-            <div key={field.id} className="grid grid-cols-2 gap-2 rounded-inner border border-hairline bg-elevated/30 p-3 sm:grid-cols-6">
+            <div key={field.id} className="grid grid-cols-2 gap-2 rounded-inner border border-border bg-muted/30 p-3 sm:grid-cols-6">
               <Input placeholder="Nombre" {...productoForm.register(`variantes.${indice}.nombre`)} />
               <Input placeholder="SKU" {...productoForm.register(`variantes.${indice}.sku`)} />
               <Select aria-label="Unidad" {...productoForm.register(`variantes.${indice}.unidadMedidaId`)}>
@@ -159,7 +159,7 @@ export function FormularioProducto({
         </div>
       </section>
 
-      <div className="flex justify-end gap-2 border-t border-hairline pt-4">
+      <div className="flex justify-end gap-2 border-t border-border pt-4">
         <Button variant="ghost" onClick={onCancelar}>
           Cancelar
         </Button>

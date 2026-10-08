@@ -122,10 +122,10 @@ function Seccion<T extends { id: string }>({
             <div className="flex flex-col gap-3">
               {campos.map((campo) =>
                 campo.tipo === 'check' ? (
-                  <label key={campo.name} className="flex items-center gap-2 text-sm text-ink">
+                  <label key={campo.name} className="flex items-center gap-2 text-sm text-foreground">
                     <input
                       type="checkbox"
-                      className="h-4 w-4 rounded-control border-hairline"
+                      className="h-4 w-4 rounded-control border-border"
                       checked={Boolean(valores[campo.name])}
                       onChange={(evento) => setValores((v) => ({ ...v, [campo.name]: evento.target.checked }))}
                     />
@@ -218,8 +218,8 @@ export function CatalogoAvanzadoPage() {
               type="button"
               onClick={() => setPestana(item.id)}
               className={cn(
-                'rounded-pill border px-4 py-1.5 text-sm transition',
-                pestana === item.id ? 'border-accent bg-accent/15 text-accent-ink' : 'border-hairline text-muted hover:text-ink',
+                'rounded-full border px-4 py-1.5 text-sm transition',
+                pestana === item.id ? 'border-primary bg-primary/15 text-foreground' : 'border-border text-muted-foreground hover:text-foreground',
               )}
             >
               {item.label}

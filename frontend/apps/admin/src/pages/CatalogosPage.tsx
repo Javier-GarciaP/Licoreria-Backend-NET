@@ -49,7 +49,7 @@ function FormularioSimple({
         <Input label="Nombre" error={form.formState.errors.nombre?.message} {...form.register('nombre')} />
         <Input label="Descripción" {...form.register('descripcion')} />
       </div>
-      <label className="flex items-center gap-2 text-sm text-muted">
+      <label className="flex items-center gap-2 text-sm text-muted-foreground">
         <input type="checkbox" {...form.register('activo')} />
         Activa
       </label>
@@ -188,11 +188,11 @@ export function CatalogosPage() {
               categorias.data?.map((categoria) => (
                 <div
                   key={categoria.id}
-                  className={`flex items-center justify-between gap-2 rounded-2xl bg-elevated/40 px-3 py-2 ${categoriaEditando?.id === categoria.id ? 'ring-1 ring-accent/50' : ''}`}
+                  className={`flex items-center justify-between gap-2 rounded-lg bg-muted/40 px-3 py-2 ${categoriaEditando?.id === categoria.id ? 'ring-1 ring-ring/50' : ''}`}
                 >
                   <div>
-                    <p className="text-sm text-ink">{categoria.nombre}</p>
-                    <p className="text-xs text-muted">{categoria.descripcion ?? '—'}</p>
+                    <p className="text-sm text-foreground">{categoria.nombre}</p>
+                    <p className="text-xs text-muted-foreground">{categoria.descripcion ?? '—'}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Pill tone={categoria.activo ? 'success' : 'danger'}>{categoria.activo ? 'Activa' : 'Inactiva'}</Pill>
@@ -233,11 +233,11 @@ export function CatalogosPage() {
               marcas.data?.map((marca) => (
                 <div
                   key={marca.id}
-                  className={`flex items-center justify-between gap-2 rounded-2xl bg-elevated/40 px-3 py-2 ${marcaEditando?.id === marca.id ? 'ring-1 ring-accent/50' : ''}`}
+                  className={`flex items-center justify-between gap-2 rounded-lg bg-muted/40 px-3 py-2 ${marcaEditando?.id === marca.id ? 'ring-1 ring-ring/50' : ''}`}
                 >
                   <div>
-                    <p className="text-sm text-ink">{marca.nombre}</p>
-                    <p className="text-xs text-muted">{marca.descripcion ?? '—'}</p>
+                    <p className="text-sm text-foreground">{marca.nombre}</p>
+                    <p className="text-xs text-muted-foreground">{marca.descripcion ?? '—'}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Pill tone={marca.activo ? 'success' : 'danger'}>{marca.activo ? 'Activa' : 'Inactiva'}</Pill>

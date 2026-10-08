@@ -105,16 +105,16 @@ export function ProductosPage() {
         <FolderPanel className="flex flex-col gap-4">
           {creando || editando ? (
             /* Panel independiente de producto (muchos campos, estilo editor). */
-            <section className="rounded-card border border-accent/40 bg-surface p-5 lg:p-6">
+            <section className="rounded-xl border border-primary/40 bg-card p-5 lg:p-6">
               <div className="flex flex-wrap items-center gap-3">
                 <Button variant="ghost" size="sm" onClick={cerrarFormulario} aria-label="Volver">
                   <ArrowLeft size={16} />
                 </Button>
                 <div>
-                  <p className="text-base font-medium tracking-tighter2 text-ink">
+                  <p className="text-base font-medium tracking-tighter2 text-foreground">
                     {editando ? `Editar · ${editando.nombre}` : 'Nuevo producto'}
                   </p>
-                  <p className="text-xs text-muted">
+                  <p className="text-xs text-muted-foreground">
                     Define el producto, su presentación y precios. La existencia parte de cero.
                   </p>
                 </div>
@@ -171,8 +171,8 @@ export function ProductosPage() {
                       header: 'Producto',
                       render: (producto) => (
                         <div>
-                          <p className="text-ink">{producto.nombre}</p>
-                          <p className="text-xs text-muted">{producto.categoriaNombre}</p>
+                          <p className="text-foreground">{producto.nombre}</p>
+                          <p className="text-xs text-muted-foreground">{producto.categoriaNombre}</p>
                         </div>
                       ),
                     },
@@ -238,12 +238,12 @@ export function ProductosPage() {
               {detalle.marcaNombre && <Pill tone="info">{detalle.marcaNombre}</Pill>}
               {detalle.activo ? <Pill tone="success">Activo</Pill> : <Pill tone="danger">Inactivo</Pill>}
             </div>
-            {detalle.descripcion && <p className="text-sm text-muted">{detalle.descripcion}</p>}
+            {detalle.descripcion && <p className="text-sm text-muted-foreground">{detalle.descripcion}</p>}
             <ModalSection title="Variantes">
-              <div className="overflow-x-auto rounded-inner border border-hairline">
+              <div className="overflow-x-auto rounded-inner border border-border">
                 <table className="w-full min-w-[480px] text-sm">
                   <thead>
-                    <tr className="bg-elevated/60 text-left text-xs uppercase tracking-tighter2 text-muted">
+                    <tr className="bg-muted/60 text-left text-xs uppercase tracking-tighter2 text-muted-foreground">
                       <th scope="col" className="px-4 py-2.5">Variante</th>
                       <th scope="col" className="px-4 py-2.5">SKU</th>
                       <th scope="col" className="px-4 py-2.5 text-right">Costo</th>
@@ -252,11 +252,11 @@ export function ProductosPage() {
                   </thead>
                   <tbody>
                     {detalle.variantes.map((variante) => (
-                      <tr key={variante.id} className="border-t border-hairline">
-                        <td className="px-4 py-2.5 text-ink">{variante.nombre}</td>
-                        <td className="num px-4 py-2.5 text-muted">{variante.sku}</td>
-                        <td className="num px-4 py-2.5 text-right text-muted">{formatUSD(variante.precioCompraUSD)}</td>
-                        <td className="num px-4 py-2.5 text-right text-ink">{formatUSD(variante.precioVentaUSD)}</td>
+                      <tr key={variante.id} className="border-t border-border">
+                        <td className="px-4 py-2.5 text-foreground">{variante.nombre}</td>
+                        <td className="num px-4 py-2.5 text-muted-foreground">{variante.sku}</td>
+                        <td className="num px-4 py-2.5 text-right text-muted-foreground">{formatUSD(variante.precioCompraUSD)}</td>
+                        <td className="num px-4 py-2.5 text-right text-foreground">{formatUSD(variante.precioVentaUSD)}</td>
                       </tr>
                     ))}
                   </tbody>
