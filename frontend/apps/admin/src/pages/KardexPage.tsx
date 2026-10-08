@@ -88,7 +88,7 @@ export function KardexPage() {
                   header: 'Cantidad',
                   align: 'right',
                   render: (movimiento) => (
-                    <span className={movimiento.cantidad < 0 ? 'text-danger-ink' : 'text-success-ink'}>
+                    <span className={movimiento.cantidad < 0 ? 'text-destructive-fg' : 'text-success-fg'}>
                       {movimiento.cantidad > 0 ? '+' : ''}
                       {formatNumber(movimiento.cantidad)}
                     </span>

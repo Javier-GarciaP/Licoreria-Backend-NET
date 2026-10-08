@@ -120,10 +120,10 @@ export function TomasFisicasPage() {
       >
         <div className="flex flex-col gap-3">
           <Input label="Observaciones" value={observaciones} onChange={(evento) => setObservaciones(evento.target.value)} />
-          <div className="max-h-80 overflow-y-auto rounded-2xl border border-hairline">
+          <div className="max-h-80 overflow-y-auto rounded-lg border border-border">
             <table className="w-full min-w-[520px] text-sm">
-              <thead className="sticky top-0 bg-elevated">
-                <tr className="text-left text-xs uppercase tracking-tighter2 text-muted">
+              <thead className="sticky top-0 bg-muted">
+                <tr className="text-left text-xs uppercase tracking-tighter2 text-muted-foreground">
                   <th scope="col" className="px-3 py-2">Producto</th>
                   <th scope="col" className="px-3 py-2 text-right">Sistema</th>
                   <th scope="col" className="px-3 py-2 text-right">Contado</th>
@@ -131,12 +131,12 @@ export function TomasFisicasPage() {
               </thead>
               <tbody>
                 {stock.data?.items.map((item) => (
-                  <tr key={item.varianteId} className="border-t border-hairline">
-                    <td className="px-3 py-2 text-ink">
+                  <tr key={item.varianteId} className="border-t border-border">
+                    <td className="px-3 py-2 text-foreground">
                       {item.productoNombre}
-                      <span className="ml-2 text-xs text-muted">{item.sku}</span>
+                      <span className="ml-2 text-xs text-muted-foreground">{item.sku}</span>
                     </td>
-                    <td className="px-3 py-2 text-right text-muted">{formatNumber(item.cantidad)}</td>
+                    <td className="px-3 py-2 text-right text-muted-foreground">{formatNumber(item.cantidad)}</td>
                     <td className="px-3 py-2 text-right">
                       <input
                         type="number"
@@ -144,7 +144,7 @@ export function TomasFisicasPage() {
                         aria-label={`Contado ${item.sku}`}
                         value={conteos[item.varianteId] ?? ''}
                         onChange={(evento) => setConteos((actuales) => ({ ...actuales, [item.varianteId]: evento.target.value }))}
-                        className="h-9 w-24 rounded-control border border-hairline bg-surface px-3 text-sm text-ink"
+                        className="h-9 w-24 rounded-control border border-border bg-card px-3 text-sm text-foreground"
                       />
                     </td>
                   </tr>
@@ -160,13 +160,13 @@ export function TomasFisicasPage() {
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-3">
               <StatusBadge status={detalle.estado} />
-              <span className="text-xs text-muted">{formatDateTime(detalle.fecha)}</span>
+              <span className="text-xs text-muted-foreground">{formatDateTime(detalle.fecha)}</span>
             </div>
-            {detalle.observaciones && <p className="text-sm text-muted">{detalle.observaciones}</p>}
+            {detalle.observaciones && <p className="text-sm text-muted-foreground">{detalle.observaciones}</p>}
             <div className="overflow-x-auto">
               <table className="w-full min-w-[520px] text-sm">
                 <thead>
-                  <tr className="text-left text-xs uppercase tracking-tighter2 text-muted">
+                  <tr className="text-left text-xs uppercase tracking-tighter2 text-muted-foreground">
                     <th scope="col" className="py-2">SKU</th>
                     <th scope="col" className="py-2 text-right">Sistema</th>
                     <th scope="col" className="py-2 text-right">Contado</th>
@@ -175,13 +175,13 @@ export function TomasFisicasPage() {
                 </thead>
                 <tbody>
                   {detalle.detalles.map((item) => (
-                    <tr key={item.varianteId} className="border-t border-hairline">
-                      <td className="py-2 text-ink">{item.sku}</td>
-                      <td className="py-2 text-right text-muted">{formatNumber(item.cantidadSistema)}</td>
-                      <td className="py-2 text-right text-muted">{formatNumber(item.cantidadContada)}</td>
+                    <tr key={item.varianteId} className="border-t border-border">
+                      <td className="py-2 text-foreground">{item.sku}</td>
+                      <td className="py-2 text-right text-muted-foreground">{formatNumber(item.cantidadSistema)}</td>
+                      <td className="py-2 text-right text-muted-foreground">{formatNumber(item.cantidadContada)}</td>
                       <td
                         className={`py-2 text-right ${
-                          item.diferencia === 0 ? 'text-muted' : item.diferencia > 0 ? 'text-success-ink' : 'text-danger-ink'
+                          item.diferencia === 0 ? 'text-muted-foreground' : item.diferencia > 0 ? 'text-success-fg' : 'text-destructive-fg'
                         }`}
                       >
                         {item.diferencia > 0 ? '+' : ''}

@@ -49,8 +49,8 @@ function FormularioAjuste({
 
   return (
     <form className="flex flex-col gap-3" onSubmit={form.handleSubmit(onGuardar)} noValidate>
-      <p className="text-xs text-muted">
-        Disponible actual: <span className="num text-ink">{formatNumber(item.cantidad)}</span>. Usa valores negativos
+      <p className="text-xs text-muted-foreground">
+        Disponible actual: <span className="num text-foreground">{formatNumber(item.cantidad)}</span>. Usa valores negativos
         para descontar.
       </p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -105,7 +105,7 @@ export function InventarioPage() {
           <CardHeader>
             <CardTitle>Existencias</CardTitle>
             <div className="flex flex-wrap items-center gap-3">
-              <label className="flex items-center gap-2 text-xs text-muted">
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
                 <input
                   type="checkbox"
                   checked={soloBajoMinimo}
@@ -155,8 +155,8 @@ export function InventarioPage() {
                   header: 'Producto',
                   render: (item) => (
                     <div>
-                      <p className="text-ink">{item.productoNombre}</p>
-                      <p className="text-xs text-muted">
+                      <p className="text-foreground">{item.productoNombre}</p>
+                      <p className="text-xs text-muted-foreground">
                         {item.varianteNombre} · {item.sku}
                       </p>
                     </div>

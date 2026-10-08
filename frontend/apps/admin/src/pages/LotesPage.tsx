@@ -132,7 +132,7 @@ export function LotesPage() {
             rowKey={(lote) => lote.id}
             empty="Sin lotes registrados."
             columns={[
-              { key: 'codigo', header: 'Código', render: (lote) => <span className="text-ink">{lote.codigo}</span> },
+              { key: 'codigo', header: 'Código', render: (lote) => <span className="text-foreground">{lote.codigo}</span> },
               { key: 'sku', header: 'SKU', render: (lote) => lote.sku },
               { key: 'cantidad', header: 'Cantidad', align: 'right', render: (lote) => formatNumber(lote.cantidad) },
               {
@@ -214,7 +214,7 @@ export function LotesPage() {
             <Input label="Vencimiento" type="date" {...loteForm.register('fechaVencimiento')} />
           </div>
           {editando && (
-            <label className="flex items-center gap-2 text-sm text-muted">
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
               <input type="checkbox" {...loteForm.register('activo')} />
               Activo
             </label>
