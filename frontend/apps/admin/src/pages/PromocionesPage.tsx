@@ -113,7 +113,7 @@ export function PromocionesPage() {
       <Card>
         <CardHeader>
           <CardTitle>Promociones</CardTitle>
-          <span className="text-xs text-muted">{promociones.data?.length ?? 0} registradas</span>
+          <span className="text-xs text-muted-foreground">{promociones.data?.length ?? 0} registradas</span>
         </CardHeader>
         <CardBody>
           <DataTable<Promocion>
@@ -194,8 +194,8 @@ export function PromocionesPage() {
             <Input label="Desde" type="date" {...form.register('fechaInicio')} />
             <Input label="Hasta" type="date" {...form.register('fechaFin')} />
           </div>
-          <label className="flex items-center gap-2 text-sm text-ink">
-            <input type="checkbox" className="h-4 w-4 rounded-control border-hairline" {...form.register('activo')} />
+          <label className="flex items-center gap-2 text-sm text-foreground">
+            <input type="checkbox" className="h-4 w-4 rounded-control border-border" {...form.register('activo')} />
             Activa
           </label>
         </form>
@@ -216,8 +216,8 @@ export function PromocionesPage() {
           </>
         }
       >
-        <p className="text-sm text-muted">
-          ¿Eliminar la promoción <span className="text-ink">{eliminar?.nombre}</span>? Esta acción no se puede deshacer.
+        <p className="text-sm text-muted-foreground">
+          ¿Eliminar la promoción <span className="text-foreground">{eliminar?.nombre}</span>? Esta acción no se puede deshacer.
         </p>
       </Modal>
     </div>

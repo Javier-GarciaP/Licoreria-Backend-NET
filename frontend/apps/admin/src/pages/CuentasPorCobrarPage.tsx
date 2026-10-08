@@ -81,7 +81,7 @@ export function CuentasPorCobrarPage() {
       <Card>
         <CardHeader>
           <CardTitle>Pendientes</CardTitle>
-          <span className="text-xs text-muted">{cuentas.data?.items.length ?? 0} cuentas</span>
+          <span className="text-xs text-muted-foreground">{cuentas.data?.items.length ?? 0} cuentas</span>
         </CardHeader>
         <CardBody>
           <DataTable<CuentaPorCobrar>
@@ -165,8 +165,8 @@ export function CuentasPorCobrarPage() {
           onSubmit={pagoForm.handleSubmit((d) => pagando && pagar.mutate({ id: pagando.id, monto: d.monto }))}
           noValidate
         >
-          <p className="text-sm text-muted">
-            Saldo pendiente <span className="num text-ink">{formatUSD(pagando?.saldoUSD ?? 0)}</span>
+          <p className="text-sm text-muted-foreground">
+            Saldo pendiente <span className="num text-foreground">{formatUSD(pagando?.saldoUSD ?? 0)}</span>
           </p>
           <Input label="Monto" type="number" step="0.01" error={pagoForm.formState.errors.monto?.message} {...pagoForm.register('monto')} />
         </form>

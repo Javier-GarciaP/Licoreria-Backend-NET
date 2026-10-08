@@ -102,7 +102,7 @@ export function ListaVipPage() {
       <Card>
         <CardHeader>
           <CardTitle>Invitados</CardTitle>
-          <span className="text-xs text-muted">{invitados.data?.length ?? 0} en la lista</span>
+          <span className="text-xs text-muted-foreground">{invitados.data?.length ?? 0} en la lista</span>
         </CardHeader>
         <CardBody>
           <DataTable<ListaVip>
@@ -157,8 +157,8 @@ export function ListaVipPage() {
             <Input label="Teléfono" {...form.register('telefono')} />
           </div>
           <Input label="Notas" {...form.register('notas')} />
-          <label className="flex items-center gap-2 text-sm text-ink">
-            <input type="checkbox" className="h-4 w-4 rounded-control border-hairline" {...form.register('activo')} />
+          <label className="flex items-center gap-2 text-sm text-foreground">
+            <input type="checkbox" className="h-4 w-4 rounded-control border-border" {...form.register('activo')} />
             Activo
           </label>
         </form>
@@ -179,8 +179,8 @@ export function ListaVipPage() {
           </>
         }
       >
-        <p className="text-sm text-muted">
-          ¿Quitar a <span className="text-ink">{eliminar?.nombre}</span> de la lista VIP?
+        <p className="text-sm text-muted-foreground">
+          ¿Quitar a <span className="text-foreground">{eliminar?.nombre}</span> de la lista VIP?
         </p>
       </Modal>
     </div>

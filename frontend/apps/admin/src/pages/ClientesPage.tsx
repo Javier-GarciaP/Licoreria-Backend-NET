@@ -175,8 +175,8 @@ export function ClientesPage() {
                 header: 'Cliente',
                 render: (cliente) => (
                   <div>
-                    <p className="text-ink">{cliente.nombre}</p>
-                    <p className="text-xs text-muted">{cliente.telefono ?? cliente.email ?? '—'}</p>
+                    <p className="text-foreground">{cliente.nombre}</p>
+                    <p className="text-xs text-muted-foreground">{cliente.telefono ?? cliente.email ?? '—'}</p>
                   </div>
                 ),
               },
@@ -253,7 +253,7 @@ export function ClientesPage() {
             <Input label="Teléfono" {...clienteForm.register('telefono')} />
           </div>
           <Input label="Dirección" {...clienteForm.register('direccion')} />
-          <label className="flex items-center gap-2 text-sm text-muted">
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
             <input type="checkbox" {...clienteForm.register('activo')} />
             Activo
           </label>
