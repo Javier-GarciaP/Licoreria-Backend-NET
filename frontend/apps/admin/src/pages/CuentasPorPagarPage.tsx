@@ -14,7 +14,6 @@ import {
   CardTitle,
   DataTable,
   Input,
-  PageHeader,
   Pagination,
   Pill,
   Select,
@@ -77,10 +76,10 @@ export function CuentasPorPagarPage() {
   };
 
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader title="Compras" subtitle="Cuentas por pagar a proveedores." />
+    <div className="mx-auto flex max-w-page flex-col gap-4">
       <ComprasTabs />
 
+      <div className="flex flex-col">
       <FolderPanel className="flex flex-col gap-4">
         <Card className="border-0 bg-transparent shadow-none">
           <CardHeader>
@@ -181,6 +180,7 @@ export function CuentasPorPagarPage() {
           </CardBody>
         </Card>
       </FolderPanel>
+      </div>
     </div>
   );
 }

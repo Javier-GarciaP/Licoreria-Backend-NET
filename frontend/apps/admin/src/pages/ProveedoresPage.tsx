@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import {
   ActionMenu,
   Button,
@@ -14,7 +14,6 @@ import {
   CardTitle,
   DataTable,
   Input,
-  PageHeader,
   Pill,
 } from '@licoreria/ui';
 import type { Proveedor } from '@licoreria/types';
@@ -133,23 +132,10 @@ export function ProveedoresPage() {
   };
 
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader
-        title="Compras"
-        subtitle="Proveedores del local."
-        actions={
-          <Button
-            onClick={() => {
-              setEditando(null);
-              setCreando(true);
-            }}
-          >
-            Nuevo proveedor
-          </Button>
-        }
-      />
+    <div className="mx-auto flex max-w-page flex-col gap-4">
       <ComprasTabs />
 
+      <div className="flex flex-col">
       <FolderPanel className="flex flex-col gap-4">
         {creando && (
           <InlineForm title="Nuevo proveedor" onCancel={() => setCreando(false)}>
@@ -160,8 +146,20 @@ export function ProveedoresPage() {
         <Card className="border-0 bg-transparent shadow-none">
           <CardHeader>
             <CardTitle>Proveedores</CardTitle>
-            <div className="w-56">
-              <Input placeholder="Buscar…" value={busqueda} onChange={(evento) => setBusqueda(evento.target.value)} />
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="w-56">
+                <Input placeholder="Buscar…" value={busqueda} onChange={(evento) => setBusqueda(evento.target.value)} />
+              </div>
+              <Button
+                size="sm"
+                leftIcon={<Plus size={15} />}
+                onClick={() => {
+                  setEditando(null);
+                  setCreando(true);
+                }}
+              >
+                Nuevo proveedor
+              </Button>
             </div>
           </CardHeader>
           <CardBody>
@@ -233,6 +231,7 @@ export function ProveedoresPage() {
           </CardBody>
         </Card>
       </FolderPanel>
+      </div>
 
       <ConfirmDialog
         open={Boolean(porEliminar)}

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Eye } from 'lucide-react';
-import { ActionMenu, Card, CardBody, CardHeader, CardTitle, DataTable, Modal, ModalSection, PageHeader, Pagination } from '@licoreria/ui';
+import { ActionMenu, Card, CardBody, CardHeader, CardTitle, DataTable, Modal, ModalSection, Pagination } from '@licoreria/ui';
 import type { Recepcion } from '@licoreria/types';
 import { comprasApi } from '@licoreria/api-client';
 import { ComprasTabs } from '../components/ComprasTabs';
@@ -18,10 +18,10 @@ export function RecepcionesPage() {
   });
 
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader title="Compras" subtitle="Recepciones de mercancía." />
+    <div className="mx-auto flex max-w-page flex-col gap-4">
       <ComprasTabs />
 
+      <div className="flex flex-col">
       <FolderPanel className="flex flex-col gap-4">
         <Card className="border-0 bg-transparent shadow-none">
           <CardHeader>
@@ -55,6 +55,7 @@ export function RecepcionesPage() {
           </CardBody>
         </Card>
       </FolderPanel>
+      </div>
 
       <Modal
         open={Boolean(detalle)}

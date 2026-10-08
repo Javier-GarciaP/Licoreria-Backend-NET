@@ -12,7 +12,6 @@ import {
   CardTitle,
   DataTable,
   Input,
-  PageHeader,
   Pagination,
   Select,
 } from '@licoreria/ui';
@@ -61,8 +60,7 @@ export function MermasPage() {
   });
 
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader title="Mermas y cortesías" subtitle="Registra producto dañado, partido o vencido." />
+    <div className="mx-auto flex max-w-page flex-col gap-4">
       <Card>
         <CardHeader>
           <CardTitle>Nuevo registro</CardTitle>

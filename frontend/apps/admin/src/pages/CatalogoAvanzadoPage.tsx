@@ -12,7 +12,6 @@ import {
   cn,
   DataTable,
   Input,
-  PageHeader,
   Pill,
 } from '@licoreria/ui';
 import { impuestosApi, listasPrecioApi, modificadoresApi, unidadesApi } from '@licoreria/api-client';
@@ -207,10 +206,10 @@ export function CatalogoAvanzadoPage() {
   const modificadores = useQuery({ queryKey: ['modificadores'], queryFn: modificadoresApi.listar });
 
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader title="Catálogo" subtitle="Productos, categorías, marcas y precios." />
+    <div className="mx-auto flex max-w-page flex-col gap-4">
       <CatalogoTabs />
 
+      <div className="flex flex-col">
       <FolderPanel className="flex flex-col gap-4">
         <nav aria-label="Secciones de catálogo avanzado" className="flex flex-wrap gap-2">
           {PESTANAS.map((item) => (
@@ -345,6 +344,7 @@ export function CatalogoAvanzadoPage() {
           />
         )}
       </FolderPanel>
+      </div>
     </div>
   );
 }

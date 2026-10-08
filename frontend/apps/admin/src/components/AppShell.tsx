@@ -238,7 +238,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             id="contenido"
             className="glass-panel app-scroll relative min-h-0 flex-1 overflow-y-auto rounded-3xl p-4 pb-28 lg:p-6"
           >
-            {!location.pathname.startsWith('/salon/planos/') && <Breadcrumbs />}
+            {!location.pathname.startsWith('/salon/planos/') && !location.pathname.startsWith('/plano') && <Breadcrumbs />}
             {children}
           </main>
         </div>

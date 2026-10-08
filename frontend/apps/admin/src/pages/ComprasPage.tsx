@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { CheckCircle2, Eye, Send, Truck, XCircle } from 'lucide-react';
+import { CheckCircle2, Eye, Plus, Send, Truck, XCircle } from 'lucide-react';
 import {
   ActionMenu,
   Button,
@@ -16,7 +16,6 @@ import {
   Input,
   Modal,
   ModalSection,
-  PageHeader,
   Pagination,
   Pill,
   Select,
@@ -135,21 +134,7 @@ export function ComprasPage() {
   };
 
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader
-        title="Compras"
-        subtitle="Órdenes de compra y su ciclo de aprobación."
-        actions={
-          <Button
-            onClick={() => {
-              ordenForm.reset(VACIO);
-              setCreando(true);
-            }}
-          >
-            Nueva orden
-          </Button>
-        }
-      />
+    <div className="mx-auto flex max-w-page flex-col gap-4">
       <ComprasTabs />
       <div className="flex flex-col">
       <FolderPanel className="flex flex-col gap-4">
@@ -223,14 +208,26 @@ export function ComprasPage() {
         <Card className="border-0 bg-transparent shadow-none">
           <CardHeader>
             <CardTitle>Órdenes</CardTitle>
-            <Select aria-label="Filtrar por estado" value={estado} onChange={(evento) => { setEstado(evento.target.value); setPage(1); }}>
-              <option value="">Todos los estados</option>
-              {ESTADOS.map((valor) => (
-                <option key={valor} value={valor}>
-                  {valor}
-                </option>
-              ))}
-            </Select>
+            <div className="flex flex-wrap items-center gap-2">
+              <Select aria-label="Filtrar por estado" value={estado} onChange={(evento) => { setEstado(evento.target.value); setPage(1); }}>
+                <option value="">Todos los estados</option>
+                {ESTADOS.map((valor) => (
+                  <option key={valor} value={valor}>
+                    {valor}
+                  </option>
+                ))}
+              </Select>
+              <Button
+                size="sm"
+                leftIcon={<Plus size={15} />}
+                onClick={() => {
+                  ordenForm.reset(VACIO);
+                  setCreando(true);
+                }}
+              >
+                Nueva orden
+              </Button>
+            </div>
           </CardHeader>
           <CardBody>
             <DataTable<OrdenCompra>

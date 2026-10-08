@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardBody, CardHeader, CardTitle, DataTable, Input, PageHeader, Pagination, Pill, Select } from '@licoreria/ui';
+import { Card, CardBody, CardHeader, CardTitle, DataTable, Input, Pagination, Pill, Select } from '@licoreria/ui';
 import type { MovimientoKardex, TipoMovimientoInventario } from '@licoreria/types';
 import { inventarioApi } from '@licoreria/api-client';
 import { InventarioTabs } from '../components/InventarioTabs';
@@ -30,10 +30,10 @@ export function KardexPage() {
   });
 
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader title="Inventario" subtitle="Kardex inmutable de movimientos." />
+    <div className="mx-auto flex max-w-page flex-col gap-4">
       <InventarioTabs />
 
+      <div className="flex flex-col">
       <FolderPanel className="flex flex-col gap-4">
         <Card className="border-0 bg-transparent shadow-none">
           <CardHeader>
@@ -107,6 +107,7 @@ export function KardexPage() {
           </CardBody>
         </Card>
       </FolderPanel>
+      </div>
     </div>
   );
 }

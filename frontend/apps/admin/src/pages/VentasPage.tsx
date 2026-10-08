@@ -14,7 +14,6 @@ import {
   CardTitle,
   DataTable,
   Input,
-  PageHeader,
   Pagination,
   StatusBadge,
 } from '@licoreria/ui';
@@ -84,8 +83,7 @@ export function VentasPage() {
   };
 
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader title="Ventas" subtitle="Historial de ventas, comprobantes y devoluciones." />
+    <div className="mx-auto flex max-w-page flex-col gap-4">
       <Card>
         <CardHeader>
           <CardTitle>Historial</CardTitle>

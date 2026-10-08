@@ -12,7 +12,6 @@ import {
   CardTitle,
   DataTable,
   Input,
-  PageHeader,
   Pagination,
   Pill,
 } from '@licoreria/ui';
@@ -97,10 +96,10 @@ export function InventarioPage() {
   });
 
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader title="Inventario" subtitle="Existencias por variante y ajustes autorizados." />
+    <div className="mx-auto flex max-w-page flex-col gap-4">
       <InventarioTabs />
 
+      <div className="flex flex-col">
       <FolderPanel className="flex flex-col gap-4">
         <Card className="border-0 bg-transparent shadow-none">
           <CardHeader>
@@ -191,6 +190,7 @@ export function InventarioPage() {
           </CardBody>
         </Card>
       </FolderPanel>
+      </div>
     </div>
   );
 }
