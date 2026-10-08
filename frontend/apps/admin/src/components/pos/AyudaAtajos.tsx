@@ -38,12 +38,12 @@ export function AyudaAtajos({ open, onClose }: { open: boolean; onClose: () => v
       <div className="grid gap-5 sm:grid-cols-1">
         {ATAJOS.map((bloque) => (
           <section key={bloque.grupo}>
-            <p className="mb-2 text-xs font-medium uppercase tracking-tighter2 text-muted">{bloque.grupo}</p>
+            <p className="mb-2 text-xs font-medium uppercase tracking-tighter2 text-muted-foreground">{bloque.grupo}</p>
             <ul className="flex flex-col gap-1.5">
               {bloque.filas.map(([tecla, descripcion]) => (
                 <li key={tecla} className="flex items-center justify-between gap-4 text-sm">
-                  <kbd className="rounded border border-hairline bg-elevated px-2 py-1 text-xs text-ink">{tecla}</kbd>
-                  <span className="text-muted">{descripcion}</span>
+                  <kbd className="rounded border border-border bg-muted px-2 py-1 text-xs text-foreground">{tecla}</kbd>
+                  <span className="text-muted-foreground">{descripcion}</span>
                 </li>
               ))}
             </ul>

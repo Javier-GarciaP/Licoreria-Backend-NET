@@ -28,7 +28,6 @@ const varianteSimple = {
   unidadMedidaNombre: 'Botella',
   activo: true,
   codigosBarras: [],
-  precios: [],
 };
 
 const productoSimple = {

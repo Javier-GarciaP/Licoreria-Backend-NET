@@ -28,10 +28,10 @@ export function CategoriaBar({
             aria-selected={seleccionada}
             onClick={() => onCambiar(item.id)}
             className={cn(
-              'flex h-10 shrink-0 items-center whitespace-nowrap rounded-pill px-4 text-sm font-medium transition',
+              'flex h-10 shrink-0 items-center whitespace-nowrap rounded-full px-4 text-sm font-medium transition',
               seleccionada
-                ? 'bg-accent text-on-pastel shadow-glow'
-                : 'border border-hairline bg-elevated/50 text-muted hover:text-ink',
+                ? 'bg-primary text-primary-foreground'
+                : 'border border-border bg-muted/50 text-muted-foreground hover:text-foreground',
             )}
           >
             {item.nombre}

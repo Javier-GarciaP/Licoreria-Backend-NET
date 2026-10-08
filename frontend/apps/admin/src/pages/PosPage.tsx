@@ -241,7 +241,7 @@ export function PosPage() {
                 setBusqueda('');
               }
             }}
-            rightSlot={<Search size={16} className="text-muted" />}
+            rightSlot={<Search size={16} className="text-muted-foreground" />}
           />
 
           <div className="app-scroll lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1">

@@ -46,7 +46,7 @@ export function OrdenPanel({
         onQuitar={pos.quitarLinea}
       />
 
-      <div className="flex flex-col gap-3 border-t border-hairline pt-3">
+      <div className="flex flex-col gap-3 border-t border-border pt-3">
         <div className="grid grid-cols-2 gap-2">
           <input
             ref={descuentoRef}
@@ -57,7 +57,7 @@ export function OrdenPanel({
             value={activa.descuentoUSD || ''}
             placeholder="Descuento"
             onChange={(evento) => pos.descuento(Number(evento.target.value) || 0)}
-            className={`num h-10 w-full rounded-control border border-hairline bg-surface px-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent/50 ${sinSpinners}`}
+            className={`num h-10 w-full rounded-control border border-border bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/50 ${sinSpinners}`}
           />
           <input
             aria-label="Propina USD"
@@ -67,7 +67,7 @@ export function OrdenPanel({
             value={activa.propinaUSD || ''}
             placeholder="Propina"
             onChange={(evento) => pos.propina(Number(evento.target.value) || 0)}
-            className={`num h-10 w-full rounded-control border border-hairline bg-surface px-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent/50 ${sinSpinners}`}
+            className={`num h-10 w-full rounded-control border border-border bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/50 ${sinSpinners}`}
           />
         </div>
 
@@ -76,7 +76,7 @@ export function OrdenPanel({
             aria-label="Promoción"
             value={activa.promocionId}
             onChange={(evento) => pos.promocion(evento.target.value)}
-            className="h-10 w-full rounded-control border border-hairline bg-surface px-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent/50"
+            className="h-10 w-full rounded-control border border-border bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/50"
           >
             <option value="">Sin promoción</option>
             {promociones.map((promocion) => (
@@ -88,27 +88,27 @@ export function OrdenPanel({
         )}
 
         <div className="flex flex-col gap-1.5">
-          <div className="flex items-center justify-between text-sm text-muted">
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
             <span>Subtotal</span>
             <span className="num">{formatUSD(subtotal)}</span>
           </div>
           {activa.descuentoUSD > 0 && (
-            <div className="flex items-center justify-between text-sm text-danger-ink">
+            <div className="flex items-center justify-between text-sm text-destructive-fg">
               <span>Descuento</span>
               <span className="num">−{formatUSD(activa.descuentoUSD)}</span>
             </div>
           )}
-          <div className="flex items-center justify-between text-sm text-muted">
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
             <span>Total</span>
             <span className="num">{formatUSD(total)}</span>
           </div>
           {activa.propinaUSD > 0 && (
-            <div className="flex items-center justify-between text-sm text-muted">
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
               <span>Propina</span>
               <span className="num">{formatUSD(activa.propinaUSD)}</span>
             </div>
           )}
-          <div className="flex items-center justify-between text-base font-medium text-ink">
+          <div className="flex items-center justify-between text-base font-medium text-foreground">
             <span>Total a cobrar</span>
             <span className="num">{formatUSD(totalPagar)}</span>
           </div>

@@ -82,7 +82,7 @@ export const ProductoGrid = forwardRef<
     return (
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
         {Array.from({ length: 12 }).map((_, posicion) => (
-          <div key={posicion} className="h-28 animate-pulse rounded-card bg-elevated" />
+          <div key={posicion} className="h-28 animate-pulse rounded-xl bg-muted" />
         ))}
       </div>
     );
@@ -90,9 +90,9 @@ export const ProductoGrid = forwardRef<
 
   if (productos.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-2 rounded-card border border-hairline bg-surface/60 px-6 py-14 text-center">
-        <p className="text-base font-medium text-ink">Sin productos</p>
-        <p className="text-sm text-muted">Ajusta la búsqueda o cambia de categoría.</p>
+      <div className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card/60 px-6 py-14 text-center">
+        <p className="text-base font-medium text-foreground">Sin productos</p>
+        <p className="text-sm text-muted-foreground">Ajusta la búsqueda o cambia de categoría.</p>
       </div>
     );
   }
@@ -119,23 +119,23 @@ export const ProductoGrid = forwardRef<
             onFocus={() => setIndice(posicion)}
             onKeyDown={(evento) => alPresionar(evento, posicion)}
             className={cn(
-              'flex min-h-[7rem] flex-col items-start gap-1 rounded-card border p-4 text-left outline-none transition',
+              'flex min-h-[7rem] flex-col items-start gap-1 rounded-xl border p-4 text-left outline-none transition',
               'focus:outline-none focus-visible:outline-none',
-              activo ? 'border-accent bg-accent/10' : 'border-hairline bg-surface/60 hover:border-accent/40',
+              activo ? 'border-primary bg-primary/10' : 'border-border bg-card/60 hover:border-primary/40',
             )}
           >
             <div className="flex w-full items-start justify-between gap-2">
-              <span className="line-clamp-2 text-sm font-medium text-ink">{producto.nombre}</span>
+              <span className="line-clamp-2 text-sm font-medium text-foreground">{producto.nombre}</span>
               {preparado && (
-                <span className="shrink-0 rounded-pill bg-info/25 px-2 py-0.5 text-[10px] font-medium text-info-ink">
+                <span className="shrink-0 rounded-full bg-info/25 px-2 py-0.5 text-[10px] font-medium text-info-fg">
                   Receta
                 </span>
               )}
             </div>
-            <span className="text-[11px] text-muted">{producto.categoriaNombre}</span>
+            <span className="text-[11px] text-muted-foreground">{producto.categoriaNombre}</span>
             <span className="mt-auto flex w-full items-center justify-between pt-2">
-              <span className="num text-sm text-accent-ink">{rangoPrecio(producto)}</span>
-              <span className="text-[11px] text-muted">
+              <span className="num text-sm text-foreground">{rangoPrecio(producto)}</span>
+              <span className="text-[11px] text-muted-foreground">
                 {producto.variantes.length === 1 ? '1 variante' : `${producto.variantes.length} variantes`}
               </span>
             </span>

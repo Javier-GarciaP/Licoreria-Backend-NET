@@ -78,7 +78,7 @@ export function TicketVenta({ venta, onCerrar }: { venta: Venta | null; onCerrar
           autoFocus
           aria-label="Cerrar"
           onClick={onCerrar}
-          className="no-print absolute -right-3 -top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-hairline bg-surface text-muted shadow-card transition hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+          className="no-print absolute -right-3 -top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-card transition hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
         >
           <X size={15} />
         </button>

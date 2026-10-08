@@ -148,7 +148,7 @@ export function SelectorProductoModal({
     >
       <div className="flex flex-col gap-5">
         <section className="flex flex-col gap-2">
-          <p className="text-xs font-medium uppercase tracking-tighter2 text-muted">Variante</p>
+          <p className="text-xs font-medium uppercase tracking-tighter2 text-muted-foreground">Variante</p>
           <div className="flex flex-wrap gap-2">
             {variantes.map((item, indice) => {
               const activa = indice === indiceVariante;
@@ -158,15 +158,15 @@ export function SelectorProductoModal({
                   type="button"
                   onClick={() => setIndiceVariante(indice)}
                   className={cn(
-                    'flex h-11 items-center gap-2 rounded-pill border px-4 text-sm transition',
+                    'flex h-11 items-center gap-2 rounded-full border px-4 text-sm transition',
                     activa
-                      ? 'border-accent bg-accent/15 text-accent-ink'
-                      : 'border-hairline bg-surface/60 text-muted hover:text-ink',
+                      ? 'border-primary bg-primary/15 text-foreground'
+                      : 'border-border bg-card/60 text-muted-foreground hover:text-foreground',
                   )}
                 >
-                  {variantes.length > 1 && <kbd className="num text-[11px] text-muted">{indice + 1}</kbd>}
-                  <span className="text-ink">{item.nombre}</span>
-                  <span className="num text-xs text-accent-ink">{formatUSD(item.precioVentaUSD)}</span>
+                  {variantes.length > 1 && <kbd className="num text-[11px] text-muted-foreground">{indice + 1}</kbd>}
+                  <span className="text-foreground">{item.nombre}</span>
+                  <span className="num text-xs text-foreground">{formatUSD(item.precioVentaUSD)}</span>
                 </button>
               );
             })}
@@ -175,9 +175,9 @@ export function SelectorProductoModal({
 
         <section className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-medium uppercase tracking-tighter2 text-muted">Extras</p>
+            <p className="text-xs font-medium uppercase tracking-tighter2 text-muted-foreground">Extras</p>
             {requeridosMinimos > 0 && (
-              <span className={cn('text-[11px]', cumpleRequeridos ? 'text-muted' : 'text-danger-ink')}>
+              <span className={cn('text-[11px]', cumpleRequeridos ? 'text-muted-foreground' : 'text-destructive-fg')}>
                 Elige al menos {requeridosMinimos}
               </span>
             )}
@@ -185,7 +185,7 @@ export function SelectorProductoModal({
           {modificadoresQuery.isLoading ? (
             <Spinner />
           ) : modificadores.length === 0 ? (
-            <p className="text-sm text-muted">Sin extras para este producto.</p>
+            <p className="text-sm text-muted-foreground">Sin extras para este producto.</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {modificadores.map((mod) => {
@@ -197,15 +197,15 @@ export function SelectorProductoModal({
                     onClick={() => alternarModificador(mod.id)}
                     aria-pressed={activo}
                     className={cn(
-                      'flex h-11 items-center gap-2 rounded-pill border px-4 text-sm transition',
+                      'flex h-11 items-center gap-2 rounded-full border px-4 text-sm transition',
                       activo
-                        ? 'border-accent bg-accent/15 text-accent-ink'
-                        : 'border-hairline bg-surface/60 text-muted hover:text-ink',
+                        ? 'border-primary bg-primary/15 text-foreground'
+                        : 'border-border bg-card/60 text-muted-foreground hover:text-foreground',
                     )}
                   >
-                    <span className="text-ink">{mod.modificadorNombre}</span>
+                    <span className="text-foreground">{mod.modificadorNombre}</span>
                     {mod.precioAdicional > 0 && (
-                      <span className="num text-xs text-accent-ink">+{formatUSD(mod.precioAdicional)}</span>
+                      <span className="num text-xs text-foreground">+{formatUSD(mod.precioAdicional)}</span>
                     )}
                   </button>
                 );
@@ -215,28 +215,28 @@ export function SelectorProductoModal({
         </section>
 
         {producto.tipo === 'Preparado' && (recetasQuery.data?.length ?? 0) > 0 && (
-          <section className="rounded-inner border border-hairline bg-elevated/40 p-3">
-            <p className="mb-2 text-xs font-medium uppercase tracking-tighter2 text-muted">Receta</p>
+          <section className="rounded-inner border border-border bg-muted/40 p-3">
+            <p className="mb-2 text-xs font-medium uppercase tracking-tighter2 text-muted-foreground">Receta</p>
             <ul className="flex flex-col gap-1">
               {recetasQuery.data?.map((receta) => (
-                <li key={receta.id} className="flex items-center justify-between text-sm text-muted">
+                <li key={receta.id} className="flex items-center justify-between text-sm text-muted-foreground">
                   <span>{receta.varianteInsumoNombre}</span>
-                  <span className="num text-ink">{receta.cantidad}</span>
+                  <span className="num text-foreground">{receta.cantidad}</span>
                 </li>
               ))}
             </ul>
           </section>
         )}
 
-        <label className="flex items-center justify-between border-t border-hairline pt-4">
-          <span className="text-sm text-muted">Cantidad</span>
+        <label className="flex items-center justify-between border-t border-border pt-4">
+          <span className="text-sm text-muted-foreground">Cantidad</span>
           <input
             aria-label="Cantidad"
             type="number"
             min={1}
             value={cantidad}
             onChange={(evento) => setCantidad(Math.max(1, Number(evento.target.value) || 1))}
-            className="num h-10 w-20 rounded-control border border-hairline bg-surface px-3 text-center text-base text-ink focus:outline-none focus:ring-2 focus:ring-accent/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            className="num h-10 w-20 rounded-control border border-border bg-card px-3 text-center text-base text-foreground focus:outline-none focus:ring-2 focus:ring-ring/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
         </label>
       </div>

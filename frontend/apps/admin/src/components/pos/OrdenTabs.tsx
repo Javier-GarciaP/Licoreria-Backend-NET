@@ -41,8 +41,8 @@ export function OrdenTabs({
             <div
               key={orden.id}
               className={cn(
-                'group flex h-10 shrink-0 items-center gap-1.5 rounded-pill border px-3 text-sm transition',
-                activa ? 'border-accent bg-accent/15 text-accent-ink' : 'border-hairline text-muted hover:text-ink',
+                'group flex h-10 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm transition',
+                activa ? 'border-primary bg-primary/15 text-foreground' : 'border-border text-muted-foreground hover:text-foreground',
               )}
             >
               {editando === orden.id ? (
@@ -55,7 +55,7 @@ export function OrdenTabs({
                     if (evento.key === 'Enter') guardar(orden.id);
                     if (evento.key === 'Escape') setEditando(null);
                   }}
-                  className="w-24 bg-transparent text-sm text-ink focus:outline-none"
+                  className="w-24 bg-transparent text-sm text-foreground focus:outline-none"
                 />
               ) : (
                 <button
@@ -76,7 +76,7 @@ export function OrdenTabs({
                   type="button"
                   aria-label={`Cerrar ${orden.nombre}`}
                   onClick={() => onCerrar(orden.id)}
-                  className="text-muted transition hover:text-danger-ink"
+                  className="text-muted-foreground transition hover:text-destructive-fg"
                 >
                   <X size={13} />
                 </button>
@@ -89,7 +89,7 @@ export function OrdenTabs({
         type="button"
         aria-label="Nueva orden"
         onClick={onNueva}
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hairline text-muted transition hover:text-ink"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground transition hover:text-foreground"
       >
         <Plus size={16} />
       </button>
