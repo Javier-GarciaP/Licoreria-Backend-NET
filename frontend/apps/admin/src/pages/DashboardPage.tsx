@@ -24,12 +24,12 @@ const HORAS = Array.from({ length: 24 }, (_, hora) => hora);
 type Tone = 'mint' | 'sky' | 'lavender' | 'peach' | 'rose' | 'butter';
 
 const TONE: Record<Tone, { chip: string; wash: string }> = {
-  mint: { chip: 'bg-success/25 text-success-ink', wash: 'bg-success/25' },
-  sky: { chip: 'bg-info/25 text-info-ink', wash: 'bg-info/25' },
-  lavender: { chip: 'bg-accent/25 text-accent-ink', wash: 'bg-accent/25' },
-  peach: { chip: 'bg-warning/25 text-warning-ink', wash: 'bg-warning/25' },
-  rose: { chip: 'bg-danger/25 text-danger-ink', wash: 'bg-danger/25' },
-  butter: { chip: 'bg-butter/25 text-butter-ink', wash: 'bg-butter/25' },
+  mint: { chip: 'bg-success text-success-fg', wash: 'bg-success/25' },
+  sky: { chip: 'bg-info text-info-fg', wash: 'bg-info/25' },
+  lavender: { chip: 'bg-primary text-primary-foreground', wash: 'bg-primary/25' },
+  peach: { chip: 'bg-warning text-warning-fg', wash: 'bg-warning/25' },
+  rose: { chip: 'bg-destructive text-destructive-fg', wash: 'bg-destructive/25' },
+  butter: { chip: 'bg-butter text-butter-fg', wash: 'bg-butter/25' },
 };
 
 const TONE_VAR: Record<Tone, string> = {
@@ -169,19 +169,19 @@ function MiniBars({ data, tone = 'mint' }: { data: Punto[]; tone?: Tone }) {
 function BarrasMotivo({ items }: { items: { motivo: string; valorUSD: number }[] }) {
   const max = Math.max(1, ...items.map((entrada) => entrada.valorUSD));
   if (items.length === 0) {
-    return <p className="py-6 text-center text-sm text-muted">Sin mermas registradas.</p>;
+    return <p className="py-6 text-center text-sm text-muted-foreground">Sin mermas registradas.</p>;
   }
   return (
     <div className="flex h-full flex-col justify-center gap-3">
       {items.slice(0, 5).map((entrada) => (
         <div key={entrada.motivo} className="flex flex-col gap-1">
           <div className="flex items-center justify-between gap-2 text-xs">
-            <span className="truncate capitalize text-muted">{entrada.motivo}</span>
-            <span className="num shrink-0 text-ink">{formatUSD(entrada.valorUSD)}</span>
+            <span className="truncate capitalize text-muted-foreground">{entrada.motivo}</span>
+            <span className="num shrink-0 text-foreground">{formatUSD(entrada.valorUSD)}</span>
           </div>
-          <div className="h-1.5 w-full overflow-hidden rounded-pill bg-elevated">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-pill bg-warning"
+              className="h-full rounded-full bg-warning"
               style={{ width: `${(entrada.valorUSD / max) * 100}%` }}
             />
           </div>
@@ -216,15 +216,14 @@ function Tile({
   return (
     <motion.div
       variants={item}
-      whileHover={{ y: -3 }}
-      className={cn(
-        'glass-card flex h-full flex-col overflow-hidden rounded-card p-5 transition-colors hover:border-accent/40',
+            className={cn(
+        'border border-border bg-card flex h-full flex-col overflow-hidden rounded-xl p-5 transition-colors hover:border-primary/40',
         !children && 'justify-center',
         className,
       )}
     >
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-medium text-muted">{label}</p>
+        <p className="text-xs font-medium text-muted-foreground">{label}</p>
         {icon && (
           <span className={cn('flex h-8 w-8 items-center justify-center rounded-full', TONE[tone].chip)}>{icon}</span>
         )}
@@ -232,7 +231,7 @@ function Tile({
       <div className="relative mt-3 flex flex-wrap items-end justify-between gap-2">
         <p
           className={cn(
-            'font-medium tracking-tightest text-ink',
+            'font-medium tracking-tightest text-foreground',
             hero ? 'text-3xl' : 'text-2xl',
           )}
         >
@@ -240,7 +239,7 @@ function Tile({
         </p>
         {badge}
       </div>
-      {hint && <p className="mt-1 text-xs text-muted">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
       {children && <div className="mt-3 min-h-0 flex-1">{children}</div>}
     </motion.div>
   );
@@ -260,15 +259,14 @@ function Panel({
   return (
     <motion.div
       variants={item}
-      whileHover={{ y: -3 }}
-      className={cn(
-        'glass-card flex h-full flex-col overflow-hidden rounded-card p-5 transition-colors hover:border-accent/40',
+            className={cn(
+        'border border-border bg-card flex h-full flex-col overflow-hidden rounded-xl p-5 transition-colors hover:border-primary/40',
         className,
       )}
     >
       <div className="mb-3 flex shrink-0 items-center justify-between gap-3">
-        <h2 className="text-sm font-medium tracking-tighter2 text-ink">{title}</h2>
-        {aside && <span className="text-xs text-muted">{aside}</span>}
+        <h2 className="text-sm font-medium tracking-tighter2 text-foreground">{title}</h2>
+        {aside && <span className="text-xs text-muted-foreground">{aside}</span>}
       </div>
       <div className="min-h-0 flex-1">{children}</div>
     </motion.div>
@@ -300,7 +298,7 @@ function Heatmap({ data }: { data?: ReporteHeatmap }) {
           <div className="w-7 shrink-0" />
           <div className="flex flex-1 gap-1">
             {HORAS.map((hora) => (
-              <div key={hora} className="flex-1 text-center text-[9px] text-muted num">
+              <div key={hora} className="flex-1 text-center text-[9px] text-muted-foreground num">
                 {hora % 3 === 0 ? hora : ''}
               </div>
             ))}
@@ -308,7 +306,7 @@ function Heatmap({ data }: { data?: ReporteHeatmap }) {
         </div>
         {DIAS.map((dia, indiceDia) => (
           <motion.div key={dia} variants={item} className="flex items-center gap-1">
-            <div className="w-7 shrink-0 text-[10px] text-muted">{dia}</div>
+            <div className="w-7 shrink-0 text-[10px] text-muted-foreground">{dia}</div>
             <div className="flex flex-1 gap-1">
               {HORAS.map((hora) => {
                 const valor = mapa.get(`${indiceDia}-${hora}`) ?? 0;
@@ -319,8 +317,8 @@ function Heatmap({ data }: { data?: ReporteHeatmap }) {
                     key={hora}
                     title={`${dia} ${hora}:00 · ${formatUSD(valor)}`}
                     className={cn(
-                      'h-5 flex-1 rounded-[4px] border border-hairline/60',
-                      esPico && 'ring-2 ring-accent-ink',
+                      'h-5 flex-1 rounded-[4px] border border-border/60',
+                      esPico && 'ring-2 ring-ring-ink',
                     )}
                     style={{
                       backgroundColor:
@@ -335,12 +333,12 @@ function Heatmap({ data }: { data?: ReporteHeatmap }) {
       </motion.div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-xs text-muted">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>Menos</span>
           {[0.2, 0.4, 0.6, 0.8, 1].map((alpha) => (
             <span
               key={alpha}
-              className="h-3 w-3 rounded-sm border border-hairline/60"
+              className="h-3 w-3 rounded-sm border border-border/60"
               style={{ backgroundColor: `rgb(var(--color-accent) / ${alpha})` }}
             />
           ))}
@@ -374,11 +372,11 @@ function SaludInventario({ data }: { data?: DiagnosticoInventario }) {
   return (
     <div className="flex h-full flex-col justify-center gap-3">
       <div className="flex items-center justify-between gap-3">
-        <span className="num text-2xl font-medium text-ink">{formatNumber(data.total)}</span>
+        <span className="num text-2xl font-medium text-foreground">{formatNumber(data.total)}</span>
         <Pill tone={criticos > 0 ? 'danger' : 'success'}>{formatNumber(criticos)} críticos</Pill>
       </div>
 
-      <div className="flex h-3 w-full overflow-hidden rounded-pill border border-hairline">
+      <div className="flex h-3 w-full overflow-hidden rounded-full border border-border">
         {ESTADOS_INVENTARIO.map((estado) => {
           const cantidad = Number(data[estado.clave] ?? 0);
           if (cantidad <= 0) return null;
@@ -395,10 +393,10 @@ function SaludInventario({ data }: { data?: DiagnosticoInventario }) {
 
       <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
         {ESTADOS_INVENTARIO.map((estado) => (
-          <span key={estado.clave} className="flex items-center gap-1.5 text-xs text-muted">
+          <span key={estado.clave} className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <span className={cn('h-2.5 w-2.5 shrink-0 rounded-full', estado.color)} />
             <span className="truncate">{estado.etiqueta}</span>
-            <span className="ml-auto font-medium text-ink tabular-nums">{formatNumber(Number(data[estado.clave] ?? 0))}</span>
+            <span className="ml-auto font-medium text-foreground tabular-nums">{formatNumber(Number(data[estado.clave] ?? 0))}</span>
           </span>
         ))}
       </div>
@@ -496,9 +494,9 @@ export function DashboardPage() {
                 }
                 className="col-span-2"
               >
-                <div className="flex items-center justify-between text-xs text-muted">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>Últimos 7 días</span>
-                  <span className="num text-ink">{formatUSD(total7)}</span>
+                  <span className="num text-foreground">{formatUSD(total7)}</span>
                 </div>
                 <div className="mt-2 h-36">
                   {ventas.data ? <AreaSpark data={serie} tone="mint" /> : <Skeleton className="h-full w-full" />}
@@ -517,7 +515,7 @@ export function DashboardPage() {
                 }
                 className="col-span-2"
               >
-                <div className="flex h-full flex-col justify-center gap-1.5 text-xs text-muted">
+                <div className="flex h-full flex-col justify-center gap-1.5 text-xs text-muted-foreground">
                   <p>
                     {datos.cajaAbierta
                       ? 'Caja operativa: los cobros de hoy se registran sobre esta caja.'
@@ -525,7 +523,7 @@ export function DashboardPage() {
                   </p>
                   <p>
                     El turno se abrió con un fondo inicial de{' '}
-                    <span className="num text-ink">{formatUSD(datos.cajaFondoInicial)}</span>
+                    <span className="num text-foreground">{formatUSD(datos.cajaFondoInicial)}</span>
                     {' '}· al cerrar se hace arqueo desde el módulo Caja.
                   </p>
                 </div>
