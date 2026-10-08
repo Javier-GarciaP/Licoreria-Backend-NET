@@ -1,12 +1,13 @@
 import { cn } from '../lib/cn';
+import { Skeleton as SkeletonPrimitivo } from './ui/skeleton';
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('animate-pulse rounded-2xl bg-elevated', className)} />;
+  return <SkeletonPrimitivo className={cn('rounded-xl', className)} />;
 }
 
 export function SkeletonCard() {
   return (
-    <div className="rounded-card border border-hairline bg-surface p-5">
+    <div className="rounded-xl border bg-card p-5 shadow-sm">
       <Skeleton className="h-3 w-24" />
       <Skeleton className="mt-4 h-8 w-32" />
       <Skeleton className="mt-3 h-3 w-40" />

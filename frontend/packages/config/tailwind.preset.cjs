@@ -42,6 +42,12 @@ module.exports = {
         'info-foreground': 'rgb(var(--info-foreground) / <alpha-value>)',
         butter: 'rgb(var(--butter) / <alpha-value>)',
         'butter-foreground': 'rgb(var(--butter-foreground) / <alpha-value>)',
+        /* Texto sobre fill pastel (badges). */
+        'success-fg': 'rgb(var(--success-fg) / <alpha-value>)',
+        'warning-fg': 'rgb(var(--warning-fg) / <alpha-value>)',
+        'info-fg': 'rgb(var(--info-fg) / <alpha-value>)',
+        'destructive-fg': 'rgb(var(--destructive-fg) / <alpha-value>)',
+        'butter-fg': 'rgb(var(--butter-fg) / <alpha-value>)',
 
         /* — Aliases legacy (migración incremental; retirar al final) — */
         canvas: 'rgb(var(--color-canvas) / <alpha-value>)',

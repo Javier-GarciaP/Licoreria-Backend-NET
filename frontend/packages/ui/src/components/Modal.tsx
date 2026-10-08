@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
-import { createPortal } from 'react-dom';
 import { cn } from '../lib/cn';
-import { useFocusTrap } from '../lib/useFocusTrap';
+import { Dialog, DialogClose, DialogContent, DialogOverlay, DialogPortal, DialogTitle } from './ui/dialog';
 
 const anchos: Record<NonNullable<ModalProps['size']>, string> = {
   sm: 'max-w-md',
@@ -12,7 +11,7 @@ const anchos: Record<NonNullable<ModalProps['size']>, string> = {
 
 const fondos: Record<NonNullable<ModalProps['backdrop']>, string> = {
   dim: 'bg-black/60',
-  soft: 'bg-black/20 backdrop-blur-[2px]',
+  soft: 'bg-black/25',
   none: 'bg-transparent',
 };
 
@@ -25,7 +24,7 @@ export interface ModalProps {
   className?: string;
   /** Ancho máximo del diálogo. Por defecto `md` (max-w-lg). */
   size?: 'sm' | 'md' | 'lg' | 'xl';
-  /** Fondo sobre el contenido. `none` deja el vidrio flotar sin opacar (estilo POS). */
+  /** Fondo sobre el contenido. `none` deja el diálogo flotar sin opacar (estilo POS). */
   backdrop?: 'dim' | 'soft' | 'none';
 }
 
@@ -39,50 +38,40 @@ export function Modal({
   size = 'md',
   backdrop = 'dim',
 }: ModalProps) {
-  const dialogRef = useFocusTrap<HTMLDivElement>(open, onClose);
-
-  if (!open) return null;
-
-  return createPortal(
-    <div
-      className={cn(
-        'fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-6',
-        fondos[backdrop],
-      )}
-      onClick={onClose}
-      role="presentation"
-    >
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="modal-titulo"
-        tabIndex={-1}
-        className={cn(
-          'w-full max-h-[92dvh] overflow-y-auto app-scroll rounded-t-card glass-card shadow-card focus:outline-none sm:rounded-card',
-          'p-6 sm:p-8',
-          anchos[size],
-          className,
-        )}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="flex items-center justify-between gap-4">
-          <h2 id="modal-titulo" className="text-lg font-medium tracking-tighter2 text-ink">
-            {title}
-          </h2>
-          <button
-            onClick={onClose}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted transition hover:bg-ink/5 hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
-            aria-label="Cerrar"
+  return (
+    <Dialog open={open} onOpenChange={(abierto) => { if (!abierto) onClose(); }}>
+      <DialogPortal>
+        <DialogOverlay className={cn('fixed inset-0 z-50', fondos[backdrop])} />
+        <DialogContent
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-6"
+        >
+          <div
+            className={cn(
+              'flex max-h-[92dvh] w-full flex-col overflow-y-auto app-scroll rounded-t-xl bg-card p-6 shadow-lg sm:rounded-xl sm:p-8',
+              anchos[size],
+              className,
+            )}
           >
-            &#x2715;
-          </button>
-        </div>
-        <div className="mt-5">{children}</div>
-        {footer && <div className="mt-7 flex flex-wrap justify-end gap-3">{footer}</div>}
-      </div>
-    </div>,
-    document.body,
+            <div className="flex items-center justify-between gap-4">
+              <DialogTitle className="text-lg font-medium tracking-tighter2 text-foreground">{title}</DialogTitle>
+              <DialogClose
+                aria-label="Cerrar"
+                className={cn(
+                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition',
+                  'hover:bg-accent/10 hover:text-foreground',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                )}
+              >
+                &#x2715;
+              </DialogClose>
+            </div>
+            <div className="mt-5">{children}</div>
+            {footer && <div className="mt-7 flex flex-wrap justify-end gap-3">{footer}</div>}
+          </div>
+        </DialogContent>
+      </DialogPortal>
+    </Dialog>
   );
 }
 
@@ -98,7 +87,7 @@ export function ModalSection({
 }) {
   return (
     <section className={cn('flex flex-col gap-2', className)}>
-      <p className="text-xs font-medium uppercase tracking-tighter2 text-muted">{title}</p>
+      <p className="text-xs font-medium text-muted-foreground">{title}</p>
       {children}
     </section>
   );

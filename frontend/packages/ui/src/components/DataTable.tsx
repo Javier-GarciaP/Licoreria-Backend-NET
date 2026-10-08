@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '../lib/cn';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { SkeletonTable } from './Skeleton';
 
 export interface Column<T> {
@@ -42,7 +43,7 @@ export function DataTable<T>({
 
   if (rows.length === 0) {
     return (
-      <div className="rounded-2xl border border-hairline bg-surface px-6 py-10 text-center text-sm text-muted">
+      <div className="rounded-xl border border-border bg-card px-6 py-10 text-center text-sm text-muted-foreground">
         {empty}
       </div>
     );
@@ -63,26 +64,19 @@ export function DataTable<T>({
     align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : 'text-left';
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-hairline">
-      <table className="w-full min-w-[640px] border-collapse text-sm">
-        <thead>
-          <tr className="bg-elevated/60">
-            {conExpandible && <th scope="col" className="w-10 px-2 py-3" />}
+    <div className="overflow-x-auto rounded-xl border border-border">
+      <Table className="min-w-[640px]">
+        <TableHeader>
+          <TableRow>
+            {conExpandible && <TableHead className="w-10 px-2" />}
             {columns.map((column) => (
-              <th
-                key={column.key}
-                scope="col"
-                className={cn(
-                  'whitespace-nowrap px-4 py-3 text-xs font-medium uppercase tracking-tighter2 text-muted',
-                  alignClass(column.align),
-                )}
-              >
+              <TableHead key={column.key} className={cn('whitespace-nowrap', alignClass(column.align))}>
                 {column.header}
-              </th>
+              </TableHead>
             ))}
-          </tr>
-        </thead>
-        <tbody>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {rows.map((row) => {
             const clave = rowKey(row);
             const expandida = esExpandible(clave);
@@ -100,8 +94,8 @@ export function DataTable<T>({
               />
             );
           })}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 }
@@ -130,16 +124,15 @@ function FragmentoFila<T>({
 
   return (
     <>
-      <tr
+      <TableRow
         onClick={onRowClick ? () => onRowClick(row) : undefined}
         className={cn(
-          'border-t border-hairline transition',
-          onRowClick && 'cursor-pointer hover:bg-elevated/40',
-          expandida && 'bg-elevated/30',
+          onRowClick && 'cursor-pointer',
+          expandida && 'bg-muted/30',
         )}
       >
         {conExpandible && (
-          <td className="px-2 py-3">
+          <TableCell className="px-2">
             <button
               type="button"
               aria-label={expandida ? 'Contraer' : 'Expandir'}
@@ -148,32 +141,31 @@ function FragmentoFila<T>({
                 evento.stopPropagation();
                 alternar(clave);
               }}
-              className="flex h-7 w-7 items-center justify-center rounded-full text-muted transition hover:bg-ink/5 hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent/10 hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              {expandida ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+              {expandida ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
             </button>
-          </td>
+          </TableCell>
         )}
         {columns.map((column) => (
-          <td
+          <TableCell
             key={column.key}
             className={cn(
-              'px-4 py-3 text-ink',
               alignClass(column.align),
               column.align === 'right' && 'num',
               column.className,
             )}
           >
             {column.render(row)}
-          </td>
+          </TableCell>
         ))}
-      </tr>
+      </TableRow>
       {expandida && expandedRow && (
-        <tr className="border-t-0">
-          <td colSpan={columns.length + 1} className="bg-elevated/20 px-5 py-4">
+        <TableRow className="border-0 bg-muted/10">
+          <TableCell colSpan={columns.length + 1} className="px-5 py-4">
             {expandedRow(row)}
-          </td>
-        </tr>
+          </TableCell>
+        </TableRow>
       )}
     </>
   );

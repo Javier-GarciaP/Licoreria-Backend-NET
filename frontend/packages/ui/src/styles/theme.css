@@ -39,6 +39,13 @@
   --butter: 244 225 161;            /* mantequilla */
   --butter-foreground: 107 87 20;
 
+  /* Texto sobre fill pastel (badges): oscuro legible en ambos temas. */
+  --success-fg: 31 92 70;
+  --warning-fg: 122 67 24;
+  --info-fg: 30 76 110;
+  --destructive-fg: 122 36 54;
+  --butter-fg: 107 87 20;
+
   --radius: 0.5rem;
 
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.08);
@@ -101,6 +108,12 @@
   --info-foreground: 197 228 250;
   --butter: 244 225 161;
   --butter-foreground: 248 236 187;
+
+  --success-fg: 31 92 70;
+  --warning-fg: 122 67 24;
+  --info-fg: 30 76 110;
+  --destructive-fg: 122 36 54;
+  --butter-fg: 107 87 20;
 
   --radius: 0.5rem;
 

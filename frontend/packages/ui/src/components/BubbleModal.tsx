@@ -40,22 +40,22 @@ export function BubbleModal({
       role="dialog"
       aria-label={title}
       style={abajo ? { top: rect.bottom + 12, left } : { bottom: window.innerHeight - rect.top + 12, left }}
-      className="fixed z-[60] w-[20rem] rounded-2xl glass-card border border-hairline shadow-card"
+      className="fixed z-50 w-[20rem] rounded-xl border border-border bg-popover shadow-md"
     >
       {/* Cola */}
       <span
         aria-hidden
-        className="absolute h-3 w-3 rotate-45 border border-hairline bg-surface"
+        className="absolute h-3 w-3 rotate-45 border border-border bg-popover"
         style={abajo ? { top: -6, left: colaX - 6 } : { bottom: -6, left: colaX - 6 }}
       />
 
       <div className="p-4">
         <div className="mb-3 flex items-center justify-between gap-2">
-          <p className={cn('text-sm font-medium tracking-tighter2 text-ink', 'flex-1 truncate')}>{title}</p>
+          <p className={cn('text-sm font-medium tracking-tighter2 text-foreground', 'flex-1 truncate')}>{title}</p>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted transition hover:bg-ink/5 hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-accent/10 hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             aria-label="Cerrar"
           >
             &#x2715;

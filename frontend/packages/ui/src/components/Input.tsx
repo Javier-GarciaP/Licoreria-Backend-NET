@@ -1,5 +1,6 @@
 import { forwardRef, type InputHTMLAttributes, type ReactNode } from 'react';
 import { cn } from '../lib/cn';
+import { Input as InputPrimitivo } from './ui/input';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -15,26 +16,21 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   const inputId = id ?? props.name;
   return (
     <label className="flex w-full flex-col gap-1.5" htmlFor={inputId}>
-      {label && <span className="text-xs font-medium tracking-tighter2 text-muted">{label}</span>}
+      {label && <span className="text-sm font-medium text-foreground">{label}</span>}
       <span className="relative flex items-center">
-        <input
+        <InputPrimitivo
           id={inputId}
           ref={ref}
-          className={cn(
-            'h-10 w-full rounded-control border bg-surface px-4 text-sm text-ink transition',
-            'placeholder:text-stone focus:outline-none focus:ring-2 focus:ring-accent/50',
-            rightSlot && 'pr-11',
-            error ? 'border-danger' : 'border-hairline',
-            className,
-          )}
+          aria-invalid={error ? true : undefined}
+          className={cn(error && 'border-destructive', rightSlot && 'pr-9', className)}
           {...props}
         />
-        {rightSlot && <span className="absolute right-3 flex items-center">{rightSlot}</span>}
+        {rightSlot && <span className="absolute right-3 flex items-center text-muted-foreground">{rightSlot}</span>}
       </span>
       {error ? (
-        <span className="text-xs text-danger-ink">{error}</span>
+        <span className="text-sm text-destructive-fg">{error}</span>
       ) : hint ? (
-        <span className="text-xs text-muted">{hint}</span>
+        <span className="text-sm text-muted-foreground">{hint}</span>
       ) : null}
     </label>
   );
