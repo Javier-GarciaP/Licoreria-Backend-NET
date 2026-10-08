@@ -40,7 +40,7 @@ export interface AuthResponse {
 }
 
 export interface UsuarioActual {
-  usuarioId: string;
+  id: string;
   nombreCompleto: string;
   email: string;
   rol: string;

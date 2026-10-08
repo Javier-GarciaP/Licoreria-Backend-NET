@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const me = await authApi.me();
         if (activo) {
           setUsuario({
-            usuarioId: me.usuarioId,
+            usuarioId: me.id,
             nombreCompleto: me.nombreCompleto,
             email: me.email,
             rol: me.rol,
