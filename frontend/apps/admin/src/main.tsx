@@ -23,12 +23,11 @@ createRoot(document.getElementById('root')!).render(
               position="top-right"
               toastOptions={{
                 style: {
-                  background: 'rgb(var(--color-surface) / 0.88)',
-                  color: 'rgb(var(--color-ink))',
-                  border: '1px solid rgb(var(--color-ink) / 0.06)',
-                  backdropFilter: 'blur(16px) saturate(150%)',
-                  WebkitBackdropFilter: 'blur(16px) saturate(150%)',
-                  borderRadius: '16px',
+                  background: 'rgb(var(--card))',
+                  color: 'rgb(var(--foreground))',
+                  border: '1px solid rgb(var(--border))',
+                  borderRadius: '12px',
+                  boxShadow: 'var(--shadow-card)',
                 },
               }}
             />

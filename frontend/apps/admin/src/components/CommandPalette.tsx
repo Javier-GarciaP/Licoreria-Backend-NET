@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRight, Package, Search, Zap } from 'lucide-react';
-import { cn, useFocusTrap } from '@licoreria/ui';
+import { Package, Zap } from 'lucide-react';
+import { cn, Command, CommandDialog, CommandEmpty, CommandInput, CommandItem, CommandList } from '@licoreria/ui';
 import { catalogoApi } from '@licoreria/api-client';
 import type { NavGroup, NavItem } from '../lib/navigation';
 
@@ -24,16 +24,13 @@ export function CommandPalette({
   grupos: NavGroup[];
 }) {
   const navigate = useNavigate();
-  const ref = useFocusTrap<HTMLDivElement>(open, onClose);
-  const inputRef = useRef<HTMLInputElement>(null);
   const [consulta, setConsulta] = useState('');
-  const [activo, setActivo] = useState(0);
   const [debounced, setDebounced] = useState('');
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(consulta.trim()), 250);
     return () => clearTimeout(t);
-  }, [consulta]);
+  }, [consulta, setDebounced]);
 
   const productos = useQuery({
     queryKey: ['palette', 'productos', debounced],
@@ -71,93 +68,58 @@ export function CommandPalette({
     return comandos.filter((c) => `${c.label} ${c.sublabel}`.toLowerCase().includes(q));
   }, [comandos, consulta]);
 
-  useEffect(() => {
-    setActivo(0);
-  }, [consulta, open]);
-
-  useEffect(() => {
-    if (open) inputRef.current?.focus();
-  }, [open]);
-
-  const cerrar = () => {
-    onClose();
-    setConsulta('');
-  };
-
-  const ejecutar = (comando?: Comando) => {
-    if (!comando) return;
+  const ejecutar = (comando: Comando) => {
     navigate(comando.to);
-    cerrar();
+    setConsulta('');
+    onClose();
   };
-
-  const alTeclear = (evento: React.KeyboardEvent) => {
-    if (evento.key === 'ArrowDown') {
-      evento.preventDefault();
-      setActivo((i) => Math.min(i + 1, filtrados.length - 1));
-    } else if (evento.key === 'ArrowUp') {
-      evento.preventDefault();
-      setActivo((i) => Math.max(i - 1, 0));
-    } else if (evento.key === 'Enter') {
-      evento.preventDefault();
-      ejecutar(filtrados[activo]);
-    }
-  };
-
-  if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-4 pt-[12vh]"
-      role="presentation"
-      onClick={cerrar}
-    >
-      <div
-        ref={ref}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Paleta de comandos"
-        tabIndex={-1}
-        onClick={(evento) => evento.stopPropagation()}
-        className="glass-panel w-full max-w-lg overflow-hidden rounded-2xl shadow-card focus:outline-none"
+    <Command shouldFilter={false} loop>
+      <CommandDialog
+        open={open}
+        onOpenChange={(abierto) => {
+          if (!abierto) {
+            setConsulta('');
+            onClose();
+          }
+        }}
+        label="Paleta de comandos"
+        overlayClassName="fixed inset-0 z-50 bg-black/40"
+        contentClassName="fixed left-1/2 top-[12vh] z-50 w-full max-w-lg -translate-x-1/2 overflow-hidden rounded-xl border border-border bg-card shadow-lg focus:outline-none"
       >
-        <div className="flex items-center gap-2 border-b border-hairline px-4 py-3">
-          <Search size={16} className="text-muted" />
-          <input
-            ref={inputRef}
-            value={consulta}
-            onChange={(evento) => setConsulta(evento.target.value)}
-            onKeyDown={alTeclear}
-            placeholder="Buscar módulo o producto…"
-            className="w-full bg-transparent text-sm text-ink placeholder:text-stone focus:outline-none"
-            aria-label="Buscar"
-          />
-          <kbd className="rounded border border-hairline px-1.5 py-0.5 text-[10px] text-muted">Esc</kbd>
-        </div>
-
-        <div className="app-scroll max-h-[50vh] overflow-y-auto p-2">
-          {filtrados.length === 0 && <p className="px-3 py-6 text-center text-sm text-muted">Sin resultados.</p>}
-          {filtrados.map((comando, indice) => {
+        <CommandInput
+          value={consulta}
+          onValueChange={setConsulta}
+          placeholder="Buscar módulo o producto…"
+          className="h-11 w-full border-0 bg-card px-4 text-sm text-foreground placeholder:text-muted-foreground shadow-none focus-visible:outline-none focus-visible:ring-0"
+        />
+        <CommandList className="app-scroll max-h-[50vh] overflow-y-auto border-t border-border p-2">
+          <CommandEmpty className="px-3 py-6 text-center text-sm text-muted-foreground">
+            Sin resultados.
+          </CommandEmpty>
+          {filtrados.map((comando) => {
             const Icono = comando.icon;
             return (
-              <button
+              <CommandItem
                 key={`${comando.sublabel}-${comando.label}-${comando.to}`}
-                type="button"
-                onMouseEnter={() => setActivo(indice)}
-                onClick={() => ejecutar(comando)}
+                value={`${comando.sublabel} ${comando.label}`}
+                onSelect={() => ejecutar(comando)}
                 className={cn(
-                  'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition',
-                  indice === activo ? 'bg-accent/20 text-accent-ink' : 'text-muted hover:bg-ink/5 hover:text-ink',
+                  'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors',
+                  'text-muted-foreground hover:bg-accent/10 hover:text-foreground',
+                  'data-[selected=true]:bg-primary/15 data-[selected=true]:text-foreground',
+                  'focus-visible:outline-none',
                 )}
               >
-                <Icono size={16} />
-                <span className="flex-1 truncate text-ink">{comando.label}</span>
-                <span className="text-[11px] text-muted">{comando.sublabel}</span>
-                {indice === activo && <ArrowRight size={14} />}
-              </button>
+                <Icono className="h-4 w-4" />
+                <span className="flex-1 truncate text-foreground">{comando.label}</span>
+                <span className="text-xs text-muted-foreground">{comando.sublabel}</span>
+              </CommandItem>
             );
           })}
-        </div>
-      </div>
-    </div>
+        </CommandList>
+      </CommandDialog>
+    </Command>
   );
 }
