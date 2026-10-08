@@ -4,7 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { Eye, RotateCcw } from 'lucide-react';
 import {
+  ActionMenu,
   Button,
   Card,
   CardBody,
@@ -12,14 +14,16 @@ import {
   CardTitle,
   DataTable,
   Input,
-  Modal,
   PageHeader,
   Pagination,
   StatusBadge,
 } from '@licoreria/ui';
 import type { Venta } from '@licoreria/types';
 import { ventasApi } from '@licoreria/api-client';
-import { Can } from '../components/Rbac';
+import { useAuth } from '../context/AuthContext';
+import { InlineForm } from '../components/InlineForm';
+import { DetalleVentaModal } from '../components/DetalleVentaModal';
+import { TicketVenta } from '../components/pos/TicketVenta';
 import { mensajeDeError } from '../lib/api';
 import { formatDateTime, formatUSD } from '../lib/format';
 
@@ -33,9 +37,12 @@ export function VentasPage() {
   const [page, setPage] = useState(1);
   const [detalle, setDetalle] = useState<Venta | null>(null);
   const [devolver, setDevolver] = useState<Venta | null>(null);
+  const [imprimiendo, setImprimiendo] = useState<Venta | null>(null);
   const [reintegrar, setReintegrar] = useState(true);
   const [cantidades, setCantidades] = useState<Record<string, number>>({});
   const queryClient = useQueryClient();
+  const { tienePermiso } = useAuth() as { tienePermiso: (clave: string) => boolean };
+  const puedeDevolver = tienePermiso('sales:void');
 
   const {
     register,
@@ -70,6 +77,12 @@ export function VentasPage() {
     [devolver, cantidades],
   );
 
+  const abrirDevolucion = (venta: Venta) => {
+    setDevolver(venta);
+    reset({ motivo: '' });
+    setCantidades({});
+  };
+
   return (
     <div className="mx-auto flex max-w-page flex-col gap-6">
       <PageHeader title="Ventas" subtitle="Historial de ventas, comprobantes y devoluciones." />
@@ -82,8 +95,69 @@ export function VentasPage() {
             rows={ventas.data?.items ?? []}
             loading={ventas.isLoading}
             rowKey={(venta) => venta.id}
-            onRowClick={(venta) => setDetalle(venta)}
             empty="No hay ventas."
+            onRowClick={(venta) => setDetalle(venta)}
+            expandirKey={devolver?.id ?? null}
+            expandedRow={
+              devolver
+                ? (venta) =>
+                    venta.id === devolver.id ? (
+                      <InlineForm title={`Devolución · ${venta.numeroComprobante ?? ''}`} onCancel={() => setDevolver(null)}>
+                        <form
+                          className="flex flex-col gap-4"
+                          onSubmit={handleSubmit((datos) => devolucion.mutate({ venta: devolver, motivo: datos.motivo }))}
+                          noValidate
+                        >
+                          <div className="flex flex-col gap-2">
+                            {devolver.detalles.map((linea) => (
+                              <div key={linea.id} className="flex items-center justify-between gap-3">
+                                <span className="text-sm text-ink">{linea.nombre}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-muted">de {linea.cantidad}</span>
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    max={linea.cantidad}
+                                    aria-label={`Cantidad a devolver de ${linea.nombre}`}
+                                    value={cantidades[linea.varianteId] ?? 0}
+                                    onChange={(evento) =>
+                                      setCantidades((actuales) => ({
+                                        ...actuales,
+                                        [linea.varianteId]: Math.min(linea.cantidad, Math.max(0, Number(evento.target.value))),
+                                      }))
+                                    }
+                                    className="num h-9 w-20 rounded-control border border-hairline bg-surface px-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent/50"
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                            {totalDevolver === 0 && (
+                              <span className="text-xs text-muted">Indica al menos una cantidad a devolver.</span>
+                            )}
+                          </div>
+                          <Input
+                            label="Motivo"
+                            placeholder="Producto dañado, error de cobro…"
+                            error={errors.motivo?.message}
+                            {...register('motivo')}
+                          />
+                          <label className="flex items-center gap-2 text-sm text-muted">
+                            <input type="checkbox" checked={reintegrar} onChange={(evento) => setReintegrar(evento.target.checked)} />
+                            Reintegrar al inventario
+                          </label>
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" onClick={() => setDevolver(null)}>
+                              Cancelar
+                            </Button>
+                            <Button type="submit" disabled={totalDevolver === 0} loading={devolucion.isPending}>
+                              Registrar devolución
+                            </Button>
+                          </div>
+                        </form>
+                      </InlineForm>
+                    ) : null
+                  : undefined
+            }
             columns={[
               { key: 'fecha', header: 'Fecha', render: (venta) => formatDateTime(venta.fecha) },
               { key: 'comprobante', header: 'Comprobante', render: (venta) => venta.numeroComprobante ?? venta.id.slice(0, 8) },
@@ -95,19 +169,15 @@ export function VentasPage() {
                 header: '',
                 align: 'right',
                 render: (venta) => (
-                  <Can permiso="sales:void">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setDevolver(venta);
-                        reset({ motivo: '' });
-                        setCantidades({});
-                      }}
-                    >
-                      Devolución
-                    </Button>
-                  </Can>
+                  <ActionMenu
+                    label={`Acciones de venta ${venta.numeroComprobante ?? ''}`}
+                    options={[
+                      { label: 'Ver detalle', icon: <Eye size={15} />, onClick: () => setDetalle(venta) },
+                      ...(puedeDevolver
+                        ? [{ label: 'Devolución', icon: <RotateCcw size={15} />, onClick: () => abrirDevolucion(venta) }]
+                        : []),
+                    ]}
+                  />
                 ),
               },
             ]}
@@ -116,104 +186,15 @@ export function VentasPage() {
         </CardBody>
       </Card>
 
-      <Modal open={Boolean(detalle)} onClose={() => setDetalle(null)} title={`Venta ${detalle?.numeroComprobante ?? ''}`}>
-        {detalle && (
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1">
-              {detalle.detalles.map((linea) => (
-                <div key={linea.id} className="flex justify-between text-sm">
-                  <span className="text-ink">
-                    {linea.cantidad} × {linea.nombre} {linea.esCortesia && <span className="text-warning-ink">(cortesía)</span>}
-                  </span>
-                  <span className="text-muted">{formatUSD(linea.subtotalUSD)}</span>
-                </div>
-              ))}
-            </div>
-            <div className="border-t border-hairline pt-3 text-sm">
-              <div className="flex justify-between text-muted">
-                <span>Subtotal</span>
-                <span>{formatUSD(detalle.subtotalUSD)}</span>
-              </div>
-              <div className="flex justify-between text-muted">
-                <span>Descuento</span>
-                <span>{formatUSD(detalle.descuentoUSD)}</span>
-              </div>
-              <div className="flex justify-between font-medium text-ink">
-                <span>Total</span>
-                <span>{formatUSD(detalle.totalUSD)}</span>
-              </div>
-            </div>
-          </div>
-        )}
-      </Modal>
-
-      <Modal
-        open={Boolean(devolver)}
-        onClose={() => setDevolver(null)}
-        title="Registrar devolución"
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setDevolver(null)}>
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              form="form-devolucion"
-              disabled={totalDevolver === 0}
-              loading={devolucion.isPending}
-            >
-              Registrar devolución
-            </Button>
-          </>
-        }
-      >
-        {devolver && (
-          <form
-            id="form-devolucion"
-            className="flex flex-col gap-4"
-            onSubmit={handleSubmit((datos) => devolucion.mutate({ venta: devolver, motivo: datos.motivo }))}
-            noValidate
-          >
-            <div className="flex flex-col gap-2">
-              {devolver.detalles.map((linea) => (
-                <div key={linea.id} className="flex items-center justify-between gap-3">
-                  <span className="text-sm text-ink">{linea.nombre}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted">de {linea.cantidad}</span>
-                    <input
-                      type="number"
-                      min={0}
-                      max={linea.cantidad}
-                      aria-label={`Cantidad a devolver de ${linea.nombre}`}
-                      value={cantidades[linea.varianteId] ?? 0}
-                      onChange={(evento) =>
-                        setCantidades((actuales) => ({
-                          ...actuales,
-                          [linea.varianteId]: Math.min(linea.cantidad, Math.max(0, Number(evento.target.value))),
-                        }))
-                      }
-                      className="h-9 w-20 rounded-control border border-hairline bg-surface px-3 text-sm text-ink"
-                    />
-                  </div>
-                </div>
-              ))}
-              {totalDevolver === 0 && (
-                <span className="text-xs text-muted">Indica al menos una cantidad a devolver.</span>
-              )}
-            </div>
-            <Input
-              label="Motivo"
-              placeholder="Producto dañado, error de cobro…"
-              error={errors.motivo?.message}
-              {...register('motivo')}
-            />
-            <label className="flex items-center gap-2 text-sm text-muted">
-              <input type="checkbox" checked={reintegrar} onChange={(evento) => setReintegrar(evento.target.checked)} />
-              Reintegrar al inventario
-            </label>
-          </form>
-        )}
-      </Modal>
+      <DetalleVentaModal
+        venta={detalle}
+        onCerrar={() => setDetalle(null)}
+        onImprimir={() => {
+          setImprimiendo(detalle);
+          setDetalle(null);
+        }}
+      />
+      <TicketVenta venta={imprimiendo} onCerrar={() => setImprimiendo(null)} />
     </div>
   );
 }
