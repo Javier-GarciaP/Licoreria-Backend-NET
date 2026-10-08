@@ -14,12 +14,16 @@ trabajo restante es construir el frontend React que lo consume **sin datos está
 
 ## 1. Decisiones tomadas
 
-- Monorepo de **dos apps** con workspaces npm: `public-web` (clientes) y `admin` (staff), según ADR 0003.
-- **React 18 + Vite + TypeScript + Tailwind CSS**.
+- Monorepo de **tres apps** con workspaces npm: `admin` (staff), `servicio`
+  (mesonero/KDS) y `public-web` (clientes), según ADR 0003.
+- **React 18 + Vite + TypeScript + Tailwind CSS v3**.
+- **Design system sobre shadcn/ui** (primitivas Radix vendoreadas en
+  `packages/ui/src/components/ui/`), re-expuesto por `@licoreria/ui` con API
+  estable. Tokens semánticos en `packages/config/tailwind.preset.cjs` y
+  `packages/ui/src/styles/theme.css`. Ver `DESIGN.md`.
 - **Context API** para estado global de sesión y tema:
   - `AuthContext.jsx` (JWT en `localStorage`).
-  - `ThemeContext.jsx` (Azul UNET `#003366` ↔ Modo Oscuro, persistente).
-  - `ModoContext.jsx` (Modo Licorería ↔ Modo Discoteca, persistente).
+  - `ThemeContext.jsx` (Claro ↔ Oscuro, persistente).
 - Datos del servidor con **TanStack Query**; formularios con **React Hook Form + Zod**;
   gráficas con **Recharts**; tiempo real con **`@microsoft/signalr`**; toasts con **sonner**.
 - RBAC: la API **siempre** valida en servidor; el front solo oculta rutas/acciones.
@@ -32,13 +36,14 @@ frontend/
 ├── tsconfig.base.json
 ├── nginx.conf                  # fallback SPA (Docker)
 ├── packages/
-│   ├── config/                 # eslint + tailwind preset (token UNET)
+│   ├── config/                 # tailwind preset (tokens semánticos)
 │   ├── types/                  # DTOs TS espejo de la API
 │   ├── api-client/             # fetch + JWT + refresh + RFC7807 + paginación
-│   └── ui/                     # design system (Button, Input, Table, Skeleton, Toast...)
+│   └── ui/                     # design system shadcn/ui (components/ui) + API pública
 └── apps/
     ├── admin/                  # SPA interna (foco Grupo 5)
-    └── public-web/             # web pública (alcance secundario)
+    ├── servicio/               # mesonero / KDS
+    └── public-web/             # web pública (tema "Hungry Tiger")
 ```
 
 ## 3. Puesta en marcha
