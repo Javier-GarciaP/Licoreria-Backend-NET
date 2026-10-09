@@ -285,7 +285,8 @@ public sealed class ServicioContenido : IServicioContenido
                     $"{p.Nombre} · {v.Nombre}",
                     v.Sku,
                     v.PrecioVentaUSD,
-                    Math.Round(v.PrecioVentaUSD * tasa, 2))))
+                    Math.Round(v.PrecioVentaUSD * tasa, 2),
+                    p.ImagenUrl)))
                     .OrderBy(i => i.Nombre)
                     .ToList()))
             .OrderBy(s => s.Nombre)

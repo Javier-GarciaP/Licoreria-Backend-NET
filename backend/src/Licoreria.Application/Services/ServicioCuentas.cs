@@ -13,7 +13,10 @@ public sealed class ServicioCuentas : IServicioCuentas
     private readonly IRepository<ProductoVariante> _variantes;
     private readonly IRepository<MetodoPago> _metodosPago;
     private readonly IRepository<CuentaDivision> _divisiones;
+    private readonly IRepository<Mesa> _mesas;
+    private readonly ISesionCajaRepository _sesionesCaja;
     private readonly IServicioVentas _ventas;
+    private readonly IServicioKardex _kardex;
     private readonly IRelojSistema _reloj;
     private readonly INotificadorComandas _notificador;
 
@@ -22,7 +25,10 @@ public sealed class ServicioCuentas : IServicioCuentas
         IRepository<ProductoVariante> variantes,
         IRepository<MetodoPago> metodosPago,
         IRepository<CuentaDivision> divisiones,
+        IRepository<Mesa> mesas,
+        ISesionCajaRepository sesionesCaja,
         IServicioVentas ventas,
+        IServicioKardex kardex,
         IRelojSistema reloj,
         INotificadorComandas notificador)
     {
@@ -30,13 +36,45 @@ public sealed class ServicioCuentas : IServicioCuentas
         _variantes = variantes;
         _metodosPago = metodosPago;
         _divisiones = divisiones;
+        _mesas = mesas;
+        _sesionesCaja = sesionesCaja;
         _ventas = ventas;
+        _kardex = kardex;
         _reloj = reloj;
         _notificador = notificador;
     }
 
+    /// <summary>Exige que exista un turno (sesión de caja) abierto para operar el salón.</summary>
+    private async Task ExigirTurnoAbiertoAsync(CancellationToken cancellationToken)
+    {
+        var sesion = await _sesionesCaja.ObtenerAbiertaAsync(cancellationToken);
+        if (sesion is null)
+        {
+            throw new ReglaNegocioException("No hay un turno abierto. Pida al cajero que abra la caja para operar.");
+        }
+    }
+
     public async Task<CuentaDto> AbrirMesaAsync(AbrirMesaDto dto, CancellationToken cancellationToken = default)
     {
+        await ExigirTurnoAbiertoAsync(cancellationToken);
+
+        if (dto.MesaId is Guid mesaId)
+        {
+            var mesa = await _mesas.GetByIdAsync(mesaId, cancellationToken)
+                ?? throw new NoEncontradoException($"No existe la mesa {mesaId}.");
+
+            if (!mesa.Activa)
+            {
+                throw new ReglaNegocioException("La mesa está inactiva y no puede asignarse.");
+            }
+
+            var ocupada = await _cuentaRepository.ObtenerCuentaAbiertaPorMesaAsync(mesaId, cancellationToken);
+            if (ocupada is not null)
+            {
+                throw new ConflictoException("La mesa ya está ocupada por otra cuenta.");
+            }
+        }
+
         var sesion = new SesionMesa
         {
             NombreMesa = dto.NombreMesa,
@@ -51,21 +89,54 @@ public sealed class ServicioCuentas : IServicioCuentas
         await _cuentaRepository.AgregarAsync(cuenta, cancellationToken);
         await _cuentaRepository.SaveChangesAsync(cancellationToken);
 
-        if (dto.MesaId is Guid mesaId)
+        if (dto.MesaId is Guid idMesa)
         {
-            await _notificador.MesaActualizadaAsync(mesaId, "Ocupada", cuenta.Id, cancellationToken);
+            await _notificador.MesaActualizadaAsync(idMesa, "Ocupada", cuenta.Id, cancellationToken);
         }
 
         return Mapear(cuenta);
     }
 
+    public async Task<CuentaDto?> ReabrirCuentaAsync(Guid cuentaId, CancellationToken cancellationToken = default)
+    {
+        await ExigirTurnoAbiertoAsync(cancellationToken);
+
+        var cuenta = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, cancellationToken);
+        if (cuenta is null || cuenta.IsDeleted || cuenta.Estado == EstadoCuenta.Cerrada)
+        {
+            return null;
+        }
+
+        if (cuenta.Estado == EstadoCuenta.Abierta)
+        {
+            return Mapear(cuenta);
+        }
+
+        cuenta.Reabrir();
+        if (cuenta.SesionMesa is not null)
+        {
+            cuenta.SesionMesa.CerradaEn = null;
+        }
+
+        await _cuentaRepository.SaveChangesAsync(cancellationToken);
+
+        if (cuenta.SesionMesa?.MesaId is Guid mesaId)
+        {
+            await _notificador.MesaActualizadaAsync(mesaId, "Ocupada", cuenta.Id, cancellationToken);
+        }
+
+        var actualizada = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, cancellationToken);
+        return actualizada is null ? null : Mapear(actualizada);
+    }
+
     public async Task<ResultadoPaginado<CuentaDto>> ObtenerCuentasAsync(
         PaginacionRequest paginacion,
         EstadoCuenta? estado = null,
+        IReadOnlyList<EstadoCuenta>? estados = null,
         Guid? usuarioId = null,
         CancellationToken cancellationToken = default)
     {
-        var pagina = await _cuentaRepository.ObtenerPaginadoAsync(paginacion, estado, usuarioId, cancellationToken);
+        var pagina = await _cuentaRepository.ObtenerPaginadoAsync(paginacion, estado, estados, usuarioId, cancellationToken);
         var items = pagina.Items.Select(Mapear).ToList();
         return ResultadoPaginado<CuentaDto>.Crear(items, pagina.Page, pagina.PageSize, pagina.TotalItems);
     }
@@ -81,6 +152,8 @@ public sealed class ServicioCuentas : IServicioCuentas
         CrearComandaDto dto,
         CancellationToken cancellationToken = default)
     {
+        await ExigirTurnoAbiertoAsync(cancellationToken);
+
         var cuenta = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, cancellationToken);
         if (cuenta is null || cuenta.IsDeleted || cuenta.Estado == EstadoCuenta.Cerrada)
         {
@@ -94,6 +167,8 @@ public sealed class ServicioCuentas : IServicioCuentas
 
         var comanda = new Comanda { CuentaId = cuentaId, Area = dto.Area };
 
+        var insumos = new List<KardexInsumo>();
+
         foreach (var item in dto.Items)
         {
             if (item.Cantidad <= 0)
@@ -104,6 +179,11 @@ public sealed class ServicioCuentas : IServicioCuentas
             var variante = await _variantes.GetByIdAsync(item.VarianteId, cancellationToken)
                 ?? throw new NoEncontradoException($"No existe la variante {item.VarianteId}.");
 
+            if (!variante.Activo || variante.IsDeleted)
+            {
+                throw new ReglaNegocioException($"La variante '{variante.Nombre}' no está disponible.");
+            }
+
             comanda.Detalles.Add(new ComandaDetalle
             {
                 VarianteId = variante.Id,
@@ -113,7 +193,12 @@ public sealed class ServicioCuentas : IServicioCuentas
                 Estado = EstadoItemComanda.Recibido,
                 EsCortesia = item.EsCortesia
             });
+
+            insumos.AddRange(await _kardex.DesglosarInsumosAsync(item.VarianteId, item.Cantidad, cancellationToken));
         }
+
+        // Evita aceptar pedidos que la barra/cocina no podría servir con la existencia actual.
+        await _kardex.VerificarStockAsync(insumos, cancellationToken);
 
         cuenta.Acumular(comanda.Detalles.Sum(d => d.SubtotalUSD));
 
@@ -131,6 +216,8 @@ public sealed class ServicioCuentas : IServicioCuentas
         RegistrarAbonoCuentaDto dto,
         CancellationToken cancellationToken = default)
     {
+        await ExigirTurnoAbiertoAsync(cancellationToken);
+
         var cuenta = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, cancellationToken);
         if (cuenta is null || cuenta.IsDeleted || cuenta.Estado == EstadoCuenta.Cerrada)
         {
@@ -169,6 +256,8 @@ public sealed class ServicioCuentas : IServicioCuentas
         DividirCuentaDto dto,
         CancellationToken cancellationToken = default)
     {
+        await ExigirTurnoAbiertoAsync(cancellationToken);
+
         var cuenta = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, cancellationToken);
         if (cuenta is null || cuenta.IsDeleted || cuenta.Estado == EstadoCuenta.Cerrada)
         {
@@ -239,10 +328,39 @@ public sealed class ServicioCuentas : IServicioCuentas
         ActualizarEstadoItemDto dto,
         CancellationToken cancellationToken = default)
     {
+        await ExigirTurnoAbiertoAsync(cancellationToken);
+
+        var cuenta = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, cancellationToken);
+        if (cuenta is null || cuenta.IsDeleted || cuenta.Estado == EstadoCuenta.Cerrada)
+        {
+            return null;
+        }
+
         var detalle = await _cuentaRepository.ObtenerDetalleAsync(comandaId, detalleId, cancellationToken);
         if (detalle is null)
         {
             return null;
+        }
+
+        var estadoAnterior = detalle.Estado;
+        var servidoAnterior = estadoAnterior is EstadoItemComanda.Preparado or EstadoItemComanda.Entregado;
+        var servidoNuevo = dto.Estado is EstadoItemComanda.Preparado or EstadoItemComanda.Entregado;
+
+        // Al servir (Preparado/Entregado) se descuenta el insumo del inventario; si un
+        // ítem servido deja de estarlo (incluida la cancelación) se reintegra.
+        if (servidoNuevo && !servidoAnterior)
+        {
+            await AplicarKardexComandaAsync(detalle, -1, "Salida por comanda servida", cancellationToken);
+        }
+        else if (servidoAnterior && !servidoNuevo)
+        {
+            await AplicarKardexComandaAsync(detalle, +1, "Reintegro por comanda no servida", cancellationToken);
+        }
+
+        if (dto.Estado == EstadoItemComanda.Cancelado)
+        {
+            // El ítem cancelado deja de formar parte del total de la cuenta.
+            cuenta.Descontar(detalle.SubtotalUSD);
         }
 
         detalle.CambiarEstado(dto.Estado);
@@ -250,8 +368,29 @@ public sealed class ServicioCuentas : IServicioCuentas
 
         await _notificador.ItemActualizadoAsync(cuentaId, comandaId, detalleId, dto.Estado.ToString(), detalle.AreaDestino.ToString(), cancellationToken);
 
-        var cuenta = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, cancellationToken);
-        return cuenta is null ? null : Mapear(cuenta);
+        var actualizada = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, cancellationToken);
+        return actualizada is null ? null : Mapear(actualizada);
+    }
+
+    /// <summary>Aplica la salida/reintegro de insumos de un ítem de comanda en el kardex.</summary>
+    private async Task AplicarKardexComandaAsync(
+        ComandaDetalle detalle,
+        int signo,
+        string motivo,
+        CancellationToken cancellationToken)
+    {
+        var insumos = await _kardex.DesglosarInsumosAsync(detalle.VarianteId, detalle.Cantidad, cancellationToken);
+        foreach (var insumo in insumos)
+        {
+            await _kardex.AplicarAsync(
+                insumo.VarianteId,
+                TipoMovimientoInventario.Venta,
+                signo * insumo.Cantidad,
+                "comanda",
+                detalle.ComandaId,
+                motivo,
+                cancellationToken);
+        }
     }
 
     public async Task<VentaDto?> CerrarCuentaAsync(
@@ -259,6 +398,8 @@ public sealed class ServicioCuentas : IServicioCuentas
         CerrarCuentaDto dto,
         CancellationToken cancellationToken = default)
     {
+        await ExigirTurnoAbiertoAsync(cancellationToken);
+
         var cuenta = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, cancellationToken);
         if (cuenta is null || cuenta.IsDeleted || cuenta.Estado == EstadoCuenta.Cerrada)
         {
@@ -268,7 +409,13 @@ public sealed class ServicioCuentas : IServicioCuentas
         var items = cuenta.Comandas
             .SelectMany(c => c.Detalles)
             .Where(d => d.Estado != EstadoItemComanda.Cancelado)
-            .Select(d => new VentaItemDto(d.VarianteId, d.Cantidad, d.PrecioUnitarioUSD, 0, d.EsCortesia))
+            .Select(d => new VentaItemDto(
+                d.VarianteId,
+                d.Cantidad,
+                d.PrecioUnitarioUSD,
+                0,
+                d.EsCortesia,
+                d.Estado is EstadoItemComanda.Preparado or EstadoItemComanda.Entregado))
             .ToList();
 
         if (items.Count == 0)

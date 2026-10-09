@@ -2,6 +2,7 @@ using Licoreria.Application.Common;
 using Licoreria.Application.Interfaces;
 using Licoreria.Domain.Entities;
 using Licoreria.Domain.Enums;
+using Licoreria.Domain.Services;
 using Licoreria.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -75,6 +76,30 @@ public class ReservaRepository : IReservaRepository
             .ToListAsync(cancellationToken);
 
         return mesas.Distinct().ToList();
+    }
+
+    public async Task<IReadOnlyList<IntervaloReserva>> ObtenerIntervalosActivosAsync(
+        IEnumerable<Guid> mesaIds,
+        DateTime desde,
+        DateTime hasta,
+        int horas,
+        CancellationToken cancellationToken = default)
+    {
+        var ids = mesaIds.ToList();
+        var filas = await _context.ReservaMesas
+            .AsNoTracking()
+            .Where(rm => !rm.IsDeleted
+                && !rm.Reserva.IsDeleted
+                && ids.Contains(rm.MesaId)
+                && rm.Reserva.FechaHora >= desde
+                && rm.Reserva.FechaHora <= hasta
+                && (rm.Reserva.Estado == EstadoReserva.Pendiente || rm.Reserva.Estado == EstadoReserva.Confirmada))
+            .Select(rm => new { MesaId = rm.MesaId, FechaHora = rm.Reserva.FechaHora })
+            .ToListAsync(cancellationToken);
+
+        return filas
+            .Select(f => IntervaloReserva.Presunto(f.MesaId, f.FechaHora, horas))
+            .ToList();
     }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

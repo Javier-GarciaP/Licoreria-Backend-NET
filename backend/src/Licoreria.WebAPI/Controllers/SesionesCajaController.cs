@@ -29,6 +29,12 @@ public class SesionesCajaController : ControllerBase
         return sesion is null ? NotFound() : Ok(sesion);
     }
 
+    /// <summary>Estado del turno para operadores sin permisos de caja (mesonero/barra/cocina).</summary>
+    [HttpGet("turno")]
+    [Authorize(Policy = Permisos.VentasLeer)]
+    public async Task<ActionResult<TurnoAbiertoDto>> Turno(CancellationToken cancellationToken)
+        => Ok(await _servicio.ObtenerEstadoTurnoAsync(cancellationToken));
+
     [HttpGet]
     [Authorize(Policy = Permisos.CajaMovimiento)]
     public async Task<ActionResult<ResultadoPaginado<SesionCajaDto>>> Obtener(

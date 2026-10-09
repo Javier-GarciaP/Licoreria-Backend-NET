@@ -61,7 +61,12 @@ export interface ProductoVariante {
   unidadMedidaId: string;
   unidadMedidaNombre: string;
   activo: boolean;
+  esBase: boolean;
   codigosBarras: string[];
+  cantidad: number;
+  cantidadReservada: number;
+  stockMinimo: number;
+  stockMaximo: number;
 }
 
 export interface Producto {
@@ -74,6 +79,7 @@ export interface Producto {
   marcaNombre: string | null;
   impuestoId: string | null;
   tipo: TipoProducto;
+  areaDestino: AreaDestino;
   gradoAlcoholico: number | null;
   imagenUrl: string | null;
   activo: boolean;
@@ -388,6 +394,7 @@ export interface Venta {
   totalBS: number;
   estado: string;
   usuarioId: string;
+  sesionCajaId: string | null;
   numeroComprobante: string | null;
   detalles: VentaDetalle[];
   pagos: VentaPagoRegistrado[];
@@ -705,10 +712,18 @@ export interface SesionCaja {
   montoEsperado: number;
   montoContado: number;
   descuadre: number;
+  ventasDelTurnoUSD: number;
+  cuentasDesalojadas: number;
   abiertaEn: string;
   cerradaEn: string | null;
   movimientos: MovimientoCaja[];
   arqueo: ArqueoLinea[];
+}
+
+/** Estado del turno para operadores sin permisos de caja. */
+export interface TurnoAbierto {
+  abierto: boolean;
+  abiertaEn: string | null;
 }
 
 /* ===================== Web pública ===================== */
@@ -719,6 +734,7 @@ export interface MenuItem {
   sku: string;
   precioUSD: number;
   precioBS: number;
+  imagenUrl: string | null;
 }
 
 export interface MenuSeccion {
@@ -900,5 +916,10 @@ export interface Receta {
   varianteInsumoId: string;
   varianteInsumoNombre: string;
   sku: string;
+  cantidad: number;
+}
+
+export interface RecetaCrear {
+  varianteInsumoId: string;
   cantidad: number;
 }

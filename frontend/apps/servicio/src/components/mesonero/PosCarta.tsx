@@ -5,26 +5,33 @@ import {
   ArrowLeft,
   Banknote,
   Calculator,
-  ChefHat,
+  CheckCircle2,
   CircleDollarSign,
+  CookingPot,
   Divide,
   HandCoins,
   Minus,
   Percent,
   Plus,
   Search,
+  Sparkles,
   UtensilsCrossed,
+  Wine,
   X,
 } from 'lucide-react';
 import { Button, cn, Input, Modal, Select } from '@licoreria/ui';
-import type { Cuenta, Producto, ProductoVariante } from '@licoreria/types';
+import type { Cuenta, EstadoItemComanda, Producto, ProductoVariante } from '@licoreria/types';
 import { catalogoApi, cuentasApi, ventasApi } from '@licoreria/api-client';
 import { formatUSD } from '../../lib/format';
 import { mensajeDeError } from '../../lib/api';
+import { urlDeImagen } from '../../lib/imagen';
 
 type Area = 'Barra' | 'Cocina';
+type AreaAuto = 'Auto' | Area;
 
-interface Linea {
+const OPCIONES_AREA: AreaAuto[] = ['Auto', 'Barra', 'Cocina'];
+
+export interface Linea {
   key: string;
   varianteId: string;
   nombre: string;
@@ -32,20 +39,12 @@ interface Linea {
   precioUSD: number;
   cantidad: number;
   area: Area;
-  enviada: boolean;
   esCortesia: boolean;
   grupo: string;
 }
 
 let secuencia = 0;
 const nuevoKey = () => `lc-${Date.now().toString(36)}-${secuencia++}`;
-
-function areaDeCategoria(nombre: string): Area {
-  const n = (nombre ?? '').toLowerCase();
-  return /licor|cerveza|gaseosa|energizante|agua|vino|trago|barra|refresco|jugo|te|ron|whisky|vodka|tequila/i.test(n)
-    ? 'Barra'
-    : 'Cocina';
-}
 
 function grupoDeCategoria(nombre: string): string {
   const n = (nombre ?? '').toLowerCase();
@@ -55,21 +54,66 @@ function grupoDeCategoria(nombre: string): string {
   return 'Comida';
 }
 
-const FOTO = 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=200&q=60';
+const ESTADO_ITEM: Record<EstadoItemComanda, { etiqueta: string; clase: string }> = {
+  Recibido: { etiqueta: 'Recibido', clase: 'bg-muted/60 text-muted-foreground' },
+  EnProceso: { etiqueta: 'En proceso', clase: 'bg-warning/15 text-warning-fg' },
+  Preparado: { etiqueta: 'Listo', clase: 'bg-success/15 text-success-fg' },
+  Entregado: { etiqueta: 'Entregado', clase: 'bg-info/15 text-info-fg' },
+  Cancelado: { etiqueta: 'Cancelado', clase: 'bg-destructive/10 text-destructive-fg' },
+};
+
+function EstadoItem({ estado }: { estado: EstadoItemComanda }) {
+  const info = ESTADO_ITEM[estado] ?? ESTADO_ITEM.Recibido;
+  return (
+    <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium', info.clase)}>
+      {estado === 'Preparado' && <CheckCircle2 size={10} />}
+      {estado === 'EnProceso' && <CookingPot size={10} />}
+      {info.etiqueta}
+    </span>
+  );
+}
+
+function ImagenProducto({ url, nombre }: { url: string | null; nombre: string }) {
+  const [falla, setFalla] = useState(false);
+  const src = falla ? null : urlDeImagen(url);
+
+  if (!src) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-muted/60">
+        <span className="text-lg font-medium text-muted-foreground/60">{nombre.trim().charAt(0).toUpperCase()}</span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={nombre}
+      className="h-full w-full object-cover"
+      loading="lazy"
+      onError={() => setFalla(true)}
+    />
+  );
+}
 
 export function PosCarta({
   cuenta,
+  lineas,
+  onLineasChange,
   onActualizar,
   onVolver,
 }: {
   cuenta: Cuenta;
+  lineas: Linea[];
+  onLineasChange: (lineas: Linea[]) => void;
   onActualizar: (cuenta: Cuenta) => void;
   onVolver: () => void;
 }) {
   const queryClient = useQueryClient();
   const [categoriaId, setCategoriaId] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
-  const [lineas, setLineas] = useState<Linea[]>([]);
+  const [areaActual, setAreaActual] = useState<AreaAuto>('Auto');
+  const [tab, setTab] = useState<'comanda' | 'consumos'>('comanda');
   const [panel, setPanel] = useState<'descuento' | 'calculadora' | 'abonar' | 'dividir' | 'cobrar' | null>(null);
 
   const categorias = useQuery({ queryKey: ['carta-categorias'], queryFn: catalogoApi.categorias });
@@ -93,29 +137,30 @@ export function PosCarta({
 
   const agregar = (producto: Producto, variante: ProductoVariante) => {
     const categoria = categorias.data?.find((c) => c.id === producto.categoriaId);
-    const area = areaDeCategoria(categoria?.nombre ?? producto.categoriaNombre ?? '');
+    const area = areaActual === 'Auto' ? (producto.areaDestino ?? 'Barra') : areaActual;
     const grupo = grupoDeCategoria(categoria?.nombre ?? producto.categoriaNombre ?? '');
-    setLineas((actuales) => {
-      const existente = actuales.find((l) => l.varianteId === variante.id && !l.enviada && l.area === area);
-      if (existente) {
-        return actuales.map((l) => (l.key === existente.key ? { ...l, cantidad: l.cantidad + 1 } : l));
-      }
-      return [
-        ...actuales,
-        {
-          key: nuevoKey(),
-          varianteId: variante.id,
-          nombre: producto.nombre,
-          varianteNombre: variante.nombre,
-          precioUSD: variante.precioVentaUSD,
-          cantidad: 1,
-          area,
-          enviada: false,
-          esCortesia: false,
-          grupo,
-        },
-      ];
-    });
+    onLineasChange(
+      (() => {
+        const existente = lineas.find((l) => l.varianteId === variante.id && l.area === area);
+        if (existente) {
+          return lineas.map((l) => (l.key === existente.key ? { ...l, cantidad: l.cantidad + 1 } : l));
+        }
+        return [
+          ...lineas,
+          {
+            key: nuevoKey(),
+            varianteId: variante.id,
+            nombre: producto.nombre,
+            varianteNombre: variante.nombre,
+            precioUSD: variante.precioVentaUSD,
+            cantidad: 1,
+            area,
+            esCortesia: false,
+            grupo,
+          },
+        ];
+      })(),
+    );
   };
 
   const seleccionarProducto = (producto: Producto) => {
@@ -124,28 +169,28 @@ export function PosCarta({
   };
 
   const cambiarCantidad = (key: string, delta: number) =>
-    setLineas((actuales) => actuales.map((l) => (l.key === key ? { ...l, cantidad: l.cantidad + delta } : l)).filter((l) => l.cantidad > 0));
+    onLineasChange(lineas.map((l) => (l.key === key ? { ...l, cantidad: l.cantidad + delta } : l)).filter((l) => l.cantidad > 0));
   const alternarArea = (key: string) =>
-    setLineas((actuales) => actuales.map((l) => (l.key === key ? { ...l, area: l.area === 'Barra' ? 'Cocina' : 'Barra' } : l)));
+    onLineasChange(lineas.map((l) => (l.key === key ? { ...l, area: l.area === 'Barra' ? 'Cocina' : 'Barra' } : l)));
   const alternarCortesia = (key: string) =>
-    setLineas((actuales) => actuales.map((l) => (l.key === key ? { ...l, esCortesia: !l.esCortesia } : l)));
-  const quitar = (key: string) => setLineas((actuales) => actuales.filter((l) => l.key !== key));
+    onLineasChange(lineas.map((l) => (l.key === key ? { ...l, esCortesia: !l.esCortesia } : l)));
+  const quitar = (key: string) => onLineasChange(lineas.filter((l) => l.key !== key));
 
   const enviar = useMutation({
     mutationFn: ({ area, items }: { area: Area; items: { varianteId: string; cantidad: number; esCortesia: boolean }[] }) =>
       cuentasApi.agregarComanda(cuenta.id, { area, items }),
-    onSuccess: (cuentaActualizada) => {
-      toast.success('Comanda enviada');
+    onSuccess: (cuentaActualizada, variables) => {
+      toast.success(`Comanda enviada a ${variables.area}`);
       onActualizar(cuentaActualizada);
       queryClient.invalidateQueries({ queryKey: ['carta-cuenta', cuenta.id] });
-      setLineas((actuales) => actuales.map((l) => (l.enviada ? l : { ...l, enviada: true })));
+      onLineasChange(lineas.filter((l) => l.area !== variables.area));
       refresh();
     },
     onError: (error) => toast.error('No se pudo enviar', { description: mensajeDeError(error) }),
   });
 
   const enviarArea = (area: Area) => {
-    const pendientes = lineas.filter((l) => !l.enviada && l.area === area);
+    const pendientes = lineas.filter((l) => l.area === area);
     if (pendientes.length === 0) {
       toast.info(`No hay ítems pendientes para ${area}`);
       return;
@@ -188,12 +233,15 @@ export function PosCarta({
     onError: (error) => toast.error('No se pudo cobrar', { description: mensajeDeError(error) }),
   });
 
-  const grupos = useMemo(() => {
-    const orden = ['Bebidas', 'Tragos', 'Entradas', 'Comida'];
-    return orden.filter((g) => lineas.some((l) => l.grupo === g));
-  }, [lineas]);
+  const pendientesBarra = lineas.filter((l) => l.area === 'Barra');
+  const pendientesCocina = lineas.filter((l) => l.area === 'Cocina');
+  const total = useMemo(
+    () => lineas.reduce((acc, l) => acc + l.precioUSD * l.cantidad, 0),
+    [lineas],
+  );
+  const totalArea = (items: Linea[]) => items.reduce((acc, l) => acc + l.precioUSD * l.cantidad, 0);
 
-  const total = useMemo(() => lineas.reduce((acc, l) => acc + l.precioUSD * l.cantidad, 0), [lineas]);
+  const consumos = useMemo(() => (cuentaViva.comandas ?? []).flatMap((c) => c.detalles), [cuentaViva.comandas]);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -210,7 +258,7 @@ export function PosCarta({
         <div className="min-w-0">
           <p className="truncate text-base font-medium text-foreground">{cuentaViva.nombreMesa}</p>
           <p className="truncate text-xs text-muted-foreground">
-            {cuentaViva.cliente ? `Cliente: ${cuentaViva.cliente}` : 'Sin cliente'}
+            {cuentaViva.cliente ? `Cliente: ${cuentaViva.cliente}` : 'Sin cliente'} · {consumos.length} consumos
           </p>
         </div>
         <div className="ml-auto text-right">
@@ -220,101 +268,180 @@ export function PosCarta({
       </header>
 
       {/* Cuerpo: comanda | menú | carta por categorías */}
-      <div className="grid min-h-0 flex-1 grid-cols-[18rem_minmax(0,1fr)_16rem] gap-3 pt-3">
-        {/* Izquierda: comanda */}
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 pt-3 lg:grid-cols-[22rem_minmax(0,1fr)_15rem] 2xl:grid-cols-[26rem_minmax(0,1fr)_18rem]">
+        {/* Izquierda: comanda / consumos */}
         <aside className="flex min-h-0 flex-col rounded-lg border border-border bg-card/40 p-3">
-          <p className="text-[11px] font-medium uppercase tracking-tighter2 text-muted-foreground">Comanda</p>
-          <div className="app-scroll mt-2 min-h-0 flex-1 overflow-y-auto pr-1">
-            {lineas.length === 0 ? (
-              <p className="py-8 text-center text-xs text-muted-foreground">Agrega productos del menú.</p>
-            ) : (
-              <ul className="flex flex-col gap-2">
-                {grupos.map((grupo) => (
-                  <li key={grupo}>
-                    <p className="sticky top-0 bg-card/90 py-1 text-[10px] font-medium uppercase tracking-tighter2 text-foreground backdrop-blur">
-                      {grupo}
-                    </p>
-                    <ul className="flex flex-col gap-1.5">
-                      {lineas
-                        .filter((l) => l.grupo === grupo)
-                        .map((l) => (
-                          <li key={l.key} className="rounded-inner bg-muted/40 px-2.5 py-2">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0">
-                                <p className="truncate text-xs text-foreground">
-                                  {l.cantidad} × {l.nombre}
-                                  <span className="text-muted-foreground"> · {l.varianteNombre}</span>
-                                </p>
-                                <div className="mt-1 flex items-center gap-2">
+          <div className="flex gap-1.5">
+            <button
+              type="button"
+              onClick={() => setTab('comanda')}
+              className={cn(
+                'flex h-8 flex-1 items-center justify-center gap-1.5 rounded-full border text-[11px] transition',
+                tab === 'comanda' ? 'border-primary bg-primary/15 font-medium text-foreground' : 'border-border text-muted-foreground hover:text-foreground',
+              )}
+            >
+              <UtensilsCrossed size={13} /> Por enviar ({lineas.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab('consumos')}
+              className={cn(
+                'flex h-8 flex-1 items-center justify-center gap-1.5 rounded-full border text-[11px] transition',
+                tab === 'consumos' ? 'border-primary bg-primary/15 font-medium text-foreground' : 'border-border text-muted-foreground hover:text-foreground',
+              )}
+            >
+              <CheckCircle2 size={13} /> Consumos ({consumos.length})
+            </button>
+          </div>
+
+          {tab === 'comanda' ? (
+            <>
+              <div className="app-scroll mt-2 min-h-0 flex-1 overflow-y-auto pr-1">
+                {lineas.length === 0 ? (
+                  <p className="py-8 text-center text-xs text-muted-foreground">
+                    Agrega productos del menú; cada uno irá a su área (Barra/Cocina) automáticamente.
+                  </p>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {[pendientesBarra, pendientesCocina].map((items, indice) => {
+                      const area = indice === 0 ? 'Barra' : 'Cocina';
+                      if (items.length === 0) return null;
+                      return (
+                        <div key={area}>
+                          <div className="flex items-center justify-between">
+                            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground">
+                              {area === 'Barra' ? <Wine size={13} /> : <UtensilsCrossed size={13} />}
+                              {area}
+                              <span className="num text-[10px] text-muted-foreground">{formatUSD(totalArea(items))}</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => onLineasChange(lineas.filter((l) => l.area !== area))}
+                              className="text-[10px] text-muted-foreground transition hover:text-destructive-fg"
+                            >
+                              Vaciar
+                            </button>
+                          </div>
+                          <ul className="mt-1.5 flex flex-col gap-1.5">
+                            {items.map((l) => (
+                              <li key={l.key} className="rounded-inner bg-muted/40 px-2.5 py-2">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="min-w-0">
+                                    <p className="truncate text-xs text-foreground">
+                                      {l.cantidad} × {l.nombre}
+                                      <span className="text-muted-foreground"> · {l.varianteNombre}</span>
+                                    </p>
+                                    <div className="mt-1 flex items-center gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => alternarArea(l.key)}
+                                        className={cn(
+                                          'rounded-full border px-1.5 py-0.5 text-[10px]',
+                                          l.area === 'Barra' ? 'border-primary/40 text-foreground' : 'border-warning/40 text-warning-fg',
+                                        )}
+                                        title={`Mover a ${l.area === 'Barra' ? 'Cocina' : 'Barra'}`}
+                                      >
+                                        {l.area === 'Barra' ? '🍸 Barra' : '🍽 Cocina'}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => alternarCortesia(l.key)}
+                                        className="text-[10px] text-muted-foreground transition hover:text-foreground"
+                                      >
+                                        {l.esCortesia ? 'cortesía' : 'cortesía?'}
+                                      </button>
+                                    </div>
+                                  </div>
                                   <button
                                     type="button"
-                                    onClick={() => alternarArea(l.key)}
-                                    className={cn(
-                                      'rounded-full border px-1.5 py-0.5 text-[10px]',
-                                      l.area === 'Barra' ? 'border-primary/40 text-foreground' : 'border-warning/40 text-warning-fg',
-                                    )}
+                                    aria-label="Quitar"
+                                    onClick={() => quitar(l.key)}
+                                    className="text-muted-foreground transition hover:text-destructive-fg"
                                   >
-                                    {l.area === 'Barra' ? '🍸 Barra' : '🍽 Cocina'}
+                                    <X size={13} />
                                   </button>
-                                  {l.enviada ? (
-                                    <span className="text-[10px] text-success-fg">enviada</span>
-                                  ) : (
-                                    <button type="button" onClick={() => alternarCortesia(l.key)} className="text-[10px] text-muted-foreground hover:text-foreground">
-                                      {l.esCortesia ? 'cortesía' : 'cortesía?'}
-                                    </button>
-                                  )}
                                 </div>
-                              </div>
-                              <button
-                                type="button"
-                                aria-label="Quitar"
-                                onClick={() => quitar(l.key)}
-                                className="text-muted-foreground transition hover:text-destructive-fg"
-                              >
-                                <X size={13} />
-                              </button>
+                                <div className="mt-1.5 flex items-center justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => cambiarCantidad(l.key, -1)}
+                                    className="flex h-6 w-6 items-center justify-center rounded-full border border-border text-foreground"
+                                  >
+                                    <Minus size={11} />
+                                  </button>
+                                  <span className="num w-5 text-center text-xs text-foreground">{l.cantidad}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => cambiarCantidad(l.key, 1)}
+                                    className="flex h-6 w-6 items-center justify-center rounded-full border border-border text-foreground"
+                                  >
+                                    <Plus size={11} />
+                                  </button>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              <div className="mt-2 flex flex-col gap-2 border-t border-border pt-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Total por enviar</span>
+                  <span className="num text-sm font-medium text-foreground">{formatUSD(total)}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={enviar.isPending || pendientesBarra.length === 0}
+                    onClick={() => enviarArea('Barra')}
+                  >
+                    <Wine size={14} /> Barra {pendientesBarra.length > 0 && `(${pendientesBarra.length})`}
+                  </Button>
+                  <Button size="sm" disabled={enviar.isPending || pendientesCocina.length === 0} onClick={() => enviarArea('Cocina')}>
+                    <UtensilsCrossed size={14} /> Cocina {pendientesCocina.length > 0 && `(${pendientesCocina.length})`}
+                  </Button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="app-scroll mt-2 min-h-0 flex-1 overflow-y-auto pr-1">
+              {consumos.length === 0 ? (
+                <p className="py-8 text-center text-xs text-muted-foreground">Todavía no hay consumos en esta mesa.</p>
+              ) : (
+                <ul className="flex flex-col gap-2">
+                  {cuentaViva.comandas.map((comanda) => (
+                    <li key={comanda.id} className="rounded-inner bg-muted/40 px-2.5 py-2">
+                      <div className="mb-1 flex items-center justify-between">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-tighter2 text-muted-foreground">
+                          {comanda.area === 'Barra' ? <Wine size={11} /> : <UtensilsCrossed size={11} />}
+                          {comanda.area}
+                        </span>
+                        <span className="num text-[10px] text-muted-foreground">{formatTime(comanda.fecha)}</span>
+                      </div>
+                      <ul className="flex flex-col gap-1">
+                        {comanda.detalles.map((detalle) => (
+                          <li key={detalle.id} className="flex items-center justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="truncate text-xs text-foreground">
+                                {detalle.cantidad} × {detalle.nombre}
+                                {detalle.esCortesia && <span className="text-[10px] text-muted-foreground"> · cortesía</span>}
+                              </p>
+                              <p className="num text-[10px] text-muted-foreground">{formatUSD(detalle.subtotalUSD)}</p>
                             </div>
-                            {!l.enviada && (
-                              <div className="mt-1.5 flex items-center justify-end gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => cambiarCantidad(l.key, -1)}
-                                  className="flex h-6 w-6 items-center justify-center rounded-full border border-border text-foreground"
-                                >
-                                  <Minus size={11} />
-                                </button>
-                                <span className="num w-5 text-center text-xs text-foreground">{l.cantidad}</span>
-                                <button
-                                  type="button"
-                                  onClick={() => cambiarCantidad(l.key, 1)}
-                                  className="flex h-6 w-6 items-center justify-center rounded-full border border-border text-foreground"
-                                >
-                                  <Plus size={11} />
-                                </button>
-                              </div>
-                            )}
+                            <EstadoItem estado={detalle.estado} />
                           </li>
                         ))}
-                    </ul>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-          <div className="mt-2 flex flex-col gap-2 border-t border-border pt-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Total</span>
-              <span className="num text-sm font-medium text-foreground">{formatUSD(total)}</span>
+                      </ul>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <Button size="sm" variant="ghost" disabled={enviar.isPending || !lineas.some((l) => !l.enviada && l.area === 'Barra')} onClick={() => enviarArea('Barra')}>
-                <UtensilsCrossed size={14} /> Barra
-              </Button>
-              <Button size="sm" disabled={enviar.isPending || !lineas.some((l) => !l.enviada && l.area === 'Cocina')} onClick={() => enviarArea('Cocina')}>
-                <ChefHat size={14} /> Cocina
-              </Button>
-            </div>
-          </div>
+          )}
         </aside>
 
         {/* Centro: menú */}
@@ -332,13 +459,34 @@ export function PosCarta({
             </label>
             <span className="num text-xs text-muted-foreground">{productos.data?.totalItems ?? 0}</span>
           </div>
+
+          <div className="mt-2 flex gap-1.5">
+            {OPCIONES_AREA.map((valor) => (
+              <button
+                key={valor}
+                type="button"
+                onClick={() => setAreaActual(valor)}
+                className={cn(
+                  'flex h-8 flex-1 items-center justify-center gap-1.5 rounded-full border px-2 text-[11px] transition',
+                  areaActual === valor ? 'border-primary bg-primary/15 font-medium text-foreground' : 'border-border text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {valor === 'Barra' ? <Wine size={13} /> : valor === 'Cocina' ? <UtensilsCrossed size={13} /> : <Sparkles size={13} />}
+                {valor}
+              </button>
+            ))}
+          </div>
+          <p className="mt-1 text-[10px] text-muted-foreground">
+            {areaActual === 'Auto' ? 'Cada producto irá al área registrada (Barra/Cocina).' : <>Lo que agregues irá a {areaActual}.</>}
+          </p>
+
           <div className="app-scroll mt-2 min-h-0 flex-1 overflow-y-auto pr-1">
             {productos.isLoading ? (
               <p className="py-10 text-center text-sm text-muted-foreground">Cargando…</p>
             ) : (productos.data?.items?.length ?? 0) === 0 ? (
               <p className="py-10 text-center text-sm text-muted-foreground">Sin productos en esta categoría.</p>
             ) : (
-              <div className="grid grid-cols-2 gap-2 xl:grid-cols-3">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
                 {productos.data?.items?.map((producto) => (
                   <button
                     key={producto.id}
@@ -346,16 +494,23 @@ export function PosCarta({
                     onClick={() => seleccionarProducto(producto)}
                     className="flex flex-col overflow-hidden rounded-inner border border-border bg-card transition hover:border-primary hover:bg-primary/10"
                   >
-                    <div className="flex h-20 items-center justify-center bg-muted/50">
-                      {producto.imagenUrl ? (
-                        <img src={producto.imagenUrl} alt={producto.nombre} className="h-full w-full object-cover" loading="lazy" />
-                      ) : (
-                        <img src={FOTO} alt="" className="h-full w-full object-cover opacity-70" loading="lazy" />
-                      )}
+                    <div className="flex h-20 items-center justify-center overflow-hidden bg-muted/50">
+                      <ImagenProducto url={producto.imagenUrl} nombre={producto.nombre} />
                     </div>
                     <div className="flex flex-col gap-0.5 p-2">
                       <p className="line-clamp-1 text-xs font-medium text-foreground">{producto.nombre}</p>
-                      <p className="num text-[11px] text-foreground">{formatUSD(producto.variantes[0]?.precioVentaUSD ?? 0)}</p>
+                      <div className="flex items-center justify-between gap-1">
+                        <p className="num text-[11px] text-foreground">{formatUSD(producto.variantes[0]?.precioVentaUSD ?? 0)}</p>
+                        <span
+                          className={cn(
+                            'inline-flex items-center gap-1 text-[10px]',
+                            producto.areaDestino === 'Cocina' ? 'text-info-fg' : 'text-foreground',
+                          )}
+                        >
+                          {producto.areaDestino === 'Cocina' ? <UtensilsCrossed size={10} /> : <Wine size={10} />}
+                          {producto.areaDestino ?? 'Barra'}
+                        </span>
+                      </div>
                     </div>
                   </button>
                 ))}
@@ -420,6 +575,14 @@ export function PosCarta({
       />
     </div>
   );
+}
+
+function formatTime(iso: string): string {
+  try {
+    return new Date(iso).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return '';
+  }
 }
 
 function BotonAccion({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
@@ -487,12 +650,7 @@ function Modales({
       )}
 
       {panel === 'calculadora' && (
-        <Modal
-          open
-          onClose={onCerrar}
-          title="Calculadora"
-          footer={pie('Usar', () => setMonto(Number(calc || 0)))}
-        >
+        <Modal open onClose={onCerrar} title="Calculadora" footer={pie('Usar', () => setMonto(Number(calc || 0)))}>
           <input
             readOnly
             aria-label="Resultado"
@@ -515,12 +673,7 @@ function Modales({
       )}
 
       {panel === 'abonar' && (
-        <Modal
-          open
-          onClose={onCerrar}
-          title="Abonar"
-          footer={pie('Abonar', () => metodo && onAbonar(metodo, monto), false)}
-        >
+        <Modal open onClose={onCerrar} title="Abonar" footer={pie('Abonar', () => metodo && onAbonar(metodo, monto), false)}>
           <div className="flex flex-col gap-3">
             <Input label="Monto" type="number" value={monto} onChange={(e) => setMonto(Number(e.target.value))} />
             <Select label="Método" value={metodo} onChange={(e) => setMetodo(e.target.value)}>
@@ -535,12 +688,7 @@ function Modales({
       )}
 
       {panel === 'dividir' && (
-        <Modal
-          open
-          onClose={onCerrar}
-          title="Dividir cuenta"
-          footer={pie('Dividir', () => onDividir(partes))}
-        >
+        <Modal open onClose={onCerrar} title="Dividir cuenta" footer={pie('Dividir', () => onDividir(partes))}>
           <Input label="Partes" type="number" min={2} value={partes} onChange={(e) => setPartes(Math.max(2, Number(e.target.value)))} />
           <p className="mt-2 text-xs text-muted-foreground">
             Cada parte quedará por <span className="num text-foreground">{formatUSD(saldo / Math.max(1, partes))}</span>
@@ -549,12 +697,7 @@ function Modales({
       )}
 
       {panel === 'cobrar' && (
-        <Modal
-          open
-          onClose={onCerrar}
-          title="Cobrar"
-          footer={pie('Cobrar', () => metodo && onCobrar(metodo, saldo - descuento, descuento))}
-        >
+        <Modal open onClose={onCerrar} title="Cobrar" footer={pie('Cobrar', () => metodo && onCobrar(metodo, saldo - descuento, descuento))}>
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Saldo</span>

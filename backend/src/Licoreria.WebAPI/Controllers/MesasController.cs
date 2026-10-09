@@ -17,8 +17,11 @@ public class MesasController : ControllerBase
 
     [HttpGet]
     [AllowAnonymous]
-    public async Task<ActionResult<IReadOnlyList<MesaDto>>> Obtener([FromQuery] Guid? zonaId, CancellationToken cancellationToken)
-        => Ok(await _servicio.ObtenerMesasAsync(zonaId, cancellationToken));
+    public async Task<ActionResult<IReadOnlyList<MesaDto>>> Obtener(
+        [FromQuery] Guid? zonaId,
+        [FromQuery] DateTime? fechaHora,
+        CancellationToken cancellationToken)
+        => Ok(await _servicio.ObtenerMesasAsync(zonaId, fechaHora, cancellationToken));
 
     [HttpPost]
     [Authorize(Policy = Permisos.ClubGestionar)]

@@ -1,4 +1,4 @@
-﻿using Licoreria.Domain.Common;
+using Licoreria.Domain.Common;
 using Licoreria.Domain.Enums;
 
 namespace Licoreria.Domain.Entities;

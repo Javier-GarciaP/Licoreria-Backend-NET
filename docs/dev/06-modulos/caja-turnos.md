@@ -17,6 +17,16 @@ Controla la operación de caja por turno con apertura, movimientos y arqueo.
 4. Al cerrar se realiza el **arqueo por denominaciones**.
 5. La diferencia entre lo esperado y lo contado se registra como descuadre.
 
+## Operación en dólares (USD)
+
+La caja opera **solo en dólares**:
+
+- Movimientos y arqueo sin moneda: todo se registra y muestra en USD.
+- El arqueo solo muestra **billetes USD** ($1, $5, $10, $20, $50, $100); las
+  denominaciones en Bs no se ofrecen.
+- Los campos de conteo arrancan vacíos y `Enter` avanza al siguiente billete;
+  las etiquetas usan `$` (ej. `$100`).
+
 ## Flujo
 
 ```mermaid

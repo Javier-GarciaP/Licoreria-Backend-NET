@@ -18,6 +18,7 @@ public sealed class ServicioCatalogo : IServicioCatalogo
     private readonly IRepository<ProductoVariante> _variantes;
     private readonly IRepository<Modificador> _modificadorRepository;
     private readonly IRepository<ProductoModificador> _productoModificadorRepository;
+    private readonly IInventarioRepository _inventario;
 
     public ServicioCatalogo(
         IProductoRepository productoRepository,
@@ -28,7 +29,8 @@ public sealed class ServicioCatalogo : IServicioCatalogo
         IRepository<ListaPrecio> listaPrecioRepository,
         IRepository<ProductoVariante> variantes,
         IRepository<Modificador> modificadorRepository,
-        IRepository<ProductoModificador> productoModificadorRepository)
+        IRepository<ProductoModificador> productoModificadorRepository,
+        IInventarioRepository inventario)
     {
         _productoRepository = productoRepository;
         _categoriaRepository = categoriaRepository;
@@ -39,6 +41,7 @@ public sealed class ServicioCatalogo : IServicioCatalogo
         _variantes = variantes;
         _modificadorRepository = modificadorRepository;
         _productoModificadorRepository = productoModificadorRepository;
+        _inventario = inventario;
     }
 
     // ================= Categorías =================
@@ -318,14 +321,27 @@ public sealed class ServicioCatalogo : IServicioCatalogo
         CancellationToken cancellationToken = default)
     {
         var pagina = await _productoRepository.ObtenerPaginadoAsync(paginacion, categoriaId, busqueda, activo, cancellationToken);
-        var items = pagina.Items.Select(MapearProducto).ToList();
+
+        var varianteIds = new List<Guid>();
+        foreach (var producto in pagina.Items)
+        {
+            foreach (var variante in producto.Variantes)
+            {
+                if (variante.Activo && !variante.IsDeleted) varianteIds.Add(variante.Id);
+            }
+        }
+
+        var porVariante = (await _inventario.ObtenerStockDeVariantesAsync(varianteIds, cancellationToken))
+            .ToDictionary(s => s.VarianteId);
+
+        var items = pagina.Items.Select(p => MapearProducto(p, porVariante)).ToList();
         return ResultadoPaginado<ProductoDto>.Crear(items, pagina.Page, pagina.PageSize, pagina.TotalItems);
     }
 
     public async Task<ProductoDto?> ObtenerProductoAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var producto = await _productoRepository.ObtenerConDetalleAsync(id, cancellationToken);
-        return producto is null || producto.IsDeleted ? null : MapearProducto(producto);
+        return producto is null || producto.IsDeleted ? null : await MapearProductoAsync(producto, cancellationToken);
     }
 
     public async Task<ProductoDto> CrearProductoAsync(ProductoCrearDto dto, CancellationToken cancellationToken = default)
@@ -338,6 +354,7 @@ public sealed class ServicioCatalogo : IServicioCatalogo
         }
 
         await ValidarSkusYCodigosAsync(dto.Variantes, null, cancellationToken);
+        ValidarConsistenciaArea(dto.Tipo, dto.AreaDestino, dto.Variantes);
 
         var producto = new Producto
         {
@@ -347,21 +364,36 @@ public sealed class ServicioCatalogo : IServicioCatalogo
             MarcaId = dto.MarcaId,
             ImpuestoId = dto.ImpuestoId,
             Tipo = dto.Tipo,
+            AreaDestino = dto.AreaDestino,
             GradoAlcoholico = dto.GradoAlcoholico,
             ImagenUrl = dto.ImagenUrl,
             Activo = true
         };
 
+        var creadas = new List<ProductoVariante>();
         foreach (var varianteDto in dto.Variantes)
         {
-            producto.Variantes.Add(CrearVariante(varianteDto));
+            var variante = CrearVariante(varianteDto);
+            producto.Variantes.Add(variante);
+            creadas.Add(variante);
         }
 
         await _productoRepository.AddAsync(producto, cancellationToken);
         await _productoRepository.SaveChangesAsync(cancellationToken);
 
+        for (var i = 0; i < dto.Variantes.Count; i += 1)
+        {
+            await AsegurarStockAsync(
+                creadas[i].Id,
+                creadas[i].EsBase,
+                dto.Variantes[i].StockInicial,
+                dto.Variantes[i].StockMinimo,
+                dto.Variantes[i].StockMaximo,
+                cancellationToken);
+        }
+
         var creado = await _productoRepository.ObtenerConDetalleAsync(producto.Id, cancellationToken);
-        return MapearProducto(creado!);
+        return await MapearProductoAsync(creado!, cancellationToken);
     }
 
     public async Task<ProductoDto?> EditarProductoAsync(ProductoEditarDto dto, CancellationToken cancellationToken = default)
@@ -380,10 +412,11 @@ public sealed class ServicioCatalogo : IServicioCatalogo
         }
 
         await ValidarSkusYCodigosAsync(dto.Variantes, dto.Id, cancellationToken);
+        ValidarConsistenciaArea(dto.Tipo, dto.AreaDestino, dto.Variantes);
 
         producto.ActualizarDatos(
             dto.Nombre, dto.Descripcion, dto.CategoriaId, dto.MarcaId,
-            dto.ImpuestoId, dto.Tipo, dto.GradoAlcoholico, dto.ImagenUrl);
+            dto.ImpuestoId, dto.Tipo, dto.AreaDestino, dto.GradoAlcoholico, dto.ImagenUrl);
 
         if (dto.Activo)
         {
@@ -400,7 +433,7 @@ public sealed class ServicioCatalogo : IServicioCatalogo
         await _productoRepository.SaveChangesAsync(cancellationToken);
 
         var actualizado = await _productoRepository.ObtenerConDetalleAsync(producto.Id, cancellationToken);
-        return MapearProducto(actualizado!);
+        return await MapearProductoAsync(actualizado!, cancellationToken);
     }
 
     public async Task<bool> EliminarProductoAsync(Guid id, CancellationToken cancellationToken = default)
@@ -419,9 +452,9 @@ public sealed class ServicioCatalogo : IServicioCatalogo
 
     // ================= Recetas =================
 
-    public async Task<IReadOnlyList<RecetaDto>> ObtenerRecetasAsync(Guid productoId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<RecetaDto>> ObtenerRecetasAsync(Guid varianteVendidaId, CancellationToken cancellationToken = default)
     {
-        var recetas = await _productoRepository.ObtenerRecetasAsync(productoId, cancellationToken);
+        var recetas = await _productoRepository.ObtenerRecetasAsync(varianteVendidaId, cancellationToken);
         return recetas.Select(r => new RecetaDto(
             r.Id,
             r.VarianteInsumoId,
@@ -430,12 +463,12 @@ public sealed class ServicioCatalogo : IServicioCatalogo
             r.Cantidad)).ToList();
     }
 
-    public async Task<RecetaDto> AgregarRecetaAsync(Guid productoId, RecetaCrearDto dto, CancellationToken cancellationToken = default)
+    public async Task<RecetaDto> AgregarRecetaAsync(Guid varianteVendidaId, RecetaCrearDto dto, CancellationToken cancellationToken = default)
     {
-        var producto = await _productoRepository.ObtenerConDetalleAsync(productoId, cancellationToken);
-        if (producto is null || producto.IsDeleted)
+        var vendida = await _variantes.GetByIdAsync(varianteVendidaId, cancellationToken);
+        if (vendida is null || vendida.IsDeleted)
         {
-            throw new NoEncontradoException($"No existe el producto {productoId}.");
+            throw new NoEncontradoException($"No existe la variante {varianteVendidaId}.");
         }
 
         if (dto.Cantidad <= 0)
@@ -443,9 +476,34 @@ public sealed class ServicioCatalogo : IServicioCatalogo
             throw new ReglaNegocioException("La cantidad de la receta debe ser mayor que cero.");
         }
 
+        if (dto.VarianteInsumoId == varianteVendidaId)
+        {
+            throw new ReglaNegocioException("Una variante no puede consumirse a sí misma.");
+        }
+
+        var insumo = await _variantes.GetByIdAsync(dto.VarianteInsumoId, cancellationToken);
+        if (insumo is null || insumo.IsDeleted)
+        {
+            throw new NoEncontradoException($"No existe la variante insumo {dto.VarianteInsumoId}.");
+        }
+
+        if (!insumo.Activo)
+        {
+            throw new ReglaNegocioException($"El insumo '{insumo.Nombre}' no está activo.");
+        }
+
+        // Los insumos deben tener existencia propia (base o con fila de stock) para
+        // que la salida por receta pueda descontarse del inventario.
+        var stockInsumo = await _inventario.ObtenerStockAsync(insumo.Id, cancellationToken);
+        if (!insumo.EsBase && stockInsumo is null)
+        {
+            throw new ReglaNegocioException(
+                $"El insumo '{insumo.Nombre}' no guarda existencia propia; usa una presentación base o con stock.");
+        }
+
         var receta = new Receta
         {
-            ProductoId = productoId,
+            VarianteVendidaId = varianteVendidaId,
             VarianteInsumoId = dto.VarianteInsumoId,
             Cantidad = dto.Cantidad
         };
@@ -453,14 +511,14 @@ public sealed class ServicioCatalogo : IServicioCatalogo
         await _productoRepository.AgregarRecetaAsync(receta, cancellationToken);
         await _productoRepository.SaveChangesAsync(cancellationToken);
 
-        var recetas = await _productoRepository.ObtenerRecetasAsync(productoId, cancellationToken);
+        var recetas = await _productoRepository.ObtenerRecetasAsync(varianteVendidaId, cancellationToken);
         var creada = recetas.First(r => r.Id == receta.Id);
         return new RecetaDto(creada.Id, creada.VarianteInsumoId, creada.VarianteInsumo?.Nombre ?? string.Empty, creada.VarianteInsumo?.Sku ?? string.Empty, creada.Cantidad);
     }
 
-    public async Task<bool> EliminarRecetaAsync(Guid productoId, Guid recetaId, CancellationToken cancellationToken = default)
+    public async Task<bool> EliminarRecetaAsync(Guid varianteVendidaId, Guid recetaId, CancellationToken cancellationToken = default)
     {
-        var receta = await _productoRepository.ObtenerRecetaAsync(productoId, recetaId, cancellationToken);
+        var receta = await _productoRepository.ObtenerRecetaAsync(varianteVendidaId, recetaId, cancellationToken);
         if (receta is null)
         {
             return false;
@@ -632,6 +690,67 @@ public sealed class ServicioCatalogo : IServicioCatalogo
         }
     }
 
+    /// <summary>
+    /// Valida la coherencia del modelo por área: la Cocina se vende sin stock ni
+    /// recetas (presentaciones Simple), mientras que la Barra simple exige al menos
+    /// una presentación base para poder ordenarse al proveedor.
+    /// </summary>
+    private static void ValidarConsistenciaArea(
+        TipoProducto tipo,
+        AreaDestino areaDestino,
+        IReadOnlyList<VarianteCrearDto> variantes)
+    {
+        if (areaDestino == AreaDestino.Cocina)
+        {
+            if (tipo != TipoProducto.Simple)
+            {
+                throw new ReglaNegocioException("Los productos de Cocina deben ser Simple: no llevan receta ni stock, solo se venden.");
+            }
+
+            if (variantes.Any(v => v.EsBase))
+            {
+                throw new ReglaNegocioException("Los productos de Cocina no se ordenan al proveedor; quita la presentación base.");
+            }
+
+            if (variantes.Any(v =>
+                (v.StockInicial ?? 0m) > 0 ||
+                (v.StockMinimo ?? 0m) > 0 ||
+                (v.StockMaximo ?? 0m) > 0))
+            {
+                throw new ReglaNegocioException("Los productos de Cocina no llevan stock; solo se venden.");
+            }
+
+            return;
+        }
+
+        // Barra: un producto simple se vende como unidad y se repone al proveedor,
+        // por lo que necesita al menos una presentación base.
+        if (tipo == TipoProducto.Simple && !variantes.Any(v => v.EsBase))
+        {
+            throw new ReglaNegocioException(
+                "El producto de Barra simple debe tener al menos una presentación base activa para ordenarlo al proveedor.");
+        }
+
+        // Barra: un preparado se elabora con insumos, nunca se compra terminado.
+        if (tipo == TipoProducto.Preparado)
+        {
+            if (variantes.Any(v => v.EsBase))
+            {
+                throw new ReglaNegocioException(
+                    "Los productos preparados no se ordenan al proveedor: quita la presentación base y asigna la receta de consumo.");
+            }
+
+            if (variantes.Any(v =>
+                (v.StockInicial ?? 0m) > 0 ||
+                (v.StockMinimo ?? 0m) > 0 ||
+                (v.StockMaximo ?? 0m) > 0))
+            {
+                throw new ReglaNegocioException(
+                    "Los productos preparados no llevan stock propio: al vender consumen sus insumos según la receta.");
+            }
+        }
+    }
+
     private async Task ValidarSkusYCodigosAsync(
         IReadOnlyList<VarianteCrearDto> variantes,
         Guid? productoId,
@@ -676,6 +795,7 @@ public sealed class ServicioCatalogo : IServicioCatalogo
             UnidadMedidaId = dto.UnidadMedidaId,
             PrecioCompraUSD = dto.PrecioCompraUSD,
             PrecioVentaUSD = dto.PrecioVentaUSD,
+            EsBase = dto.EsBase,
             Activo = true
         };
 
@@ -696,6 +816,7 @@ public sealed class ServicioCatalogo : IServicioCatalogo
             if (dto.Id is Guid id && existentes.TryGetValue(id, out var variante))
             {
                 variante.ActualizarDatos(dto.Nombre, dto.Sku, dto.UnidadMedidaId, dto.PrecioCompraUSD, dto.PrecioVentaUSD);
+                variante.EsBase = dto.EsBase;
                 variante.Activar();
                 existentes.Remove(id);
 
@@ -704,12 +825,15 @@ public sealed class ServicioCatalogo : IServicioCatalogo
                 {
                     variante.CodigosBarras.Add(new CodigoBarras { Codigo = codigo, Principal = false });
                 }
+
+                await AsegurarStockAsync(variante.Id, dto.EsBase, null, dto.StockMinimo, dto.StockMaximo, cancellationToken);
             }
             else
             {
                 var nueva = CrearVariante(dto);
                 nueva.ProductoId = producto.Id;
                 await _productoRepository.AgregarVarianteAsync(nueva, cancellationToken);
+                await AsegurarStockAsync(nueva.Id, nueva.EsBase, dto.StockInicial, dto.StockMinimo, dto.StockMaximo, cancellationToken);
             }
         }
 
@@ -731,7 +855,20 @@ public sealed class ServicioCatalogo : IServicioCatalogo
     private static ModificadorDto MapearModificador(Modificador m)
         => new(m.Id, m.Nombre, m.PrecioAdicional, m.Activo);
 
-    private static ProductoDto MapearProducto(Producto p)
+    private async Task<ProductoDto> MapearProductoAsync(Producto p, CancellationToken cancellationToken = default)
+    {
+        var varianteIds = new List<Guid>();
+        foreach (var variante in p.Variantes)
+        {
+            if (variante.Activo && !variante.IsDeleted) varianteIds.Add(variante.Id);
+        }
+
+        var porVariante = (await _inventario.ObtenerStockDeVariantesAsync(varianteIds, cancellationToken))
+            .ToDictionary(s => s.VarianteId);
+        return MapearProducto(p, porVariante);
+    }
+
+    private static ProductoDto MapearProducto(Producto p, IReadOnlyDictionary<Guid, StockProducto> porVariante)
         => new(
             p.Id,
             p.Nombre,
@@ -742,17 +879,74 @@ public sealed class ServicioCatalogo : IServicioCatalogo
             p.Marca?.Nombre,
             p.ImpuestoId,
             p.Tipo,
+            p.AreaDestino,
             p.GradoAlcoholico,
             p.ImagenUrl,
             p.Activo,
-            p.Variantes.Where(v => !v.IsDeleted).Select(v => new ProductoVarianteDto(
-                v.Id,
-                v.Nombre,
-                v.Sku,
-                v.PrecioCompraUSD,
-                v.PrecioVentaUSD,
-                v.UnidadMedidaId,
-                v.UnidadMedida?.Nombre ?? string.Empty,
-                v.Activo,
-                v.CodigosBarras.Select(c => c.Codigo).ToList())).ToList());
+            p.Variantes.Where(v => v.Activo && !v.IsDeleted).Select(v =>
+            {
+                var stock = porVariante.GetValueOrDefault(v.Id);
+                return new ProductoVarianteDto(
+                    v.Id,
+                    v.Nombre,
+                    v.Sku,
+                    v.PrecioCompraUSD,
+                    v.PrecioVentaUSD,
+                    v.UnidadMedidaId,
+                    v.UnidadMedida?.Nombre ?? string.Empty,
+                    v.Activo,
+                    v.EsBase,
+                    v.CodigosBarras.Select(c => c.Codigo).ToList(),
+                    stock?.Cantidad ?? 0m,
+                    stock?.CantidadReservada ?? 0m,
+                    stock?.StockMinimo ?? 0m,
+                    stock?.StockMaximo ?? 0m);
+            }).ToList());
+
+    /// <summary>
+    /// Asegura la fila de existencias de una variante y aplica su stock inicial (kardex).
+    /// Las presentaciones base siempre guardan fila; las demás solo si aportan valores de
+    /// stock (inicial o mín/máx), pues una variante con receta consume de sus insumos.
+    /// </summary>
+    private async Task AsegurarStockAsync(
+        Guid varianteId,
+        bool esBase,
+        decimal? stockInicial,
+        decimal? stockMinimo,
+        decimal? stockMaximo,
+        CancellationToken cancellationToken = default)
+    {
+        var inicial = stockInicial ?? 0m;
+        var hayMinimo = stockMinimo is not null && stockMinimo.Value > 0;
+        var hayMaximo = stockMaximo is not null && stockMaximo.Value > 0;
+        if (!esBase && inicial <= 0 && !hayMinimo && !hayMaximo)
+        {
+            return;
+        }
+
+        var stock = await _inventario.ObtenerStockAsync(varianteId, cancellationToken);
+        if (stock is null)
+        {
+            stock = new StockProducto { VarianteId = varianteId };
+            await _inventario.AgregarStockAsync(stock, cancellationToken);
+        }
+
+        if (stockMinimo != null) stock.StockMinimo = stockMinimo.Value;
+        if (stockMaximo != null) stock.StockMaximo = stockMaximo.Value;
+
+        if (inicial > 0)
+        {
+            stock.AplicarMovimiento(inicial);
+            await _inventario.AgregarMovimientoAsync(new MovimientoInventario
+            {
+                VarianteId = varianteId,
+                Tipo = TipoMovimientoInventario.Ajuste,
+                Cantidad = inicial,
+                ReferenciaTipo = "ajuste",
+                Motivo = "Stock inicial"
+            }, cancellationToken);
+        }
+
+        await _inventario.SaveChangesAsync(cancellationToken);
+    }
 }

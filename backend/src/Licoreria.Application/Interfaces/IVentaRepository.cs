@@ -23,5 +23,7 @@ public interface IVentaRepository
 
     Task AgregarDevolucionAsync(Devolucion devolucion, CancellationToken cancellationToken = default);
 
+    Task<decimal> ObtenerTotalVentasDelTurnoAsync(Guid sesionCajaId, CancellationToken cancellationToken = default);
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

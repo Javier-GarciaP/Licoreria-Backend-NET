@@ -389,6 +389,67 @@ paths:
       responses:
         '200':
           description: OK
+  /api/v1/staff/chat:
+    get:
+      tags:
+        - Chat
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            pattern: ^-?(?:0|[1-9]\d*)$
+            type:
+              - integer
+              - string
+            format: int32
+            default: 50
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChatMensajeDto'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChatMensajeDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChatMensajeDto'
+    post:
+      tags:
+        - Chat
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatEnviarDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/ChatEnviarDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/ChatEnviarDto'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ChatMensajeDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMensajeDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ChatMensajeDto'
   /api/v1/clientes:
     get:
       tags:
@@ -794,6 +855,15 @@ paths:
           in: query
           schema:
             $ref: '#/components/schemas/EstadoCuenta'
+        - name: estados
+          in: query
+          schema:
+            type: string
+        - name: usuarioId
+          in: query
+          schema:
+            type: string
+            format: uuid
       responses:
         '200':
           description: OK
@@ -837,6 +907,30 @@ paths:
                 $ref: '#/components/schemas/CuentaDto'
   /api/v1/cuentas/{id}:
     get:
+      tags:
+        - Cuentas
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/CuentaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CuentaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/CuentaDto'
+  /api/v1/cuentas/{id}/reabrir:
+    post:
       tags:
         - Cuentas
       parameters:
@@ -2385,6 +2479,11 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: fechaHora
+          in: query
+          schema:
+            type: string
+            format: date-time
       responses:
         '200':
           description: OK
@@ -3325,91 +3424,6 @@ paths:
       responses:
         '200':
           description: OK
-  /api/v1/productos/{id}/recetas:
-    get:
-      tags:
-        - Productos
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: OK
-          content:
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RecetaDto'
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RecetaDto'
-            text/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RecetaDto'
-    post:
-      tags:
-        - Productos
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RecetaCrearDto'
-          text/json:
-            schema:
-              $ref: '#/components/schemas/RecetaCrearDto'
-          application/*+json:
-            schema:
-              $ref: '#/components/schemas/RecetaCrearDto'
-        required: true
-      responses:
-        '200':
-          description: OK
-          content:
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/RecetaDto'
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RecetaDto'
-            text/json:
-              schema:
-                $ref: '#/components/schemas/RecetaDto'
-  /api/v1/productos/{id}/recetas/{recetaId}:
-    delete:
-      tags:
-        - Productos
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: recetaId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: OK
   /api/v1/productos/{id}/modificadores:
     get:
       tags:
@@ -4289,6 +4303,30 @@ paths:
             text/json:
               schema:
                 $ref: '#/components/schemas/ReservaDto'
+  /api/v1/reservas/{id}/atender:
+    post:
+      tags:
+        - Reservas
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ReservaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ReservaDto'
   /api/v1/reservas/{id}/pedidos:
     get:
       tags:
@@ -4492,6 +4530,23 @@ paths:
             text/json:
               schema:
                 $ref: '#/components/schemas/SesionCajaDto'
+  /api/v1/sesiones-caja/turno:
+    get:
+      tags:
+        - SesionesCaja
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/TurnoAbiertoDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TurnoAbiertoDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/TurnoAbiertoDto'
   /api/v1/sesiones-caja/{id}/movimientos:
     post:
       tags:
@@ -5106,6 +5161,91 @@ paths:
       responses:
         '200':
           description: OK
+  /api/v1/variantes/{id}/recetas:
+    get:
+      tags:
+        - Variantes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecetaDto'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecetaDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecetaDto'
+    post:
+      tags:
+        - Variantes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecetaCrearDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/RecetaCrearDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/RecetaCrearDto'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/RecetaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecetaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/RecetaDto'
+  /api/v1/variantes/{id}/recetas/{recetaId}:
+    delete:
+      tags:
+        - Variantes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: recetaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
   /api/v1/ventas:
     get:
       tags:
@@ -5444,6 +5584,14 @@ components:
             - 'null'
             - string
           format: uuid
+        cliente:
+          type:
+            - 'null'
+            - string
+        notas:
+          type:
+            - 'null'
+            - string
     ActualizarEstadoItemDto:
       required:
         - estado
@@ -5812,6 +5960,38 @@ components:
             - string
           format: double
           default: 0
+    ChatEnviarDto:
+      required:
+        - mensaje
+      type: object
+      properties:
+        mensaje:
+          type: string
+    ChatMensajeDto:
+      required:
+        - id
+        - autorId
+        - autorNombre
+        - rol
+        - mensaje
+        - creadoEn
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        autorId:
+          type: string
+          format: uuid
+        autorNombre:
+          type: string
+        rol:
+          type: string
+        mensaje:
+          type: string
+        creadoEn:
+          type: string
+          format: date-time
     ClienteCrearDto:
       required:
         - nombre
@@ -6141,6 +6321,10 @@ components:
             - 'null'
             - string
           format: uuid
+        cliente:
+          type:
+            - 'null'
+            - string
     CuentaPorCobrarCrearDto:
       required:
         - clienteId
@@ -7481,6 +7665,10 @@ components:
             - number
             - string
           format: double
+        imagenUrl:
+          type:
+            - 'null'
+            - string
     MenuSeccionDto:
       required:
         - categoriaId
@@ -8463,6 +8651,7 @@ components:
         - marcaId
         - impuestoId
         - tipo
+        - areaDestino
         - gradoAlcoholico
         - imagenUrl
         - variantes
@@ -8489,6 +8678,8 @@ components:
           format: uuid
         tipo:
           $ref: '#/components/schemas/TipoProducto'
+        areaDestino:
+          $ref: '#/components/schemas/AreaDestino'
         gradoAlcoholico:
           pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
           type:
@@ -8515,6 +8706,7 @@ components:
         - marcaNombre
         - impuestoId
         - tipo
+        - areaDestino
         - gradoAlcoholico
         - imagenUrl
         - activo
@@ -8551,6 +8743,8 @@ components:
           format: uuid
         tipo:
           $ref: '#/components/schemas/TipoProducto'
+        areaDestino:
+          $ref: '#/components/schemas/AreaDestino'
         gradoAlcoholico:
           pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
           type:
@@ -8577,6 +8771,7 @@ components:
         - marcaId
         - impuestoId
         - tipo
+        - areaDestino
         - gradoAlcoholico
         - imagenUrl
         - activo
@@ -8607,6 +8802,8 @@ components:
           format: uuid
         tipo:
           $ref: '#/components/schemas/TipoProducto'
+        areaDestino:
+          $ref: '#/components/schemas/AreaDestino'
         gradoAlcoholico:
           pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
           type:
@@ -8673,7 +8870,12 @@ components:
         - unidadMedidaId
         - unidadMedidaNombre
         - activo
+        - esBase
         - codigosBarras
+        - cantidad
+        - cantidadReservada
+        - stockMinimo
+        - stockMaximo
       type: object
       properties:
         id:
@@ -8702,10 +8904,36 @@ components:
           type: string
         activo:
           type: boolean
+        esBase:
+          type: boolean
         codigosBarras:
           type: array
           items:
             type: string
+        cantidad:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        cantidadReservada:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        stockMinimo:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        stockMaximo:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
     PromocionCrearDto:
       required:
         - nombre
@@ -10442,6 +10670,8 @@ components:
         - montoEsperado
         - montoContado
         - descuadre
+        - ventasDelTurnoUSD
+        - cuentasDesalojadas
         - abiertaEn
         - cerradaEn
         - movimientos
@@ -10477,6 +10707,18 @@ components:
             - number
             - string
           format: double
+        ventasDelTurnoUSD:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        cuentasDesalojadas:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
         abiertaEn:
           type: string
           format: date-time
@@ -10673,6 +10915,19 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TomaFisicaDetalleDto'
+    TurnoAbiertoDto:
+      required:
+        - abierto
+        - abiertaEn
+      type: object
+      properties:
+        abierto:
+          type: boolean
+        abiertaEn:
+          type:
+            - 'null'
+            - string
+          format: date-time
     UnidadMedidaCrearDto:
       required:
         - nombre
@@ -10846,6 +11101,30 @@ components:
             - array
           items:
             type: string
+        stockInicial:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - 'null'
+            - number
+            - string
+          format: double
+        stockMinimo:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - 'null'
+            - number
+            - string
+          format: double
+        stockMaximo:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - 'null'
+            - number
+            - string
+          format: double
+        esBase:
+          type: boolean
+          default: false
     VentaDetalleDto:
       required:
         - id
@@ -10906,6 +11185,7 @@ components:
         - totalBS
         - estado
         - usuarioId
+        - sesionCajaId
         - numeroComprobante
         - detalles
         - pagos
@@ -10952,6 +11232,11 @@ components:
         usuarioId:
           type: string
           format: uuid
+        sesionCajaId:
+          type:
+            - 'null'
+            - string
+          format: uuid
         numeroComprobante:
           type:
             - 'null'
@@ -10994,6 +11279,9 @@ components:
           format: double
           default: 0
         esCortesia:
+          type: boolean
+          default: false
+        yaDescontado:
           type: boolean
           default: false
     VentaPagoDto:
@@ -11285,6 +11573,7 @@ tags:
   - name: Auditoria
   - name: Auth
   - name: Categorias
+  - name: Chat
   - name: Clientes
   - name: Contenido
   - name: Cuentas
@@ -11322,5 +11611,6 @@ tags:
   - name: TomasFisicas
   - name: UnidadesMedida
   - name: Usuarios
+  - name: Variantes
   - name: Ventas
   - name: Zonas

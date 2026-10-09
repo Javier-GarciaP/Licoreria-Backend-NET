@@ -3,6 +3,7 @@ using Licoreria.Application.Dtos;
 using Licoreria.Application.Interfaces;
 using Licoreria.Application.Services;
 using Licoreria.Domain.Entities;
+using Licoreria.Domain.Services;
 using Moq;
 
 namespace Licoreria.UnitTests;
@@ -31,6 +32,7 @@ public sealed class ServicioClubPlanoTests
             Mock.Of<IRepository<ProductoVariante>>(),
             Mock.Of<IReservaRepository>(),
             Mock.Of<ICuentaRepository>(),
+            new DetectorConflictosReserva(),
             Mock.Of<IRelojSistema>(),
             Mock.Of<INotificadorComandas>());
 

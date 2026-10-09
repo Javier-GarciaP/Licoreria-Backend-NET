@@ -1,5 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
-import { DndContext, useDraggable, useDroppable, type DragEndEvent } from '@dnd-kit/core';
+import {
+  DndContext,
+  DragOverlay,
+  MeasuringStrategy,
+  PointerSensor,
+  TouchSensor,
+  pointerWithin,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ChefHat, Clock3, GripVertical, LogOut, Martini, UserRound } from 'lucide-react';
@@ -11,6 +24,7 @@ import { Chat } from '../components/Chat';
 import { etiquetaRol } from '../lib/roles';
 import { formatTime, minutosTranscurridos } from '../lib/format';
 import { mensajeDeError } from '../lib/api';
+import { sonidoNotificacion } from '../lib/sonido';
 
 type Area = 'barra' | 'cocina';
 type Columna = 'recibido' | 'proceso' | 'terminado';
@@ -49,6 +63,12 @@ export function KdsPage() {
   const { usuario, logout, rolDominio } = useAuth();
   const [area, setArea] = useState<Area>(rolDominio === 'Cocina' ? 'cocina' : 'barra');
   const [hora, setHora] = useState(horaActual);
+  const [activo, setActivo] = useState<ItemKds | null>(null);
+
+  const sensores = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 8 } }),
+  );
 
   const areaApi = area === 'cocina' ? 'Cocina' : 'Barra';
 
@@ -58,14 +78,19 @@ export function KdsPage() {
   }, []);
 
   useRealtime(area, {
-    'comanda:creada': () => queryClient.invalidateQueries({ queryKey: ['kds'] }),
+    'comanda:creada': () => {
+      sonidoNotificacion('recibido');
+      queryClient.invalidateQueries({ queryKey: ['kds'] });
+    },
     'comanda:actualizada': () => queryClient.invalidateQueries({ queryKey: ['kds'] }),
     'item:actualizado': () => queryClient.invalidateQueries({ queryKey: ['kds'] }),
+    'turno:abierto': () => queryClient.invalidateQueries({ queryKey: ['kds'] }),
+    'turno:cerrado': () => queryClient.invalidateQueries({ queryKey: ['kds'] }),
   });
 
   const cuentas = useQuery({
     queryKey: ['kds', 'cuentas', area],
-    queryFn: () => cuentasApi.listar({ estado: 'Abierta', pageSize: 100 }),
+    queryFn: () => cuentasApi.listar({ estados: 'Abierta,PorCobrar', pageSize: 100 }),
   });
 
   const items = useMemo<ItemKds[]>(
@@ -102,8 +127,13 @@ export function KdsPage() {
     onError: (error) => toast.error('No se pudo mover', { description: mensajeDeError(error) }),
   });
 
+  const alIniciar = (evento: DragStartEvent) => {
+    setActivo(items.find((i) => i.id === evento.active.id) ?? null);
+  };
+
   const alSoltar = (evento: DragEndEvent) => {
     const item = items.find((i) => i.id === evento.active.id);
+    setActivo(null);
     if (!item) return;
     const objetivo = COLUMNAS.find((c) => c.id === evento.over?.id);
     if (!objetivo || objetivo.estado === item.estado) return;
@@ -111,7 +141,7 @@ export function KdsPage() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background p-4 lg:p-6">
+    <div className="flex h-dvh flex-col overflow-hidden bg-background p-4 lg:p-6">
       {/* Header */}
       <header className="flex items-center gap-3 border-b border-border pb-4">
         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-foreground">
@@ -160,7 +190,14 @@ export function KdsPage() {
         {cuentas.isLoading ? (
           <p className="py-16 text-center text-sm text-muted-foreground">Cargando…</p>
         ) : (
-          <DndContext onDragEnd={alSoltar}>
+          <DndContext
+            sensors={sensores}
+            collisionDetection={pointerWithin}
+            measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
+            onDragStart={alIniciar}
+            onDragEnd={alSoltar}
+            onDragCancel={() => setActivo(null)}
+          >
             <div className="grid min-h-0 flex-1 grid-cols-3 gap-3">
               {COLUMNAS.map((columna) => (
                 <ColumnaKanban
@@ -168,9 +205,14 @@ export function KdsPage() {
                   columna={columna}
                   items={items.filter((i) => i.columna === columna.id)}
                   moviendo={mover.isPending}
+                  arrastrando={activo !== null}
                 />
               ))}
             </div>
+
+            <DragOverlay>
+              {activo ? <TarjetaItem item={activo} moviendo={false} overlay /> : null}
+            </DragOverlay>
           </DndContext>
         )}
       </div>
@@ -184,10 +226,12 @@ function ColumnaKanban({
   columna,
   items,
   moviendo,
+  arrastrando,
 }: {
   columna: (typeof COLUMNAS)[number];
   items: ItemKds[];
   moviendo: boolean;
+  arrastrando: boolean;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: columna.id });
 
@@ -195,8 +239,8 @@ function ColumnaKanban({
     <section
       ref={setNodeRef}
       className={cn(
-        'flex min-h-0 flex-col rounded-lg border border-border bg-card/30 p-3 transition',
-        isOver && 'border-primary bg-primary/10',
+        'flex min-h-0 flex-col rounded-lg border border-border bg-card/30 p-3 transition-colors',
+        isOver && 'border-primary bg-primary/10 ring-1 ring-primary/60',
       )}
     >
       <header className="mb-2 flex items-center justify-between px-1">
@@ -206,28 +250,47 @@ function ColumnaKanban({
 
       <div className="app-scroll flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
         {items.length === 0 ? (
-          <p className="rounded-inner border border-dashed border-border py-8 text-center text-xs text-muted-foreground">Vacío</p>
+          <p
+            className={cn(
+              'rounded-inner border border-dashed border-border py-8 text-center text-xs text-muted-foreground',
+              isOver && 'border-primary/60 text-primary',
+            )}
+          >
+            {isOver ? 'Suelta aquí' : 'Vacío'}
+          </p>
         ) : (
           items.map((item) => <TarjetaItem key={item.id} item={item} moviendo={moviendo} />)
         )}
       </div>
+
+      {isOver && arrastrando && (
+        <div className="pointer-events-none mt-2 rounded-inner bg-primary/20 px-2 py-1 text-center text-[10px] font-medium text-primary-foreground">
+          Soltar aquí
+        </div>
+      )}
     </section>
   );
 }
 
-function TarjetaItem({ item, moviendo }: { item: ItemKds; moviendo: boolean }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: item.id });
+function TarjetaItem({ item, moviendo, overlay = false }: { item: ItemKds; moviendo: boolean; overlay?: boolean }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: item.id,
+    disabled: overlay,
+  });
   const minutos = minutosTranscurridos(item.fecha);
   const urgente = minutos >= 10;
 
   return (
     <div
       ref={setNodeRef}
-      {...listeners}
-      {...attributes}
+      {...(overlay ? {} : listeners)}
+      {...(overlay ? {} : attributes)}
       className={cn(
-        'cursor-grab touch-none rounded-inner border border-border bg-card p-3 shadow-soft transition active:cursor-grabbing',
-        isDragging && 'rotate-2 border-primary opacity-80',
+        'rounded-inner border border-border bg-card p-3 shadow-soft',
+        overlay
+          ? 'rotate-2 cursor-grabbing border-primary shadow-card ring-1 ring-primary/60'
+          : 'cursor-grab touch-none transition active:cursor-grabbing',
+        isDragging && 'border-dashed opacity-40',
         urgente && item.columna !== 'terminado' && 'ring-1 ring-danger/60',
       )}
     >
@@ -243,7 +306,7 @@ function TarjetaItem({ item, moviendo }: { item: ItemKds; moviendo: boolean }) {
       <p className={cn('mt-2 text-[11px]', urgente && item.columna !== 'terminado' ? 'text-destructive-fg' : 'text-muted-foreground')}>
         {minutos < 1 ? 'recién recibido' : `${minutos} min`} · {formatTime(item.fecha)}
       </p>
-      {moviendo && <p className="mt-1 text-[10px] text-muted-foreground">actualizando…</p>}
+      {moviendo && !overlay && <p className="mt-1 text-[10px] text-muted-foreground">actualizando…</p>}
     </div>
   );
 }

@@ -24,6 +24,7 @@ public class ProductoCrearDtoValidatorTests
         MarcaId: Guid.NewGuid(),
         ImpuestoId: null,
         Tipo: TipoProducto.Simple,
+        AreaDestino: AreaDestino.Barra,
         GradoAlcoholico: 40m,
         ImagenUrl: null,
         Variantes: [VarianteValida()]);

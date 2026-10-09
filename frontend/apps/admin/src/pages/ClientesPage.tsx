@@ -5,7 +5,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { Coins, Pencil, Trash2 } from 'lucide-react';
 import {
+  ActionMenu,
   Button,
   Card,
   CardBody,
@@ -194,17 +196,19 @@ export function ClientesPage() {
                 header: '',
                 align: 'right',
                 render: (cliente) => (
-                  <div className="flex justify-end gap-2">
-                    <Button size="sm" variant="ghost" onClick={() => setPuntosDe(cliente)}>
-                      Puntos
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => abrirEditar(cliente)}>
-                      Editar
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setPorEliminar(cliente)}>
-                      Eliminar
-                    </Button>
-                  </div>
+                  <ActionMenu
+                    label={`Acciones de ${cliente.nombre}`}
+                    options={[
+                      { label: 'Puntos', icon: <Coins size={15} />, onClick: () => setPuntosDe(cliente) },
+                      { label: 'Editar', icon: <Pencil size={15} />, onClick: () => abrirEditar(cliente) },
+                      {
+                        label: 'Eliminar',
+                        icon: <Trash2 size={15} />,
+                        danger: true,
+                        onClick: () => setPorEliminar(cliente),
+                      },
+                    ]}
+                  />
                 ),
               },
             ]}

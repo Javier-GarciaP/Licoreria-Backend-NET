@@ -23,6 +23,7 @@ public class CuentaRepository : ICuentaRepository
     public Task<ResultadoPaginado<Cuenta>> ObtenerPaginadoAsync(
         PaginacionRequest paginacion,
         EstadoCuenta? estado = null,
+        IReadOnlyList<EstadoCuenta>? estados = null,
         Guid? usuarioId = null,
         CancellationToken cancellationToken = default)
     {
@@ -31,6 +32,11 @@ public class CuentaRepository : ICuentaRepository
         if (estado is not null)
         {
             consulta = consulta.Where(c => c.Estado == estado);
+        }
+
+        if (estados is { Count: > 0 })
+        {
+            consulta = consulta.Where(c => estados.Contains(c.Estado));
         }
 
         if (usuarioId is not null)
@@ -89,6 +95,13 @@ public class CuentaRepository : ICuentaRepository
             .GroupBy(f => f.MesaId)
             .ToDictionary(g => g.Key, g => g.First().CuentaId);
     }
+
+    public async Task<IReadOnlyList<Cuenta>> ObtenerAbiertasConSesionAsync(CancellationToken cancellationToken = default)
+        => await ConDetalle()
+            .Where(c => !c.IsDeleted
+                && c.Estado != EstadoCuenta.Cerrada
+                && c.SesionMesa.CerradaEn == null)
+            .ToListAsync(cancellationToken);
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => _context.SaveChangesAsync(cancellationToken);

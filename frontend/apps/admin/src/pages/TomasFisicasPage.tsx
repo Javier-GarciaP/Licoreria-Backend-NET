@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { Eye } from 'lucide-react';
 import {
+  ActionMenu,
   Button,
   Card,
   CardBody,
@@ -48,6 +50,8 @@ export function TomasFisicasPage() {
       setConteos({});
       queryClient.invalidateQueries({ queryKey: ['tomas'] });
       queryClient.invalidateQueries({ queryKey: ['stock'] });
+      queryClient.invalidateQueries({ queryKey: ['kardex'] });
+      queryClient.invalidateQueries({ queryKey: ['productos'] });
     },
     onError: (error) => toast.error('No se pudo registrar la toma', { description: mensajeDeError(error) }),
   });
@@ -87,9 +91,10 @@ export function TomasFisicasPage() {
                 header: '',
                 align: 'right',
                 render: (toma) => (
-                  <Button size="sm" variant="ghost" onClick={() => setDetalle(toma)}>
-                    Ver
-                  </Button>
+                  <ActionMenu
+                    label={`Acciones de toma ${formatDateTime(toma.fecha)}`}
+                    options={[{ label: 'Ver', icon: <Eye size={15} />, onClick: () => setDetalle(toma) }]}
+                  />
                 ),
               },
             ]}

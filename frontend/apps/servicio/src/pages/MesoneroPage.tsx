@@ -1,21 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Bell, Clock3, LogOut, UserRound } from 'lucide-react';
+import { Clock3, LogOut, UserRound } from 'lucide-react';
 import type { Cuenta } from '@licoreria/types';
 import { cuentasApi } from '@licoreria/api-client';
 import { useAuth } from '../context/AuthContext';
 import { useRealtime } from '../hooks/useRealtime';
 import { Chat } from '../components/Chat';
 import { AtenderView } from '../components/mesonero/AtenderView';
-import { PosCarta } from '../components/mesonero/PosCarta';
+import { PosCarta, type Linea } from '../components/mesonero/PosCarta';
+import { Notificaciones } from '../components/mesonero/Notificaciones';
+import { cargarNotificaciones, guardarNotificaciones, type Notificacion } from '../lib/notificaciones';
 import { etiquetaRol } from '../lib/roles';
 import { sonidoNotificacion } from '../lib/sonido';
-
-interface Notificacion {
-  id: string;
-  texto: string;
-}
 
 let secuencia = 0;
 
@@ -28,17 +25,38 @@ export function MesoneroPage() {
   const { usuario, logout } = useAuth();
   const [modo, setModo] = useState<'atender' | 'carta'>('atender');
   const [cuentaActiva, setCuentaActiva] = useState<Cuenta | null>(null);
+  const [lineasPorCuenta, setLineasPorCuenta] = useState<Record<string, Linea[]>>({});
   const [hora, setHora] = useState(horaActual);
-  const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
+  const [notificaciones, setNotificaciones] = useState<Notificacion[]>(() => cargarNotificaciones(usuario?.usuarioId ?? ''));
   const misCuentasRef = useRef<string[]>([]);
+  const nombresMesaRef = useRef<Record<string, string>>({});
+  const notificadasRef = useRef<Set<string>>(new Set());
 
   const susCuentas = useQuery({
     queryKey: ['mis-cuentas'],
     queryFn: () => cuentasApi.listar({ estado: 'Abierta', usuarioId: usuario?.usuarioId, pageSize: 100 }),
   });
 
+  // Persistencia de notificaciones por mesonero: se cargan al entrar (estado inicial
+  // perezoso desde localStorage) y se guardan en cada cambio, de modo que sobreviven
+  // a refrescar la página o reabrir la app.
+  const usuarioId = usuario?.usuarioId;
+
   useEffect(() => {
-    misCuentasRef.current = (susCuentas.data?.items ?? []).map((c) => c.id);
+    if (!usuarioId) return;
+    setNotificaciones(cargarNotificaciones(usuarioId));
+    notificadasRef.current.clear();
+  }, [usuarioId]);
+
+  useEffect(() => {
+    if (!usuarioId) return;
+    guardarNotificaciones(usuarioId, notificaciones);
+  }, [notificaciones, usuarioId]);
+
+  useEffect(() => {
+    const items = susCuentas.data?.items ?? [];
+    misCuentasRef.current = items.map((c) => c.id);
+    nombresMesaRef.current = Object.fromEntries(items.map((c) => [c.id, c.nombreMesa]));
   }, [susCuentas.data]);
 
   useEffect(() => {
@@ -52,20 +70,46 @@ export function MesoneroPage() {
     queryClient.invalidateQueries({ queryKey: ['carta-cuenta'] });
   }, [queryClient]);
 
-  const notificar = useCallback((texto: string) => {
-    setNotificaciones((prev) => [{ id: `n-${Date.now()}-${secuencia++}`, texto }, ...prev].slice(0, 20));
+  const notificar = useCallback((texto: string, tipo: Notificacion['tipo'] = 'info') => {
+    setNotificaciones((prev) =>
+      [{ id: `n-${Date.now()}-${secuencia++}`, texto, cuando: Date.now(), leida: false, tipo }, ...prev].slice(0, 50),
+    );
     toast.info(texto);
-    sonidoNotificacion();
+    sonidoNotificacion(tipo === 'exito' ? 'listo' : 'recibido');
   }, []);
+
+  const marcarLeidas = useCallback(() => {
+    setNotificaciones((prev) => prev.map((n) => (n.leida ? n : { ...n, leida: true })));
+  }, []);
+
+  const descartar = useCallback((id: string) => {
+    setNotificaciones((prev) => prev.filter((n) => n.id !== id));
+  }, []);
+
+  const limpiar = useCallback(() => setNotificaciones([]), []);
 
   useRealtime('meseros', {
     'mesa:actualizada': invalidar,
+    'turno:abierto': () => queryClient.invalidateQueries({ queryKey: ['turno'] }),
+    'turno:cerrado': () => {
+      queryClient.invalidateQueries({ queryKey: ['turno'] });
+      queryClient.invalidateQueries({ queryKey: ['mesas'] });
+      queryClient.invalidateQueries({ queryKey: ['mis-cuentas'] });
+    },
     'comanda:creada': invalidar,
     'comanda:actualizada': invalidar,
     'item:actualizado': (payload) => {
-      const p = payload as { cuentaId?: string; estado?: string; area?: string };
-      if (p.estado === 'Preparado' && p.cuentaId && misCuentasRef.current.includes(p.cuentaId)) {
-        notificar(`Tu pedido está listo (${p.area ?? ''})`);
+      const p = payload as { cuentaId?: string; detalleId?: string; estado?: string; area?: string };
+      const cuentaId = p.cuentaId;
+      if (cuentaId && misCuentasRef.current.includes(cuentaId)) {
+        const clave = `${p.detalleId}-${p.estado}`;
+        if (p.estado === 'EnProceso' && !notificadasRef.current.has(clave)) {
+          notificadasRef.current.add(clave);
+          notificar(`En preparación (${p.area ?? ''}) — mesa ${nombresMesaRef.current[cuentaId] ?? ''}`, 'info');
+        } else if (p.estado === 'Preparado' && !notificadasRef.current.has(clave)) {
+          notificadasRef.current.add(clave);
+          notificar(`Tu pedido está listo (${p.area ?? ''}) — mesa ${nombresMesaRef.current[cuentaId] ?? ''}`, 'exito');
+        }
       }
       invalidar();
     },
@@ -82,8 +126,15 @@ export function MesoneroPage() {
     invalidar();
   };
 
+  const lineasActivas = cuentaActiva ? (lineasPorCuenta[cuentaActiva.id] ?? []) : [];
+
+  const setLineasActivas = (lineas: Linea[]) => {
+    if (!cuentaActiva) return;
+    setLineasPorCuenta((prev) => ({ ...prev, [cuentaActiva.id]: lineas }));
+  };
+
   return (
-    <div className="flex min-h-dvh flex-col bg-background p-4 lg:p-6">
+    <div className="flex h-dvh flex-col overflow-hidden bg-background p-4 lg:p-6">
       {/* Header */}
       <header className="flex items-center gap-3 border-b border-border pb-4">
         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-foreground">
@@ -99,19 +150,12 @@ export function MesoneroPage() {
             <Clock3 size={14} className="text-foreground" /> {hora}
           </span>
 
-          <button
-            type="button"
-            aria-label={`Notificaciones (${notificaciones.length})`}
-            onClick={() => setNotificaciones([])}
-            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-border text-foreground transition hover:bg-accent/10"
-          >
-            <Bell size={17} />
-            {notificaciones.length > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 num text-[10px] text-primary-foreground">
-                {notificaciones.length}
-              </span>
-            )}
-          </button>
+          <Notificaciones
+            notificaciones={notificaciones}
+            onMarcarLeidas={marcarLeidas}
+            onDescartar={descartar}
+            onLimpiar={limpiar}
+          />
 
           <button
             type="button"
@@ -124,23 +168,20 @@ export function MesoneroPage() {
         </div>
       </header>
 
-      {/* Notificaciones desplegables */}
-      {notificaciones.length > 0 && (
-        <div className="absolute right-6 top-16 z-40 flex w-72 flex-col gap-1 rounded-lg border border-border bg-card/95 p-2 shadow-card backdrop-blur">
-          {notificaciones.map((n) => (
-            <p key={n.id} className="rounded-inner bg-primary/10 px-3 py-2 text-xs text-foreground">
-              {n.texto}
-            </p>
-          ))}
-        </div>
-      )}
-
       {/* Contenido */}
       <div className="min-h-0 flex-1 pt-4">
         {modo === 'atender' ? (
           <AtenderView onEntrarCarta={entrarCarta} />
         ) : (
-          cuentaActiva && <PosCarta cuenta={cuentaActiva} onActualizar={setCuentaActiva} onVolver={volver} />
+          cuentaActiva && (
+            <PosCarta
+              cuenta={cuentaActiva}
+              lineas={lineasActivas}
+              onLineasChange={setLineasActivas}
+              onActualizar={setCuentaActiva}
+              onVolver={volver}
+            />
+          )
         )}
       </div>
 

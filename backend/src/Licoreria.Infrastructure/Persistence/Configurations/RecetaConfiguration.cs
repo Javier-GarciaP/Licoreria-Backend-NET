@@ -12,11 +12,11 @@ public class RecetaConfiguration : IEntityTypeConfiguration<Receta>
         builder.HasKey(r => r.Id);
 
         builder.Property(r => r.Cantidad).HasPrecision(14, 3);
-        builder.HasIndex(r => new { r.ProductoId, r.VarianteInsumoId }).IsUnique();
+        builder.HasIndex(r => new { r.VarianteVendidaId, r.VarianteInsumoId }).IsUnique();
 
-        builder.HasOne(r => r.Producto)
-               .WithMany(p => p.Recetas)
-               .HasForeignKey(r => r.ProductoId)
+        builder.HasOne(r => r.VarianteVendida)
+               .WithMany(v => v.RecetasVendidas)
+               .HasForeignKey(r => r.VarianteVendidaId)
                .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(r => r.VarianteInsumo)

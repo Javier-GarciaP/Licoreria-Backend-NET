@@ -72,16 +72,16 @@ public class ProductoRepository : Repository<Producto>, IProductoRepository
             c => c.Codigo == codigo && (excluirVarianteId == null || c.VarianteId != excluirVarianteId),
             cancellationToken);
 
-    public async Task<IReadOnlyList<Receta>> ObtenerRecetasAsync(Guid productoId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Receta>> ObtenerRecetasAsync(Guid varianteVendidaId, CancellationToken cancellationToken = default)
         => await _context.Set<Receta>()
             .AsNoTracking()
             .Include(r => r.VarianteInsumo)
-            .Where(r => r.ProductoId == productoId)
+            .Where(r => r.VarianteVendidaId == varianteVendidaId)
             .ToListAsync(cancellationToken);
 
-    public Task<Receta?> ObtenerRecetaAsync(Guid productoId, Guid recetaId, CancellationToken cancellationToken = default)
+    public Task<Receta?> ObtenerRecetaAsync(Guid varianteVendidaId, Guid recetaId, CancellationToken cancellationToken = default)
         => _context.Set<Receta>()
-            .FirstOrDefaultAsync(r => r.Id == recetaId && r.ProductoId == productoId, cancellationToken);
+            .FirstOrDefaultAsync(r => r.Id == recetaId && r.VarianteVendidaId == varianteVendidaId, cancellationToken);
 
     public async Task AgregarRecetaAsync(Receta receta, CancellationToken cancellationToken = default)
         => await _context.Set<Receta>().AddAsync(receta, cancellationToken);

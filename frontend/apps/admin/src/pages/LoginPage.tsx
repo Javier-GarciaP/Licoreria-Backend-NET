@@ -1,114 +1,17 @@
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
-import { Button, Card, cn, Input } from '@licoreria/ui';
-import { useAuth } from '../context/AuthContext';
-import { mensajeDeError } from '../lib/api';
-import { CUENTAS_DEMO, esRolServicio, inicioDeRol, urlServicio } from '../lib/roles';
-
-const esquema = z.object({
-  username: z.string().min(3, 'Ingresa tu correo o usuario'),
-  password: z.string().min(1, 'Ingresa tu contraseña'),
-});
-
-type Formulario = z.infer<typeof esquema>;
-
-interface RespuestaLogin {
-  rolDominio?: string;
-}
+import { LoginPage as LoginCompartido } from '@licoreria/auth';
+import { LogoCorcho } from '../components/Logo';
 
 export function LoginPage() {
-  const { login } = useAuth() as { login: (u: string, p: string) => Promise<RespuestaLogin> };
-  const navigate = useNavigate();
-  const location = useLocation();
-  const destino = (location.state as { from?: { pathname: string } } | null)?.from?.pathname;
-
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    formState: { errors, isSubmitting },
-  } = useForm<Formulario>({ resolver: zodResolver(esquema), defaultValues: { username: '', password: '' } });
-
-  const autenticar = async (username: string, password: string) => {
-    try {
-      const respuesta = await login(username, password);
-      if (esRolServicio(respuesta.rolDominio)) {
-        window.location.assign(urlServicio());
-        return;
-      }
-      toast.success('Sesión iniciada');
-      navigate(destino ?? inicioDeRol(respuesta.rolDominio), { replace: true });
-    } catch (error) {
-      toast.error('No se pudo iniciar sesión', { description: mensajeDeError(error) });
-    }
-  };
-
-  const enviar = (datos: Formulario) => autenticar(datos.username, datos.password);
-
-  const usarCuenta = (cuenta: (typeof CUENTAS_DEMO)[number]) => {
-    setValue('username', cuenta.email);
-    setValue('password', cuenta.password);
-    void autenticar(cuenta.email, cuenta.password);
-  };
-
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-background px-4 py-10">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-2xl text-primary-foreground">
-            &#127863;
-          </div>
-          <h1 className="text-xl font-medium tracking-tightest text-foreground">Panel interno</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Licorería · Discoteca</p>
-        </div>
-
-        <Card className="p-6">
-          <form className="flex flex-col gap-4" onSubmit={handleSubmit(enviar)} noValidate>
-            <Input
-              label="Correo"
-              type="email"
-              placeholder="admin@licoreria.com"
-              autoComplete="username"
-              error={errors.username?.message}
-              {...register('username')}
-            />
-            <Input
-              label="Contraseña"
-              type="password"
-              placeholder="••••••••"
-              autoComplete="current-password"
-              error={errors.password?.message}
-              {...register('password')}
-            />
-            <Button type="submit" loading={isSubmitting} className="mt-2 w-full">
-              Entrar
-            </Button>
-          </form>
-        </Card>
-
-        <div className="mt-6">
-          <p className="mb-2 text-center text-xs text-muted-foreground">Entrar como</p>
-          <div className="flex flex-wrap justify-center gap-1.5">
-            {CUENTAS_DEMO.map((cuenta) => (
-              <button
-                key={cuenta.email}
-                type="button"
-                onClick={() => usarCuenta(cuenta)}
-                className={cn(
-                  'rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground transition',
-                  'hover:border-primary hover:bg-primary/15 hover:text-foreground',
-                )}
-              >
-                {cuenta.rol}
-              </button>
-            ))}
-          </div>
-          <p className="mt-3 text-center text-[11px] text-muted-foreground">Contraseña demo: <span className="num text-foreground">demo123</span></p>
-        </div>
-      </div>
-    </div>
+    <LoginCompartido
+      app="admin"
+      titulo="Bienvenido a CORCHO"
+      subtitulo="Panel interno · Licorería &amp; Discoteca"
+      logo={
+        <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md">
+          <LogoCorcho className="h-8 w-8" />
+        </span>
+      }
+    />
   );
 }

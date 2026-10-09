@@ -6,7 +6,7 @@ const BASE = 'http://localhost:5190';
 export const handlers = [
   http.post(`${BASE}/api/auth/login`, async ({ request }) => {
     const body = (await request.json()) as { username?: string; password?: string };
-    if (body.username === 'admin@licoreria.com' && body.password === 'admin123') {
+    if (body.username === 'admin@licoreria.com' && body.password === 'demo123') {
       return HttpResponse.json({
         usuarioId: '1',
         nombreCompleto: 'Administrador',

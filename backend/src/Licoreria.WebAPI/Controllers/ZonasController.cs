@@ -9,7 +9,6 @@ namespace Licoreria.WebAPI.Controllers;
 /// <summary>Zonas del local.</summary>
 [ApiController]
 [Route("api/v1/zonas")]
-[Authorize(Policy = Permisos.ClubLeer)]
 public class ZonasController : ControllerBase
 {
     private readonly IServicioClub _servicio;
@@ -17,6 +16,7 @@ public class ZonasController : ControllerBase
     public ZonasController(IServicioClub servicio) => _servicio = servicio;
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<ActionResult<IReadOnlyList<ZonaDto>>> ObtenerTodas(CancellationToken cancellationToken)
         => Ok(await _servicio.ObtenerZonasAsync(cancellationToken));
 

@@ -4,7 +4,9 @@ namespace Licoreria.Domain.Entities;
 
 /// <summary>
 /// Presentación vendible de un producto (botella, tobo, unidad). Concentra el SKU,
-/// la unidad de venta y los precios.
+/// la unidad de venta y los precios. Si <see cref="EsBase"/> es cierto, guarda el
+/// stock y es la presentación que se ordena al proveedor; si no, es una presentación
+/// derivada que consume de la(s) base(s) según sus recetas.
 /// </summary>
 public class ProductoVariante : BaseEntity
 {
@@ -16,11 +18,13 @@ public class ProductoVariante : BaseEntity
     public decimal PrecioCompraUSD { get; set; }
     public decimal PrecioVentaUSD { get; set; }
     public bool Activo { get; set; } = true;
+    public bool EsBase { get; set; } = false;
 
     public Guid UnidadMedidaId { get; set; }
     public UnidadMedida UnidadMedida { get; set; } = null!;
 
     public ICollection<CodigoBarras> CodigosBarras { get; set; } = new List<CodigoBarras>();
+    public ICollection<Receta> RecetasVendidas { get; set; } = new List<Receta>();
 
     public void ActualizarDatos(
         string nombre,

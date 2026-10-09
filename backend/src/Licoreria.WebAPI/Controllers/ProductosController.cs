@@ -66,23 +66,6 @@ public class ProductosController : ControllerBase
     public async Task<IActionResult> Eliminar(Guid id, CancellationToken cancellationToken)
         => await _servicio.EliminarProductoAsync(id, cancellationToken) ? NoContent() : NotFound();
 
-    [HttpGet("{id:guid}/recetas")]
-    public async Task<ActionResult<IReadOnlyList<RecetaDto>>> ObtenerRecetas(Guid id, CancellationToken cancellationToken)
-        => Ok(await _servicio.ObtenerRecetasAsync(id, cancellationToken));
-
-    [HttpPost("{id:guid}/recetas")]
-    [Authorize(Policy = Permisos.CatalogoEscribir)]
-    public async Task<ActionResult<RecetaDto>> AgregarReceta(
-        Guid id,
-        [FromBody] RecetaCrearDto dto,
-        CancellationToken cancellationToken)
-        => StatusCode(StatusCodes.Status201Created, await _servicio.AgregarRecetaAsync(id, dto, cancellationToken));
-
-    [HttpDelete("{id:guid}/recetas/{recetaId:guid}")]
-    [Authorize(Policy = Permisos.CatalogoEscribir)]
-    public async Task<IActionResult> EliminarReceta(Guid id, Guid recetaId, CancellationToken cancellationToken)
-        => await _servicio.EliminarRecetaAsync(id, recetaId, cancellationToken) ? NoContent() : NotFound();
-
     [HttpGet("{id:guid}/modificadores")]
     public async Task<ActionResult<IReadOnlyList<ProductoModificadorDto>>> ObtenerModificadores(Guid id, CancellationToken cancellationToken)
         => Ok(await _servicio.ObtenerModificadoresProductoAsync(id, cancellationToken));

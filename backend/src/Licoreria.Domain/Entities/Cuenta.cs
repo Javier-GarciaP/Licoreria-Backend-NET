@@ -28,11 +28,30 @@ public class Cuenta : BaseEntity
         }
 
         Total += monto;
-        if (Estado == EstadoCuenta.Abierta && Total > 0)
+        MarcarModificado();
+    }
+
+    /// <summary>
+    /// Resta del total un ítem que dejó de formar parte de la cuenta (p. ej. cancelado).
+    /// </summary>
+    public void Descontar(decimal monto)
+    {
+        if (monto < 0)
         {
-            Estado = EstadoCuenta.PorCobrar;
+            throw new InvalidOperationException("El descuento no puede ser negativo.");
         }
 
+        Total = Math.Max(0m, Total - monto);
+        MarcarModificado();
+    }
+
+    /// <summary>
+    /// Vuelve a poner la cuenta en estado Abierta para que el mesonero pueda
+    /// seguir trabajándola (retomar una mesa que quedó por cobrar).
+    /// </summary>
+    public void Reabrir()
+    {
+        Estado = EstadoCuenta.Abierta;
         MarcarModificado();
     }
 

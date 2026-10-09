@@ -47,9 +47,9 @@ public interface IServicioCatalogo
     Task<ProductoDto?> EditarProductoAsync(ProductoEditarDto dto, CancellationToken cancellationToken = default);
     Task<bool> EliminarProductoAsync(Guid id, CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<RecetaDto>> ObtenerRecetasAsync(Guid productoId, CancellationToken cancellationToken = default);
-    Task<RecetaDto> AgregarRecetaAsync(Guid productoId, RecetaCrearDto dto, CancellationToken cancellationToken = default);
-    Task<bool> EliminarRecetaAsync(Guid productoId, Guid recetaId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<RecetaDto>> ObtenerRecetasAsync(Guid varianteVendidaId, CancellationToken cancellationToken = default);
+    Task<RecetaDto> AgregarRecetaAsync(Guid varianteVendidaId, RecetaCrearDto dto, CancellationToken cancellationToken = default);
+    Task<bool> EliminarRecetaAsync(Guid varianteVendidaId, Guid recetaId, CancellationToken cancellationToken = default);
 
     // Modificadores / extras por producto
     Task<IReadOnlyList<ModificadorDto>> ObtenerModificadoresAsync(CancellationToken cancellationToken = default);

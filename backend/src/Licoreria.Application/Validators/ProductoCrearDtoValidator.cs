@@ -17,6 +17,9 @@ public sealed class ProductoCrearDtoValidator : AbstractValidator<ProductoCrearD
         RuleFor(x => x.CategoriaId)
             .NotEmpty().WithMessage("La categoría es obligatoria.");
 
+        RuleFor(x => x.AreaDestino)
+            .IsInEnum().WithMessage("El área destino no es válida.");
+
         RuleFor(x => x.Variantes)
             .NotEmpty().WithMessage("El producto debe tener al menos una variante.");
 
@@ -40,6 +43,9 @@ public sealed class ProductoEditarDtoValidator : AbstractValidator<ProductoEdita
 
         RuleFor(x => x.CategoriaId)
             .NotEmpty().WithMessage("La categoría es obligatoria.");
+
+        RuleFor(x => x.AreaDestino)
+            .IsInEnum().WithMessage("El área destino no es válida.");
 
         RuleFor(x => x.Variantes)
             .NotEmpty().WithMessage("El producto debe tener al menos una variante.");
@@ -73,5 +79,14 @@ public sealed class VarianteCrearDtoValidator : AbstractValidator<VarianteCrearD
 
         RuleForEach(x => x.CodigosBarras)
             .MaximumLength(50).WithMessage("El código de barras no puede superar los 50 caracteres.");
+
+        RuleFor(x => x.StockInicial)
+            .GreaterThanOrEqualTo(0).WithMessage("El stock inicial no puede ser negativo.");
+
+        RuleFor(x => x.StockMinimo)
+            .GreaterThanOrEqualTo(0).WithMessage("El stock mínimo no puede ser negativo.");
+
+        RuleFor(x => x.StockMaximo)
+            .GreaterThanOrEqualTo(0).WithMessage("El stock máximo no puede ser negativo.");
     }
 }

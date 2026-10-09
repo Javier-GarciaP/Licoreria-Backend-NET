@@ -27,6 +27,7 @@ export function EditorOverlay({
   onDelete,
   onLayer,
   onUpdate,
+  onCrearMesa,
   zonas,
   mesas,
   rootRef,
@@ -42,6 +43,7 @@ export function EditorOverlay({
   onDelete: () => void;
   onLayer: (delta: number) => void;
   onUpdate: (cambios: Partial<PlanoElemento>) => void;
+  onCrearMesa: () => void;
   zonas: Zona[];
   mesas: Mesa[];
   rootRef?: React.Ref<HTMLDivElement>;
@@ -212,8 +214,17 @@ export function EditorOverlay({
             </label>
 
             {(elemento.tipo === 'mesa' || elemento.forma?.startsWith('mesa')) && (
-              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+              <div className="flex flex-col gap-1.5 text-xs text-muted-foreground">
                 Mesa operativa
+                {!elemento.mesaId && (
+                  <button
+                    type="button"
+                    onClick={onCrearMesa}
+                    className="flex h-8 items-center justify-center gap-1.5 rounded-control border border-primary/30 bg-primary/10 text-xs font-medium text-foreground transition hover:bg-primary/20"
+                  >
+                    Crear mesa
+                  </button>
+                )}
                 <select
                   value={elemento.mesaId ?? ''}
                   onChange={(e) => onUpdate({ mesaId: e.target.value || null })}
@@ -226,7 +237,7 @@ export function EditorOverlay({
                     </option>
                   ))}
                 </select>
-              </label>
+              </div>
             )}
           </div>
         </div>

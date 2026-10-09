@@ -21,6 +21,7 @@ public class Reserva : BaseEntity
     public void Confirmar() => Estado = EstadoReserva.Confirmada;
     public void Cancelar() => Estado = EstadoReserva.Cancelada;
     public void MarcarAsistencia() => Estado = EstadoReserva.Asistio;
+    public void Finalizar() => Estado = EstadoReserva.Finalizada;
 }
 
 /// <summary>Mesa incluida en una reserva.</summary>

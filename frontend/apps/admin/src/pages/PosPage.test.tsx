@@ -61,7 +61,7 @@ const productoReceta = {
   id: 'prod-3',
   nombre: 'Mojito',
   tipo: 'Preparado',
-  variantes: [{ ...varianteSimple, id: 'var-3', nombre: 'Vaso', precioVentaUSD: 8 }],
+  variantes: [{ ...varianteSimple, id: 'var-3', nombre: 'Vaso', sku: 'MOJ-1', esBase: false, precioVentaUSD: 8 }],
 };
 
 function usarHandlers(onVenta?: (body: unknown) => void) {
@@ -97,7 +97,11 @@ function usarHandlers(onVenta?: (body: unknown) => void) {
         },
       ]),
     ),
-    http.get(`${BASE}/api/v1/productos/prod-3/recetas`, () => HttpResponse.json([])),
+    http.get(`${BASE}/api/v1/variantes/var-3/recetas`, () =>
+      HttpResponse.json([
+        { id: 'rec-1', varianteInsumoId: 'var-2a', varianteInsumoNombre: '750ml', sku: 'RON-750', cantidad: 0.04 },
+      ]),
+    ),
     http.get(`${BASE}/api/v1/local-info`, () =>
       HttpResponse.json({
         id: 'local-1',
@@ -193,6 +197,18 @@ describe('PosPage', () => {
 
     expect(await screen.findByText(/\+ Doble hielo/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Cobrar/ }).textContent).toContain(formatUSD(9.5));
+  });
+
+  it('muestra lo que consume un preparado antes de agregarlo', async () => {
+    usarHandlers();
+    renderPos();
+
+    await userEvent.click(await screen.findByRole('gridcell', { name: /Mojito/ }));
+    const dialog = await screen.findByRole('dialog', { name: 'Mojito' });
+
+    expect(within(dialog).getByText('Consume')).toBeInTheDocument();
+    expect(within(dialog).getByText('750ml')).toBeInTheDocument();
+    expect(within(dialog).getByText('0.04')).toBeInTheDocument();
   });
 
   it('ajusta la cantidad de la línea seleccionada con el atajo +', async () => {

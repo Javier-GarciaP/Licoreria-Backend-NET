@@ -3,7 +3,6 @@ import { cn } from '@licoreria/ui';
 
 const TABS = [
   { to: '/contenido', label: 'Páginas', end: true },
-  { to: '/contenido/eventos', label: 'Eventos', end: false },
   { to: '/contenido/local', label: 'Horarios y local', end: false },
   { to: '/contenido/menu', label: 'Menú y archivos', end: false },
 ];

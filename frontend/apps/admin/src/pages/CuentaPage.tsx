@@ -5,48 +5,58 @@ import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
+import { HandCoins, ArrowLeft, Plus, Receipt, Scissors, UtensilsCrossed, Wallet, X } from 'lucide-react';
 import {
   Button,
   Card,
   CardBody,
   CardHeader,
   CardTitle,
+  cn,
   Input,
   Modal,
-  PageHeader,
   Pill,
   Select,
   Skeleton,
   StatusBadge,
 } from '@licoreria/ui';
-import type { Cuenta, MetodoPago } from '@licoreria/types';
-import { catalogoApi, cuentasApi, ventasApi } from '@licoreria/api-client';
+import type { Cuenta, MetodoPago, Venta } from '@licoreria/types';
+import { cuentasApi, ventasApi } from '@licoreria/api-client';
+import { AgregarComandaModal } from '../components/cuentas/AgregarComandaModal';
+import { TicketVenta } from '../components/pos/TicketVenta';
 import { mensajeDeError } from '../lib/api';
 import { formatUSD, haceCuanto } from '../lib/format';
-
-interface NuevoItem {
-  varianteId: string;
-  nombre: string;
-  precioUSD: number;
-  cantidad: number;
-}
 
 interface PagoLinea {
   metodoPagoId: string;
   monto: number;
-  moneda: 'USD' | 'BS';
 }
 
-const SIGUIENTE_ESTADO: Record<string, string | null> = {
-  Recibido: 'Preparado',
-  Preparado: 'Entregado',
-  Entregado: null,
-};
+function KpiTile({
+  label,
+  value,
+  icon,
+  chip,
+}: {
+  label: string;
+  value: React.ReactNode;
+  icon: React.ReactNode;
+  chip: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
+      <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-full', chip)}>{icon}</span>
+      <div className="min-w-0">
+        <p className="num truncate text-lg font-medium leading-tight text-foreground">{value}</p>
+        <p className="truncate text-[11px] text-muted-foreground">{label}</p>
+      </div>
+    </div>
+  );
+}
 
 const esquemaAbono = z.object({
   metodoPagoId: z.string().min(1, 'Selecciona el método de pago'),
   monto: z.coerce.number({ invalid_type_error: 'Ingresa un monto' }).positive('Debe ser mayor que 0'),
-  moneda: z.enum(['USD', 'BS']),
 });
 
 const esquemaDividir = z.object({
@@ -61,18 +71,19 @@ export function CuentaPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const [busqueda, setBusqueda] = useState('');
-  const [area, setArea] = useState<'Barra' | 'Cocina'>('Barra');
-  const [nuevos, setNuevos] = useState<NuevoItem[]>([]);
+  const [consumoOpen, setConsumoOpen] = useState(false);
+  const [abonoOpen, setAbonoOpen] = useState(false);
+  const [dividirOpen, setDividirOpen] = useState(false);
+  const [cobroOpen, setCobroOpen] = useState(false);
+  const [ventaTicket, setVentaTicket] = useState<Venta | null>(null);
+
   const [pagosCierre, setPagosCierre] = useState<PagoLinea[]>([]);
   const [cierreMetodo, setCierreMetodo] = useState('');
   const [cierreMonto, setCierreMonto] = useState('');
-  const [cierreMoneda, setCierreMoneda] = useState<'USD' | 'BS'>('USD');
-  const [dividirOpen, setDividirOpen] = useState(false);
 
   const abonoForm = useForm<FormularioAbono>({
     resolver: zodResolver(esquemaAbono),
-    defaultValues: { metodoPagoId: '', monto: 0, moneda: 'USD' },
+    defaultValues: { metodoPagoId: '', monto: 0 },
   });
   const dividirForm = useForm<FormularioDividir>({
     resolver: zodResolver(esquemaDividir),
@@ -80,10 +91,6 @@ export function CuentaPage() {
   });
 
   const cuenta = useQuery({ queryKey: ['cuenta', id], queryFn: () => cuentasApi.obtener(id), enabled: Boolean(id) });
-  const productos = useQuery({
-    queryKey: ['cuenta', 'productos', busqueda],
-    queryFn: () => catalogoApi.productos({ busqueda, pageSize: 10, activo: true }),
-  });
   const metodos = useQuery({ queryKey: ['metodos-pago'], queryFn: ventasApi.metodosPago });
 
   const invalidar = () => {
@@ -91,32 +98,11 @@ export function CuentaPage() {
     queryClient.invalidateQueries({ queryKey: ['cuentas'] });
   };
 
-  const agregarComanda = useMutation({
-    mutationFn: () =>
-      cuentasApi.agregarComanda(id, {
-        area,
-        items: nuevos.map((item) => ({ varianteId: item.varianteId, cantidad: item.cantidad })),
-      }),
-    onSuccess: () => {
-      toast.success('Comanda enviada');
-      setNuevos([]);
-      invalidar();
-    },
-    onError: (error) => toast.error('No se pudo enviar la comanda', { description: mensajeDeError(error) }),
-  });
-
-  const cambiarEstado = useMutation({
-    mutationFn: ({ comandaId, detalleId, estado }: { comandaId: string; detalleId: string; estado: string }) =>
-      cuentasApi.cambiarEstadoItem(id, comandaId, detalleId, estado),
-    onSuccess: invalidar,
-    onError: (error) => toast.error('No se pudo actualizar', { description: mensajeDeError(error) }),
-  });
-
   const abonar = useMutation({
-    mutationFn: (datos: FormularioAbono) => cuentasApi.abonar(id, datos),
+    mutationFn: (datos: FormularioAbono) => cuentasApi.abonar(id, { ...datos, moneda: 'USD' }),
     onSuccess: () => {
       toast.success('Abono registrado');
-      abonoForm.reset({ metodoPagoId: '', monto: 0, moneda: 'USD' });
+      abonoForm.reset({ metodoPagoId: '', monto: 0 });
       invalidar();
     },
     onError: (error) => toast.error('No se pudo abonar', { description: mensajeDeError(error) }),
@@ -126,7 +112,6 @@ export function CuentaPage() {
     mutationFn: (datos: FormularioDividir) => cuentasApi.dividir(id, { partes: datos.partes }),
     onSuccess: () => {
       toast.success('Cuenta dividida');
-      setDividirOpen(false);
       dividirForm.reset({ partes: 2 });
       invalidar();
     },
@@ -136,22 +121,38 @@ export function CuentaPage() {
   const cerrar = useMutation({
     mutationFn: () =>
       cuentasApi.cerrar(id, {
-        pagos: pagosCierre.map((pago) => ({ metodoPagoId: pago.metodoPagoId, monto: pago.monto, moneda: pago.moneda })),
+        pagos: pagosCierre.map((pago) => ({ metodoPagoId: pago.metodoPagoId, monto: pago.monto, moneda: 'USD' })),
       }),
     onSuccess: (venta) => {
       toast.success('Cuenta cerrada', { description: `Comprobante ${venta.numeroComprobante ?? venta.id.slice(0, 8)}` });
+      setPagosCierre([]);
+      setCobroOpen(false);
       queryClient.invalidateQueries({ queryKey: ['cuentas'] });
       queryClient.invalidateQueries({ queryKey: ['mesas'] });
-      navigate('/cuentas');
+      setVentaTicket(venta);
     },
     onError: (error) => toast.error('No se pudo cerrar la cuenta', { description: mensajeDeError(error) }),
   });
 
   const datos: Cuenta | undefined = cuenta.data;
-  const totalCierre = useMemo(
-    () => pagosCierre.reduce((acumulado, pago) => acumulado + pago.monto, 0),
-    [pagosCierre],
-  );
+
+  const totalCierre = useMemo(() => pagosCierre.reduce((acumulado, pago) => acumulado + pago.monto, 0), [pagosCierre]);
+  const restante = Math.max(0, (datos?.saldo ?? 0) - totalCierre);
+  const cubierto = restante <= 0.01;
+
+  const abrirCobro = () => {
+    setPagosCierre([]);
+    setCierreMetodo(metodos.data?.[0]?.id ?? '');
+    setCierreMonto(datos ? String(datos.saldo) : '');
+    setCobroOpen(true);
+  };
+
+  const agregarPago = () => {
+    const monto = Number(cierreMonto);
+    if (!cierreMetodo || monto <= 0) return;
+    setPagosCierre((actuales) => [...actuales, { metodoPagoId: cierreMetodo, monto }]);
+    setCierreMonto(String(Math.max(0, restante - monto)));
+  };
 
   if (cuenta.isLoading || !datos) {
     return (
@@ -161,262 +162,188 @@ export function CuentaPage() {
     );
   }
 
-  const agregarNuevo = (nombre: string, varianteId: string, precioUSD: number) => {
-    setNuevos((actuales) => {
-      const existente = actuales.find((item) => item.varianteId === varianteId);
-      if (existente) {
-        return actuales.map((item) => (item.varianteId === varianteId ? { ...item, cantidad: item.cantidad + 1 } : item));
-      }
-      return [...actuales, { varianteId, nombre, precioUSD, cantidad: 1 }];
-    });
-  };
+  const consumos = datos.comandas.reduce(
+    (acumulado, comanda) => acumulado + comanda.detalles.reduce((subtotal, detalle) => subtotal + detalle.cantidad, 0),
+    0,
+  );
 
   return (
     <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader
-        title={`Mesa ${datos.nombreMesa}`}
-        subtitle={`Abierta ${haceCuanto(datos.abiertaEn)}`}
-        actions={<StatusBadge status={datos.estado} />}
-      />
-
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.4fr_1fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Comandas</CardTitle>
-            <span className="text-xs text-muted-foreground">Recibido → Preparado → Entregado</span>
-          </CardHeader>
-          <CardBody className="flex flex-col gap-4">
-            {datos.comandas.length === 0 && <p className="text-sm text-muted-foreground">Sin consumos todavía.</p>}
-            {datos.comandas.map((comanda) => (
-              <div key={comanda.id} className="rounded-lg border border-border p-3">
-                <div className="mb-2 flex items-center justify-between">
-                  <Pill tone={comanda.area === 'Barra' ? 'accent' : 'info'}>{comanda.area}</Pill>
-                  <span className="text-xs text-muted-foreground">{haceCuanto(comanda.fecha)}</span>
-                </div>
-                <div className="flex flex-col gap-1">
-                  {comanda.detalles.map((detalle) => {
-                    const siguiente = SIGUIENTE_ESTADO[detalle.estado];
-                    return (
-                      <div key={detalle.id} className="flex items-center justify-between gap-2 rounded-xl bg-muted/40 px-3 py-2">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm text-foreground">
-                            {detalle.cantidad} × {detalle.nombre}
-                            {detalle.esCortesia && <span className="ml-2 text-xs text-warning-fg">cortesía</span>}
-                          </p>
-                          <p className="text-xs text-muted-foreground">{formatUSD(detalle.subtotalUSD)}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <StatusBadge status={detalle.estado} />
-                          {siguiente && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() =>
-                                cambiarEstado.mutate({ comandaId: comanda.id, detalleId: detalle.id, estado: siguiente })
-                              }
-                            >
-                              {siguiente === 'Preparado' ? 'Preparado' : 'Entregado'}
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </CardBody>
-        </Card>
-
-        <div className="flex flex-col gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Agregar consumo</CardTitle>
-            </CardHeader>
-            <CardBody className="flex flex-col gap-3">
-              <Input placeholder="Buscar producto…" value={busqueda} onChange={(evento) => setBusqueda(evento.target.value)} />
-              <div className="flex gap-2">
-                {(['Barra', 'Cocina'] as const).map((valor) => (
-                  <button
-                    key={valor}
-                    onClick={() => setArea(valor)}
-                    className={`flex-1 rounded-full border px-3 py-2 text-sm transition ${
-                      area === valor ? 'border-primary text-foreground' : 'border-border text-muted-foreground'
-                    }`}
-                  >
-                    {valor}
-                  </button>
-                ))}
-              </div>
-              <div className="grid max-h-56 grid-cols-1 gap-2 overflow-y-auto">
-                {productos.data?.items.map((producto) =>
-                  producto.variantes.map((variante) => (
-                    <button
-                      key={variante.id}
-                      className="flex items-center justify-between rounded-xl border border-border px-3 py-2 text-left text-sm transition hover:border-primary/50"
-                      onClick={() => agregarNuevo(producto.nombre, variante.id, variante.precioVentaUSD)}
-                    >
-                      <span className="text-foreground">{producto.nombre}</span>
-                      <span className="text-xs text-muted-foreground">{formatUSD(variante.precioVentaUSD)}</span>
-                    </button>
-                  )),
-                )}
-              </div>
-              {nuevos.length > 0 && (
-                <div className="rounded-lg bg-muted/40 p-3">
-                  {nuevos.map((item) => (
-                    <div key={item.varianteId} className="flex items-center justify-between text-sm">
-                      <span className="text-foreground">{item.cantidad} × {item.nombre}</span>
-                      <span className="text-muted-foreground">{formatUSD(item.precioUSD * item.cantidad)}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <Button disabled={nuevos.length === 0} loading={agregarComanda.isPending} onClick={() => agregarComanda.mutate()}>
-                Enviar a {area}
-              </Button>
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Abonar</CardTitle>
-              <span className="text-xs text-muted-foreground">Saldo {formatUSD(datos.saldo)}</span>
-            </CardHeader>
-            <CardBody className="flex flex-col gap-3">
-              <form
-                className="flex flex-col gap-3"
-                onSubmit={abonoForm.handleSubmit((datos) => abonar.mutate(datos))}
-                noValidate
-              >
-                <div className="grid grid-cols-2 gap-2">
-                  <Select
-                    aria-label="Método de pago"
-                    error={abonoForm.formState.errors.metodoPagoId?.message}
-                    {...abonoForm.register('metodoPagoId')}
-                  >
-                    <option value="">Método…</option>
-                    {metodos.data?.map((metodo: MetodoPago) => (
-                      <option key={metodo.id} value={metodo.id}>{metodo.nombre}</option>
-                    ))}
-                  </Select>
-                  <Select aria-label="Moneda" {...abonoForm.register('moneda')}>
-                    <option value="USD">USD</option>
-                    <option value="BS">Bs</option>
-                  </Select>
-                </div>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Monto"
-                    error={abonoForm.formState.errors.monto?.message}
-                    {...abonoForm.register('monto')}
-                  />
-                  <Button type="submit" variant="ghost" loading={abonar.isPending}>
-                    Abonar
-                  </Button>
-                </div>
-              </form>
-              {datos.abonos.length > 0 && (
-                <div className="flex flex-col gap-1">
-                  {datos.abonos.map((abono) => (
-                    <div key={abono.id} className="flex justify-between text-xs text-muted-foreground">
-                      <span>{abono.metodoPago}</span>
-                      <span>{abono.moneda === 'USD' ? formatUSD(abono.monto) : `Bs ${abono.monto}`}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Dividir cuenta</CardTitle>
-              {datos.divisiones.length > 0 && <Pill tone="accent">{datos.divisiones.length} partes</Pill>}
-            </CardHeader>
-            <CardBody className="flex flex-col gap-3">
-              {datos.divisiones.length > 0 ? (
-                <div className="flex flex-col gap-1">
-                  {datos.divisiones.map((division) => (
-                    <div key={division.id} className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Parte {division.indice}</span>
-                      <span className={division.pagada ? 'text-success-fg' : 'text-foreground'}>{formatUSD(division.monto)}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">Divide la cuenta en partes iguales para cobrar por separado.</p>
-              )}
-              <Button variant="ghost" size="sm" onClick={() => setDividirOpen(true)}>
-                Dividir en partes
-              </Button>
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Cerrar cuenta</CardTitle>
-              <span className="text-xs text-muted-foreground">
-                Total <span className="num">{formatUSD(datos.total)}</span>
-              </span>
-            </CardHeader>
-            <CardBody className="flex flex-col gap-3">
-              <div className="grid grid-cols-2 gap-2">
-                <select
-                  className="h-10 rounded-control border border-border bg-card px-3 text-sm text-foreground"
-                  value={cierreMetodo}
-                  onChange={(evento) => setCierreMetodo(evento.target.value)}
-                >
-                  <option value="">Método…</option>
-                  {metodos.data?.map((metodo: MetodoPago) => (
-                    <option key={metodo.id} value={metodo.id}>{metodo.nombre}</option>
-                  ))}
-                </select>
-                <select
-                  className="h-10 rounded-control border border-border bg-card px-3 text-sm text-foreground"
-                  value={cierreMoneda}
-                  onChange={(evento) => setCierreMoneda(evento.target.value as 'USD' | 'BS')}
-                >
-                  <option value="USD">USD</option>
-                  <option value="BS">Bs</option>
-                </select>
-              </div>
-              <div className="flex gap-2">
-                <Input type="number" placeholder="Monto" value={cierreMonto} onChange={(evento) => setCierreMonto(evento.target.value)} />
-                <Button
-                  variant="ghost"
-                  disabled={!cierreMetodo || Number(cierreMonto) <= 0}
-                  onClick={() => {
-                    setPagosCierre((actuales) => [...actuales, { metodoPagoId: cierreMetodo, monto: Number(cierreMonto), moneda: cierreMoneda }]);
-                    setCierreMonto('');
-                  }}
-                >
-                  Añadir
-                </Button>
-              </div>
-              {pagosCierre.length > 0 && (
-                <div className="flex flex-col gap-1">
-                  {pagosCierre.map((pago, indice) => (
-                    <div key={indice} className="flex justify-between text-xs text-muted-foreground">
-                      <span>{metodos.data?.find((metodo) => metodo.id === pago.metodoPagoId)?.nombre}</span>
-                      <span>{pago.moneda === 'USD' ? formatUSD(pago.monto) : `Bs ${pago.monto}`}</span>
-                    </div>
-                  ))}
-                  <span className="text-right text-xs text-foreground">Registrado: {formatUSD(totalCierre)}</span>
-                </div>
-              )}
-              <Button
-                disabled={pagosCierre.length === 0}
-                loading={cerrar.isPending}
-                onClick={() => cerrar.mutate()}
-              >
-                Cobrar y cerrar
-              </Button>
-            </CardBody>
-          </Card>
+      <div className="flex flex-wrap items-center gap-2 border-b border-border pb-2">
+        <Button variant="ghost" size="sm" type="button" onClick={() => navigate('/cuentas')} aria-label="Volver">
+          <ArrowLeft size={16} />
+        </Button>
+        <div>
+          <p className="text-base font-medium tracking-tighter2 text-foreground">Mesa {datos.nombreMesa}</p>
+          <p className="text-xs text-muted-foreground">
+            Abierta {haceCuanto(datos.abiertaEn)}{datos.cliente ? ` · ${datos.cliente}` : ''}
+          </p>
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          <StatusBadge status={datos.estado} />
+          <Button disabled={datos.estado !== 'Abierta'} onClick={abrirCobro} leftIcon={<Wallet size={16} />}>
+            Cobrar
+          </Button>
         </div>
       </div>
+
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <KpiTile label="Saldo" value={formatUSD(datos.saldo)} icon={<Wallet size={16} />} chip="bg-butter/25 text-butter-fg" />
+        <KpiTile label="Total" value={formatUSD(datos.total)} icon={<Receipt size={16} />} chip="bg-primary/25 text-foreground" />
+        <KpiTile label="Abonado" value={formatUSD(datos.totalAbonado)} icon={<HandCoins size={16} />} chip="bg-success/25 text-success-fg" />
+        <KpiTile label="Consumos" value={consumos} icon={<UtensilsCrossed size={16} />} chip="bg-info/25 text-info-fg" />
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Consumos</CardTitle>
+          <span className="text-xs text-muted-foreground">
+            {datos.comandas.length} comanda{datos.comandas.length === 1 ? '' : 's'}
+          </span>
+        </CardHeader>
+        <CardBody className="flex flex-col gap-4">
+          {datos.comandas.length === 0 && <p className="text-sm text-muted-foreground">Sin consumos todavía.</p>}
+          {datos.comandas.map((comanda) => (
+            <div key={comanda.id} className="rounded-lg border border-border p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <Pill tone={comanda.area === 'Barra' ? 'accent' : 'info'}>{comanda.area}</Pill>
+                <span className="text-xs text-muted-foreground">{haceCuanto(comanda.fecha)}</span>
+              </div>
+              <div className="flex flex-col gap-1">
+                {comanda.detalles.map((detalle) => (
+                  <div key={detalle.id} className="flex items-center justify-between gap-2 rounded-xl bg-muted/40 px-3 py-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm text-foreground">
+                        {detalle.cantidad} × {detalle.nombre}
+                        {detalle.esCortesia && <span className="ml-2 text-xs text-warning-fg">cortesía</span>}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{formatUSD(detalle.subtotalUSD)}</p>
+                    </div>
+                    <StatusBadge status={detalle.estado} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Acciones</CardTitle>
+        </CardHeader>
+        <CardBody className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <Button variant="ghost" onClick={() => setConsumoOpen(true)} leftIcon={<Plus size={16} />}>
+            Agregar a la comanda
+          </Button>
+          <Button variant="ghost" onClick={() => setAbonoOpen(true)} leftIcon={<HandCoins size={16} />}>
+            Abonar
+          </Button>
+          <Button variant="ghost" onClick={() => setDividirOpen(true)} leftIcon={<Scissors size={16} />}>
+            Dividir
+          </Button>
+        </CardBody>
+      </Card>
+
+      <AgregarComandaModal
+        cuentaId={id}
+        abierto={consumoOpen}
+        onCerrar={() => setConsumoOpen(false)}
+        onEnviado={invalidar}
+      />
+
+      <Modal
+        open={abonoOpen}
+        onClose={() => setAbonoOpen(false)}
+        title="Pago parcial (abono)"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setAbonoOpen(false)}>
+              Cerrar
+            </Button>
+            <Button type="submit" form="form-abono" loading={abonar.isPending}>
+              Registrar abono
+            </Button>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <div className="rounded-xl border border-border bg-muted/40 px-4 py-3">
+            <div className="flex items-baseline justify-between">
+              <span className="text-sm text-muted-foreground">Saldo pendiente</span>
+              <span className="num text-xl font-medium text-foreground">{formatUSD(datos.saldo)}</span>
+            </div>
+            {Number(abonoForm.watch('monto')) > 0 && (
+              <div className="mt-1 flex items-baseline justify-between">
+                <span className="text-sm text-muted-foreground">Quedará pendiente</span>
+                <span className="num text-sm font-medium text-foreground">
+                  {formatUSD(Math.max(0, datos.saldo - Number(abonoForm.watch('monto'))))}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <form
+            id="form-abono"
+            className="flex flex-col gap-3"
+            onSubmit={abonoForm.handleSubmit((valores) => abonar.mutate(valores))}
+            noValidate
+          >
+            <div>
+              <p className="mb-1.5 text-sm font-medium text-foreground">Método de pago</p>
+              <div className="flex flex-wrap gap-2">
+                {metodos.data?.map((metodo: MetodoPago) => {
+                  const activo = abonoForm.watch('metodoPagoId') === metodo.id;
+                  return (
+                    <button
+                      key={metodo.id}
+                      type="button"
+                      onClick={() => abonoForm.setValue('metodoPagoId', metodo.id, { shouldValidate: true })}
+                      className={cn(
+                        'flex h-9 items-center gap-2 rounded-full border px-3.5 text-sm transition',
+                        activo ? 'border-primary bg-primary/15 text-foreground' : 'border-border text-muted-foreground hover:text-foreground',
+                      )}
+                    >
+                      {metodo.nombre}
+                    </button>
+                  );
+                })}
+              </div>
+              {abonoForm.formState.errors.metodoPagoId?.message && (
+                <p className="mt-1 text-sm text-destructive-fg">{abonoForm.formState.errors.metodoPagoId.message}</p>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Input
+                type="number"
+                placeholder="Monto (USD)"
+                error={abonoForm.formState.errors.monto?.message}
+                {...abonoForm.register('monto')}
+              />
+              <div className="flex gap-2">
+                <Button type="button" variant="ghost" size="sm" onClick={() => abonoForm.setValue('monto', datos.saldo / 2)}>
+                  Mitad
+                </Button>
+                <Button type="button" variant="ghost" size="sm" onClick={() => abonoForm.setValue('monto', datos.saldo)}>
+                  Saldo completo
+                </Button>
+              </div>
+            </div>
+          </form>
+
+          <div className="flex flex-col gap-1">
+            <p className="text-xs font-medium text-muted-foreground">Historial de abonos</p>
+            {datos.abonos.length === 0 && <p className="text-sm text-muted-foreground">Sin abonos todavía.</p>}
+            {datos.abonos.map((abono) => (
+              <div key={abono.id} className="flex justify-between text-xs text-muted-foreground">
+                <span>{abono.metodoPago}</span>
+                <span className="num text-foreground">{formatUSD(abono.monto)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Modal>
 
       <Modal
         open={dividirOpen}
@@ -433,16 +360,147 @@ export function CuentaPage() {
           </>
         }
       >
-        <form id="form-dividir" onSubmit={dividirForm.handleSubmit((datos) => dividir.mutate(datos))} noValidate>
-          <Input
-            label="Número de partes"
-            type="number"
-            placeholder="2"
-            error={dividirForm.formState.errors.partes?.message}
-            {...dividirForm.register('partes')}
-          />
-        </form>
+        <div className="flex flex-col gap-4">
+          <div className="rounded-xl border border-border bg-muted/40 px-4 py-3">
+            <div className="flex items-baseline justify-between">
+              <span className="text-sm text-muted-foreground">Saldo a dividir</span>
+              <span className="num text-xl font-medium text-foreground">{formatUSD(datos.saldo)}</span>
+            </div>
+          </div>
+
+          <form id="form-dividir" onSubmit={dividirForm.handleSubmit((valores) => dividir.mutate(valores))} noValidate className="flex flex-col gap-3">
+            <div>
+              <p className="mb-1.5 text-sm font-medium text-foreground">Número de partes</p>
+              <div className="flex flex-wrap gap-2">
+                {[2, 3, 4, 5, 6].map((numero) => {
+                  const activo = Number(dividirForm.watch('partes')) === numero;
+                  return (
+                    <button
+                      key={numero}
+                      type="button"
+                      onClick={() => dividirForm.setValue('partes', numero)}
+                      className={cn(
+                        'flex h-9 min-w-10 items-center justify-center rounded-full border px-3 text-sm transition',
+                        activo ? 'border-primary bg-primary/15 text-foreground' : 'border-border text-muted-foreground hover:text-foreground',
+                      )}
+                    >
+                      {numero}
+                    </button>
+                  );
+                })}
+                <input
+                  type="number"
+                  min={2}
+                  placeholder="N"
+                  aria-label="Número de partes"
+                  className="h-9 w-20 rounded-control border border-border bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/50"
+                  {...dividirForm.register('partes')}
+                />
+              </div>
+              {dividirForm.formState.errors.partes?.message && (
+                <p className="mt-1 text-sm text-destructive-fg">{dividirForm.formState.errors.partes.message}</p>
+              )}
+            </div>
+            {datos.saldo > 0 && Number(dividirForm.watch('partes')) >= 2 && (
+              <p className="text-sm text-muted-foreground">
+                Se divide en <span className="num font-medium text-foreground">{Number(dividirForm.watch('partes'))}</span> partes de{' '}
+                <span className="num font-medium text-foreground">{formatUSD(datos.saldo / Number(dividirForm.watch('partes')))}</span> aprox.
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">Divide para cobrar cada parte por separado. La cuenta sigue abierta.</p>
+          </form>
+
+          {datos.divisiones.length > 0 && (
+            <div className="flex flex-col gap-1">
+              <p className="text-xs font-medium text-muted-foreground">Partes actuales</p>
+              {datos.divisiones.map((division) => (
+                <div key={division.id} className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Parte {division.indice}</span>
+                  <span className={division.pagada ? 'text-success-fg' : 'text-foreground'}>{formatUSD(division.monto)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </Modal>
+
+      <Modal
+        open={cobroOpen}
+        onClose={() => setCobroOpen(false)}
+        title="Cobrar cuenta"
+        size="md"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setCobroOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={pagosCierre.length === 0 || !cubierto}
+              loading={cerrar.isPending}
+              onClick={() => cerrar.mutate()}
+              leftIcon={<Wallet size={16} />}
+            >
+              Cobrar y cerrar
+            </Button>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <div className="flex items-baseline justify-between rounded-xl border border-border bg-muted/40 px-4 py-3">
+            <span className="text-sm text-muted-foreground">Saldo a cobrar</span>
+            <span className="num text-xl font-medium text-foreground">{formatUSD(datos.saldo)}</span>
+          </div>
+
+          <div className="flex gap-2">
+            <Select aria-label="Método de pago" value={cierreMetodo} onChange={(evento) => setCierreMetodo(evento.target.value)}>
+              <option value="">Método…</option>
+              {metodos.data?.map((metodo: MetodoPago) => (
+                <option key={metodo.id} value={metodo.id}>
+                  {metodo.nombre}
+                </option>
+              ))}
+            </Select>
+            <Input
+              aria-label="Monto"
+              type="number"
+              placeholder="Monto"
+              value={cierreMonto}
+              onChange={(evento) => setCierreMonto(evento.target.value)}
+            />
+            <Button
+              variant="ghost"
+              disabled={!cierreMetodo || Number(cierreMonto) <= 0}
+              onClick={agregarPago}
+            >
+              Añadir
+            </Button>
+          </div>
+
+          {pagosCierre.length > 0 && (
+            <div className="flex flex-col gap-1">
+              {pagosCierre.map((pago, indice) => (
+                <div key={indice} className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                  <span>{metodos.data?.find((metodo) => metodo.id === pago.metodoPagoId)?.nombre ?? '—'}</span>
+                  <span className="num text-foreground">{formatUSD(pago.monto)}</span>
+                  <button
+                    type="button"
+                    aria-label="Quitar pago"
+                    onClick={() => setPagosCierre((actuales) => actuales.filter((_, i) => i !== indice))}
+                    className="flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground transition hover:text-foreground"
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+              ))}
+              <span className="text-right text-xs text-foreground">
+                Registrado: {formatUSD(totalCierre)} · {cubierto ? <span className="text-success-fg">Saldo cubierto</span> : <span>Falta {formatUSD(restante)}</span>}
+              </span>
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      <TicketVenta venta={ventaTicket} onCerrar={() => navigate('/cuentas')} />
     </div>
   );
 }

@@ -11,6 +11,10 @@ public interface IInventarioRepository
 {
     Task<StockProducto?> ObtenerStockAsync(Guid varianteId, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<StockProducto>> ObtenerStockDeVariantesAsync(
+        IReadOnlyList<Guid> varianteIds,
+        CancellationToken cancellationToken = default);
+
     Task<ProductoVariante?> ObtenerVarianteConRecetasAsync(Guid varianteId, CancellationToken cancellationToken = default);
 
     Task<ResultadoPaginado<StockProducto>> ObtenerStockPaginadoAsync(

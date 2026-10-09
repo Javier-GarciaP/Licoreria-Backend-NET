@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { lazy, Suspense, useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { lazy, Suspense, useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowUpRight,
   CalendarDays,
@@ -9,12 +9,16 @@ import {
   Instagram,
   MapPin,
   MessageCircle,
+  Search,
   Wine,
 } from 'lucide-react';
 import { publicApi } from '@licoreria/api-client';
-import type { Evento, MenuSeccion, Mesa, MetodoPago, Reserva } from '@licoreria/types';
+import type { Evento, MenuSeccion, MetodoPago, Reserva } from '@licoreria/types';
 import { BotanicalWatermark } from './components/BotanicalWatermark';
+import { MapaView, type EstadoMesaPlano } from './components/mapa/MapaView';
+import { estadoMesaPublic, planoVisible } from './lib/plano';
 import { formatBS, formatFecha, formatUSD } from './lib/format';
+import { urlDeImagen } from './lib/imagenes';
 
 const Bottle3D = lazy(() => import('./components/Bottle3D').then((m) => ({ default: m.Bottle3D })));
 
@@ -184,6 +188,16 @@ function Statement() {
 }
 
 function CartaSection({ secciones, cargando, error }: { secciones: MenuSeccion[]; cargando: boolean; error: boolean }) {
+  const [busqueda, setBusqueda] = useState('');
+
+  const termino = busqueda.trim().toLowerCase();
+  const filtradas = termino
+    ? secciones
+        .map((seccion) => ({ ...seccion, items: seccion.items.filter((item) => item.nombre.toLowerCase().includes(termino)) }))
+        .filter((seccion) => seccion.items.length > 0)
+    : secciones;
+  const totalItems = secciones.reduce((suma, seccion) => suma + seccion.items.length, 0);
+
   return (
     <section id="carta" className="relative isolate py-20 sm:py-24">
       <div className="mx-auto max-w-poster px-5 sm:px-8 lg:px-12">
@@ -198,16 +212,37 @@ function CartaSection({ secciones, cargando, error }: { secciones: MenuSeccion[]
           </p>
         </div>
 
-        <div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-2">
+            <span className="tag-outline">{secciones.length} CATEGORÍAS</span>
+            <span className="tag-outline">{totalItems} ÍTEMS</span>
+          </div>
+          <label className="relative block w-full max-w-sm">
+            <Search
+              size={15}
+              strokeWidth={1.8}
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-tiger-gold/60"
+            />
+            <input
+              type="search"
+              value={busqueda}
+              onChange={(evento) => setBusqueda(evento.target.value)}
+              placeholder="Buscar en la carta…"
+              className="w-full rounded-button border border-cardamom-brown bg-charred-clove py-2.5 pl-10 pr-4 text-[13px] text-tiger-gold placeholder:text-tiger-gold/40 focus:border-tiger-gold focus:outline-none"
+            />
+          </label>
+        </div>
+
+        <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {cargando &&
             Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="h-64 animate-pulse rounded-card bg-dark-spice" />
             ))}
 
           {!cargando &&
-            secciones.map((seccion) => (
-              <article key={seccion.categoriaId} className="rounded-card bg-dark-spice p-5">
-                <div className="flex items-baseline justify-between gap-3 border-b border-dotted border-cardamom-brown pb-3">
+            filtradas.map((seccion) => (
+              <article key={seccion.categoriaId} className="flex flex-col overflow-hidden rounded-card bg-dark-spice">
+                <div className="flex items-baseline justify-between gap-3 border-b border-dotted border-cardamom-brown px-5 pb-3 pt-5">
                   <h3 className="font-display text-2xl font-semibold uppercase tracking-[0.02em] text-tiger-gold">
                     {seccion.nombre}
                   </h3>
@@ -215,15 +250,27 @@ function CartaSection({ secciones, cargando, error }: { secciones: MenuSeccion[]
                     {seccion.items.length} ítems
                   </span>
                 </div>
-                <ul className="mt-2 flex flex-col">
-                  {seccion.items.map((item, index) => (
-                    <li
-                      key={item.varianteId}
-                      className={`flex items-center justify-between gap-4 py-2.5 ${
-                        index < seccion.items.length - 1 ? 'border-b border-dotted border-cardamom-brown/60' : ''
-                      }`}
-                    >
-                      <span className="text-[13px] text-tiger-gold">{item.nombre}</span>
+                <ul className="flex flex-1 flex-col px-5 pb-5 pt-1">
+                  {seccion.items.map((item) => (
+                    <li key={item.varianteId} className="flex items-center gap-3.5 py-2.5">
+                      {item.imagenUrl ? (
+                        <img
+                          src={urlDeImagen(item.imagenUrl)}
+                          alt={item.nombre}
+                          loading="lazy"
+                          className="h-14 w-14 shrink-0 rounded-card border border-cardamom-brown/40 object-cover"
+                        />
+                      ) : (
+                        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-card border border-cardamom-brown/40 bg-charred-clove">
+                          <Wine size={20} strokeWidth={1.5} className="text-tiger-gold/50" />
+                        </span>
+                      )}
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[13px] text-tiger-gold">{item.nombre}</span>
+                        <span className="mt-0.5 block text-[11px] uppercase tracking-[0.14em] text-tiger-gold/40">
+                          {item.sku}
+                        </span>
+                      </span>
                       <span className="shrink-0 text-right">
                         <span className="block font-display text-base font-semibold text-tiger-gold">
                           {formatUSD(item.precioUSD)}
@@ -236,8 +283,10 @@ function CartaSection({ secciones, cargando, error }: { secciones: MenuSeccion[]
               </article>
             ))}
 
-          {!cargando && !error && secciones.length === 0 && (
-            <p className="text-subheading text-tiger-gold/70">La carta se está actualizando. Vuelve en un momento.</p>
+          {!cargando && !error && filtradas.length === 0 && (
+            <p className="text-subheading text-tiger-gold/70">
+              {busqueda ? 'Sin resultados para tu búsqueda.' : 'La carta se está actualizando. Vuelve en un momento.'}
+            </p>
           )}
 
           {!cargando && error && (
@@ -277,7 +326,12 @@ function EventosSection({ eventos, cargando }: { eventos: Evento[]; cargando: bo
             eventos.map((evento) => (
               <article key={evento.id} className="overflow-hidden rounded-card bg-dark-spice">
                 {evento.imagenUrl ? (
-                  <img src={evento.imagenUrl} alt={evento.titulo} className="h-44 w-full object-cover" loading="lazy" />
+                  <img
+                    src={urlDeImagen(evento.imagenUrl)}
+                    alt={evento.titulo}
+                    className="h-44 w-full object-cover"
+                    loading="lazy"
+                  />
                 ) : (
                   <div className="flex h-44 w-full items-center justify-center bg-charred-clove">
                     <span className="display-type text-[64px] leading-none">{evento.titulo.charAt(0)}</span>
@@ -358,10 +412,16 @@ function HoySection({
   );
 }
 
-function ReservaSection({ whatsapp }: { whatsapp: string | null }) {
-  const mesas = useQuery({ queryKey: ['reservar-mesas'], queryFn: publicApi.mesas });
-  const metodos = useQuery({ queryKey: ['reservar-metodos'], queryFn: publicApi.metodosPago });
+function Leyenda({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="flex items-center gap-2">
+      <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: color }} />
+      {label}
+    </span>
+  );
+}
 
+function ReservaSection({ whatsapp }: { whatsapp: string | null }) {
   const [fecha, setFecha] = useState('');
   const [personas, setPersonas] = useState('2');
   const [seleccion, setSeleccion] = useState<string[]>([]);
@@ -373,14 +433,42 @@ function ReservaSection({ whatsapp }: { whatsapp: string | null }) {
   const [monto, setMonto] = useState('');
   const [creada, setCreada] = useState<Reserva | null>(null);
 
+  const planos = useQuery({ queryKey: ['reservar-planos'], queryFn: publicApi.planos });
+  const zonas = useQuery({ queryKey: ['reservar-zonas'], queryFn: publicApi.zonas });
+  const mesas = useQuery({
+    queryKey: ['reservar-mesas', fecha],
+    queryFn: () => publicApi.mesas(fecha ? new Date(fecha).toISOString() : undefined),
+  });
+  const metodos = useQuery({ queryKey: ['reservar-metodos'], queryFn: publicApi.metodosPago });
+
+  const puedeElegir = fecha !== '';
+  const seleccionSet = new Set(seleccion);
+  const plano = planoVisible(planos.data ?? [], mesas.data ?? []);
+  const estadoPorMesa: Record<string, EstadoMesaPlano> = {};
+  for (const mesa of mesas.data ?? []) {
+    estadoPorMesa[mesa.id] = estadoMesaPublic(mesa, seleccionSet, puedeElegir);
+  }
+  const numeroPorMesa = Object.fromEntries((mesas.data ?? []).map((mesa) => [mesa.id, mesa.numero]));
+  const capacidadSeleccionada = (mesas.data ?? [])
+    .filter((mesa) => seleccion.includes(mesa.id))
+    .reduce((suma, mesa) => suma + mesa.capacidad, 0);
+  const capacidadSuficiente = capacidadSeleccionada >= Number(personas || 0);
+
+  useEffect(() => {
+    const datos = mesas.data;
+    if (!datos) return;
+    const disponibles = new Set(
+      datos
+        .filter((mesa) => mesa.activa && (puedeElegir || !mesa.cuentaId) && !mesa.reservada)
+        .map((mesa) => mesa.id),
+    );
+    setSeleccion((actual) => actual.filter((id) => disponibles.has(id)));
+  }, [mesas.data, puedeElegir]);
+
   const toggleMesa = (id: string) =>
     setSeleccion((actuales) => (actuales.includes(id) ? actuales.filter((x) => x !== id) : [...actuales, id]));
 
-  const porZona = (mesas.data ?? []).reduce<Record<string, Mesa[]>>((acc, mesa) => {
-    (acc[mesa.zonaNombre] ??= []).push(mesa);
-    return acc;
-  }, {});
-
+  const queryClient = useQueryClient();
   const reservar = useMutation({
     mutationFn: async () => {
       const reserva = await publicApi.crearReserva({
@@ -403,6 +491,9 @@ function ReservaSection({ whatsapp }: { whatsapp: string | null }) {
       return reserva;
     },
     onSuccess: (reserva) => setCreada(reserva),
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ['reservar-mesas'] });
+    },
   });
 
   const puedeEnviar = fecha && seleccion.length > 0 && nombre.trim().length >= 2 && telefono.trim().length >= 6;
@@ -446,7 +537,7 @@ function ReservaSection({ whatsapp }: { whatsapp: string | null }) {
             )}
           </div>
         ) : (
-          <div className="mx-auto mt-12 flex max-w-3xl flex-col gap-5 rounded-card bg-dark-spice p-6 sm:p-8">
+          <div className="mx-auto mt-12 flex max-w-5xl flex-col gap-5 rounded-card bg-dark-spice p-6 sm:p-8">
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="flex flex-col gap-1.5">
                 <span className="eyebrow">Fecha y hora</span>
@@ -470,37 +561,69 @@ function ReservaSection({ whatsapp }: { whatsapp: string | null }) {
             </div>
 
             <div>
-              <span className="eyebrow">Mesas disponibles</span>
-              <div className="mt-2 flex flex-col gap-3">
-                {Object.entries(porZona).map(([zona, mesasZona]) => (
-                  <div key={zona}>
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-tiger-gold/50">{zona}</p>
-                    <div className="mt-1.5 flex flex-wrap gap-2">
-                      {mesasZona.map((mesa) => {
-                        const activa = seleccion.includes(mesa.id);
-                        return (
-                          <button
-                            key={mesa.id}
-                            type="button"
-                            onClick={() => toggleMesa(mesa.id)}
-                            aria-pressed={activa}
-                            className={`rounded-button border px-3 py-1.5 text-[12px] uppercase tracking-[0.1em] transition ${
-                              activa
-                                ? 'border-tiger-gold bg-tiger-gold text-charred-clove'
-                                : 'border-tiger-gold/50 text-tiger-gold/80 hover:border-tiger-gold'
-                            }`}
-                          >
-                            {mesa.numero} · {mesa.capacidad}p
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-                {(mesas.data?.length ?? 0) === 0 && (
-                  <p className="text-[13px] text-tiger-gold/60">Consultamos disponibilidad por WhatsApp.</p>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="eyebrow">Elige tus mesas en el plano</span>
+                {seleccion.length > 0 && (
+                  <span className="text-[12px] uppercase tracking-[0.1em] text-tiger-gold/70">
+                    {seleccion.length} mesa{seleccion.length === 1 ? '' : 's'} · {capacidadSeleccionada} cupos
+                  </span>
                 )}
               </div>
+
+              {!puedeElegir && (
+                <p className="mt-2 text-[13px] text-tiger-gold/60">
+                  Toca una mesa libre para elegirla. Elige fecha y hora para ver la disponibilidad de esa noche.
+                </p>
+              )}
+
+              {mesas.isLoading && <div className="mt-4 h-64 animate-pulse rounded-card bg-charred-clove" />}
+
+              {!mesas.isLoading && (mesas.data?.length ?? 0) > 0 && (
+                <div className="mt-4 overflow-x-auto rounded-card border border-cardamom-brown/60 bg-charred-clove p-4">
+                  <MapaView
+                    plano={plano}
+                    zonas={zonas.data ?? []}
+                    estadoPorMesa={estadoPorMesa}
+                    numeroPorMesa={numeroPorMesa}
+                    onElementoPointerDown={(evento, elemento) => {
+                      if (!elemento.mesaId) return;
+                      const mesa = mesas.data?.find((m) => m.id === elemento.mesaId);
+                      if (!mesa) return;
+                      const estado = estadoMesaPublic(mesa, seleccionSet, puedeElegir);
+                      if (estado === 'Libre' || estado === 'Seleccionada') toggleMesa(mesa.id);
+                    }}
+                  />
+                  <div className="mt-4 flex flex-wrap gap-4 text-[11px] uppercase tracking-[0.12em] text-tiger-gold/70">
+                    <Leyenda color="#3fbf7f" label="Libre" />
+                    <Leyenda color="#faae33" label="Seleccionada" />
+                    <Leyenda color="#e6a23c" label="Reservada" />
+                    <Leyenda color="#d1255c" label="Ocupada" />
+                  </div>
+                </div>
+              )}
+
+              {!mesas.isLoading && seleccion.length > 0 && (
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  {seleccion.map((id) => {
+                    const mesa = mesas.data?.find((m) => m.id === id);
+                    return (
+                      <button key={id} type="button" onClick={() => toggleMesa(id)} aria-pressed className="tag-outline">
+                        {mesa?.numero ?? id} · {mesa?.capacidad ?? ''}p ✕
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {puedeElegir && seleccion.length > 0 && !capacidadSuficiente && (
+                <p className="mt-3 text-[12px] text-chili-red/80">
+                  Capacidad seleccionada ({capacidadSeleccionada}) menor que el número de personas ({personas}).
+                </p>
+              )}
+
+              {(mesas.data?.length ?? 0) === 0 && (
+                <p className="mt-3 text-[13px] text-tiger-gold/60">Consultamos disponibilidad por WhatsApp.</p>
+              )}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -569,7 +692,8 @@ function ReservaSection({ whatsapp }: { whatsapp: string | null }) {
 
             {reservar.isError && (
               <p className="text-[13px] text-chili-red">
-                No pudimos registrar la reserva. Verifica los datos o escríbenos por WhatsApp.
+                {reservar.error?.message ??
+                  'No pudimos registrar la reserva. Verifica los datos o escríbenos por WhatsApp.'}
               </p>
             )}
 

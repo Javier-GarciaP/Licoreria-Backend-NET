@@ -14,6 +14,7 @@ const CuentasPage = lazy(() => import('./pages/CuentasPage').then((m) => ({ defa
 const CuentaPage = lazy(() => import('./pages/CuentaPage').then((m) => ({ default: m.CuentaPage })));
 const VentasPage = lazy(() => import('./pages/VentasPage').then((m) => ({ default: m.VentasPage })));
 const ReservasPage = lazy(() => import('./pages/ReservasPage').then((m) => ({ default: m.ReservasPage })));
+const ReservaPage = lazy(() => import('./pages/ReservaPage').then((m) => ({ default: m.ReservaPage })));
 const MermasPage = lazy(() => import('./pages/MermasPage').then((m) => ({ default: m.MermasPage })));
 const InventarioPage = lazy(() => import('./pages/InventarioPage').then((m) => ({ default: m.InventarioPage })));
 const KardexPage = lazy(() => import('./pages/KardexPage').then((m) => ({ default: m.KardexPage })));
@@ -29,7 +30,7 @@ const LocalPage = lazy(() => import('./pages/LocalPage').then((m) => ({ default:
 const MenuMediaPage = lazy(() => import('./pages/MenuMediaPage').then((m) => ({ default: m.MenuMediaPage })));
 const TasasPage = lazy(() => import('./pages/TasasPage').then((m) => ({ default: m.TasasPage })));
 const PlanosPage = lazy(() => import('./pages/PlanosPage').then((m) => ({ default: m.PlanosPage })));
-const ZonasMesasPage = lazy(() => import('./pages/ZonasMesasPage').then((m) => ({ default: m.ZonasMesasPage })));
+const SalonMesasPage = lazy(() => import('./pages/SalonMesasPage').then((m) => ({ default: m.SalonMesasPage })));
 const SalonLayout = lazy(() => import('./pages/SalonLayout').then((m) => ({ default: m.SalonLayout })));
 const EditorMapaPage = lazy(() => import('./pages/EditorMapaPage').then((m) => ({ default: m.EditorMapaPage })));
 const ReportesPage = lazy(() => import('./pages/ReportesPage').then((m) => ({ default: m.ReportesPage })));
@@ -107,28 +108,34 @@ export default function App() {
         <Route path="/cuentas/:id" element={<CuentaPage />} />
         <Route path="/ventas" element={<VentasPage />} />
         <Route path="/reservas" element={<ReservasPage />} />
+        <Route path="/eventos" element={<EventosPage />} />
+        <Route path="/eventos/nuevo" element={<EventosPage />} />
+        <Route path="/eventos/:id/editar" element={<EventosPage />} />
+        <Route path="/reservas/:id" element={<ReservaPage />} />
         <Route path="/mermas" element={<MermasPage />} />
         <Route path="/inventario" element={<InventarioPage />} />
         <Route path="/inventario/kardex" element={<KardexPage />} />
         <Route path="/inventario/lotes" element={<LotesPage />} />
         <Route path="/inventario/tomas" element={<TomasFisicasPage />} />
         <Route path="/compras" element={<ComprasPage />} />
+        <Route path="/compras/ordenes/nueva" element={<ComprasPage />} />
         <Route path="/compras/proveedores" element={<ProveedoresPage />} />
         <Route path="/compras/recepciones" element={<RecepcionesPage />} />
         <Route path="/compras/cuentas" element={<CuentasPorPagarPage />} />
         <Route path="/contenido" element={<PaginasPage />} />
-        <Route path="/contenido/eventos" element={<EventosPage />} />
         <Route path="/contenido/local" element={<LocalPage />} />
         <Route path="/contenido/menu" element={<MenuMediaPage />} />
         <Route path="/finanzas" element={<TasasPage />} />
         <Route path="/salon" element={<SalonLayout />}>
           <Route index element={<PlanosPage />} />
-          <Route path="zonas" element={<ZonasMesasPage />} />
+          <Route path="mesas" element={<SalonMesasPage />} />
         </Route>
         <Route path="/salon/planos/:id" element={<EditorMapaPage />} />
         <Route path="/entradas" element={<EntradasPage />} />
         <Route path="/vip" element={<ListaVipPage />} />
         <Route path="/productos" element={<ProductosPage />} />
+        <Route path="/productos/nuevo" element={<ProductosPage />} />
+        <Route path="/productos/:id/editar" element={<ProductosPage />} />
         <Route path="/catalogos" element={<CatalogosPage />} />
         <Route path="/catalogos-avanzado" element={<CatalogoAvanzadoPage />} />
         <Route path="/clientes" element={<ClientesPage />} />

@@ -1,6 +1,7 @@
 using Licoreria.Application.Common;
 using Licoreria.Domain.Entities;
 using Licoreria.Domain.Enums;
+using Licoreria.Domain.Services;
 
 namespace Licoreria.Application.Interfaces;
 
@@ -25,6 +26,17 @@ public interface IReservaRepository
     Task<IReadOnlyList<Guid>> ObtenerMesasReservadasAsync(
         DateTime desde,
         DateTime hasta,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Intervalos presuntos de ocupación de las reservas vigentes (pendiente o confirmada)
+    /// para las mesas dadas, con <see cref="Reserva.FechaHora"/> dentro de la ventana.
+    /// </summary>
+    Task<IReadOnlyList<IntervaloReserva>> ObtenerIntervalosActivosAsync(
+        IEnumerable<Guid> mesaIds,
+        DateTime desde,
+        DateTime hasta,
+        int horas,
         CancellationToken cancellationToken = default);
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

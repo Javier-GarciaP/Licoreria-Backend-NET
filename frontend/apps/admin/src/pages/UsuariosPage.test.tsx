@@ -16,6 +16,7 @@ describe('UsuariosPage', () => {
   it('renderiza la tabla de cuentas y el botón de nuevo usuario', async () => {
     renderPagina();
     expect(await screen.findByRole('button', { name: 'Nuevo usuario' })).toBeInTheDocument();
-    expect(screen.getByText('Cuentas')).toBeInTheDocument();
+    expect(screen.getByText('Rol')).toBeInTheDocument();
+    expect(screen.getByText('Limpiar')).toBeDisabled();
   });
 });

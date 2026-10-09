@@ -100,7 +100,8 @@ public sealed record MenuItemDto(
     string Nombre,
     string Sku,
     decimal PrecioUSD,
-    decimal PrecioBS);
+    decimal PrecioBS,
+    string? ImagenUrl = null);
 
 public sealed record MenuSeccionDto(
     Guid CategoriaId,

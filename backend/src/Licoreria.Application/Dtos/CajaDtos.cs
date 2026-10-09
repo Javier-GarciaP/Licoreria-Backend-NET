@@ -46,7 +46,14 @@ public sealed record SesionCajaDto(
     decimal MontoEsperado,
     decimal MontoContado,
     decimal Descuadre,
+    decimal VentasDelTurnoUSD,
+    int CuentasDesalojadas,
     DateTime AbiertaEn,
     DateTime? CerradaEn,
     IReadOnlyList<MovimientoCajaDto> Movimientos,
     IReadOnlyList<ArqueoLineaDto> Arqueo);
+
+/// <summary>Estado del turno para operadores (mesonero/barra/cocina) sin permisos de caja.</summary>
+public sealed record TurnoAbiertoDto(
+    bool Abierto,
+    DateTime? AbiertaEn);

@@ -17,7 +17,8 @@ public class UnidadMedidaConfiguration : IEntityTypeConfiguration<UnidadMedida>
             new { Id = SeedData.UnidadBotella, Nombre = "Botella", Abreviatura = "BOT", CreatedAt = SeedData.Fecha, LastModifiedAt = (DateTime?)null, IsDeleted = false },
             new { Id = SeedData.UnidadUnidad, Nombre = "Unidad", Abreviatura = "UND", CreatedAt = SeedData.Fecha, LastModifiedAt = (DateTime?)null, IsDeleted = false },
             new { Id = SeedData.UnidadTobo, Nombre = "Tobo", Abreviatura = "TOB", CreatedAt = SeedData.Fecha, LastModifiedAt = (DateTime?)null, IsDeleted = false },
-            new { Id = SeedData.UnidadPlato, Nombre = "Plato", Abreviatura = "PLA", CreatedAt = SeedData.Fecha, LastModifiedAt = (DateTime?)null, IsDeleted = false }
+            new { Id = SeedData.UnidadPlato, Nombre = "Plato", Abreviatura = "PLA", CreatedAt = SeedData.Fecha, LastModifiedAt = (DateTime?)null, IsDeleted = false },
+            new { Id = SeedData.UnidadTrago, Nombre = "Trago", Abreviatura = "TRA", CreatedAt = SeedData.Fecha, LastModifiedAt = (DateTime?)null, IsDeleted = false }
         );
     }
 }

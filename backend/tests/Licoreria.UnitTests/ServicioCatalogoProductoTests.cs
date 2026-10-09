@@ -19,6 +19,7 @@ public sealed class ServicioCatalogoProductoTests
 {
     private readonly Mock<IProductoRepository> _productos = new();
     private readonly Mock<ICategoriaRepository> _categorias = new();
+    private readonly Mock<IInventarioRepository> _inventario = new();
 
     public ServicioCatalogoProductoTests()
     {
@@ -30,6 +31,22 @@ public sealed class ServicioCatalogoProductoTests
         _ = new Mock<IRepository<ProductoVariante>>();
         _ = new Mock<IRepository<Modificador>>();
         _ = new Mock<IRepository<ProductoModificador>>();
+
+        _inventario
+            .Setup(i => i.ObtenerStockAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((StockProducto?)null);
+        _inventario
+            .Setup(i => i.ObtenerStockDeVariantesAsync(It.IsAny<IReadOnlyList<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<StockProducto>());
+        _inventario
+            .Setup(i => i.AgregarStockAsync(It.IsAny<StockProducto>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        _inventario
+            .Setup(i => i.AgregarMovimientoAsync(It.IsAny<MovimientoInventario>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        _inventario
+            .Setup(i => i.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
     }
 
     private ServicioCatalogo CrearServicio()
@@ -42,7 +59,8 @@ public sealed class ServicioCatalogoProductoTests
             Mock.Of<IRepository<ListaPrecio>>(),
             Mock.Of<IRepository<ProductoVariante>>(),
             Mock.Of<IRepository<Modificador>>(),
-            Mock.Of<IRepository<ProductoModificador>>());
+            Mock.Of<IRepository<ProductoModificador>>(),
+            _inventario.Object);
 
     private static ProductoCrearDto CrearDto(params VarianteCrearDto[] variantes)
         => new(
@@ -52,12 +70,13 @@ public sealed class ServicioCatalogoProductoTests
             null,
             null,
             TipoProducto.Simple,
+            AreaDestino.Barra,
             40m,
             null,
             variantes);
 
     private static VarianteCrearDto Variante(string sku = "WHI-750-001")
-        => new(null, "Whisky 750ml", sku, Guid.NewGuid(), 10m, 20m, []);
+        => new(null, "Whisky 750ml", sku, Guid.NewGuid(), 10m, 20m, [], null, null, null, true);
 
     private void CategoriaExiste()
         => _categorias
@@ -178,7 +197,7 @@ public sealed class ServicioCatalogoProductoTests
 
         var resultado = await servicio.EditarProductoAsync(
             new ProductoEditarDto(Guid.NewGuid(), "x", null, Guid.NewGuid(), null, null,
-                TipoProducto.Simple, null, null, true, [Variante()]));
+                TipoProducto.Simple, AreaDestino.Barra, null, null, true, [Variante()]));
 
         Assert.Null(resultado);
     }

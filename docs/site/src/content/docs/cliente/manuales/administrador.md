@@ -5,6 +5,10 @@ title: Manual del administrador
 ## Configuración inicial
 
 1. Carga el **catálogo**: categorías, marcas, productos y variantes con precios.
+   - Indica el **área destino** (Barra/Cocina) de cada producto para que las comandas
+     se enruten solas.
+   - En comida no hace falta grado alcohólico ni código de barras, y el **SKU** se
+     autogenera si lo dejas vacío (ej. `TACOS-1`).
 2. Define las **zonas** y diseña el **plano** del local (mesas y capacidad).
 3. Registra las **tasas de cambio** del día.
 4. Crea los **usuarios** y asígnales su **rol**.

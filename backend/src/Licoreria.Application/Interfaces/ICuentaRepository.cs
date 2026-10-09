@@ -9,6 +9,7 @@ public interface ICuentaRepository
     Task<ResultadoPaginado<Cuenta>> ObtenerPaginadoAsync(
         PaginacionRequest paginacion,
         EstadoCuenta? estado = null,
+        IReadOnlyList<EstadoCuenta>? estados = null,
         Guid? usuarioId = null,
         CancellationToken cancellationToken = default);
 
@@ -29,6 +30,9 @@ public interface ICuentaRepository
 
     /// <summary>Mapa mesa → cuenta abierta (sesión de mesa sin cerrar), si existe.</summary>
     Task<IReadOnlyDictionary<Guid, Guid>> ObtenerCuentasAbiertasPorMesaAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Cuentas con sesión de mesa aún abierta (no cobradas ni desalojadas).</summary>
+    Task<IReadOnlyList<Cuenta>> ObtenerAbiertasConSesionAsync(CancellationToken cancellationToken = default);
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

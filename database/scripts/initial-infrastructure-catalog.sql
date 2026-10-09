@@ -133,9 +133,9 @@ INSERT INTO unidades_medida ("Id", "Abreviatura", "CreatedAt", "IsDeleted", "Las
 VALUES ('66666666-6666-6666-6666-666666666664', 'PLA', TIMESTAMPTZ '2026-09-23T00:00:00Z', FALSE, NULL, 'Plato');
 
 INSERT INTO usuarios ("Id", "Activo", "CreatedAt", "Email", "IsDeleted", "LastModifiedAt", "NombreCompleto", "PasswordHash", "Rol")
-VALUES ('20000000-0000-0000-0000-000000000001', TRUE, TIMESTAMPTZ '2026-09-23T00:00:00Z', 'admin@licoreria.com', FALSE, NULL, 'Administrador Principal', 'admin123_hash', 'Administrador');
+VALUES ('20000000-0000-0000-0000-000000000001', TRUE, TIMESTAMPTZ '2026-09-23T00:00:00Z', 'admin@licoreria.com', FALSE, NULL, 'Administrador Principal', '100000.FAjfLZhxDdPKpSSBsWnxhA==.oEa34uWpndtwYkEbsIYWwybInWw7MjWldrQtjwI46xI=', 'Administrador');
 INSERT INTO usuarios ("Id", "Activo", "CreatedAt", "Email", "IsDeleted", "LastModifiedAt", "NombreCompleto", "PasswordHash", "Rol")
-VALUES ('20000000-0000-0000-0000-000000000002', TRUE, TIMESTAMPTZ '2026-09-23T00:00:00Z', 'cajero1@licoreria.com', FALSE, NULL, 'Cajero Turno Mañana', 'cajero123_hash', 'Cajero');
+VALUES ('20000000-0000-0000-0000-000000000002', TRUE, TIMESTAMPTZ '2026-09-23T00:00:00Z', 'cajero1@licoreria.com', FALSE, NULL, 'Cajero Turno Mañana', '100000./aCU6rte+XCUv0r4ENjLuw==.1WuFy7dAWv4p3TZOWu05sIRNYmAQy25tmq7a2FxGY50=', 'Cajero');
 
 INSERT INTO productos ("Id", "Activo", "CategoriaId", "CodigoBarras", "CreatedAt", "Descripcion", "ImagenUrl", "IsDeleted", "LastModifiedAt", "MarcaId", "Nombre", "PrecioCompraUSD", "PrecioVentaUSD", "Sku", "Stock", "StockMaximo", "StockMinimo", "UnidadMedidaId")
 VALUES ('10000000-0000-0000-0000-000000000001', TRUE, '11111111-1111-1111-1111-111111111111', '759100100101', TIMESTAMPTZ '2026-09-23T00:00:00Z', 'Ron añejo venezolano de 0.75 litros.', NULL, FALSE, NULL, '55555555-5555-5555-5555-555555555551', 'Ron Cacique Añejo 0.75L', 8.5, 12.0, 'LIC-RON-0001', 30, 60, 5, '66666666-6666-6666-6666-666666666661');

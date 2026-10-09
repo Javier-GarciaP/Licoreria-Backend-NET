@@ -14,6 +14,8 @@ public interface IServicioCaja
 
     Task<SesionCajaDto?> ObtenerSesionActivaAsync(CancellationToken cancellationToken = default);
 
+    Task<TurnoAbiertoDto> ObtenerEstadoTurnoAsync(CancellationToken cancellationToken = default);
+
     Task<ResultadoPaginado<SesionCajaDto>> ObtenerSesionesAsync(
         PaginacionRequest paginacion,
         CancellationToken cancellationToken = default);

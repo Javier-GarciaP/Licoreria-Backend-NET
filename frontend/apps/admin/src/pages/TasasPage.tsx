@@ -1,11 +1,11 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Plus } from 'lucide-react';
-import { BubbleModal, Button, Card, CardBody, CardHeader, CardTitle, DataTable, Input, Pill, Select } from '@licoreria/ui';
+import { BubbleModal, Button, Card, CardBody, CardHeader, DataTable, FiltroDropdown, FiltroFechas, Input, LimpiarFiltros, Pill, Select } from '@licoreria/ui';
 import type { TasaCambio } from '@licoreria/types';
 import { finanzasApi } from '@licoreria/api-client';
 import { mensajeDeError } from '../lib/api';
@@ -22,11 +22,32 @@ type Formulario = z.infer<typeof esquema>;
 export function TasasPage() {
   const queryClient = useQueryClient();
   const [abierta, setAbierta] = useState(false);
+  const [tipo, setTipo] = useState('');
+  const [desde, setDesde] = useState('');
+  const [hasta, setHasta] = useState('');
   const botonRef = useRef<HTMLButtonElement>(null);
   const form = useForm<Formulario>({ resolver: zodResolver(esquema), defaultValues: { fecha: '', tipo: 'Paralelo', valor: 0 } });
 
   const actual = useQuery({ queryKey: ['tasa-actual'], queryFn: () => finanzasApi.tasaActual('Paralelo') });
-  const historico = useQuery({ queryKey: ['tasas'], queryFn: () => finanzasApi.tasas() });
+  const historico = useQuery({ queryKey: ['tasas', tipo], queryFn: () => finanzasApi.tasas({ tipo: tipo || undefined }) });
+
+  const filas = useMemo(
+    () =>
+      (historico.data ?? []).filter((tasa) => {
+        if (desde && tasa.fecha < desde) return false;
+        if (hasta && tasa.fecha.slice(0, 10) > hasta) return false;
+        return true;
+      }),
+    [historico.data, desde, hasta],
+  );
+
+  const hayFiltros = Boolean(tipo || desde || hasta);
+
+  const limpiarFiltros = () => {
+    setTipo('');
+    setDesde('');
+    setHasta('');
+  };
 
   const registrar = useMutation({
     mutationFn: (datos: Formulario) =>
@@ -90,12 +111,31 @@ export function TasasPage() {
       </BubbleModal>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Histórico</CardTitle>
+        <CardHeader className="flex flex-col items-stretch gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <FiltroDropdown
+              label="Tipo"
+              opciones={[
+                { valor: 'Paralelo', etiqueta: 'Paralelo' },
+                { valor: 'BCV', etiqueta: 'BCV' },
+              ]}
+              valor={tipo}
+              onChange={setTipo}
+            />
+            <FiltroFechas
+              desde={desde}
+              hasta={hasta}
+              onDesde={setDesde}
+              onHasta={setHasta}
+            />
+            <div className="ml-auto">
+              <LimpiarFiltros activo={hayFiltros} onClick={limpiarFiltros} />
+            </div>
+          </div>
         </CardHeader>
         <CardBody>
           <DataTable<TasaCambio>
-            rows={historico.data ?? []}
+            rows={filas}
             loading={historico.isLoading}
             rowKey={(tasa) => tasa.id}
             empty="Sin tasas registradas."

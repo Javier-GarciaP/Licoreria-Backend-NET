@@ -26,9 +26,9 @@ public interface IProductoRepository : IRepository<Producto>
         Guid? excluirVarianteId = null,
         CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<Receta>> ObtenerRecetasAsync(Guid productoId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Receta>> ObtenerRecetasAsync(Guid varianteVendidaId, CancellationToken cancellationToken = default);
 
-    Task<Receta?> ObtenerRecetaAsync(Guid productoId, Guid recetaId, CancellationToken cancellationToken = default);
+    Task<Receta?> ObtenerRecetaAsync(Guid varianteVendidaId, Guid recetaId, CancellationToken cancellationToken = default);
 
     Task AgregarRecetaAsync(Receta receta, CancellationToken cancellationToken = default);
 

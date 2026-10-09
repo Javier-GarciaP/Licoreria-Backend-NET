@@ -26,15 +26,18 @@ export function SelectorProductoModal({
   const [seleccionados, setSeleccionados] = useState<Set<string>>(new Set());
   const [cantidad, setCantidad] = useState(1);
 
+  const variantes = producto?.variantes ?? [];
+  const variante = variantes[indiceVariante] ?? null;
+
   const modificadoresQuery = useQuery({
     queryKey: ['pos', 'producto-modificadores', producto?.id],
     queryFn: () => catalogoApi.productoModificadores(producto!.id),
     enabled: abierto,
   });
   const recetasQuery = useQuery({
-    queryKey: ['pos', 'producto-recetas', producto?.id],
-    queryFn: () => catalogoApi.recetas(producto!.id),
-    enabled: abierto && producto?.tipo === 'Preparado',
+    queryKey: ['pos', 'producto-recetas', producto?.id, indiceVariante],
+    queryFn: () => catalogoApi.recetas(variante!.id),
+    enabled: abierto && variante != null && !variante.esBase,
   });
 
   useEffect(() => {
@@ -44,8 +47,6 @@ export function SelectorProductoModal({
     setCantidad(1);
   }, [abierto, producto?.id]);
 
-  const variantes = producto?.variantes ?? [];
-  const variante = variantes[indiceVariante] ?? null;
   const modificadores = useMemo(() => modificadoresQuery.data ?? [], [modificadoresQuery.data]);
 
   const requeridosMinimos = useMemo(
@@ -214,9 +215,9 @@ export function SelectorProductoModal({
           )}
         </section>
 
-        {producto.tipo === 'Preparado' && (recetasQuery.data?.length ?? 0) > 0 && (
+        {variante != null && !variante.esBase && (recetasQuery.data?.length ?? 0) > 0 && (
           <section className="rounded-inner border border-border bg-muted/40 p-3">
-            <p className="mb-2 text-xs font-medium uppercase tracking-tighter2 text-muted-foreground">Receta</p>
+            <p className="mb-2 text-xs font-medium uppercase tracking-tighter2 text-muted-foreground">Consume</p>
             <ul className="flex flex-col gap-1">
               {recetasQuery.data?.map((receta) => (
                 <li key={receta.id} className="flex items-center justify-between text-sm text-muted-foreground">

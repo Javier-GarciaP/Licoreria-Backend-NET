@@ -15,6 +15,7 @@ public class SesionCajaConfiguration : IEntityTypeConfiguration<SesionCaja>
         builder.Property(s => s.MontoEsperado).HasPrecision(18, 2);
         builder.Property(s => s.MontoContado).HasPrecision(18, 2);
         builder.Property(s => s.Descuadre).HasPrecision(18, 2);
+        builder.Property(s => s.VentasDelTurnoUSD).HasPrecision(18, 2);
 
         builder.HasOne(s => s.Usuario)
                .WithMany()

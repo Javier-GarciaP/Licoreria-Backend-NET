@@ -16,6 +16,13 @@ public class SesionCaja : BaseEntity
     public decimal MontoEsperado { get; set; }
     public decimal MontoContado { get; set; }
     public decimal Descuadre { get; set; }
+
+    /// <summary>Total de ventas registradas durante el turno (se calcula al cerrar).</summary>
+    public decimal VentasDelTurnoUSD { get; set; }
+
+    /// <summary>Cuentas de mesa que quedaron abiertas y se desalojaron al cerrar el turno.</summary>
+    public int CuentasDesalojadas { get; set; }
+
     public DateTime AbiertaEn { get; set; } = DateTime.UtcNow;
     public DateTime? CerradaEn { get; set; }
 

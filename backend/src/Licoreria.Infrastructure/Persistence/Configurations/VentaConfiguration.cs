@@ -24,5 +24,6 @@ public class VentaConfiguration : IEntityTypeConfiguration<Venta>
                .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(v => v.Fecha);
+        builder.HasIndex(v => v.SesionCajaId);
     }
 }

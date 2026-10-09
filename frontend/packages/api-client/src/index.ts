@@ -50,6 +50,7 @@ import type {
   StockItem,
   TasaCambio,
   TomaFisica,
+  TurnoAbierto,
   UnidadMedida,
   Usuario,
   UsuarioActual,
@@ -80,7 +81,11 @@ export const catalogoApi = {
   productos: (query: PaginaQuery & { busqueda?: string; categoriaId?: string; activo?: boolean } = {}) =>
     apiFetch<ResultadoPaginado<Producto>>('/api/v1/productos', { query }),
   producto: (id: string) => apiFetch<Producto>(`/api/v1/productos/${id}`),
-  recetas: (id: string) => apiFetch<Receta[]>(`/api/v1/productos/${id}/recetas`),
+  recetas: (varianteId: string) => apiFetch<Receta[]>(`/api/v1/variantes/${varianteId}/recetas`),
+  agregarReceta: (varianteId: string, body: unknown) =>
+    apiFetch<Receta>(`/api/v1/variantes/${varianteId}/recetas`, { method: 'POST', body }),
+  eliminarReceta: (varianteId: string, recetaId: string) =>
+    apiFetch<void>(`/api/v1/variantes/${varianteId}/recetas/${recetaId}`, { method: 'DELETE' }),
   productoModificadores: (id: string) =>
     apiFetch<ProductoModificador[]>(`/api/v1/productos/${id}/modificadores`),
   crear: (body: unknown) => apiFetch<Producto>('/api/v1/productos', { method: 'POST', body }),
@@ -116,11 +121,12 @@ export const promocionesApi = {
 };
 
 export const cuentasApi = {
-  listar: (query: PaginaQuery & { estado?: string; usuarioId?: string } = {}) =>
+  listar: (query: PaginaQuery & { estado?: string; estados?: string; usuarioId?: string } = {}) =>
     apiFetch<ResultadoPaginado<Cuenta>>('/api/v1/cuentas', { query }),
   obtener: (id: string) => apiFetch<Cuenta>(`/api/v1/cuentas/${id}`),
   abrir: (body: { nombreMesa: string; mesaId?: string; cliente?: string; notas?: string }) =>
     apiFetch<Cuenta>('/api/v1/cuentas', { method: 'POST', body }),
+  reabrir: (id: string) => apiFetch<Cuenta>(`/api/v1/cuentas/${id}/reabrir`, { method: 'POST', body: {} }),
   agregarComanda: (id: string, body: unknown) =>
     apiFetch<Cuenta>(`/api/v1/cuentas/${id}/comandas`, { method: 'POST', body }),
   cambiarEstadoItem: (
@@ -276,6 +282,7 @@ export const chatApi = {
 export const cajaApi = {
   sesiones: (query: PaginaQuery = {}) =>
     apiFetch<ResultadoPaginado<SesionCaja>>('/api/v1/sesiones-caja', { query }),
+  turno: () => apiFetch<TurnoAbierto>('/api/v1/sesiones-caja/turno'),
   activa: async (): Promise<SesionCaja | null> => {
     try {
       return await apiFetch<SesionCaja>('/api/v1/sesiones-caja/activa');
@@ -302,7 +309,8 @@ export const publicApi = {
   tasaActual: (tipo: 'BCV' | 'Paralelo' = 'Paralelo') =>
     apiFetch<TasaCambio>('/api/v1/tasas-cambio/actual', { query: { tipo } }),
   zonas: () => apiFetch<Zona[]>('/api/v1/zonas'),
-  mesas: () => apiFetch<Mesa[]>('/api/v1/mesas'),
+  planos: () => apiFetch<Plano[]>('/api/v1/planos'),
+  mesas: (fechaHora?: string) => apiFetch<Mesa[]>('/api/v1/mesas', { query: { fechaHora } }),
   metodosPago: () => apiFetch<MetodoPago[]>('/api/v1/metodos-pago'),
   crearReserva: (body: unknown) => apiFetch<Reserva>('/api/v1/reservas', { method: 'POST', body }),
   registrarPagoReserva: (id: string, body: unknown) =>

@@ -1,19 +1,23 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { CheckCircle2, ClipboardList, HandCoins, Plus, XCircle } from 'lucide-react';
+import { CheckCircle2, ClipboardList, Plus, XCircle } from 'lucide-react';
 import {
   ActionMenu,
+  Buscador,
   Button,
   Card,
   CardBody,
   CardHeader,
-  CardTitle,
   DataTable,
+  FiltroDropdown,
+  FiltroRango,
   Input,
+  LimpiarFiltros,
   Modal,
   Pagination,
   Pill,
@@ -21,11 +25,13 @@ import {
   StatusBadge,
 } from '@licoreria/ui';
 import type { Mesa, Reserva } from '@licoreria/types';
-import { clubApi, inventarioApi, ventasApi } from '@licoreria/api-client';
+import { clubApi, ventasApi } from '@licoreria/api-client';
 import { mensajeDeError } from '../lib/api';
-import { formatDateTime, formatUSD } from '../lib/format';
+import { formatDateTime } from '../lib/format';
+import { contiene, paginarEnMemoria, PAGE_SIZE_FILTRO_LOCAL } from '../lib/filtros';
 
 const ORIGENES = ['Web', 'Whatsapp', 'Presencial'] as const;
+const ESTADOS_RESERVA = ['Pendiente', 'Confirmada', 'Cancelada'] as const;
 
 const esquema = z
   .object({
@@ -59,14 +65,14 @@ const VALORES_INICIALES: Formulario = {
 };
 
 export function ReservasPage() {
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [crearOpen, setCrearOpen] = useState(false);
-  const [senasDe, setSenasDe] = useState<Reserva | null>(null);
-  const [pedidosDe, setPedidosDe] = useState<Reserva | null>(null);
+  const [estado, setEstado] = useState('');
+  const [origen, setOrigen] = useState('');
+  const [busqueda, setBusqueda] = useState('');
+  const [personasMin, setPersonasMin] = useState('');
   const queryClient = useQueryClient();
-
-  const [pedidoVarianteId, setPedidoVarianteId] = useState('');
-  const [pedidoCantidad, setPedidoCantidad] = useState('1');
 
   const {
     register,
@@ -79,15 +85,41 @@ export function ReservasPage() {
 
   const mesasSeleccionadas = watch('mesas');
 
-  const reservas = useQuery({ queryKey: ['reservas', page], queryFn: () => clubApi.reservas({ page, pageSize: 15 }) });
+  const hayFiltroLocal = Boolean(busqueda || origen || personasMin);
+  const hayFiltros = hayFiltroLocal || Boolean(estado);
+
+  const limpiarFiltros = () => {
+    setEstado('');
+    setOrigen('');
+    setBusqueda('');
+    setPersonasMin('');
+    setPage(1);
+  };
+
+  const reservas = useQuery({
+    queryKey: ['reservas', page, estado, hayFiltroLocal ? PAGE_SIZE_FILTRO_LOCAL : 15],
+    queryFn: () =>
+      clubApi.reservas({
+        estado: estado || undefined,
+        page: hayFiltroLocal ? 1 : page,
+        pageSize: hayFiltroLocal ? PAGE_SIZE_FILTRO_LOCAL : 15,
+      }),
+  });
   const mesas = useQuery({ queryKey: ['mesas'], queryFn: () => clubApi.mesas(), enabled: crearOpen });
   const metodos = useQuery({ queryKey: ['metodos-pago'], queryFn: ventasApi.metodosPago, enabled: crearOpen });
-  const variantes = useQuery({ queryKey: ['stock'], queryFn: () => inventarioApi.stock(), enabled: Boolean(pedidosDe) });
-  const pedidos = useQuery({
-    queryKey: ['pedidos', pedidosDe?.id],
-    queryFn: () => clubApi.pedidos(pedidosDe!.id),
-    enabled: Boolean(pedidosDe),
-  });
+
+  const { items: filas, totalPages } = useMemo(() => {
+    const personasMinN = Number(personasMin);
+    const filtradas = (reservas.data?.items ?? []).filter((reserva) => {
+      if (!contiene(`${reserva.nombreContacto} ${reserva.telefono}`, busqueda)) return false;
+      if (origen && reserva.origen !== origen) return false;
+      if (personasMinN && reserva.personas < personasMinN) return false;
+      return true;
+    });
+    return hayFiltroLocal
+      ? paginarEnMemoria(filtradas, page, 15)
+      : { items: filtradas, totalPages: reservas.data?.totalPages ?? 1 };
+  }, [reservas.data, busqueda, origen, personasMin, hayFiltroLocal, page]);
 
   const invalidar = () => queryClient.invalidateQueries({ queryKey: ['reservas'] });
 
@@ -129,35 +161,6 @@ export function ReservasPage() {
     onError: (error) => toast.error('No se pudo actualizar', { description: mensajeDeError(error) }),
   });
 
-  const validar = useMutation({
-    mutationFn: ({ id, pagoId, aprobar }: { id: string; pagoId: string; aprobar: boolean }) =>
-      clubApi.validarPagoReserva(id, pagoId, aprobar),
-    onSuccess: (_data, variables) => {
-      toast.success(variables.aprobar ? 'Seña validada' : 'Seña rechazada');
-      queryClient.invalidateQueries({ queryKey: ['reservas'] });
-      setSenasDe(null);
-    },
-    onError: (error) => toast.error('No se pudo validar la seña', { description: mensajeDeError(error) }),
-  });
-
-  const agregarPedido = useMutation({
-    mutationFn: () =>
-      clubApi.agregarPedido(pedidosDe!.id, { varianteId: pedidoVarianteId, cantidad: Number(pedidoCantidad) }),
-    onSuccess: () => {
-      toast.success('Pedido agregado');
-      setPedidoVarianteId('');
-      setPedidoCantidad('1');
-      queryClient.invalidateQueries({ queryKey: ['pedidos', pedidosDe?.id] });
-    },
-    onError: (error) => toast.error('No se pudo agregar el pedido', { description: mensajeDeError(error) }),
-  });
-
-  const quitarPedido = useMutation({
-    mutationFn: (pedidoId: string) => clubApi.eliminarPedido(pedidosDe!.id, pedidoId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pedidos', pedidosDe?.id] }),
-    onError: (error) => toast.error('No se pudo quitar', { description: mensajeDeError(error) }),
-  });
-
   const toggleMesa = (mesaId: string) => {
     const siguiente = mesasSeleccionadas.includes(mesaId)
       ? mesasSeleccionadas.filter((id) => id !== mesaId)
@@ -168,15 +171,59 @@ export function ReservasPage() {
   return (
     <div className="mx-auto flex max-w-page flex-col gap-4">
       <Card>
-        <CardHeader>
-          <CardTitle>Agenda</CardTitle>
-          <Button size="sm" leftIcon={<Plus size={15} />} onClick={() => setCrearOpen(true)}>
-            Nueva reserva
-          </Button>
+        <CardHeader className="flex flex-col items-stretch gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Buscador
+              placeholder="Buscar nombre o teléfono…"
+              value={busqueda}
+              onCambio={(valor) => {
+                setBusqueda(valor);
+                setPage(1);
+              }}
+            />
+            <FiltroDropdown
+              label="Estado"
+              opciones={ESTADOS_RESERVA.map((valor) => ({ valor, etiqueta: valor }))}
+              valor={estado}
+              onChange={(valor) => {
+                setEstado(valor);
+                setPage(1);
+              }}
+            />
+            <div className="ml-auto">
+              <Button size="sm" leftIcon={<Plus size={15} />} onClick={() => setCrearOpen(true)}>
+                Nueva reserva
+              </Button>
+            </div>
+          </div>
+          <div className="border-b border-border" />
+          <div className="flex flex-wrap items-center gap-2">
+            <FiltroDropdown
+              label="Origen"
+              opciones={ORIGENES.map((valor) => ({ valor, etiqueta: valor }))}
+              valor={origen}
+              onChange={(valor) => {
+                setOrigen(valor);
+                setPage(1);
+              }}
+            />
+            <FiltroRango
+              label="Personas"
+              minimo={personasMin}
+              onMinimo={(valor) => {
+                setPersonasMin(valor);
+                setPage(1);
+              }}
+              step="1"
+            />
+            <div className="ml-auto">
+              <LimpiarFiltros activo={hayFiltros} onClick={limpiarFiltros} />
+            </div>
+          </div>
         </CardHeader>
         <CardBody>
           <DataTable<Reserva>
-            rows={reservas.data?.items ?? []}
+            rows={filas}
             loading={reservas.isLoading}
             rowKey={(reserva) => reserva.id}
             empty="No hay reservas."
@@ -217,10 +264,7 @@ export function ReservasPage() {
                 align: 'right',
                 render: (reserva) => {
                   const opciones = [];
-                  if (reserva.pagos.some((pago) => pago.estado === 'Pendiente')) {
-                    opciones.push({ label: 'Validar señas', icon: <HandCoins size={15} />, onClick: () => setSenasDe(reserva) });
-                  }
-                  opciones.push({ label: 'Pedidos', icon: <ClipboardList size={15} />, onClick: () => setPedidosDe(reserva) });
+                  opciones.push({ label: 'Ver detalle y pedidos', icon: <ClipboardList size={15} />, onClick: () => navigate(`/reservas/${reserva.id}`) });
                   if (reserva.estado === 'Pendiente') {
                     opciones.push({
                       label: 'Confirmar',
@@ -241,7 +285,7 @@ export function ReservasPage() {
               },
             ]}
           />
-          <Pagination page={page} totalPages={reservas.data?.totalPages ?? 1} onPageChange={setPage} />
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </CardBody>
       </Card>
 
@@ -321,88 +365,6 @@ export function ReservasPage() {
             <Input label="Monto seña (USD)" type="number" error={errors.monto?.message} {...register('monto')} />
           </div>
         </form>
-      </Modal>
-
-      <Modal open={Boolean(senasDe)} onClose={() => setSenasDe(null)} title="Validar señas">
-        <div className="flex flex-col gap-3">
-          {senasDe?.pagos.map((pago) => (
-            <div key={pago.id} className="flex items-center justify-between gap-3 rounded-lg bg-muted/40 px-3 py-2">
-              <div>
-                <p className="text-sm text-foreground">{pago.metodoPago}</p>
-                <p className="text-xs text-muted-foreground">{formatUSD(pago.monto)}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <StatusBadge status={pago.estado} />
-                {pago.estado === 'Pendiente' && (
-                  <>
-                    <Button
-                      size="sm"
-                      onClick={() => validar.mutate({ id: senasDe.id, pagoId: pago.id, aprobar: true })}
-                    >
-                      Validar
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => validar.mutate({ id: senasDe.id, pagoId: pago.id, aprobar: false })}
-                    >
-                      Rechazar
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </Modal>
-
-      <Modal open={Boolean(pedidosDe)} onClose={() => setPedidosDe(null)} title="Pedidos anticipados">
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1">
-            {pedidos.data?.map((pedido) => (
-              <div key={pedido.id} className="flex items-center justify-between text-sm">
-                <span className="text-foreground">
-                  {pedido.cantidad} × {pedido.nombre}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">{formatUSD(pedido.subtotalUSD)}</span>
-                  <button className="text-destructive-fg" onClick={() => quitarPedido.mutate(pedido.id)}>
-                    Quitar
-                  </button>
-                </div>
-              </div>
-            ))}
-            {pedidos.data?.length === 0 && <p className="text-sm text-muted-foreground">Sin pedidos.</p>}
-          </div>
-          <div className="flex items-end gap-2">
-            <Select
-              label="Producto"
-              className="flex-1"
-              value={pedidoVarianteId}
-              onChange={(evento) => setPedidoVarianteId(evento.target.value)}
-            >
-              <option value="">Selecciona…</option>
-              {variantes.data?.items.map((item) => (
-                <option key={item.varianteId} value={item.varianteId}>
-                  {item.productoNombre} · {item.sku}
-                </option>
-              ))}
-            </Select>
-            <Input
-              label="Cant."
-              type="number"
-              value={pedidoCantidad}
-              onChange={(evento) => setPedidoCantidad(evento.target.value)}
-            />
-            <Button
-              disabled={!pedidoVarianteId || Number(pedidoCantidad) <= 0}
-              loading={agregarPedido.isPending}
-              onClick={() => agregarPedido.mutate()}
-            >
-              Añadir
-            </Button>
-          </div>
-        </div>
       </Modal>
     </div>
   );

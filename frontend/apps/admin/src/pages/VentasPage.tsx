@@ -7,13 +7,17 @@ import { toast } from 'sonner';
 import { Eye, RotateCcw } from 'lucide-react';
 import {
   ActionMenu,
+  Buscador,
   Button,
   Card,
   CardBody,
   CardHeader,
-  CardTitle,
   DataTable,
+  FiltroDropdown,
+  FiltroFechas,
+  FiltroRango,
   Input,
+  LimpiarFiltros,
   Pagination,
   StatusBadge,
 } from '@licoreria/ui';
@@ -25,6 +29,7 @@ import { DetalleVentaModal } from '../components/DetalleVentaModal';
 import { TicketVenta } from '../components/pos/TicketVenta';
 import { mensajeDeError } from '../lib/api';
 import { formatDateTime, formatUSD } from '../lib/format';
+import { contiene, paginarEnMemoria, PAGE_SIZE_FILTRO_LOCAL } from '../lib/filtros';
 
 const esquemaDevolucion = z.object({
   motivo: z.string().min(3, 'Describe el motivo (mínimo 3 caracteres)'),
@@ -39,6 +44,13 @@ export function VentasPage() {
   const [imprimiendo, setImprimiendo] = useState<Venta | null>(null);
   const [reintegrar, setReintegrar] = useState(true);
   const [cantidades, setCantidades] = useState<Record<string, number>>({});
+  const [busqueda, setBusqueda] = useState('');
+  const [estado, setEstado] = useState('');
+  const [metodoPago, setMetodoPago] = useState('');
+  const [totalMin, setTotalMin] = useState('');
+  const [totalMax, setTotalMax] = useState('');
+  const [desde, setDesde] = useState('');
+  const [hasta, setHasta] = useState('');
   const queryClient = useQueryClient();
   const { tienePermiso } = useAuth() as { tienePermiso: (clave: string) => boolean };
   const puedeDevolver = tienePermiso('sales:void');
@@ -50,7 +62,60 @@ export function VentasPage() {
     formState: { errors },
   } = useForm<FormularioDevolucion>({ resolver: zodResolver(esquemaDevolucion), defaultValues: { motivo: '' } });
 
-  const ventas = useQuery({ queryKey: ['ventas', page], queryFn: () => ventasApi.listar({ page, pageSize: 15 }) });
+  const hayFiltroLocal = Boolean(busqueda || estado || metodoPago || totalMin || totalMax);
+  const hayFiltros = hayFiltroLocal || Boolean(desde || hasta);
+
+  const limpiarFiltros = () => {
+    setBusqueda('');
+    setEstado('');
+    setMetodoPago('');
+    setTotalMin('');
+    setTotalMax('');
+    setDesde('');
+    setHasta('');
+    setPage(1);
+  };
+
+  const ventas = useQuery({
+    queryKey: ['ventas', page, desde, hasta, hayFiltroLocal ? PAGE_SIZE_FILTRO_LOCAL : 15],
+    queryFn: () =>
+      ventasApi.listar({
+        page: hayFiltroLocal ? 1 : page,
+        pageSize: hayFiltroLocal ? PAGE_SIZE_FILTRO_LOCAL : 15,
+        desde: desde || undefined,
+        hasta: hasta || undefined,
+      }),
+  });
+
+  const opcionesEstado = useMemo(() => {
+    const valores = new Set<string>();
+    for (const venta of ventas.data?.items ?? []) valores.add(venta.estado);
+    return [...valores].sort().map((valor) => ({ valor, etiqueta: valor }));
+  }, [ventas.data]);
+
+  const opcionesMetodo = useMemo(() => {
+    const valores = new Set<string>();
+    for (const venta of ventas.data?.items ?? []) {
+      for (const pago of venta.pagos) valores.add(pago.metodoPago);
+    }
+    return [...valores].sort().map((valor) => ({ valor, etiqueta: valor }));
+  }, [ventas.data]);
+
+  const { items: filas, totalPages } = useMemo(() => {
+    const totalMinN = Number(totalMin);
+    const totalMaxN = Number(totalMax);
+    const filtradas = (ventas.data?.items ?? []).filter((venta) => {
+      if (!contiene(venta.numeroComprobante, busqueda)) return false;
+      if (estado && venta.estado !== estado) return false;
+      if (metodoPago && !venta.pagos.some((pago) => pago.metodoPago === metodoPago)) return false;
+      if (totalMinN && venta.totalUSD < totalMinN) return false;
+      if (totalMaxN && venta.totalUSD > totalMaxN) return false;
+      return true;
+    });
+    return hayFiltroLocal
+      ? paginarEnMemoria(filtradas, page, 15)
+      : { items: filtradas, totalPages: ventas.data?.totalPages ?? 1 };
+  }, [ventas.data, busqueda, estado, metodoPago, totalMin, totalMax, hayFiltroLocal, page]);
 
   const devolucion = useMutation({
     mutationFn: ({ venta, motivo }: { venta: Venta; motivo: string }) =>
@@ -85,12 +150,50 @@ export function VentasPage() {
   return (
     <div className="mx-auto flex max-w-page flex-col gap-4">
       <Card>
-        <CardHeader>
-          <CardTitle>Historial</CardTitle>
+        <CardHeader className="flex flex-col items-stretch gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Buscador
+              placeholder="Buscar comprobante…"
+              value={busqueda}
+              onCambio={(valor) => {
+                setBusqueda(valor);
+                setPage(1);
+              }}
+            />
+            <FiltroDropdown label="Estado" opciones={opcionesEstado} valor={estado} onChange={(valor) => { setEstado(valor); setPage(1); }} />
+            <FiltroDropdown
+              label="Método pago"
+              opciones={opcionesMetodo}
+              valor={metodoPago}
+              onChange={(valor) => {
+                setMetodoPago(valor);
+                setPage(1);
+              }}
+            />
+            <FiltroFechas
+              desde={desde}
+              hasta={hasta}
+              onDesde={(valor) => { setDesde(valor); setPage(1); }}
+              onHasta={(valor) => { setHasta(valor); setPage(1); }}
+            />
+          </div>
+          <div className="border-b border-border" />
+          <div className="flex flex-wrap items-center gap-2">
+            <FiltroRango
+              label="Total USD"
+              minimo={totalMin}
+              maximo={totalMax}
+              onMinimo={(valor) => { setTotalMin(valor); setPage(1); }}
+              onMaximo={(valor) => { setTotalMax(valor); setPage(1); }}
+            />
+            <div className="ml-auto">
+              <LimpiarFiltros activo={hayFiltros} onClick={limpiarFiltros} />
+            </div>
+          </div>
         </CardHeader>
         <CardBody>
           <DataTable<Venta>
-            rows={ventas.data?.items ?? []}
+            rows={filas}
             loading={ventas.isLoading}
             rowKey={(venta) => venta.id}
             empty="No hay ventas."
@@ -180,7 +283,7 @@ export function VentasPage() {
               },
             ]}
           />
-          <Pagination page={page} totalPages={ventas.data?.totalPages ?? 1} onPageChange={setPage} />
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </CardBody>
       </Card>
 

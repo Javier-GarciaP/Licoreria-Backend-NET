@@ -98,6 +98,17 @@ module.exports = {
       maxWidth: {
         page: '1600px',
       },
+      keyframes: {
+        'deriva-bola': {
+          '0%': { transform: 'translate(0%, 0%) rotate(0deg)' },
+          '33%': { transform: 'translate(35%, -28%) rotate(140deg)' },
+          '66%': { transform: 'translate(-22%, 30%) rotate(255deg)' },
+          '100%': { transform: 'translate(0%, 0%) rotate(360deg)' },
+        },
+      },
+      animation: {
+        'deriva-bola': 'deriva-bola 24s ease-in-out infinite',
+      },
       spacing: {
         4.5: '1.125rem',
         18: '4.5rem',

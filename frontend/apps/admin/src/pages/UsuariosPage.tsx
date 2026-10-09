@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -7,13 +7,15 @@ import { toast } from 'sonner';
 import { KeyRound, Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-react';
 import {
   ActionMenu,
+  Buscador,
   Button,
   Card,
   CardBody,
   CardHeader,
-  CardTitle,
   DataTable,
+  FiltroDropdown,
   Input,
+  LimpiarFiltros,
   Modal,
   Pagination,
   Pill,
@@ -22,7 +24,6 @@ import {
 import type { Usuario } from '@licoreria/types';
 import { usuariosApi } from '@licoreria/api-client';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { InlineForm } from '../components/InlineForm';
 import { mensajeDeError } from '../lib/api';
 import { formatDateTime } from '../lib/format';
 
@@ -54,6 +55,8 @@ const VACIO: FormularioUsuario = {
 export function UsuariosPage() {
   const [page, setPage] = useState(1);
   const [busqueda, setBusqueda] = useState('');
+  const [rol, setRol] = useState('');
+  const [estado, setEstado] = useState('');
   const [editando, setEditando] = useState<Usuario | null>(null);
   const [creando, setCreando] = useState(false);
   const [cambiandoPassword, setCambiandoPassword] = useState<Usuario | null>(null);
@@ -70,6 +73,26 @@ export function UsuariosPage() {
     queryKey: ['usuarios', page, busqueda],
     queryFn: () => usuariosApi.listar({ page, pageSize: 15, busqueda }),
   });
+
+  const filas = useMemo(
+    () =>
+      (usuarios.data?.items ?? []).filter((usuario) => {
+        if (rol && usuario.rol !== rol) return false;
+        if (estado === 'activos' && !usuario.activo) return false;
+        if (estado === 'inactivos' && usuario.activo) return false;
+        return true;
+      }),
+    [usuarios.data, rol, estado],
+  );
+
+  const hayFiltros = Boolean(busqueda || rol || estado);
+
+  const limpiarFiltros = () => {
+    setBusqueda('');
+    setRol('');
+    setEstado('');
+    setPage(1);
+  };
 
   const invalidar = () => queryClient.invalidateQueries({ queryKey: ['usuarios'] });
 
@@ -150,108 +173,53 @@ export function UsuariosPage() {
     setEditando(usuario);
   };
 
-  const filaEdicion = editando
-    ? (usuario: Usuario) =>
-        usuario.id === editando.id ? (
-          <InlineForm title={`Editar · ${usuario.nombreCompleto}`} onCancel={() => setEditando(null)}>
-            <form
-              className="flex flex-col gap-3"
-              onSubmit={usuarioForm.handleSubmit((datos) => guardar.mutate(datos))}
-              noValidate
-            >
-              <Input label="Nombre completo" error={usuarioForm.formState.errors.nombreCompleto?.message} {...usuarioForm.register('nombreCompleto')} />
-              <Input label="Correo" type="email" error={usuarioForm.formState.errors.email?.message} {...usuarioForm.register('email')} />
-              <Select label="Rol" error={usuarioForm.formState.errors.rol?.message} {...usuarioForm.register('rol')}>
-                {ROLES.map((rol) => (
-                  <option key={rol} value={rol}>
-                    {rol}
-                  </option>
-                ))}
-              </Select>
-              <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                <input type="checkbox" {...usuarioForm.register('activo')} />
-                Activo
-              </label>
-              <div className="flex justify-end gap-2">
-                <Button variant="ghost" onClick={() => setEditando(null)}>
-                  Cancelar
-                </Button>
-                <Button type="submit" loading={guardar.isPending}>
-                  Guardar cambios
-                </Button>
-              </div>
-            </form>
-          </InlineForm>
-        ) : null
-    : undefined;
-
   return (
     <div className="mx-auto flex max-w-page flex-col gap-4">
       <Card>
-        <CardHeader>
-          <CardTitle>Cuentas</CardTitle>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="w-56">
-              <Input
-                placeholder="Buscar…"
-                value={busqueda}
-                onChange={(evento) => {
-                  setBusqueda(evento.target.value);
-                  setPage(1);
-                }}
-              />
+        <CardHeader className="flex flex-col items-stretch gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Buscador
+              placeholder="Buscar nombre o correo…"
+              value={busqueda}
+              onCambio={(valor) => {
+                setBusqueda(valor);
+                setPage(1);
+              }}
+            />
+            <div className="ml-auto">
+              <Button size="sm" leftIcon={<Plus size={15} />} onClick={abrirCrear}>
+                Nuevo usuario
+              </Button>
             </div>
-            <Button size="sm" leftIcon={<Plus size={15} />} onClick={abrirCrear}>
-              Nuevo usuario
-            </Button>
+          </div>
+          <div className="border-b border-border" />
+          <div className="flex flex-wrap items-center gap-2">
+            <FiltroDropdown
+              label="Rol"
+              opciones={ROLES.map((valor) => ({ valor, etiqueta: valor }))}
+              valor={rol}
+              onChange={setRol}
+            />
+            <FiltroDropdown
+              label="Estado"
+              opciones={[
+                { valor: 'activos', etiqueta: 'Activos' },
+                { valor: 'inactivos', etiqueta: 'Inactivos' },
+              ]}
+              valor={estado}
+              onChange={setEstado}
+            />
+            <div className="ml-auto">
+              <LimpiarFiltros activo={hayFiltros} onClick={limpiarFiltros} />
+            </div>
           </div>
         </CardHeader>
-        <CardBody className="flex flex-col gap-3">
-          {creando && (
-            <InlineForm title="Nuevo usuario" onCancel={cerrarFormulario}>
-              <form
-                className="flex flex-col gap-3"
-                onSubmit={usuarioForm.handleSubmit((datos) => guardar.mutate(datos))}
-                noValidate
-              >
-                <Input label="Nombre completo" error={usuarioForm.formState.errors.nombreCompleto?.message} {...usuarioForm.register('nombreCompleto')} />
-                <Input label="Correo" type="email" error={usuarioForm.formState.errors.email?.message} {...usuarioForm.register('email')} />
-                <Select label="Rol" error={usuarioForm.formState.errors.rol?.message} {...usuarioForm.register('rol')}>
-                  {ROLES.map((rol) => (
-                    <option key={rol} value={rol}>
-                      {rol}
-                    </option>
-                  ))}
-                </Select>
-                <Input
-                  label="Contraseña"
-                  type="password"
-                  error={usuarioForm.formState.errors.password?.message}
-                  {...usuarioForm.register('password')}
-                />
-                <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <input type="checkbox" {...usuarioForm.register('activo')} />
-                  Activo
-                </label>
-                <div className="flex justify-end gap-2">
-                  <Button variant="ghost" onClick={cerrarFormulario}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit" loading={guardar.isPending}>
-                    Crear usuario
-                  </Button>
-                </div>
-              </form>
-            </InlineForm>
-          )}
-
+        <CardBody>
           <DataTable<Usuario>
-            rows={usuarios.data?.items ?? []}
+            rows={filas}
             loading={usuarios.isLoading}
             rowKey={(usuario) => usuario.id}
             empty="No hay usuarios."
-            expandirKey={editando?.id ?? null}
-            expandedRow={filaEdicion}
             columns={[
               {
                 key: 'nombre',
@@ -302,6 +270,51 @@ export function UsuariosPage() {
           <Pagination page={page} totalPages={usuarios.data?.totalPages ?? 1} onPageChange={setPage} />
         </CardBody>
       </Card>
+
+      <Modal
+        open={creando || Boolean(editando)}
+        onClose={cerrarFormulario}
+        title={editando ? `Editar · ${editando.nombreCompleto}` : 'Nuevo usuario'}
+        footer={
+          <>
+            <Button variant="ghost" onClick={cerrarFormulario}>
+              Cancelar
+            </Button>
+            <Button type="submit" form="form-usuario" loading={guardar.isPending}>
+              {editando ? 'Guardar cambios' : 'Crear usuario'}
+            </Button>
+          </>
+        }
+      >
+        <form
+          id="form-usuario"
+          className="flex flex-col gap-3"
+          onSubmit={usuarioForm.handleSubmit((datos) => guardar.mutate(datos))}
+          noValidate
+        >
+          <Input label="Nombre completo" error={usuarioForm.formState.errors.nombreCompleto?.message} {...usuarioForm.register('nombreCompleto')} />
+          <Input label="Correo" type="email" error={usuarioForm.formState.errors.email?.message} {...usuarioForm.register('email')} />
+          <Select label="Rol" error={usuarioForm.formState.errors.rol?.message} {...usuarioForm.register('rol')}>
+            {ROLES.map((rol) => (
+              <option key={rol} value={rol}>
+                {rol}
+              </option>
+            ))}
+          </Select>
+          {!editando && (
+            <Input
+              label="Contraseña"
+              type="password"
+              error={usuarioForm.formState.errors.password?.message}
+              {...usuarioForm.register('password')}
+            />
+          )}
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            <input type="checkbox" {...usuarioForm.register('activo')} />
+            Activo
+          </label>
+        </form>
+      </Modal>
 
       <Modal
         open={Boolean(cambiandoPassword)}

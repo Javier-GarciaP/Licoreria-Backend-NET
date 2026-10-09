@@ -19,7 +19,7 @@ Esta guía resume cómo consumir la API desde las apps React (`public-web` y `ad
 
 ```http
 POST /api/auth/login
-{ "username": "admin@licoreria.com", "password": "admin123" }
+{ "username": "admin@licoreria.com", "password": "demo123" }
 ```
 
 Respuesta `200`:
@@ -42,8 +42,10 @@ Respuesta `200`:
 - Cierra sesión con `POST /api/auth/logout` (`{ "refreshToken": "..." }`).
 - Datos del usuario actual: `GET /api/auth/me`.
 
-Credenciales de prueba: `admin@licoreria.com` / `admin123` y
-`cajero1@licoreria.com` / `cajero123`.
+Credenciales de prueba: todas comparten la misma contraseña `demo123`
+(`admin@licoreria.com`, `cajero1@licoreria.com`, `mesero1@licoreria.com`,
+`barra1@licoreria.com`, `cocina1@licoreria.com`, `host1@licoreria.com`,
+`editor1@licoreria.com`).
 
 ## Roles y permisos
 

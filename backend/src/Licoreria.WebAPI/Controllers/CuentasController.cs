@@ -23,9 +23,21 @@ public class CuentasController : ControllerBase
     public async Task<ActionResult<ResultadoPaginado<CuentaDto>>> Obtener(
         [FromQuery] PaginacionRequest paginacion,
         [FromQuery] EstadoCuenta? estado,
+        [FromQuery] string? estados,
         [FromQuery] Guid? usuarioId,
         CancellationToken cancellationToken)
-        => Ok(await _servicio.ObtenerCuentasAsync(paginacion, estado, usuarioId, cancellationToken));
+    {
+        IReadOnlyList<EstadoCuenta>? listaEstados = null;
+        if (!string.IsNullOrWhiteSpace(estados))
+        {
+            listaEstados = estados
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(valor => Enum.Parse<EstadoCuenta>(valor, ignoreCase: true))
+                .ToList();
+        }
+
+        return Ok(await _servicio.ObtenerCuentasAsync(paginacion, estado, listaEstados, usuarioId, cancellationToken));
+    }
 
     [HttpGet("{id:guid}")]
     [Authorize(Policy = Permisos.VentasLeer)]
@@ -39,6 +51,14 @@ public class CuentasController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<CuentaDto>> AbrirMesa([FromBody] AbrirMesaDto dto, CancellationToken cancellationToken)
         => StatusCode(StatusCodes.Status201Created, await _servicio.AbrirMesaAsync(dto, cancellationToken));
+
+    /// <summary>Retoma una cuenta por cobrar para seguir trabajándola (vuelve a Abierta).</summary>
+    [HttpPost("{id:guid}/reabrir")]
+    public async Task<ActionResult<CuentaDto>> Reabrir(Guid id, CancellationToken cancellationToken)
+    {
+        var cuenta = await _servicio.ReabrirCuentaAsync(id, cancellationToken);
+        return cuenta is null ? NotFound() : Ok(cuenta);
+    }
 
     [HttpPost("{id:guid}/comandas")]
     public async Task<ActionResult<CuentaDto>> AgregarComanda(

@@ -103,7 +103,9 @@ public static class RolesSeguridad
                 Permisos.CatalogoLeer,
                 Permisos.ClubLeer,
                 Permisos.ClubGestionar,
-                Permisos.ReservasGestionar
+                Permisos.ReservasGestionar,
+                Permisos.ContenidoLeer,
+                Permisos.ContenidoPublicar
             ],
             RolUsuario.EditorContenido =>
             [

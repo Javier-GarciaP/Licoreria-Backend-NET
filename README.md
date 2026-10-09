@@ -138,8 +138,9 @@ Lo logrado:
 - **401** sin token y **403** con rol insuficiente.
 - Validación con **FluentValidation** → **400** con errores por campo.
 
-Credenciales de prueba: `admin@licoreria.com` / `admin123` (Admin) y
-`cajero1@licoreria.com` / `cajero123` (Employee).
+Credenciales de prueba (todas con la misma contraseña `demo123`):
+`admin@licoreria.com` (Admin), `cajero1@licoreria.com` (Employee), `mesero1@licoreria.com`,
+`barra1@licoreria.com`, `cocina1@licoreria.com`, `host1@licoreria.com` y `editor1@licoreria.com`.
 
 ### Evidencia (Postman)
 

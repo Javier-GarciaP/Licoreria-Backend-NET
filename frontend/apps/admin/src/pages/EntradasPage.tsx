@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { XCircle } from 'lucide-react';
 import {
+  ActionMenu,
   Button,
   Card,
   CardBody,
@@ -120,9 +122,12 @@ export function EntradasPage() {
                 align: 'right',
                 render: (fila) =>
                   fila.estado === 'Emitida' || fila.estado === 'Valida' ? (
-                    <Button size="sm" variant="ghost" onClick={() => cancelar.mutate(fila.id)}>
-                      Cancelar
-                    </Button>
+                    <ActionMenu
+                      label={`Acciones de entrada ${fila.codigo}`}
+                      options={[
+                        { label: 'Cancelar', icon: <XCircle size={15} />, onClick: () => cancelar.mutate(fila.id) },
+                      ]}
+                    />
                   ) : null,
               },
             ]}

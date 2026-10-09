@@ -1,4 +1,5 @@
 using Licoreria.Domain.Entities;
+using Licoreria.Domain.Enums;
 
 namespace Licoreria.UnitTests;
 
@@ -27,7 +28,7 @@ public class ProductoTests
     {
         var producto = CrearProducto();
 
-        producto.ActualizarDatos("Ron Cacique Añejo", "Nueva descripción", producto.CategoriaId, null, null, producto.Tipo, null, null);
+        producto.ActualizarDatos("Ron Cacique Añejo", "Nueva descripción", producto.CategoriaId, null, null, producto.Tipo, AreaDestino.Barra, null, null);
 
         Assert.Equal("Ron Cacique Añejo", producto.Nombre);
         Assert.NotNull(producto.LastModifiedAt);
@@ -39,7 +40,7 @@ public class ProductoTests
         var producto = CrearProducto();
 
         Assert.Throws<InvalidOperationException>(() =>
-            producto.ActualizarDatos("", null, producto.CategoriaId, null, null, producto.Tipo, null, null));
+            producto.ActualizarDatos("", null, producto.CategoriaId, null, null, producto.Tipo, AreaDestino.Barra, null, null));
     }
 
     [Fact]

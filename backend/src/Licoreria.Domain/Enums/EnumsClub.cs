@@ -17,7 +17,8 @@ public enum EstadoReserva
     Confirmada = 2,
     Cancelada = 3,
     Asistio = 4,
-    NoAsistio = 5
+    NoAsistio = 5,
+    Finalizada = 6
 }
 
 /// <summary>Canal de origen de una reserva.</summary>

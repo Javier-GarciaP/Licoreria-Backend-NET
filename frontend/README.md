@@ -9,6 +9,8 @@ trabajo restante es construir el frontend React que lo consume **sin datos está
 > - Endpoints: `docs/dev/04-api/endpoints.md`
 > - Contrato: `openapi/licoreria.yaml`
 > - Arquitectura front: `docs/dev/07-frontend/overview.md` y ADR `0003`.
+> - Bitácoras de diseño: `frontend/docs/rediseno-convencional.md` y
+>   `frontend/docs/salon-reservas.md`.
 
 ---
 
@@ -73,13 +75,15 @@ Credenciales de prueba (una cuenta por rol, sembradas en la BD):
 
 | Rol | Correo | Contraseña |
 | :-- | :-- | :-- |
-| Administrador | `admin@licoreria.com` | `admin123` |
-| Cajero | `cajero1@licoreria.com` | `cajero123` |
+| Administrador | `admin@licoreria.com` | `demo123` |
+| Cajero | `cajero1@licoreria.com` | `demo123` |
 | Mesero | `mesero1@licoreria.com` | `demo123` |
 | Barra | `barra1@licoreria.com` | `demo123` |
 | Cocina | `cocina1@licoreria.com` | `demo123` |
 | Host | `host1@licoreria.com` | `demo123` |
 | Editor de contenido | `editor1@licoreria.com` | `demo123` |
+
+> Todas las cuentas de prueba comparten la misma contraseña: `demo123`.
 
 ## 4. Contratos clave de la API
 
@@ -172,11 +176,14 @@ Leyenda: `[ ]` pendiente · `[~]` en progreso · `[x]` hecho.
 - [x] Abrir mesa (`POST /api/v1/cuentas`)
 - [x] **Desalojo de mesa en tiempo real**: `POST /api/v1/mesas/{id}/desalojar` +
       evento `mesa:actualizada` → el resto de clientes ven la mesa **Libre**
-- [x] Cuenta: comandas (`POST /cuentas/{id}/comandas`), máquina de estados
-      Recibido→Preparado→Entregado (`PUT .../detalles/{detalleId}/estado`)
-- [x] Abonos y **pagos mixtos USD/Bs** (`POST /cuentas/{id}/abonos`, `.../cerrar`),
-      sincronizados con `GET /api/v1/tasas-cambio/actual`
-- [x] Dividir cuenta (`POST /cuentas/{id}/dividir`)
+- [x] **Cuenta orientada a monitoreo**: resumen (saldo/total/abonado/consumos), consumos
+      read-only por comanda, listado con filtro por estado (Abiertas/PorCobrar/Cerradas)
+- [x] **Cobro en modal** con líneas de pago (solo USD), restante por cubrir y ticket
+      térmico (`TicketVenta`) al cerrar
+- [x] **Agregar a la comanda** (`AgregarComandaModal`): buscador + categorías + fotos de
+      producto y **área por ítem** (Auto/Barra/Cocina); envía una comanda por área
+- [x] Abonos (pago parcial) y dividir en partes iguales, **solo USD**
+      (`POST /cuentas/{id}/abonos`, `.../dividir`, `.../cerrar`)
 - [x] **KDS Barra** en tiempo real (`/hubs/comandas`, área `barra`), tiempo transcurrido
       y botón "Marcar Preparado"
 - [x] Reservas VIP: crear/gestionar, validar señas y pedidos anticipados
@@ -198,17 +205,22 @@ Leyenda: `[ ]` pendiente · `[~]` en progreso · `[x]` hecho.
 
 ### 7.6 `admin` — Catálogo / Inventario / Administración
 - [x] Productos con variantes (crear/editar/eliminar), paginación server-side y búsqueda
+- [x] **Área destino (Barra/Cocina)** por producto: enruta comandas solo y se muestra
+      en tabla, detalle y formulario
+- [x] **Formulario coherente Barra/Cocina**: grado alcohólico y código de barras solo en
+      Barra; **SKU autogenerado** (`{PRODUCTO}-{n}`) si se deja vacío; tipo sugerido por área
 - [x] Categorías y marcas (CRUD)
 - [x] Usuarios: crear/editar, cambio de contraseña, revocar sesiones, baja lógica
 - [x] Clientes (CRM): CRUD y acumular/canjear puntos
-- [x] Caja: abrir, movimientos, arqueo y cierre (Z), historial
+- [x] Caja **solo USD**: abrir, movimientos, arqueo de billetes ($1–$100) y cierre (Z)
 - [x] Inventario: existencias, kardex, ajustes, lotes y tomas físicas
-- [x] Mermas y cortesías: registro e historial
+- [x] Mermas y cortesías: registro e historial (formulario en `Modal`)
 - [x] Compras: proveedores, órdenes de compra, recepciones y cuentas por pagar
 - [x] Contenido: páginas (secciones/bloques), eventos, horarios, local, menú y archivos
 - [x] Finanzas: tasas de cambio y tesorería
 - [x] Salón: editor de planos (dnd-kit) y CRUD de zonas y mesas
-- [x] **Catálogo avanzado**: unidades de medida, impuestos, listas de precio y modificadores
+- [x] **Catálogo avanzado**: unidades de medida (impuestos, listas de precio y
+      modificadores quedan ocultos del núcleo mínimo)
 - [x] **Promociones**: CRUD (tipo porcentaje / monto fijo)
 - [x] **Cuentas por cobrar de clientes**: registrar y cobrar
 - [x] **Entradas y Lista VIP**: emisión, validación por código y control de acceso
@@ -216,6 +228,16 @@ Leyenda: `[ ]` pendiente · `[~]` en progreso · `[x]` hecho.
 - [x] **Auditoría**: bitácora de acciones sensibles (solo Admin)
 - [x] **Por rol**: workspaces (nav curada por rol), KDS por área (barra/cocina), breadcrumbs y paleta de comandos ⌘K
 - [ ] Módulo de IA (generaciones y aprobación)
+- [x] **Patrón de listado unificado** (DESIGN.md §7.5): cada módulo de
+      listado/CRUD usa un solo `Card` con buscador a la izquierda (lupa),
+      filtros generales en fila 1 (dropdowns + rango de fechas en popover),
+      filtros concretos en fila 2, botón "Limpiar" para resetear todo, y
+      formularios de crear/editar en `Modal`
+- [x] **Núcleo mínimo**: los módulos fuera de uso operativo se ocultan de la
+      nav y se bloquea su acceso directo (Existencias, Impuestos, Listas de
+      precio, Modificadores, Lotes, Tomas, Promociones, Entradas, Lista VIP,
+      Clientes, Cuentas por cobrar, Contenido y Reportes), sin eliminar su
+      lógica ni sus rutas
 
 ### 7.7 `public-web`
 - [x] Menú digital, tasas del día y eventos (API pública, sin datos estáticos)

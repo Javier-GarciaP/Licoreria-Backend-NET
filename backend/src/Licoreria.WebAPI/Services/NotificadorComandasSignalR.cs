@@ -73,4 +73,19 @@ public sealed class NotificadorComandasSignalR : INotificadorComandas
         var payload = new { autorId, autorNombre, rol, mensaje };
         return _hub.Clients.Group("staff").SendAsync("chat:recibido", payload, cancellationToken);
     }
+
+    public Task TurnoAbiertoAsync(Guid sesionId, CancellationToken cancellationToken = default)
+        => EnviarGlobalAsync("turno:abierto", new { sesionId }, cancellationToken);
+
+    public Task TurnoCerradoAsync(Guid sesionId, CancellationToken cancellationToken = default)
+        => EnviarGlobalAsync("turno:cerrado", new { sesionId }, cancellationToken);
+
+    /// <summary>Difunde un evento a todas las áreas operativas (barra, cocina, meseros, mesas y staff).</summary>
+    private Task EnviarGlobalAsync(string evento, object payload, CancellationToken cancellationToken)
+        => Task.WhenAll(
+            _hub.Clients.Group("barra").SendAsync(evento, payload, cancellationToken),
+            _hub.Clients.Group("cocina").SendAsync(evento, payload, cancellationToken),
+            _hub.Clients.Group("meseros").SendAsync(evento, payload, cancellationToken),
+            _hub.Clients.Group("mesas").SendAsync(evento, payload, cancellationToken),
+            _hub.Clients.Group("staff").SendAsync(evento, payload, cancellationToken));
 }

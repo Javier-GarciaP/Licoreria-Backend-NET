@@ -1,4 +1,4 @@
-﻿using Licoreria.Domain.Common;
+using Licoreria.Domain.Common;
 using Licoreria.Domain.Enums;
 
 namespace Licoreria.Domain.Entities;
@@ -13,6 +13,7 @@ public class Producto : BaseEntity
     public string? Descripcion { get; set; }
     public string? ImagenUrl { get; set; }
     public TipoProducto Tipo { get; set; } = TipoProducto.Simple;
+    public AreaDestino AreaDestino { get; set; } = AreaDestino.Barra;
     public decimal? GradoAlcoholico { get; set; }
     public bool Activo { get; set; } = true;
 
@@ -26,7 +27,6 @@ public class Producto : BaseEntity
     public Impuesto? Impuesto { get; set; }
 
     public ICollection<ProductoVariante> Variantes { get; set; } = new List<ProductoVariante>();
-    public ICollection<Receta> Recetas { get; set; } = new List<Receta>();
     public ICollection<ProductoModificador> Modificadores { get; set; } = new List<ProductoModificador>();
 
     public void ActualizarDatos(
@@ -36,6 +36,7 @@ public class Producto : BaseEntity
         Guid? marcaId,
         Guid? impuestoId,
         TipoProducto tipo,
+        AreaDestino areaDestino,
         decimal? gradoAlcoholico,
         string? imagenUrl)
     {
@@ -50,6 +51,7 @@ public class Producto : BaseEntity
         MarcaId = marcaId;
         ImpuestoId = impuestoId;
         Tipo = tipo;
+        AreaDestino = areaDestino;
         GradoAlcoholico = gradoAlcoholico;
         ImagenUrl = imagenUrl;
         MarcarModificado();

@@ -18,7 +18,7 @@ public class ReservasController : ControllerBase
     public ReservasController(IServicioClub servicio) => _servicio = servicio;
 
     [HttpGet]
-    [Authorize(Policy = Permisos.ReservasGestionar)]
+    [Authorize(Policy = Permisos.ClubLeer)]
     public async Task<ActionResult<ResultadoPaginado<ReservaDto>>> Obtener(
         [FromQuery] PaginacionRequest paginacion,
         [FromQuery] DateTime? desde,
@@ -76,6 +76,15 @@ public class ReservasController : ControllerBase
         CancellationToken cancellationToken)
     {
         var reserva = await _servicio.CambiarEstadoReservaAsync(id, dto, cancellationToken);
+        return reserva is null ? NotFound() : Ok(reserva);
+    }
+
+    /// <summary>Marca una reserva como atendida (Finalizada) al abrir su mesa desde el mesonero.</summary>
+    [HttpPost("{id:guid}/atender")]
+    [Authorize(Policy = Permisos.VentasEscribir)]
+    public async Task<ActionResult<ReservaDto>> Atender(Guid id, CancellationToken cancellationToken)
+    {
+        var reserva = await _servicio.MarcarReservaAtendidaAsync(id, cancellationToken);
         return reserva is null ? NotFound() : Ok(reserva);
     }
 

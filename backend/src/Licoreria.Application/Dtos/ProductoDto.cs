@@ -11,7 +11,12 @@ public sealed record ProductoVarianteDto(
     Guid UnidadMedidaId,
     string UnidadMedidaNombre,
     bool Activo,
-    IReadOnlyList<string> CodigosBarras);
+    bool EsBase,
+    IReadOnlyList<string> CodigosBarras,
+    decimal Cantidad,
+    decimal CantidadReservada,
+    decimal StockMinimo,
+    decimal StockMaximo);
 
 public sealed record ProductoDto(
     Guid Id,
@@ -23,6 +28,7 @@ public sealed record ProductoDto(
     string? MarcaNombre,
     Guid? ImpuestoId,
     TipoProducto Tipo,
+    AreaDestino AreaDestino,
     decimal? GradoAlcoholico,
     string? ImagenUrl,
     bool Activo,
@@ -35,7 +41,11 @@ public sealed record VarianteCrearDto(
     Guid UnidadMedidaId,
     decimal PrecioCompraUSD,
     decimal PrecioVentaUSD,
-    IReadOnlyList<string>? CodigosBarras = null);
+    IReadOnlyList<string>? CodigosBarras = null,
+    decimal? StockInicial = null,
+    decimal? StockMinimo = null,
+    decimal? StockMaximo = null,
+    bool EsBase = false);
 
 public sealed record ProductoCrearDto(
     string Nombre,
@@ -44,6 +54,7 @@ public sealed record ProductoCrearDto(
     Guid? MarcaId,
     Guid? ImpuestoId,
     TipoProducto Tipo,
+    AreaDestino AreaDestino,
     decimal? GradoAlcoholico,
     string? ImagenUrl,
     IReadOnlyList<VarianteCrearDto> Variantes);
@@ -56,6 +67,7 @@ public sealed record ProductoEditarDto(
     Guid? MarcaId,
     Guid? ImpuestoId,
     TipoProducto Tipo,
+    AreaDestino AreaDestino,
     decimal? GradoAlcoholico,
     string? ImagenUrl,
     bool Activo,

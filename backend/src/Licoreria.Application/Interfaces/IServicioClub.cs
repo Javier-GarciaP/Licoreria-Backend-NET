@@ -14,7 +14,10 @@ public interface IServicioClub
     Task<ZonaDto?> EditarZonaAsync(ZonaEditarDto dto, CancellationToken cancellationToken = default);
     Task<bool> EliminarZonaAsync(Guid id, CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<MesaDto>> ObtenerMesasAsync(Guid? zonaId = null, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<MesaDto>> ObtenerMesasAsync(
+        Guid? zonaId = null,
+        DateTime? fechaHora = null,
+        CancellationToken cancellationToken = default);
     Task<MesaDto> CrearMesaAsync(MesaCrearDto dto, CancellationToken cancellationToken = default);
     Task<MesaDto?> EditarMesaAsync(MesaEditarDto dto, CancellationToken cancellationToken = default);
     Task<bool> EliminarMesaAsync(Guid id, CancellationToken cancellationToken = default);
@@ -43,6 +46,9 @@ public interface IServicioClub
     Task<ReservaDto?> RegistrarPagoReservaAsync(Guid reservaId, ReservaPagoCrearDto dto, CancellationToken cancellationToken = default);
     Task<ReservaDto?> ValidarPagoReservaAsync(Guid reservaId, Guid pagoId, ValidarReservaPagoDto dto, CancellationToken cancellationToken = default);
     Task<ReservaDto?> CambiarEstadoReservaAsync(Guid reservaId, CambiarEstadoReservaDto dto, CancellationToken cancellationToken = default);
+
+    /// <summary>Marca una reserva como atendida (Finalizada) cuando el mesonero abre su mesa.</summary>
+    Task<ReservaDto?> MarcarReservaAtendidaAsync(Guid reservaId, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<EventoDto>> ObtenerEventosAsync(bool soloPublicados = false, CancellationToken cancellationToken = default);
     Task<EventoDto> CrearEventoAsync(EventoCrearDto dto, CancellationToken cancellationToken = default);

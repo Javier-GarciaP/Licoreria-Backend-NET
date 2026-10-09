@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Text.Json;
 using Licoreria.Domain.Common;
 using Microsoft.AspNetCore.Mvc;

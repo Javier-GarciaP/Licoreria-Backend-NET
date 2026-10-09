@@ -12,7 +12,8 @@ public sealed record VentaItemDto(
     decimal Cantidad,
     decimal? PrecioUnitarioUSD = null,
     decimal DescuentoUSD = 0,
-    bool EsCortesia = false);
+    bool EsCortesia = false,
+    bool YaDescontado = false);
 
 public sealed record VentaPagoDto(
     Guid MetodoPagoId,
@@ -62,6 +63,7 @@ public sealed record VentaDto(
     decimal TotalBS,
     EstadoVenta Estado,
     Guid UsuarioId,
+    Guid? SesionCajaId,
     string? NumeroComprobante,
     IReadOnlyList<VentaDetalleDto> Detalles,
     IReadOnlyList<VentaPagoRegistradoDto> Pagos);

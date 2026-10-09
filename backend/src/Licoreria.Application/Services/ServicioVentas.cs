@@ -15,6 +15,7 @@ public sealed class ServicioVentas : IServicioVentas
     private readonly IRepository<MetodoPago> _metodoPagoRepository;
     private readonly IRepository<Promocion> _promocionRepository;
     private readonly IServicioFinanzas _finanzas;
+    private readonly ISesionCajaRepository _sesionesCaja;
     private readonly IContextoUsuario _contextoUsuario;
     private readonly IRelojSistema _reloj;
     private readonly IUnitOfWork _unitOfWork;
@@ -27,6 +28,7 @@ public sealed class ServicioVentas : IServicioVentas
         IRepository<MetodoPago> metodoPagoRepository,
         IRepository<Promocion> promocionRepository,
         IServicioFinanzas finanzas,
+        ISesionCajaRepository sesionesCaja,
         IContextoUsuario contextoUsuario,
         IRelojSistema reloj,
         IUnitOfWork unitOfWork,
@@ -38,6 +40,7 @@ public sealed class ServicioVentas : IServicioVentas
         _metodoPagoRepository = metodoPagoRepository;
         _promocionRepository = promocionRepository;
         _finanzas = finanzas;
+        _sesionesCaja = sesionesCaja;
         _contextoUsuario = contextoUsuario;
         _reloj = reloj;
         _unitOfWork = unitOfWork;
@@ -99,6 +102,9 @@ public sealed class ServicioVentas : IServicioVentas
         var usuarioId = _contextoUsuario.UsuarioId
             ?? throw new ReglaNegocioException("No se pudo identificar al usuario que registra la venta.");
 
+        var sesionCaja = await _sesionesCaja.ObtenerAbiertaAsync(cancellationToken)
+            ?? throw new ReglaNegocioException("No hay un turno abierto. Pida al cajero que abra la caja para operar.");
+
         var tasa = await _finanzas.ObtenerValorVigenteAsync(TipoTasa.Paralelo, cancellationToken);
 
         var venta = new Venta
@@ -107,10 +113,11 @@ public sealed class ServicioVentas : IServicioVentas
             TasaCambio = tasa,
             UsuarioId = usuarioId,
             DescuentoUSD = dto.DescuentoUSD,
+            SesionCajaId = sesionCaja.Id,
             CuentaId = dto.CuentaId
         };
 
-        var insumos = new List<(Guid VarianteId, decimal Cantidad)>();
+        var insumos = new List<KardexInsumo>();
 
         foreach (var item in dto.Items)
         {
@@ -133,16 +140,11 @@ public sealed class ServicioVentas : IServicioVentas
                 EsCortesia = item.EsCortesia
             });
 
-            if (variante.Producto.Tipo == TipoProducto.Preparado && variante.Producto.Recetas.Count > 0)
+            // Los ítems ya servidos (comanda en estado Preparado/Entregado) ya
+            // descontaron inventario al servirse; no se vuelven a descontar.
+            if (!item.YaDescontado)
             {
-                foreach (var receta in variante.Producto.Recetas)
-                {
-                    insumos.Add((receta.VarianteInsumoId, item.Cantidad * receta.Cantidad));
-                }
-            }
-            else
-            {
-                insumos.Add((variante.Id, item.Cantidad));
+                insumos.AddRange(await _kardex.DesglosarInsumosAsync(item.VarianteId, item.Cantidad, cancellationToken));
             }
         }
 
@@ -204,9 +206,13 @@ public sealed class ServicioVentas : IServicioVentas
 
         await _ventaRepository.AgregarAsync(venta, cancellationToken);
 
-        foreach (var (varianteId, cantidad) in insumos)
+        if (insumos.Count > 0)
         {
-            await _kardex.AplicarAsync(varianteId, TipoMovimientoInventario.Venta, -cantidad, "venta", venta.Id, "Salida por venta", cancellationToken);
+            await _kardex.VerificarStockAsync(insumos, cancellationToken);
+            foreach (var insumo in insumos)
+            {
+                await _kardex.AplicarAsync(insumo.VarianteId, TipoMovimientoInventario.Venta, -insumo.Cantidad, "venta", venta.Id, "Salida por venta", cancellationToken);
+            }
         }
 
         await _ventaRepository.SaveChangesAsync(cancellationToken);
@@ -280,7 +286,13 @@ public sealed class ServicioVentas : IServicioVentas
 
             if (dto.ReintegrarInventario)
             {
-                await _kardex.AplicarAsync(item.VarianteId, TipoMovimientoInventario.Ajuste, item.Cantidad, "devolucion", ventaId, "Reintegro por devolución", cancellationToken);
+                // Reintegra a los mismos insumos que descontó la venta (receta o
+                // variante directa); los productos sin control de inventario no aplican.
+                var insumos = await _kardex.DesglosarInsumosAsync(item.VarianteId, item.Cantidad, cancellationToken);
+                foreach (var insumo in insumos)
+                {
+                    await _kardex.AplicarAsync(insumo.VarianteId, TipoMovimientoInventario.Ajuste, insumo.Cantidad, "devolucion", ventaId, "Reintegro por devolución", cancellationToken);
+                }
             }
         }
 
@@ -384,6 +396,7 @@ public sealed class ServicioVentas : IServicioVentas
             v.TotalBS,
             v.Estado,
             v.UsuarioId,
+            v.SesionCajaId,
             v.Comprobante?.Numero,
             v.Detalles.Select(d => new VentaDetalleDto(
                 d.Id,

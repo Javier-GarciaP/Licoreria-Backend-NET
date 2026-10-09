@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,21 +8,22 @@ import { Pencil, Plus, Trash2 } from 'lucide-react';
 import {
   ActionMenu,
   BubbleModal,
+  Buscador,
   Button,
   Card,
   CardBody,
   CardHeader,
-  CardTitle,
+  FiltroDropdown,
   Input,
+  LimpiarFiltros,
   Pill,
   Skeleton,
 } from '@licoreria/ui';
 import type { Categoria, Marca } from '@licoreria/types';
 import { catalogoApi } from '@licoreria/api-client';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { CatalogoTabs } from '../components/CatalogoTabs';
-import { FolderPanel } from '../components/FolderTabs';
 import { mensajeDeError } from '../lib/api';
+import { contiene } from '../lib/filtros';
 
 const esquemaSimple = z.object({
   nombre: z.string().min(2, 'Ingresa el nombre'),
@@ -72,9 +73,40 @@ export function CatalogosPage() {
   const [marcaCreando, setMarcaCreando] = useState(false);
   const [marcaEditando, setMarcaEditando] = useState<Marca | null>(null);
   const [marcaEliminar, setMarcaEliminar] = useState<Marca | null>(null);
+  const [busqueda, setBusqueda] = useState('');
+  const [estado, setEstado] = useState('');
 
   const categorias = useQuery({ queryKey: ['categorias'], queryFn: catalogoApi.categorias });
   const marcas = useQuery({ queryKey: ['marcas'], queryFn: catalogoApi.marcas });
+
+  const categoriasVisibles = useMemo(
+    () =>
+      (categorias.data ?? []).filter((categoria) => {
+        if (!contiene(categoria.nombre, busqueda)) return false;
+        if (estado === 'activos' && !categoria.activo) return false;
+        if (estado === 'inactivos' && categoria.activo) return false;
+        return true;
+      }),
+    [categorias.data, busqueda, estado],
+  );
+
+  const marcasVisibles = useMemo(
+    () =>
+      (marcas.data ?? []).filter((marca) => {
+        if (!contiene(marca.nombre, busqueda)) return false;
+        if (estado === 'activos' && !marca.activo) return false;
+        if (estado === 'inactivos' && marca.activo) return false;
+        return true;
+      }),
+    [marcas.data, busqueda, estado],
+  );
+
+  const hayFiltros = Boolean(busqueda || estado);
+
+  const limpiarFiltros = () => {
+    setBusqueda('');
+    setEstado('');
+  };
 
   const invalidar = () => {
     queryClient.invalidateQueries({ queryKey: ['categorias'] });
@@ -161,13 +193,32 @@ export function CatalogosPage() {
 
   return (
     <div className="mx-auto flex max-w-page flex-col gap-4">
-      <CatalogoTabs />
-
-      <div className="flex flex-col">
-      <FolderPanel className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <Card className="border-0 bg-transparent shadow-none">
-          <CardHeader>
-            <CardTitle>Categorías</CardTitle>
+      <Card>
+        <CardHeader className="flex flex-col items-stretch gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Buscador
+              placeholder="Buscar categoría o marca…"
+              value={busqueda}
+              onCambio={setBusqueda}
+            />
+            <FiltroDropdown
+              label="Estado"
+              opciones={[
+                { valor: 'activos', etiqueta: 'Activos' },
+                { valor: 'inactivos', etiqueta: 'Inactivos' },
+              ]}
+              valor={estado}
+              onChange={setEstado}
+            />
+            <div className="ml-auto">
+              <LimpiarFiltros activo={hayFiltros} onClick={limpiarFiltros} />
+            </div>
+          </div>
+        </CardHeader>
+        <CardBody className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <section className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h3 className="text-lg font-medium tracking-tighter2 text-card-foreground">Categorías</h3>
             <span ref={botonCategoriaRef}>
               <Button
                 size="sm"
@@ -180,12 +231,12 @@ export function CatalogosPage() {
                 Nueva
               </Button>
             </span>
-          </CardHeader>
-          <CardBody className="flex flex-col gap-2">
+          </div>
+          <div className="flex flex-col gap-2">
             {categorias.isLoading ? (
               <Skeleton className="h-24 w-full" />
             ) : (
-              categorias.data?.map((categoria) => (
+              categoriasVisibles.map((categoria) => (
                 <div
                   key={categoria.id}
                   className={`flex items-center justify-between gap-2 rounded-lg bg-muted/40 px-3 py-2 ${categoriaEditando?.id === categoria.id ? 'ring-1 ring-ring/50' : ''}`}
@@ -207,12 +258,12 @@ export function CatalogosPage() {
                 </div>
               ))
             )}
-          </CardBody>
-        </Card>
+          </div>
+        </section>
 
-        <Card className="border-0 bg-transparent shadow-none">
-          <CardHeader>
-            <CardTitle>Marcas</CardTitle>
+        <section className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h3 className="text-lg font-medium tracking-tighter2 text-card-foreground">Marcas</h3>
             <span ref={botonMarcaRef}>
               <Button
                 size="sm"
@@ -225,12 +276,12 @@ export function CatalogosPage() {
                 Nueva
               </Button>
             </span>
-          </CardHeader>
-          <CardBody className="flex flex-col gap-2">
+          </div>
+          <div className="flex flex-col gap-2">
             {marcas.isLoading ? (
               <Skeleton className="h-24 w-full" />
             ) : (
-              marcas.data?.map((marca) => (
+              marcasVisibles.map((marca) => (
                 <div
                   key={marca.id}
                   className={`flex items-center justify-between gap-2 rounded-lg bg-muted/40 px-3 py-2 ${marcaEditando?.id === marca.id ? 'ring-1 ring-ring/50' : ''}`}
@@ -252,10 +303,10 @@ export function CatalogosPage() {
                 </div>
               ))
             )}
-          </CardBody>
-        </Card>
-      </FolderPanel>
-      </div>
+          </div>
+        </section>
+        </CardBody>
+      </Card>
 
       <BubbleModal
         open={categoriaCreando || Boolean(categoriaEditando)}

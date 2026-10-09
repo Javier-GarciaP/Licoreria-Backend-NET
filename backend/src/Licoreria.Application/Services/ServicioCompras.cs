@@ -166,6 +166,11 @@ public sealed class ServicioCompras : IServicioCompras
             var variante = await _variantes.GetByIdAsync(linea.VarianteId, cancellationToken)
                 ?? throw new NoEncontradoException($"No existe la variante {linea.VarianteId}.");
 
+            if (!variante.EsBase)
+            {
+                throw new ReglaNegocioException($"La variante '{variante.Nombre}' no se ordena al proveedor (solo presentaciones base).");
+            }
+
             orden.Detalles.Add(new OrdenCompraDetalle
             {
                 VarianteId = variante.Id,

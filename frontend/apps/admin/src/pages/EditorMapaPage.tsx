@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
@@ -16,14 +19,15 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
-import { Button, cn, Skeleton } from '@licoreria/ui';
-import type { Plano, PlanoElemento, Zona } from '@licoreria/types';
+import { Button, cn, Input, Modal, Skeleton } from '@licoreria/ui';
+import type { Mesa, Plano, PlanoElemento, Zona } from '@licoreria/types';
 import { clubApi } from '@licoreria/api-client';
 import { dibujarElemento, ELEMENTOS, ELEMENTOS_POR_FORMA, UNIT } from '../components/mapa/elementos';
 import { MapaView } from '../components/mapa/MapaView';
 import { EditorOverlay } from '../components/mapa/EditorOverlay';
 import { mensajeDeError } from '../lib/api';
 import { planoAPayload } from '../lib/plano';
+import { formaMesaDeElemento, zonaPorDefecto } from '../lib/salon';
 
 const OFFSET = 16;
 
@@ -53,6 +57,20 @@ interface Gesto {
 }
 
 type Herramienta = 'seleccionar' | 'mano';
+
+interface CrearMesaPendiente {
+  elementoId: string;
+  forma: string;
+}
+
+const esquemaNuevaMesa = z.object({
+  numero: z.string().min(1, 'Ingresa el número'),
+  capacidad: z.coerce.number().int().min(1, 'Al menos 1'),
+});
+
+type FormularioNuevaMesa = z.infer<typeof esquemaNuevaMesa>;
+
+const NUEVA_MESA_VACIA: FormularioNuevaMesa = { numero: '', capacidad: 4 };
 
 const PISOS = ['madera', 'cemento', 'neon', 'claro'];
 let contador = 0;
@@ -96,6 +114,9 @@ export function EditorMapaPage() {
   const [snapActivo, setSnapActivo] = useState(true);
   const [coords, setCoords] = useState({ x: 0, y: 0 });
   const [dirty, setDirty] = useState(false);
+  const [crearMesaPendiente, setCrearMesaPendiente] = useState<CrearMesaPendiente | null>(null);
+
+  const nuevaMesaForm = useForm<FormularioNuevaMesa>({ resolver: zodResolver(esquemaNuevaMesa), defaultValues: NUEVA_MESA_VACIA });
 
   const gesto = useRef<Gesto | null>(null);
   const wrapper = useRef<HTMLDivElement>(null);
@@ -161,9 +182,69 @@ export function EditorMapaPage() {
       setSeleccion(null);
       setDirty(false);
       queryClient.invalidateQueries({ queryKey: ['planos'] });
+      sincronizarGeometriaMesas(plano);
     },
     onError: (error) => toast.error('No se pudo guardar', { description: mensajeDeError(error) }),
   });
+
+  const crearMesa = useMutation({
+    mutationFn: (datos: FormularioNuevaMesa) => {
+      if (!draft || !crearMesaPendiente) throw new Error('Nada que crear');
+      const el = draft.elementos.find((e) => e.id === crearMesaPendiente.elementoId);
+      if (!el) throw new Error('Elemento no encontrado');
+      return zonaPorDefecto().then((zona) =>
+        clubApi.crearMesa({
+          zonaId: zona.id,
+          numero: datos.numero,
+          capacidad: datos.capacidad,
+          forma: formaMesaDeElemento(crearMesaPendiente.forma),
+          posX: el.posX,
+          posY: el.posY,
+          ancho: el.ancho,
+          alto: el.alto,
+        }),
+      );
+    },
+    onSuccess: (mesa: Mesa) => {
+      toast.success(`Mesa ${mesa.numero} creada`);
+      if (crearMesaPendiente) actualizarElemento(crearMesaPendiente.elementoId, { mesaId: mesa.id, etiqueta: mesa.numero });
+      setCrearMesaPendiente(null);
+      nuevaMesaForm.reset(NUEVA_MESA_VACIA);
+      queryClient.invalidateQueries({ queryKey: ['mesas'] });
+    },
+    onError: (error) => toast.error('No se pudo crear la mesa', { description: mensajeDeError(error) }),
+  });
+
+  const sincronizarGeometriaMesas = (plano: Plano) => {
+    const mesasPorId = new Map((mesas.data ?? []).map((m) => [m.id, m]));
+    const pendientes: Promise<unknown>[] = [];
+    for (const el of plano.elementos) {
+      if (!el.mesaId) continue;
+      const mesa = mesasPorId.get(el.mesaId);
+      if (!mesa) continue;
+      const forma = formaMesaDeElemento(el.forma);
+      if (mesa.posX === el.posX && mesa.posY === el.posY && mesa.ancho === el.ancho && mesa.alto === el.alto && mesa.forma === forma) {
+        continue;
+      }
+      pendientes.push(
+        clubApi.actualizarMesa(mesa.id, {
+          id: mesa.id,
+          zonaId: mesa.zonaId,
+          numero: mesa.numero,
+          capacidad: mesa.capacidad,
+          forma,
+          posX: el.posX,
+          posY: el.posY,
+          ancho: el.ancho,
+          alto: el.alto,
+          activa: mesa.activa,
+        }),
+      );
+    }
+    if (pendientes.length > 0) {
+      Promise.allSettled(pendientes).then(() => queryClient.invalidateQueries({ queryKey: ['mesas'] }));
+    }
+  };
 
   // ===== Elementos =====
 
@@ -190,6 +271,9 @@ export function EditorMapaPage() {
     };
     commit({ ...draft, elementos: [...draft.elementos, elemento] });
     setSeleccion(elId);
+    if (forma.startsWith('mesa')) {
+      setCrearMesaPendiente({ elementoId: elId, forma });
+    }
   };
 
   const actualizarElemento = (elId: string, cambios: Partial<PlanoElemento>, historial = true) => {
@@ -641,6 +725,7 @@ export function EditorMapaPage() {
               onDelete={() => elemento && eliminarElemento(elemento.id)}
               onLayer={(delta) => elemento && cambiarZ(elemento.id, delta)}
               onUpdate={(cambios) => elemento && actualizarElemento(elemento.id, cambios)}
+              onCrearMesa={() => elemento && setCrearMesaPendiente({ elementoId: elemento.id, forma: elemento.forma ?? '' })}
               zonas={(zonas.data ?? []) as Zona[]}
               mesas={mesas.data ?? []}
               rootRef={overlayRef}
@@ -660,6 +745,39 @@ export function EditorMapaPage() {
           {dirty ? 'Cambios sin guardar' : 'Guardado'}
         </span>
       </div>
+
+      {/* ===== Crear mesa ===== */}
+      <Modal
+        open={Boolean(crearMesaPendiente)}
+        onClose={() => {
+          setCrearMesaPendiente(null);
+          nuevaMesaForm.reset(NUEVA_MESA_VACIA);
+        }}
+        title="Nueva mesa"
+        footer={
+          <>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setCrearMesaPendiente(null);
+                nuevaMesaForm.reset(NUEVA_MESA_VACIA);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button type="submit" form="form-nueva-mesa" loading={crearMesa.isPending}>
+              Crear mesa
+            </Button>
+          </>
+        }
+      >
+        <form id="form-nueva-mesa" className="flex flex-col gap-3" onSubmit={nuevaMesaForm.handleSubmit((d) => crearMesa.mutate(d))} noValidate>
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="Número" error={nuevaMesaForm.formState.errors.numero?.message} {...nuevaMesaForm.register('numero')} />
+            <Input label="Capacidad" type="number" error={nuevaMesaForm.formState.errors.capacidad?.message} {...nuevaMesaForm.register('capacidad')} />
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

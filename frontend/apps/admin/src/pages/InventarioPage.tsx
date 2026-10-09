@@ -4,7 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { SlidersHorizontal } from 'lucide-react';
 import {
+  ActionMenu,
   Button,
   Card,
   CardBody,
@@ -18,7 +20,6 @@ import {
 import type { StockItem } from '@licoreria/types';
 import { inventarioApi } from '@licoreria/api-client';
 import { InventarioTabs } from '../components/InventarioTabs';
-import { FolderPanel } from '../components/FolderTabs';
 import { InlineForm } from '../components/InlineForm';
 import { Can } from '../components/Rbac';
 import { mensajeDeError } from '../lib/api';
@@ -91,6 +92,7 @@ export function InventarioPage() {
       setAjustando(null);
       queryClient.invalidateQueries({ queryKey: ['stock'] });
       queryClient.invalidateQueries({ queryKey: ['kardex'] });
+      queryClient.invalidateQueries({ queryKey: ['productos'] });
     },
     onError: (error) => toast.error('No se pudo ajustar', { description: mensajeDeError(error) }),
   });
@@ -99,10 +101,8 @@ export function InventarioPage() {
     <div className="mx-auto flex max-w-page flex-col gap-4">
       <InventarioTabs />
 
-      <div className="flex flex-col">
-      <FolderPanel className="flex flex-col gap-4">
-        <Card className="border-0 bg-transparent shadow-none">
-          <CardHeader>
+      <Card>
+        <CardHeader>
             <CardTitle>Existencias</CardTitle>
             <div className="flex flex-wrap items-center gap-3">
               <label className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -178,9 +178,12 @@ export function InventarioPage() {
                   align: 'right',
                   render: (item) => (
                     <Can permiso="inventory:write">
-                      <Button size="sm" variant="ghost" onClick={() => setAjustando(item)}>
-                        Ajustar
-                      </Button>
+                      <ActionMenu
+                        label={`Acciones de ${item.productoNombre}`}
+                        options={[
+                          { label: 'Ajustar', icon: <SlidersHorizontal size={15} />, onClick: () => setAjustando(item) },
+                        ]}
+                      />
                     </Can>
                   ),
                 },
@@ -188,9 +191,7 @@ export function InventarioPage() {
             />
             <Pagination page={page} totalPages={stock.data?.totalPages ?? 1} onPageChange={setPage} />
           </CardBody>
-        </Card>
-      </FolderPanel>
-      </div>
+      </Card>
     </div>
   );
 }

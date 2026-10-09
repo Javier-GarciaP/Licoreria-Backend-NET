@@ -4,7 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { Pencil, Trash2 } from 'lucide-react';
 import {
+  ActionMenu,
   Button,
   Card,
   CardBody,
@@ -158,14 +160,18 @@ export function LotesPage() {
                 header: '',
                 align: 'right',
                 render: (lote) => (
-                  <div className="flex justify-end gap-2">
-                    <Button size="sm" variant="ghost" onClick={() => abrirEditar(lote)}>
-                      Editar
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setPorEliminar(lote)}>
-                      Eliminar
-                    </Button>
-                  </div>
+                  <ActionMenu
+                    label={`Acciones de ${lote.codigo}`}
+                    options={[
+                      { label: 'Editar', icon: <Pencil size={15} />, onClick: () => abrirEditar(lote) },
+                      {
+                        label: 'Eliminar',
+                        icon: <Trash2 size={15} />,
+                        danger: true,
+                        onClick: () => setPorEliminar(lote),
+                      },
+                    ]}
+                  />
                 ),
               },
             ]}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -7,22 +7,23 @@ import { toast } from 'sonner';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import {
   ActionMenu,
+  Buscador,
   Button,
   Card,
   CardBody,
   CardHeader,
-  CardTitle,
   DataTable,
+  FiltroDropdown,
   Input,
+  LimpiarFiltros,
+  Modal,
   Pill,
 } from '@licoreria/ui';
 import type { Proveedor } from '@licoreria/types';
 import { proveedoresApi } from '@licoreria/api-client';
-import { ComprasTabs } from '../components/ComprasTabs';
-import { FolderPanel } from '../components/FolderTabs';
-import { InlineForm } from '../components/InlineForm';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { mensajeDeError } from '../lib/api';
+import { contiene } from '../lib/filtros';
 
 const esquema = z.object({
   nombre: z.string().min(2, 'Ingresa el nombre'),
@@ -93,12 +94,35 @@ function FormularioProveedor({
 
 export function ProveedoresPage() {
   const [busqueda, setBusqueda] = useState('');
+  const [estado, setEstado] = useState('');
+  const [credito, setCredito] = useState('');
   const [creando, setCreando] = useState(false);
   const [editando, setEditando] = useState<Proveedor | null>(null);
   const [porEliminar, setPorEliminar] = useState<Proveedor | null>(null);
   const queryClient = useQueryClient();
 
-  const proveedores = useQuery({ queryKey: ['proveedores', busqueda], queryFn: () => proveedoresApi.listar(busqueda) });
+  const proveedores = useQuery({ queryKey: ['proveedores'], queryFn: () => proveedoresApi.listar() });
+
+  const filas = useMemo(
+    () =>
+      (proveedores.data ?? []).filter((proveedor) => {
+        if (!contiene(`${proveedor.nombre} ${proveedor.rif ?? ''} ${proveedor.contacto ?? ''}`, busqueda)) return false;
+        if (estado === 'activos' && !proveedor.activo) return false;
+        if (estado === 'inactivos' && proveedor.activo) return false;
+        if (credito === 'sin' && proveedor.diasCredito !== 0) return false;
+        if (credito === 'con' && proveedor.diasCredito === 0) return false;
+        return true;
+      }),
+    [proveedores.data, busqueda, estado, credito],
+  );
+
+  const hayFiltros = Boolean(busqueda || estado || credito);
+
+  const limpiarFiltros = () => {
+    setBusqueda('');
+    setEstado('');
+    setCredito('');
+  };
 
   const invalidar = () => queryClient.invalidateQueries({ queryKey: ['proveedores'] });
 
@@ -126,112 +150,143 @@ export function ProveedoresPage() {
     onError: (error) => toast.error('No se pudo eliminar', { description: mensajeDeError(error) }),
   });
 
-  const editar = (proveedor: Proveedor) => {
+  const abrirCrear = () => {
+    setEditando(null);
+    setCreando(true);
+  };
+
+  const abrirEditar = (proveedor: Proveedor) => {
     setEditando(proveedor);
     setCreando(false);
   };
 
+  const modalAbierto = creando || Boolean(editando);
+  const formInicial = editando
+    ? {
+        nombre: editando.nombre,
+        rif: editando.rif ?? '',
+        contacto: editando.contacto ?? '',
+        telefono: editando.telefono ?? '',
+        email: editando.email ?? '',
+        direccion: editando.direccion ?? '',
+        diasCredito: editando.diasCredito,
+        activo: editando.activo,
+      }
+    : VACIO;
+
   return (
     <div className="mx-auto flex max-w-page flex-col gap-4">
-      <ComprasTabs />
-
-      <div className="flex flex-col">
-      <FolderPanel className="flex flex-col gap-4">
-        {creando && (
-          <InlineForm title="Nuevo proveedor" onCancel={() => setCreando(false)}>
-            <FormularioProveedor inicial={VACIO} guardando={guardar.isPending} onGuardar={(datos) => guardar.mutate(datos)} />
-          </InlineForm>
-        )}
-
-        <Card className="border-0 bg-transparent shadow-none">
-          <CardHeader>
-            <CardTitle>Proveedores</CardTitle>
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="w-56">
-                <Input placeholder="Buscar…" value={busqueda} onChange={(evento) => setBusqueda(evento.target.value)} />
-              </div>
-              <Button
-                size="sm"
-                leftIcon={<Plus size={15} />}
-                onClick={() => {
-                  setEditando(null);
-                  setCreando(true);
-                }}
-              >
+      <Card>
+        <CardHeader className="flex flex-col items-stretch gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Buscador
+              placeholder="Buscar nombre, RIF o contacto…"
+              value={busqueda}
+              onCambio={setBusqueda}
+            />
+            <div className="ml-auto">
+              <Button leftIcon={<Plus size={15} />} onClick={abrirCrear}>
                 Nuevo proveedor
               </Button>
             </div>
-          </CardHeader>
-          <CardBody>
-            <DataTable<Proveedor>
-              rows={proveedores.data ?? []}
-              loading={proveedores.isLoading}
-              rowKey={(proveedor) => proveedor.id}
-              empty="No hay proveedores."
-              expandirKey={editando?.id ?? null}
-              expandedRow={
-                editando
-                  ? (proveedor) =>
-                      proveedor.id === editando.id ? (
-                        <InlineForm title={`Editar · ${proveedor.nombre}`} onCancel={() => setEditando(null)}>
-                          <FormularioProveedor
-                            inicial={{
-                              nombre: proveedor.nombre,
-                              rif: proveedor.rif ?? '',
-                              contacto: proveedor.contacto ?? '',
-                              telefono: proveedor.telefono ?? '',
-                              email: proveedor.email ?? '',
-                              direccion: proveedor.direccion ?? '',
-                              diasCredito: proveedor.diasCredito,
-                              activo: proveedor.activo,
-                            }}
-                            guardando={guardar.isPending}
-                            onGuardar={(datos) => guardar.mutate(datos)}
-                          />
-                        </InlineForm>
-                      ) : null
-                  : undefined
-              }
-              columns={[
-                {
-                  key: 'nombre',
-                  header: 'Proveedor',
-                  render: (proveedor) => (
-                    <div>
-                      <p className="text-foreground">{proveedor.nombre}</p>
-                      <p className="text-xs text-muted-foreground">{proveedor.contacto ?? proveedor.telefono ?? '—'}</p>
-                    </div>
-                  ),
-                },
-                { key: 'rif', header: 'RIF', render: (proveedor) => proveedor.rif ?? '—' },
-                { key: 'credito', header: 'Crédito', align: 'center', render: (proveedor) => `${proveedor.diasCredito} d` },
-                {
-                  key: 'activo',
-                  header: 'Estado',
-                  render: (proveedor) => (
-                    <Pill tone={proveedor.activo ? 'success' : 'danger'}>{proveedor.activo ? 'Activo' : 'Inactivo'}</Pill>
-                  ),
-                },
-                {
-                  key: 'acciones',
-                  header: '',
-                  align: 'right',
-                  render: (proveedor) => (
-                    <ActionMenu
-                      label={`Acciones de ${proveedor.nombre}`}
-                      options={[
-                        { label: 'Editar', icon: <Pencil size={15} />, onClick: () => editar(proveedor) },
-                        { label: 'Eliminar', icon: <Trash2 size={15} />, danger: true, onClick: () => setPorEliminar(proveedor) },
-                      ]}
-                    />
-                  ),
-                },
+          </div>
+          <div className="border-b border-border" />
+          <div className="flex flex-wrap items-center gap-2">
+            <FiltroDropdown
+              label="Estado"
+              opciones={[
+                { valor: 'activos', etiqueta: 'Activos' },
+                { valor: 'inactivos', etiqueta: 'Inactivos' },
               ]}
+              valor={estado}
+              onChange={setEstado}
             />
-          </CardBody>
-        </Card>
-      </FolderPanel>
-      </div>
+            <FiltroDropdown
+              label="Crédito"
+              opciones={[
+                { valor: 'sin', etiqueta: 'Sin crédito' },
+                { valor: 'con', etiqueta: 'Con crédito' },
+              ]}
+              valor={credito}
+              onChange={setCredito}
+            />
+            <div className="ml-auto">
+              <LimpiarFiltros activo={hayFiltros} onClick={limpiarFiltros} />
+            </div>
+          </div>
+        </CardHeader>
+        <CardBody>
+          <DataTable<Proveedor>
+            rows={filas}
+            loading={proveedores.isLoading}
+            rowKey={(proveedor) => proveedor.id}
+            empty="No hay proveedores."
+            columns={[
+              {
+                key: 'nombre',
+                header: 'Proveedor',
+                render: (proveedor) => (
+                  <div>
+                    <p className="text-foreground">{proveedor.nombre}</p>
+                    <p className="text-xs text-muted-foreground">{proveedor.contacto ?? proveedor.telefono ?? '—'}</p>
+                  </div>
+                ),
+              },
+              { key: 'rif', header: 'RIF', render: (proveedor) => proveedor.rif ?? '—' },
+              { key: 'credito', header: 'Crédito', align: 'center', render: (proveedor) => `${proveedor.diasCredito} d` },
+              {
+                key: 'activo',
+                header: 'Estado',
+                render: (proveedor) => (
+                  <Pill tone={proveedor.activo ? 'success' : 'danger'}>{proveedor.activo ? 'Activo' : 'Inactivo'}</Pill>
+                ),
+              },
+              {
+                key: 'acciones',
+                header: '',
+                align: 'right',
+                render: (proveedor) => (
+                  <ActionMenu
+                    label={`Acciones de ${proveedor.nombre}`}
+                    options={[
+                      { label: 'Editar', icon: <Pencil size={15} />, onClick: () => abrirEditar(proveedor) },
+                      { label: 'Eliminar', icon: <Trash2 size={15} />, danger: true, onClick: () => setPorEliminar(proveedor) },
+                    ]}
+                  />
+                ),
+              },
+            ]}
+          />
+        </CardBody>
+      </Card>
+
+      <Modal
+        open={modalAbierto}
+        onClose={() => {
+          setCreando(false);
+          setEditando(null);
+        }}
+        title={editando ? `Editar · ${editando.nombre}` : 'Nuevo proveedor'}
+        footer={
+          <>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setCreando(false);
+                setEditando(null);
+              }}
+            >
+              Cancelar
+            </Button>
+          </>
+        }
+      >
+        <FormularioProveedor
+          inicial={formInicial}
+          guardando={guardar.isPending}
+          onGuardar={(datos) => guardar.mutate(datos)}
+        />
+      </Modal>
 
       <ConfirmDialog
         open={Boolean(porEliminar)}

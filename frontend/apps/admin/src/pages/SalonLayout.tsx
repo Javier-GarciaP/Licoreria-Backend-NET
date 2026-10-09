@@ -3,7 +3,7 @@ import { FolderPanel, FolderTabs, type FolderTab } from '../components/FolderTab
 
 const TABS: FolderTab[] = [
   { to: '/salon', label: 'Planos', end: true },
-  { to: '/salon/zonas', label: 'Zonas y mesas' },
+  { to: '/salon/mesas', label: 'Mesas' },
 ];
 
 /** Salón como sistema de carpetas: pestañas sobre un panel que contiene el contenido. */

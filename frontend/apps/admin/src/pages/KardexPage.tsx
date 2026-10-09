@@ -1,11 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardBody, CardHeader, CardTitle, DataTable, Input, Pagination, Pill, Select } from '@licoreria/ui';
+import { Buscador, Card, CardBody, CardHeader, DataTable, FiltroDropdown, FiltroFechas, LimpiarFiltros, Pagination, Pill } from '@licoreria/ui';
 import type { MovimientoKardex, TipoMovimientoInventario } from '@licoreria/types';
 import { inventarioApi } from '@licoreria/api-client';
-import { InventarioTabs } from '../components/InventarioTabs';
-import { FolderPanel } from '../components/FolderTabs';
 import { formatDateTime, formatNumber, formatUSD } from '../lib/format';
+import { contiene, paginarEnMemoria, PAGE_SIZE_FILTRO_LOCAL } from '../lib/filtros';
 
 const TIPOS: TipoMovimientoInventario[] = ['Compra', 'Venta', 'Ajuste', 'Merma', 'Cortesia', 'ConsumoInterno'];
 
@@ -23,91 +22,104 @@ export function KardexPage() {
   const [tipo, setTipo] = useState('');
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
+  const [busqueda, setBusqueda] = useState('');
+
+  const hayFiltroLocal = Boolean(busqueda);
+  const hayFiltros = hayFiltroLocal || Boolean(tipo || desde || hasta);
+
+  const limpiarFiltros = () => {
+    setBusqueda('');
+    setTipo('');
+    setDesde('');
+    setHasta('');
+    setPage(1);
+  };
 
   const kardex = useQuery({
-    queryKey: ['kardex', page, tipo, desde, hasta],
-    queryFn: () => inventarioApi.kardex({ page, pageSize: 20, tipo: tipo || undefined, desde: desde || undefined, hasta: hasta || undefined }),
+    queryKey: ['kardex', page, tipo, desde, hasta, hayFiltroLocal ? PAGE_SIZE_FILTRO_LOCAL : 20],
+    queryFn: () =>
+      inventarioApi.kardex({
+        page: hayFiltroLocal ? 1 : page,
+        pageSize: hayFiltroLocal ? PAGE_SIZE_FILTRO_LOCAL : 20,
+        tipo: tipo || undefined,
+        desde: desde || undefined,
+        hasta: hasta || undefined,
+      }),
   });
+
+  const { items: filas, totalPages } = useMemo(() => {
+    const filtradas = (kardex.data?.items ?? []).filter((movimiento) => contiene(movimiento.sku, busqueda));
+    return hayFiltroLocal
+      ? paginarEnMemoria(filtradas, page, 20)
+      : { items: filtradas, totalPages: kardex.data?.totalPages ?? 1 };
+  }, [kardex.data, busqueda, hayFiltroLocal, page]);
 
   return (
     <div className="mx-auto flex max-w-page flex-col gap-4">
-      <InventarioTabs />
-
-      <div className="flex flex-col">
-      <FolderPanel className="flex flex-col gap-4">
-        <Card className="border-0 bg-transparent shadow-none">
-          <CardHeader>
-            <CardTitle>Movimientos</CardTitle>
-            <div className="flex flex-wrap items-end gap-2">
-              <div className="w-44">
-                <Select aria-label="Tipo" value={tipo} onChange={(evento) => { setTipo(evento.target.value); setPage(1); }}>
-                  <option value="">Todos</option>
-                  {TIPOS.map((valor) => (
-                    <option key={valor} value={valor}>
-                      {valor}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-              <div className="w-40">
-                <Input
-                  label="Desde"
-                  type="date"
-                  value={desde}
-                  onChange={(evento) => {
-                    setDesde(evento.target.value);
-                    setPage(1);
-                  }}
-                />
-              </div>
-              <div className="w-40">
-                <Input
-                  label="Hasta"
-                  type="date"
-                  value={hasta}
-                  onChange={(evento) => {
-                    setHasta(evento.target.value);
-                    setPage(1);
-                  }}
-                />
-              </div>
-            </div>
-          </CardHeader>
-          <CardBody>
-            <DataTable<MovimientoKardex>
-              rows={kardex.data?.items ?? []}
-              loading={kardex.isLoading}
-              rowKey={(movimiento) => movimiento.id}
-              empty="Sin movimientos."
-              columns={[
-                { key: 'fecha', header: 'Fecha', render: (movimiento) => formatDateTime(movimiento.fecha) },
-                { key: 'sku', header: 'SKU', render: (movimiento) => movimiento.sku },
-                { key: 'tipo', header: 'Tipo', render: (movimiento) => <Pill tone={tono[movimiento.tipo] ?? 'neutral'}>{movimiento.tipo}</Pill> },
-                {
-                  key: 'cantidad',
-                  header: 'Cantidad',
-                  align: 'right',
-                  render: (movimiento) => (
-                    <span className={movimiento.cantidad < 0 ? 'text-destructive-fg' : 'text-success-fg'}>
-                      {movimiento.cantidad > 0 ? '+' : ''}
-                      {formatNumber(movimiento.cantidad)}
-                    </span>
-                  ),
-                },
-                {
-                  key: 'costo',
-                  header: 'Costo unit.',
-                  align: 'right',
-                  render: (movimiento) => (movimiento.costoUnitario != null ? formatUSD(movimiento.costoUnitario) : '—'),
-                },
-                { key: 'motivo', header: 'Motivo', render: (movimiento) => movimiento.motivo ?? movimiento.referenciaTipo ?? '—' },
-              ]}
+      <Card>
+        <CardHeader className="flex flex-col items-stretch gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Buscador
+              placeholder="Buscar SKU…"
+              value={busqueda}
+              onCambio={(valor) => {
+                setBusqueda(valor);
+                setPage(1);
+              }}
             />
-            <Pagination page={page} totalPages={kardex.data?.totalPages ?? 1} onPageChange={setPage} />
-          </CardBody>
-        </Card>
-      </FolderPanel>
-      </div>
+            <FiltroDropdown
+              label="Tipo"
+              opciones={TIPOS.map((valor) => ({ valor, etiqueta: valor }))}
+              valor={tipo}
+              onChange={(valor) => {
+                setTipo(valor);
+                setPage(1);
+              }}
+            />
+            <FiltroFechas
+              desde={desde}
+              hasta={hasta}
+              onDesde={(valor) => { setDesde(valor); setPage(1); }}
+              onHasta={(valor) => { setHasta(valor); setPage(1); }}
+            />
+            <div className="ml-auto">
+              <LimpiarFiltros activo={hayFiltros} onClick={limpiarFiltros} />
+            </div>
+          </div>
+        </CardHeader>
+        <CardBody>
+          <DataTable<MovimientoKardex>
+            rows={filas}
+            loading={kardex.isLoading}
+            rowKey={(movimiento) => movimiento.id}
+            empty="Sin movimientos."
+            columns={[
+              { key: 'fecha', header: 'Fecha', render: (movimiento) => formatDateTime(movimiento.fecha) },
+              { key: 'sku', header: 'SKU', render: (movimiento) => movimiento.sku },
+              { key: 'tipo', header: 'Tipo', render: (movimiento) => <Pill tone={tono[movimiento.tipo] ?? 'neutral'}>{movimiento.tipo}</Pill> },
+              {
+                key: 'cantidad',
+                header: 'Cantidad',
+                align: 'right',
+                render: (movimiento) => (
+                  <span className={movimiento.cantidad < 0 ? 'text-destructive-fg' : 'text-success-fg'}>
+                    {movimiento.cantidad > 0 ? '+' : ''}
+                    {formatNumber(movimiento.cantidad)}
+                  </span>
+                ),
+              },
+              {
+                key: 'costo',
+                header: 'Costo unit.',
+                align: 'right',
+                render: (movimiento) => (movimiento.costoUnitario != null ? formatUSD(movimiento.costoUnitario) : '—'),
+              },
+              { key: 'motivo', header: 'Motivo', render: (movimiento) => movimiento.motivo ?? movimiento.referenciaTipo ?? '—' },
+            ]}
+          />
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        </CardBody>
+      </Card>
     </div>
   );
 }

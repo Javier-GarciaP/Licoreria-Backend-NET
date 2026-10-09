@@ -17,6 +17,17 @@ Gestiona todo lo que se vende: productos, presentaciones, precios y composición
 4. Los productos preparados (cócteles, tobos) tienen **receta**: al venderse descuentan
    insumos del inventario.
 5. Un producto con movimientos no se elimina físicamente: se marca `is_deleted`.
+6. Cada producto define su **área destino** (`AreaDestino`: Barra/Cocina) para enrutar
+   las comandas automáticamente; por defecto es Barra.
+
+## Formulario coherente para Barra y Cocina
+
+El alta/edición de productos adapta los campos según el área:
+
+- **Barra:** muestra grado alcohólico (opcional) y código de barras por variante.
+- **Cocina:** oculta grado alcohólico y código de barras (las comidas no los usan).
+- **SKU opcional:** si se deja vacío se autogenera `{PRODUCTO}-{n}` (ej. `TACOS-1`).
+- **Tipo sugerido:** en productos nuevos, Cocina sugiere `Preparado` y Barra `Simple`.
 
 ## Flujo de venta con receta
 

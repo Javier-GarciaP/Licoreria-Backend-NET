@@ -4,7 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { Pencil, Trash2 } from 'lucide-react';
 import {
+  ActionMenu,
   Button,
   Card,
   CardBody,
@@ -234,14 +236,18 @@ export function PaginasPage() {
                 header: '',
                 align: 'right',
                 render: (pagina) => (
-                  <div className="flex justify-end gap-2">
-                    <Button size="sm" variant="ghost" onClick={() => abrirEditar(pagina)}>
-                      Editar
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setPorEliminar(pagina)}>
-                      Eliminar
-                    </Button>
-                  </div>
+                  <ActionMenu
+                    label={`Acciones de ${pagina.titulo}`}
+                    options={[
+                      { label: 'Editar', icon: <Pencil size={15} />, onClick: () => abrirEditar(pagina) },
+                      {
+                        label: 'Eliminar',
+                        icon: <Trash2 size={15} />,
+                        danger: true,
+                        onClick: () => setPorEliminar(pagina),
+                      },
+                    ]}
+                  />
                 ),
               },
             ]}

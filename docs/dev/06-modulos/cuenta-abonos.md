@@ -35,6 +35,20 @@ flowchart LR
 
 `abierta` → `por_cobrar` → `cerrada`.
 
+## Interfaz (monitoreo y cobro)
+
+La página de cuenta está pensada para **monitorear** lo vendido y **cobrar** desde caja:
+
+- **Resumen** con saldo, total, abonado y nº de consumos.
+- **Consumos** read-only agrupados por comanda (área Barra/Cocina y estado del ítem).
+- **Cobrar** abre un modal con el saldo a cobrar, líneas de pago (método + monto, solo
+  USD) y el restante por cubrir; al cerrar se muestra el **ticket**.
+- **Acciones secundarias** en modales: **Agregar a la comanda** (ver `catalogo.md`),
+  **Abonar** (pago parcial con saldo pendiente y "quedará pendiente") y **Dividir**
+  (presets de partes con vista previa).
+
+El listado de cuentas filtra por estado (Todas/Abiertas/PorCobrar/Cerradas).
+
 ## Endpoints
 
 | Método | Ruta | Descripción |

@@ -2848,6 +2848,11 @@ namespace Licoreria.Infrastructure.Migrations
                     b.Property<bool>("Activo")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("AreaDestino")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<Guid>("CategoriaId")
                         .HasColumnType("uuid");
 
@@ -2915,6 +2920,7 @@ namespace Licoreria.Infrastructure.Migrations
                         {
                             Id = new Guid("10000000-0000-0000-0000-000000000001"),
                             Activo = true,
+                            AreaDestino = "Barra",
                             CategoriaId = new Guid("11111111-1111-1111-1111-111111111111"),
                             CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
                             Descripcion = "Ron añejo venezolano.",
@@ -2929,6 +2935,7 @@ namespace Licoreria.Infrastructure.Migrations
                         {
                             Id = new Guid("10000000-0000-0000-0000-000000000002"),
                             Activo = true,
+                            AreaDestino = "Barra",
                             CategoriaId = new Guid("11111111-1111-1111-1111-111111111111"),
                             CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
                             Descripcion = "Whisky escocés de 12 años.",
@@ -2943,6 +2950,7 @@ namespace Licoreria.Infrastructure.Migrations
                         {
                             Id = new Guid("10000000-0000-0000-0000-000000000003"),
                             Activo = true,
+                            AreaDestino = "Barra",
                             CategoriaId = new Guid("22222222-2222-2222-2222-222222222222"),
                             CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
                             Descripcion = "Refresco de cola.",
@@ -2956,6 +2964,7 @@ namespace Licoreria.Infrastructure.Migrations
                         {
                             Id = new Guid("10000000-0000-0000-0000-000000000004"),
                             Activo = true,
+                            AreaDestino = "Barra",
                             CategoriaId = new Guid("33333333-3333-3333-3333-333333333333"),
                             CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
                             Descripcion = "Bebida energizante.",
@@ -2969,6 +2978,7 @@ namespace Licoreria.Infrastructure.Migrations
                         {
                             Id = new Guid("10000000-0000-0000-0000-000000000005"),
                             Activo = true,
+                            AreaDestino = "Barra",
                             CategoriaId = new Guid("44444444-4444-4444-4444-444444444444"),
                             CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
                             Descripcion = "Snack de maíz sabor queso.",
@@ -3047,6 +3057,11 @@ namespace Licoreria.Infrastructure.Migrations
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("EsBase")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
@@ -3103,6 +3118,7 @@ namespace Licoreria.Infrastructure.Migrations
                             Id = new Guid("30000000-0000-0000-0000-000000000001"),
                             Activo = true,
                             CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EsBase = true,
                             IsDeleted = false,
                             Nombre = "Botella 0.75L",
                             PrecioCompraUSD = 8.50m,
@@ -3116,6 +3132,7 @@ namespace Licoreria.Infrastructure.Migrations
                             Id = new Guid("30000000-0000-0000-0000-000000000002"),
                             Activo = true,
                             CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EsBase = true,
                             IsDeleted = false,
                             Nombre = "Botella 0.75L",
                             PrecioCompraUSD = 28.00m,
@@ -3129,6 +3146,7 @@ namespace Licoreria.Infrastructure.Migrations
                             Id = new Guid("30000000-0000-0000-0000-000000000003"),
                             Activo = true,
                             CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EsBase = true,
                             IsDeleted = false,
                             Nombre = "Botella 2L",
                             PrecioCompraUSD = 1.60m,
@@ -3142,6 +3160,7 @@ namespace Licoreria.Infrastructure.Migrations
                             Id = new Guid("30000000-0000-0000-0000-000000000004"),
                             Activo = true,
                             CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EsBase = true,
                             IsDeleted = false,
                             Nombre = "Lata 250ml",
                             PrecioCompraUSD = 1.80m,
@@ -3155,6 +3174,7 @@ namespace Licoreria.Infrastructure.Migrations
                             Id = new Guid("30000000-0000-0000-0000-000000000005"),
                             Activo = true,
                             CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EsBase = true,
                             IsDeleted = false,
                             Nombre = "Paquete 150g",
                             PrecioCompraUSD = 1.20m,
@@ -3474,13 +3494,13 @@ namespace Licoreria.Infrastructure.Migrations
                     b.Property<DateTime?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("ProductoId")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("VarianteInsumoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("VarianteVendidaId")
                         .HasColumnType("uuid");
 
                     b.Property<uint>("xmin")
@@ -3493,7 +3513,7 @@ namespace Licoreria.Infrastructure.Migrations
 
                     b.HasIndex("VarianteInsumoId");
 
-                    b.HasIndex("ProductoId", "VarianteInsumoId")
+                    b.HasIndex("VarianteVendidaId", "VarianteInsumoId")
                         .IsUnique();
 
                     b.ToTable("recetas", (string)null);
@@ -3791,6 +3811,9 @@ namespace Licoreria.Infrastructure.Migrations
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uuid");
 
+                    b.Property<int>("CuentasDesalojadas")
+                        .HasColumnType("integer");
+
                     b.Property<decimal>("Descuadre")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
@@ -3823,6 +3846,10 @@ namespace Licoreria.Infrastructure.Migrations
 
                     b.Property<Guid>("UsuarioId")
                         .HasColumnType("uuid");
+
+                    b.Property<decimal>("VentasDelTurnoUSD")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<uint>("xmin")
                         .IsConcurrencyToken()
@@ -4182,6 +4209,14 @@ namespace Licoreria.Infrastructure.Migrations
                             CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Nombre = "Plato"
+                        },
+                        new
+                        {
+                            Id = new Guid("66666666-6666-6666-6666-666666666665"),
+                            Abreviatura = "TRA",
+                            CreatedAt = new DateTime(2026, 9, 23, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsDeleted = false,
+                            Nombre = "Trago"
                         });
                 });
 
@@ -4250,7 +4285,7 @@ namespace Licoreria.Infrastructure.Migrations
                             Email = "admin@licoreria.com",
                             IsDeleted = false,
                             NombreCompleto = "Administrador Principal",
-                            PasswordHash = "100000.bGljb3JlcmlhLWFkbWluIQ==.YwgspkL29TkDaFw34dp94bJtoYuLiheB1jTHjHoI0/A=",
+                            PasswordHash = "100000.FAjfLZhxDdPKpSSBsWnxhA==.oEa34uWpndtwYkEbsIYWwybInWw7MjWldrQtjwI46xI=",
                             Rol = "Administrador"
                         },
                         new
@@ -4261,7 +4296,7 @@ namespace Licoreria.Infrastructure.Migrations
                             Email = "cajero1@licoreria.com",
                             IsDeleted = false,
                             NombreCompleto = "Cajero Turno Mañana",
-                            PasswordHash = "100000.bGljb3JlcmlhLWNhamVybw==.vBfTiTnA2NkFbJLRMHRR/Cp00Fm6VwefpzHLwFJcVY0=",
+                            PasswordHash = "100000./aCU6rte+XCUv0r4ENjLuw==.1WuFy7dAWv4p3TZOWu05sIRNYmAQy25tmq7a2FxGY50=",
                             Rol = "Cajero"
                         },
                         new
@@ -4357,6 +4392,9 @@ namespace Licoreria.Infrastructure.Migrations
                     b.Property<Guid?>("PromocionId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("SesionCajaId")
+                        .HasColumnType("uuid");
+
                     b.Property<decimal>("SubtotalUSD")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
@@ -4388,6 +4426,8 @@ namespace Licoreria.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Fecha");
+
+                    b.HasIndex("SesionCajaId");
 
                     b.HasIndex("UsuarioId");
 
@@ -4989,21 +5029,21 @@ namespace Licoreria.Infrastructure.Migrations
 
             modelBuilder.Entity("Licoreria.Domain.Entities.Receta", b =>
                 {
-                    b.HasOne("Licoreria.Domain.Entities.Producto", "Producto")
-                        .WithMany("Recetas")
-                        .HasForeignKey("ProductoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Licoreria.Domain.Entities.ProductoVariante", "VarianteInsumo")
                         .WithMany()
                         .HasForeignKey("VarianteInsumoId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Producto");
+                    b.HasOne("Licoreria.Domain.Entities.ProductoVariante", "VarianteVendida")
+                        .WithMany("RecetasVendidas")
+                        .HasForeignKey("VarianteVendidaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("VarianteInsumo");
+
+                    b.Navigation("VarianteVendida");
                 });
 
             modelBuilder.Entity("Licoreria.Domain.Entities.RefreshToken", b =>
@@ -5199,14 +5239,14 @@ namespace Licoreria.Infrastructure.Migrations
                 {
                     b.Navigation("Modificadores");
 
-                    b.Navigation("Recetas");
-
                     b.Navigation("Variantes");
                 });
 
             modelBuilder.Entity("Licoreria.Domain.Entities.ProductoVariante", b =>
                 {
                     b.Navigation("CodigosBarras");
+
+                    b.Navigation("RecetasVendidas");
                 });
 
             modelBuilder.Entity("Licoreria.Domain.Entities.Recepcion", b =>

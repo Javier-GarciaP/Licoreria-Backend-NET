@@ -1,7 +1,9 @@
 import { useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { Trash2 } from 'lucide-react';
 import {
+  ActionMenu,
   Button,
   Card,
   CardBody,
@@ -136,9 +138,17 @@ export function MenuMediaPage() {
                 header: '',
                 align: 'right',
                 render: (asset) => (
-                  <Button size="sm" variant="ghost" onClick={() => setPorEliminar(asset)}>
-                    Eliminar
-                  </Button>
+                  <ActionMenu
+                    label={`Acciones de ${asset.nombre}`}
+                    options={[
+                      {
+                        label: 'Eliminar',
+                        icon: <Trash2 size={15} />,
+                        danger: true,
+                        onClick: () => setPorEliminar(asset),
+                      },
+                    ]}
+                  />
                 ),
               },
             ]}

@@ -1,5 +1,6 @@
-﻿using Licoreria.Application.Dtos;
+using FluentValidation;
 using Licoreria.Application.Common;
+using Licoreria.Application.Dtos;
 using Licoreria.Application.Interfaces;
 using Licoreria.Application.Services;
 using Licoreria.Application.Validators;
@@ -9,7 +10,6 @@ using Licoreria.Infrastructure.Persistence.Interceptors;
 using Licoreria.Infrastructure.Repositories;
 using Licoreria.Infrastructure.Security;
 using Licoreria.Infrastructure.Services;
-using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,7 +32,8 @@ public static class DependencyInjection
         services.AddSingleton<IRelojSistema, RelojSistema>();
 
         services.AddDbContext<LicoreriaDbContext>((sp, options) =>
-            options.UseNpgsql(
+            options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning))
+                .UseNpgsql(
                     configuration.GetConnectionString("DefaultConnection"),
                     b => b.MigrationsAssembly(typeof(LicoreriaDbContext).Assembly.FullName))
                 .AddInterceptors(sp.GetRequiredService<AuditoriaInterceptor>()));

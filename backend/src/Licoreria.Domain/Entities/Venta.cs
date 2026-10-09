@@ -1,4 +1,4 @@
-﻿using Licoreria.Domain.Common;
+using Licoreria.Domain.Common;
 using Licoreria.Domain.Enums;
 
 namespace Licoreria.Domain.Entities;
@@ -18,6 +18,9 @@ public class Venta : BaseEntity
 
     public Guid UsuarioId { get; set; }
     public Usuario Usuario { get; set; } = null!;
+
+    /// <summary>Turno (sesión de caja) en el que se registró la venta, si aplica.</summary>
+    public Guid? SesionCajaId { get; set; }
 
     public Guid? CuentaId { get; set; }
     public Guid? PromocionId { get; set; }

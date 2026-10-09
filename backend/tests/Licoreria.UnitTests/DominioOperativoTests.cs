@@ -1,4 +1,5 @@
 using Licoreria.Domain.Entities;
+using Licoreria.Domain.Enums;
 
 namespace Licoreria.UnitTests;
 
@@ -36,7 +37,7 @@ public class StockProductoTests
 public class CuentaTests
 {
     [Fact]
-    public void Acumular_CambiaElEstadoAPorCobrar()
+    public void Acumular_MantieneLaCuentaAbierta()
     {
         var cuenta = new Cuenta();
 
@@ -44,6 +45,17 @@ public class CuentaTests
 
         Assert.Equal(25.5m, cuenta.Total);
         Assert.Equal(25.5m, cuenta.Saldo);
+        Assert.Equal(EstadoCuenta.Abierta, cuenta.Estado);
+    }
+
+    [Fact]
+    public void Reabrir_DevuelveLaCuentaAEstadosAbierta()
+    {
+        var cuenta = new Cuenta { Estado = EstadoCuenta.PorCobrar };
+
+        cuenta.Reabrir();
+
+        Assert.Equal(EstadoCuenta.Abierta, cuenta.Estado);
     }
 
     [Fact]

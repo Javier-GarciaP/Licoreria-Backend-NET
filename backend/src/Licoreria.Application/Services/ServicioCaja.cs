@@ -11,6 +11,9 @@ public sealed class ServicioCaja : IServicioCaja
 {
     private readonly ISesionCajaRepository _sesionRepository;
     private readonly IRepository<Denominacion> _denominacionRepository;
+    private readonly ICuentaRepository _cuentaRepository;
+    private readonly IVentaRepository _ventaRepository;
+    private readonly INotificadorComandas _notificador;
     private readonly IContextoUsuario _contextoUsuario;
     private readonly IRelojSistema _reloj;
     private readonly IServicioAuditoria _auditoria;
@@ -18,12 +21,18 @@ public sealed class ServicioCaja : IServicioCaja
     public ServicioCaja(
         ISesionCajaRepository sesionRepository,
         IRepository<Denominacion> denominacionRepository,
+        ICuentaRepository cuentaRepository,
+        IVentaRepository ventaRepository,
+        INotificadorComandas notificador,
         IContextoUsuario contextoUsuario,
         IRelojSistema reloj,
         IServicioAuditoria auditoria)
     {
         _sesionRepository = sesionRepository;
         _denominacionRepository = denominacionRepository;
+        _cuentaRepository = cuentaRepository;
+        _ventaRepository = ventaRepository;
+        _notificador = notificador;
         _contextoUsuario = contextoUsuario;
         _reloj = reloj;
         _auditoria = auditoria;
@@ -65,15 +74,22 @@ public sealed class ServicioCaja : IServicioCaja
         await _sesionRepository.AgregarAsync(sesion, cancellationToken);
         await _sesionRepository.SaveChangesAsync(cancellationToken);
 
+        await _notificador.TurnoAbiertoAsync(sesion.Id, cancellationToken);
         await _auditoria.RegistrarAsync("abrir", "sesion-caja", sesion.Id, new { sesion.FondoInicial }, cancellationToken);
 
-        return Mapear(sesion);
+        return await MapearAsync(sesion, cancellationToken);
     }
 
     public async Task<SesionCajaDto?> ObtenerSesionActivaAsync(CancellationToken cancellationToken = default)
     {
         var sesion = await _sesionRepository.ObtenerAbiertaAsync(cancellationToken);
-        return sesion is null ? null : Mapear(sesion);
+        return sesion is null ? null : await MapearAsync(sesion, cancellationToken);
+    }
+
+    public async Task<TurnoAbiertoDto> ObtenerEstadoTurnoAsync(CancellationToken cancellationToken = default)
+    {
+        var sesion = await _sesionRepository.ObtenerAbiertaAsync(cancellationToken);
+        return new TurnoAbiertoDto(sesion is not null, sesion?.AbiertaEn);
     }
 
     public async Task<ResultadoPaginado<SesionCajaDto>> ObtenerSesionesAsync(
@@ -81,7 +97,11 @@ public sealed class ServicioCaja : IServicioCaja
         CancellationToken cancellationToken = default)
     {
         var pagina = await _sesionRepository.ObtenerPaginadoAsync(paginacion, cancellationToken);
-        var items = pagina.Items.Select(Mapear).ToList();
+        var items = new List<SesionCajaDto>();
+        foreach (var sesion in pagina.Items)
+        {
+            items.Add(await MapearAsync(sesion, cancellationToken));
+        }
         return ResultadoPaginado<SesionCajaDto>.Crear(items, pagina.Page, pagina.PageSize, pagina.TotalItems);
     }
 
@@ -114,7 +134,7 @@ public sealed class ServicioCaja : IServicioCaja
         await _sesionRepository.SaveChangesAsync(cancellationToken);
 
         var actualizada = await _sesionRepository.ObtenerConDetalleAsync(sesionId, cancellationToken);
-        return actualizada is null ? null : Mapear(actualizada);
+        return actualizada is null ? null : await MapearAsync(actualizada, cancellationToken);
     }
 
     public async Task<SesionCajaDto?> CerrarSesionAsync(
@@ -156,27 +176,57 @@ public sealed class ServicioCaja : IServicioCaja
             }, cancellationToken);
         }
 
+        // Desaloja las mesas que quedaron abiertas: con saldo quedan por cobrar,
+        // sin saldo se cierran, y todas las mesas vuelven a libres.
+        var abiertas = await _cuentaRepository.ObtenerAbiertasConSesionAsync(cancellationToken);
+        var mesasDesalojadas = new List<Guid>();
+        foreach (var cuenta in abiertas)
+        {
+            cuenta.SesionMesa.CerradaEn = _reloj.UtcNow;
+            cuenta.Estado = cuenta.Saldo > 0m ? EstadoCuenta.PorCobrar : EstadoCuenta.Cerrada;
+
+            if (cuenta.SesionMesa.MesaId is Guid mesaId)
+            {
+                mesasDesalojadas.Add(mesaId);
+            }
+        }
+
+        sesion.VentasDelTurnoUSD = await _ventaRepository.ObtenerTotalVentasDelTurnoAsync(sesionId, cancellationToken);
+        sesion.CuentasDesalojadas = mesasDesalojadas.Count;
+
         sesion.Cerrar(esperado, contado, _reloj.UtcNow);
         await _sesionRepository.SaveChangesAsync(cancellationToken);
 
-        await _auditoria.RegistrarAsync("cerrar", "sesion-caja", sesion.Id, new { esperado, contado, descuadre = sesion.Descuadre }, cancellationToken);
+        foreach (var mesaId in mesasDesalojadas.Distinct())
+        {
+            await _notificador.MesaActualizadaAsync(mesaId, "Libre", cancellationToken: cancellationToken);
+        }
+
+        await _notificador.TurnoCerradoAsync(sesionId, cancellationToken);
+        await _auditoria.RegistrarAsync("cerrar", "sesion-caja", sesion.Id, new { esperado, contado, descuadre = sesion.Descuadre, ventas = sesion.VentasDelTurnoUSD, mesas = sesion.CuentasDesalojadas }, cancellationToken);
 
         var cerrada = await _sesionRepository.ObtenerConDetalleAsync(sesionId, cancellationToken);
-        return cerrada is null ? null : Mapear(cerrada);
+        return cerrada is null ? null : await MapearAsync(cerrada, cancellationToken);
     }
 
-    private static SesionCajaDto Mapear(SesionCaja s)
-        => new(
+    private async Task<SesionCajaDto> MapearAsync(SesionCaja s, CancellationToken cancellationToken)
+    {
+        var ventasDelTurno = await _ventaRepository.ObtenerTotalVentasDelTurnoAsync(s.Id, cancellationToken);
+
+        return new SesionCajaDto(
             s.Id,
             s.Estado,
             s.FondoInicial,
             s.MontoEsperado,
             s.MontoContado,
             s.Descuadre,
+            ventasDelTurno,
+            s.CuentasDesalojadas,
             s.AbiertaEn,
             s.CerradaEn,
             s.Movimientos.Select(MapearMovimiento).ToList(),
             s.Arqueos.Select(MapearArqueo).ToList());
+    }
 
     private static MovimientoCajaDto MapearMovimiento(MovimientoCaja m)
         => new(m.Id, m.Tipo, m.Monto, m.Moneda, m.Motivo, m.CreatedAt);

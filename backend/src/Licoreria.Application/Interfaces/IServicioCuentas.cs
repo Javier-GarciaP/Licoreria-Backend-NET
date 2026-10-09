@@ -11,9 +11,12 @@ public interface IServicioCuentas
 {
     Task<CuentaDto> AbrirMesaAsync(AbrirMesaDto dto, CancellationToken cancellationToken = default);
 
+    Task<CuentaDto?> ReabrirCuentaAsync(Guid cuentaId, CancellationToken cancellationToken = default);
+
     Task<ResultadoPaginado<CuentaDto>> ObtenerCuentasAsync(
         PaginacionRequest paginacion,
         EstadoCuenta? estado = null,
+        IReadOnlyList<EstadoCuenta>? estados = null,
         Guid? usuarioId = null,
         CancellationToken cancellationToken = default);
 

@@ -61,6 +61,12 @@ public class VentaRepository : IVentaRepository
     public async Task AgregarDevolucionAsync(Devolucion devolucion, CancellationToken cancellationToken = default)
         => await _context.Devoluciones.AddAsync(devolucion, cancellationToken);
 
+    public Task<decimal> ObtenerTotalVentasDelTurnoAsync(Guid sesionCajaId, CancellationToken cancellationToken = default)
+        => _context.Ventas
+            .Where(v => !v.IsDeleted && v.SesionCajaId == sesionCajaId && v.Estado != EstadoVenta.Anulada)
+            .SumAsync(v => (decimal?)v.TotalUSD, cancellationToken)
+            .ContinueWith(t => t.Result ?? 0m, cancellationToken);
+
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => _context.SaveChangesAsync(cancellationToken);
 }

@@ -1,35 +1,73 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Eye } from 'lucide-react';
-import { ActionMenu, Card, CardBody, CardHeader, CardTitle, DataTable, Modal, ModalSection, Pagination } from '@licoreria/ui';
+import { ActionMenu, Buscador, Card, CardBody, CardHeader, DataTable, FiltroFechas, LimpiarFiltros, Modal, ModalSection, Pagination } from '@licoreria/ui';
 import type { Recepcion } from '@licoreria/types';
 import { comprasApi } from '@licoreria/api-client';
-import { ComprasTabs } from '../components/ComprasTabs';
-import { FolderPanel } from '../components/FolderTabs';
 import { formatDateTime, formatNumber, formatUSD } from '../lib/format';
+import { contiene, paginarEnMemoria, PAGE_SIZE_FILTRO_LOCAL } from '../lib/filtros';
 
 export function RecepcionesPage() {
   const [page, setPage] = useState(1);
   const [detalle, setDetalle] = useState<Recepcion | null>(null);
+  const [busqueda, setBusqueda] = useState('');
+  const [desde, setDesde] = useState('');
+  const [hasta, setHasta] = useState('');
+
+  const hayFiltroLocal = Boolean(busqueda || desde || hasta);
+  const hayFiltros = hayFiltroLocal;
+
+  const limpiarFiltros = () => {
+    setBusqueda('');
+    setDesde('');
+    setHasta('');
+    setPage(1);
+  };
 
   const recepciones = useQuery({
-    queryKey: ['recepciones', page],
-    queryFn: () => comprasApi.recepciones({ page, pageSize: 15 }),
+    queryKey: ['recepciones', page, hayFiltroLocal ? PAGE_SIZE_FILTRO_LOCAL : 15],
+    queryFn: () => comprasApi.recepciones({ page: hayFiltroLocal ? 1 : page, pageSize: hayFiltroLocal ? PAGE_SIZE_FILTRO_LOCAL : 15 }),
   });
+
+  const { items: filas, totalPages } = useMemo(() => {
+    const filtradas = (recepciones.data?.items ?? []).filter((recepcion) => {
+      if (!contiene(recepcion.numeroOrden, busqueda)) return false;
+      if (desde && recepcion.fecha.slice(0, 10) < desde) return false;
+      if (hasta && recepcion.fecha.slice(0, 10) > hasta) return false;
+      return true;
+    });
+    return hayFiltroLocal
+      ? paginarEnMemoria(filtradas, page, 15)
+      : { items: filtradas, totalPages: recepciones.data?.totalPages ?? 1 };
+  }, [recepciones.data, busqueda, desde, hasta, hayFiltroLocal, page]);
 
   return (
     <div className="mx-auto flex max-w-page flex-col gap-4">
-      <ComprasTabs />
-
-      <div className="flex flex-col">
-      <FolderPanel className="flex flex-col gap-4">
-        <Card className="border-0 bg-transparent shadow-none">
-          <CardHeader>
-            <CardTitle>Recepciones</CardTitle>
-          </CardHeader>
+      <Card>
+        <CardHeader className="flex flex-col items-stretch gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Buscador
+              placeholder="Buscar número de orden…"
+              value={busqueda}
+              onCambio={(valor) => {
+                setBusqueda(valor);
+                setPage(1);
+              }}
+            />
+            <FiltroFechas
+              desde={desde}
+              hasta={hasta}
+              onDesde={(valor) => { setDesde(valor); setPage(1); }}
+              onHasta={(valor) => { setHasta(valor); setPage(1); }}
+            />
+            <div className="ml-auto">
+              <LimpiarFiltros activo={hayFiltros} onClick={limpiarFiltros} />
+            </div>
+          </div>
+        </CardHeader>
           <CardBody>
             <DataTable<Recepcion>
-              rows={recepciones.data?.items ?? []}
+              rows={filas}
               loading={recepciones.isLoading}
               rowKey={(recepcion) => recepcion.id}
               empty="No hay recepciones."
@@ -51,11 +89,9 @@ export function RecepcionesPage() {
                 },
               ]}
             />
-            <Pagination page={page} totalPages={recepciones.data?.totalPages ?? 1} onPageChange={setPage} />
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
           </CardBody>
-        </Card>
-      </FolderPanel>
-      </div>
+      </Card>
 
       <Modal
         open={Boolean(detalle)}

@@ -16,9 +16,20 @@ public class InventarioRepository : IInventarioRepository
     public Task<StockProducto?> ObtenerStockAsync(Guid varianteId, CancellationToken cancellationToken = default)
         => _context.StockProductos.FirstOrDefaultAsync(s => s.VarianteId == varianteId, cancellationToken);
 
+    public async Task<IReadOnlyList<StockProducto>> ObtenerStockDeVariantesAsync(
+        IReadOnlyList<Guid> varianteIds,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.StockProductos
+            .AsNoTracking()
+            .Where(s => !s.IsDeleted && varianteIds.Contains(s.VarianteId))
+            .ToListAsync(cancellationToken);
+    }
+
     public Task<ProductoVariante?> ObtenerVarianteConRecetasAsync(Guid varianteId, CancellationToken cancellationToken = default)
         => _context.ProductoVariantes
-            .Include(v => v.Producto).ThenInclude(p => p.Recetas).ThenInclude(r => r.VarianteInsumo)
+            .Include(v => v.Producto)
+            .Include(v => v.RecetasVendidas).ThenInclude(r => r.VarianteInsumo)
             .FirstOrDefaultAsync(v => v.Id == varianteId, cancellationToken);
 
     public Task<ResultadoPaginado<StockProducto>> ObtenerStockPaginadoAsync(
@@ -30,7 +41,7 @@ public class InventarioRepository : IInventarioRepository
         var consulta = _context.StockProductos
             .Include(s => s.Variante).ThenInclude(v => v.Producto)
             .AsNoTracking()
-            .Where(s => !s.IsDeleted);
+            .Where(s => !s.IsDeleted && s.Variante != null && !s.Variante.Producto.IsDeleted);
 
         if (soloBajoMinimo)
         {

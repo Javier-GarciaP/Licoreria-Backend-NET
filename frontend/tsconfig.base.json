@@ -21,6 +21,7 @@
     "paths": {
       "@licoreria/types": ["packages/types/src/index.ts"],
       "@licoreria/api-client": ["packages/api-client/src/index.ts"],
+      "@licoreria/auth": ["packages/auth/src/index.ts"],
       "@licoreria/ui": ["packages/ui/src/index.ts"]
     }
   }

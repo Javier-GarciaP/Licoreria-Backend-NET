@@ -74,8 +74,8 @@ cifras en IBM Plex Mono y acento lavanda en acción y navegación.
 - Sombras: `shadow-sm` (controles), `shadow-md` (menús/modales), `shadow-lg`
   (diálogos). Las tarjetas usan `shadow-sm` + borde hairline.
 - Espaciado base (px): 4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 64.
-- Layout: `max-width 1600px`; shell con sidebar fija `w-72`, topbar `h-14`
-  sticky y canvas `bg-background` con padding 16/24px.
+- Layout: `max-width 1600px`; shell con sidebar a la izquierda `w-72` (colapsable a rail de iconos `w-16`), topbar `h-16` con buscador a la izquierda (20px del sidebar) y canvas `bg-background` con padding 16/24px.
+- Marca: **CORCHO** — corcho SVG + nombre en la cabecera del sidebar (y login); iconos de nav en `text-accent-ink`.
 
 ## 5. Componentes
 
@@ -85,9 +85,14 @@ cifras en IBM Plex Mono y acento lavanda en acción y navegación.
 | `Button` (primary) | `rounded-md`, lavanda `bg-primary`, texto `on-pastel` |
 | `Button` (outline/ghost) | `rounded-md`, borde hairline, hover lavanda |
 | `Input` / `Select` | radio 8px, `bg-background`, borde `input`, `ring-ring` |
+| `Buscador` | input de búsqueda con lupa a la izquierda y limpiar (patrón de listado) |
+| `FiltroDropdown` | label arriba + botón con menú Radix (patrón de listado) |
+| `FiltroRango` | label arriba + botón que abre popover con Mín/Máx (patrón de listado) |
+| `FiltroFechas` | label "Fecha" arriba + botón que abre popover con Desde/Hasta (patrón de listado) |
+| `LimpiarFiltros` | botón para limpiar todos los filtros activos (patrón de listado) |
 | `Badge` / `Pill` | píldora, fill pastel + texto `-fg` |
 | `StatusBadge` | familia pastel por estado (ver mapeo §6) |
-| `SidebarNav` | rail 288px, ítem activo `bg-primary/15` + `font-medium` |
+| `SidebarNav` | rail 288px (`w-72`) colapsable a `w-16` (solo iconos del módulo), iconos en `text-accent-ink`, ítem activo `bg-primary/15` + `font-medium` |
 | `DataTable` | tabla shadcn, filas separadas por hairline, hover `bg-muted/50` |
 | `Modal` / `Dialog` | Radix, `rounded-xl`, `bg-card`, `shadow-lg` |
 | `DropdownMenu` | Radix, `bg-popover`, `shadow-md` |
@@ -125,6 +130,67 @@ cifras en IBM Plex Mono y acento lavanda en acción y navegación.
 - No usar pastel como texto sin la variante `-fg` (rompe contraste).
 - No colores en crudo (`bg-blue-500`): siempre token semántico.
 - No `space-x/y-*`: usar `flex` + `gap-*`.
+
+---
+
+## 7.5 Patrón de listado (buscador + filtros)
+
+**Toda pantalla de listado/CRUD sigue un único layout.** Un `<Card>` que
+engloba todo: cabecera con búsqueda y filtros, luego la tabla.
+
+```
+<Card>
+  <CardHeader className="flex flex-col items-stretch gap-3">
+    ── Fila 1 ────────────────────────────────────────────────
+    [ Buscador (izq) ]  [ FiltroDropdown general ]  [ FiltroFechas ]  [ ＋ Añadir (der) ]
+    ── hairline: <div className="border-b border-border" /> ──
+    ── Fila 2 ────────────────────────────────────────────────
+    [ FiltroDropdown concreto ]  [ FiltroRango (popover) ]  [ FiltroFechas (popover) ]  [ Limpiar (der) ]
+  </CardHeader>
+  <CardBody>
+    <DataTable … /> <Pagination … />
+  </CardBody>
+</Card>
+```
+
+Cada filtro (botón desplegable o popover) lleva su **label arriba** y muestra
+**solo el valor seleccionado** dentro del botón.
+
+### Componentes comunes
+
+| Componente | Rol | Especificación |
+| :--- | :--- | :--- |
+| `Buscador` | Input con **lupa a la izquierda** y botón X para limpiar a la derecha | `w-80 shrink-0`, `onCambio(valor)` |
+| `FiltroDropdown` | **Label arriba** + botón con el valor seleccionado y chevron que abre menú Radix | panel sólido `bg-popover rounded-xl border shadow-md` |
+| `FiltroRango` | **Label arriba** + botón que abre un **popover** con inputs Mín/Máx | `onMinimo`/`onMaximo`, valor "5 – 20" |
+| `FiltroFechas` | **Label "Fecha" arriba** + botón que abre un **popover** con Desde/Hasta | `onDesde`/`onHasta`, valor "dd/mm/aaaa – …" |
+| `FiltroPopover` | Base: **label arriba** + botón + panel posicionado bajo él, cierra con clic fuera/Escape | `bg-popover rounded-xl border shadow-md` |
+| `LimpiarFiltros` | Botón ghost con icono para limpiar **todos** los filtros y el buscador | `disabled` si no hay filtros activos |
+| Hairline | `<div className="border-b border-border" />` | separa fila 1 de fila 2 |
+
+### Reglas
+
+- **El label del filtro va arriba del botón** (`text-xs font-medium text-foreground`);
+  el botón muestra solo el valor seleccionado ("Todos", "Ron", "5 – 20", rango
+  de fechas…). Los botones de filtro usan radio `rounded` (menos redondeado).
+- **Buscador a la izquierda, botón de añadir a la derecha** (fila 1).
+- **Filtros generales en fila 1** (estado, tipo, **rango de fechas** como
+  `FiltroFechas`) y **filtros concretos en fila 2** (categoría, marca, precio,
+  rol, motivo…).
+- **Botón `LimpiarFiltros` al final de la fila de filtros** (fila 2, o fila 1 si
+  no hay fila 2), alineado a la derecha con `ml-auto`. Resetea **filtros +
+  buscador** y vuelve a página 1.
+- **Sin píldoras como filtros**: se usan `FiltroDropdown` (menú Radix) con
+  panel sólido redondeado que agrupa las opciones.
+- **Los rangos y las fechas se colocan desde un popover** (`FiltroRango`,
+  `FiltroFechas`) para no mostrar dos inputs confusos en línea.
+- **Filtrado server-side** cuando la API lo soporta (re-query con params).
+- **Filtrado client-side** cuando no: la query amplía `pageSize`
+  (`PAGE_SIZE_FILTRO_LOCAL = 500`) y se pagina en memoria
+  (`paginarEnMemoria` en `apps/admin/src/lib/filtros.ts`).
+- **Formularios de crear/editar en `Modal`** (no inline expandido): patrón
+  tabla + botón añadir. Las ediciones rápidas en fila (`expandedRow`) se
+  reservan para acciones (devolución, pago, ajuste).
 
 ---
 

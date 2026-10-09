@@ -1,33 +1,34 @@
-import { useState } from 'react';
-import { useFieldArray, useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { CheckCircle2, Eye, Plus, Send, Truck, XCircle } from 'lucide-react';
 import {
   ActionMenu,
+  Buscador,
   Button,
   Card,
   CardBody,
   CardHeader,
-  CardTitle,
   DataTable,
+  FiltroDropdown,
+  FiltroFechas,
+  FiltroRango,
   Input,
+  LimpiarFiltros,
   Modal,
   ModalSection,
   Pagination,
   Pill,
-  Select,
   type ActionMenuOption,
 } from '@licoreria/ui';
 import type { EstadoOrdenCompra, OrdenCompra } from '@licoreria/types';
-import { comprasApi, inventarioApi, proveedoresApi } from '@licoreria/api-client';
-import { ComprasTabs } from '../components/ComprasTabs';
-import { FolderPanel } from '../components/FolderTabs';
+import { comprasApi, proveedoresApi } from '@licoreria/api-client';
+import { EditorOrdenCompra } from '../components/compras/EditorOrdenCompra';
 import { InlineForm } from '../components/InlineForm';
 import { mensajeDeError } from '../lib/api';
 import { formatDateTime, formatNumber, formatUSD } from '../lib/format';
+import { contiene, paginarEnMemoria, PAGE_SIZE_FILTRO_LOCAL } from '../lib/filtros';
 
 const ESTADOS: EstadoOrdenCompra[] = ['Borrador', 'Aprobada', 'Enviada', 'RecibidaParcial', 'Recibida', 'Cancelada'];
 
@@ -40,62 +41,73 @@ const tono: Record<string, 'success' | 'danger' | 'warning' | 'info' | 'accent' 
   Cancelada: 'danger',
 };
 
-const esquemaDetalle = z.object({
-  varianteId: z.string().min(1, 'Selecciona la variante'),
-  cantidad: z.coerce.number({ invalid_type_error: 'Cantidad inválida' }).positive('Debe ser mayor que 0'),
-  costoUnitarioUSD: z.coerce.number({ invalid_type_error: 'Costo inválido' }).min(0, 'No puede ser negativo'),
-});
-
-const esquemaOrden = z.object({
-  proveedorId: z.string().min(1, 'Selecciona el proveedor'),
-  observaciones: z.string().optional(),
-  detalles: z.array(esquemaDetalle).min(1, 'Agrega al menos una línea'),
-});
-
-type FormularioOrden = z.infer<typeof esquemaOrden>;
-
-const VACIO: FormularioOrden = {
-  proveedorId: '',
-  observaciones: '',
-  detalles: [{ varianteId: '', cantidad: 1, costoUnitarioUSD: 0 }],
-};
-
 export function ComprasPage() {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [page, setPage] = useState(1);
   const [estado, setEstado] = useState('');
-  const [creando, setCreando] = useState(false);
+  const [proveedorFiltro, setProveedorFiltro] = useState('');
+  const [busqueda, setBusqueda] = useState('');
+  const [desde, setDesde] = useState('');
+  const [hasta, setHasta] = useState('');
+  const [totalMin, setTotalMin] = useState('');
+  const [totalMax, setTotalMax] = useState('');
   const [detalle, setDetalle] = useState<OrdenCompra | null>(null);
   const [recepcionando, setRecepcionando] = useState<OrdenCompra | null>(null);
   const [recepcionQty, setRecepcionQty] = useState<Record<string, string>>({});
   const [recepcionObs, setRecepcionObs] = useState('');
   const queryClient = useQueryClient();
 
-  const ordenForm = useForm<FormularioOrden>({ resolver: zodResolver(esquemaOrden), defaultValues: VACIO });
-  const { fields, append, remove } = useFieldArray({ control: ordenForm.control, name: 'detalles' });
+  const hayFiltroLocal = Boolean(busqueda || proveedorFiltro || desde || hasta || totalMin || totalMax);
+  const hayFiltros = hayFiltroLocal || Boolean(estado);
+
+  const limpiarFiltros = () => {
+    setBusqueda('');
+    setEstado('');
+    setProveedorFiltro('');
+    setDesde('');
+    setHasta('');
+    setTotalMin('');
+    setTotalMax('');
+    setPage(1);
+  };
 
   const ordenes = useQuery({
-    queryKey: ['ordenes', page, estado],
-    queryFn: () => comprasApi.ordenes({ page, pageSize: 15, estado: estado || undefined }),
+    queryKey: ['ordenes', page, estado, hayFiltroLocal ? PAGE_SIZE_FILTRO_LOCAL : 15],
+    queryFn: () =>
+      comprasApi.ordenes({
+        page: hayFiltroLocal ? 1 : page,
+        pageSize: hayFiltroLocal ? PAGE_SIZE_FILTRO_LOCAL : 15,
+        estado: estado || undefined,
+      }),
   });
   const proveedores = useQuery({ queryKey: ['proveedores'], queryFn: () => proveedoresApi.listar() });
-  const stock = useQuery({ queryKey: ['stock'], queryFn: () => inventarioApi.stock(), enabled: creando });
+
+  const { items: filas, totalPages } = useMemo(() => {
+    const totalMinN = Number(totalMin);
+    const totalMaxN = Number(totalMax);
+    const filtradas = (ordenes.data?.items ?? []).filter((orden) => {
+      if (!contiene(`${orden.numero} ${orden.proveedorNombre}`, busqueda)) return false;
+      if (proveedorFiltro && orden.proveedorId !== proveedorFiltro) return false;
+      if (desde && orden.fecha.slice(0, 10) < desde) return false;
+      if (hasta && orden.fecha.slice(0, 10) > hasta) return false;
+      if (totalMinN && orden.totalUSD < totalMinN) return false;
+      if (totalMaxN && orden.totalUSD > totalMaxN) return false;
+      return true;
+    });
+    return hayFiltroLocal
+      ? paginarEnMemoria(filtradas, page, 15)
+      : { items: filtradas, totalPages: ordenes.data?.totalPages ?? 1 };
+  }, [ordenes.data, busqueda, proveedorFiltro, desde, hasta, totalMin, totalMax, hayFiltroLocal, page]);
 
   const invalidar = () => {
     queryClient.invalidateQueries({ queryKey: ['ordenes'] });
     queryClient.invalidateQueries({ queryKey: ['recepciones'] });
     queryClient.invalidateQueries({ queryKey: ['cuentas-pagar'] });
+    queryClient.invalidateQueries({ queryKey: ['stock'] });
+    queryClient.invalidateQueries({ queryKey: ['kardex'] });
+    queryClient.invalidateQueries({ queryKey: ['productos'] });
   };
-
-  const crear = useMutation({
-    mutationFn: (datos: FormularioOrden) => comprasApi.crear(datos),
-    onSuccess: () => {
-      toast.success('Orden creada');
-      setCreando(false);
-      ordenForm.reset(VACIO);
-      invalidar();
-    },
-    onError: (error) => toast.error('No se pudo crear la orden', { description: mensajeDeError(error) }),
-  });
 
   const accion = useMutation({
     mutationFn: ({ id, op }: { id: string; op: 'aprobar' | 'enviar' | 'cancelar' }) => comprasApi[op](id),
@@ -133,105 +145,76 @@ export function ComprasPage() {
     setRecepcionando(orden);
   };
 
+  if (pathname === '/compras/ordenes/nueva') {
+    return <EditorOrdenCompra />;
+  }
+
   return (
     <div className="mx-auto flex max-w-page flex-col gap-4">
-      <ComprasTabs />
-      <div className="flex flex-col">
-      <FolderPanel className="flex flex-col gap-4">
-        {creando && (
-          <InlineForm title="Nueva orden de compra" onCancel={() => setCreando(false)}>
-            <form
-              className="flex flex-col gap-3"
-              onSubmit={ordenForm.handleSubmit((d) => crear.mutate(d))}
-              noValidate
-            >
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <Select label="Proveedor" error={ordenForm.formState.errors.proveedorId?.message} {...ordenForm.register('proveedorId')}>
-                  <option value="">Selecciona…</option>
-                  {proveedores.data?.map((proveedor) => (
-                    <option key={proveedor.id} value={proveedor.id}>
-                      {proveedor.nombre}
-                    </option>
-                  ))}
-                </Select>
-                <Input label="Observaciones" {...ordenForm.register('observaciones')} />
-              </div>
-
-              <div className="rounded-inner border border-border bg-muted/30 p-3">
-                <div className="mb-2 flex items-center justify-between">
-                  <p className="text-xs font-medium uppercase tracking-tighter2 text-muted-foreground">Líneas</p>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => append({ varianteId: '', cantidad: 1, costoUnitarioUSD: 0 })}
-                  >
-                    Agregar
-                  </Button>
-                </div>
-                {ordenForm.formState.errors.detalles?.message && (
-                  <p className="mb-2 text-xs text-destructive-fg">{ordenForm.formState.errors.detalles.message}</p>
-                )}
-                <div className="flex flex-col gap-2">
-                  {fields.map((field, indice) => (
-                    <div key={field.id} className="grid grid-cols-2 gap-2 rounded-inner bg-card p-3 sm:grid-cols-4">
-                      <Select aria-label="Variante" {...ordenForm.register(`detalles.${indice}.varianteId`)}>
-                        <option value="">Producto…</option>
-                        {stock.data?.items.map((item) => (
-                          <option key={item.varianteId} value={item.varianteId}>
-                            {item.productoNombre} · {item.sku}
-                          </option>
-                        ))}
-                      </Select>
-                      <Input type="number" placeholder="Cantidad" {...ordenForm.register(`detalles.${indice}.cantidad`)} />
-                      <Input type="number" placeholder="Costo USD" {...ordenForm.register(`detalles.${indice}.costoUnitarioUSD`)} />
-                      <Button type="button" variant="ghost" size="sm" onClick={() => remove(indice)}>
-                        Quitar
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <Button variant="ghost" onClick={() => setCreando(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit" loading={crear.isPending}>
-                  Crear orden
-                </Button>
-              </div>
-            </form>
-          </InlineForm>
-        )}
-
-        <Card className="border-0 bg-transparent shadow-none">
-          <CardHeader>
-            <CardTitle>Órdenes</CardTitle>
+        <Card>
+          <CardHeader className="flex flex-col items-stretch gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <Select aria-label="Filtrar por estado" value={estado} onChange={(evento) => { setEstado(evento.target.value); setPage(1); }}>
-                <option value="">Todos los estados</option>
-                {ESTADOS.map((valor) => (
-                  <option key={valor} value={valor}>
-                    {valor}
-                  </option>
-                ))}
-              </Select>
-              <Button
-                size="sm"
-                leftIcon={<Plus size={15} />}
-                onClick={() => {
-                  ordenForm.reset(VACIO);
-                  setCreando(true);
+              <Buscador
+                placeholder="Buscar número o proveedor…"
+                value={busqueda}
+                onCambio={(valor) => {
+                  setBusqueda(valor);
+                  setPage(1);
                 }}
-              >
-                Nueva orden
-              </Button>
+              />
+              <FiltroDropdown
+                label="Estado"
+                opciones={ESTADOS.map((valor) => ({ valor, etiqueta: valor }))}
+                valor={estado}
+                onChange={(valor) => {
+                  setEstado(valor);
+                  setPage(1);
+                }}
+              />
+              <FiltroFechas
+                desde={desde}
+                hasta={hasta}
+                onDesde={(valor) => { setDesde(valor); setPage(1); }}
+                onHasta={(valor) => { setHasta(valor); setPage(1); }}
+              />
+              <div className="ml-auto">
+                <Button leftIcon={<Plus size={15} />} onClick={() => navigate('/compras/ordenes/nueva')}>
+                  Nueva orden
+                </Button>
+              </div>
+            </div>
+            <div className="border-b border-border" />
+            <div className="flex flex-wrap items-center gap-2">
+              <FiltroDropdown
+                label="Proveedor"
+                opciones={(proveedores.data ?? []).map((p) => ({ valor: p.id, etiqueta: p.nombre }))}
+                valor={proveedorFiltro}
+                onChange={(valor) => {
+                  setProveedorFiltro(valor);
+                  setPage(1);
+                }}
+              />
+              <FiltroRango
+                label="Total USD"
+                minimo={totalMin}
+                maximo={totalMax}
+                onMinimo={(valor) => {
+                  setTotalMin(valor);
+                  setPage(1);
+                }}
+                onMaximo={(valor) => {
+                  setTotalMax(valor);
+                  setPage(1);
+                }}
+              />
+              <div className="ml-auto">
+                <LimpiarFiltros activo={hayFiltros} onClick={limpiarFiltros} />
+              </div>
             </div>
           </CardHeader>
           <CardBody>
             <DataTable<OrdenCompra>
-              rows={ordenes.data?.items ?? []}
+              rows={filas}
               loading={ordenes.isLoading}
               rowKey={(orden) => orden.id}
               empty="No hay órdenes."
@@ -324,11 +307,9 @@ export function ComprasPage() {
                 },
               ]}
             />
-            <Pagination page={page} totalPages={ordenes.data?.totalPages ?? 1} onPageChange={setPage} />
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
           </CardBody>
         </Card>
-      </FolderPanel>
-      </div>
 
       <Modal
         open={Boolean(detalle)}

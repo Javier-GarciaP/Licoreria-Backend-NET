@@ -1,66 +1,104 @@
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
+import { motion, LayoutGroup } from 'framer-motion';
+import { CalendarDays, Pencil, Trash2 } from 'lucide-react';
 import {
+  ActionMenu,
+  Buscador,
   Button,
   Card,
   CardBody,
   CardHeader,
-  CardTitle,
   DataTable,
-  Input,
-  Modal,
-  PageHeader,
+  FiltroDropdown,
+  LimpiarFiltros,
+  Pagination,
   Pill,
+  Skeleton,
 } from '@licoreria/ui';
 import type { Evento } from '@licoreria/types';
 import { contenidoApi } from '@licoreria/api-client';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { ContenidoTabs } from '../components/ContenidoTabs';
+import { FormularioEvento, type FormularioEventoForm } from '../components/eventos/FormularioEvento';
+import { PanelDetalleEvento } from '../components/eventos/PanelDetalleEvento';
+import { EstadoEvento, vigenciaDe } from '../components/eventos/estado';
 import { mensajeDeError } from '../lib/api';
+import { urlDeImagen } from '../lib/imagenProducto';
 import { formatDateTime } from '../lib/format';
+import { contiene, paginarEnMemoria } from '../lib/filtros';
 
-const esquema = z.object({
-  titulo: z.string().min(2, 'Ingresa el título'),
-  descripcion: z.string().min(2, 'Ingresa la descripción'),
-  fechaInicio: z.string().min(1, 'Selecciona la fecha de inicio'),
-  fechaFin: z.string().optional(),
-  imagenUrl: z.string().optional(),
-  publicado: z.boolean(),
-  activo: z.boolean(),
-});
+const OPCIONES_ESTADO = [
+  { valor: '', etiqueta: 'Todos' },
+  { valor: 'Publicados', etiqueta: 'Publicados' },
+  { valor: 'Proximos', etiqueta: 'Próximos' },
+  { valor: 'Pasados', etiqueta: 'Pasados' },
+];
 
-type Formulario = z.infer<typeof esquema>;
+const imagenIdDe = (evento: Evento) => `ev-img-${evento.id}`;
 
-const VACIO: Formulario = {
-  titulo: '',
-  descripcion: '',
-  fechaInicio: '',
-  fechaFin: '',
-  imagenUrl: '',
-  publicado: false,
-  activo: true,
-};
+function MiniaturaEvento({ evento }: { evento: Evento }) {
+  const imagen = urlDeImagen(evento.imagenUrl);
+  const layoutId = imagenIdDe(evento);
+  if (imagen) {
+    return (
+      <motion.img
+        layoutId={layoutId}
+        layout
+        src={imagen}
+        alt=""
+        className="h-10 w-10 shrink-0 rounded-lg border border-border object-cover"
+      />
+    );
+  }
+  return (
+    <motion.div
+      layoutId={layoutId}
+      layout
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 text-muted-foreground"
+    >
+      <CalendarDays size={16} />
+    </motion.div>
+  );
+}
 
 export function EventosPage() {
-  const [creando, setCreando] = useState(false);
-  const [editando, setEditando] = useState<Evento | null>(null);
-  const [porEliminar, setPorEliminar] = useState<Evento | null>(null);
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const { id } = useParams();
   const queryClient = useQueryClient();
 
-  const form = useForm<Formulario>({ resolver: zodResolver(esquema), defaultValues: VACIO });
+  const esCrear = pathname === '/eventos/nuevo';
+  const esEditar = /^\/eventos\/[^/]+\/editar$/.test(pathname);
+  const esEditor = esCrear || esEditar;
+
+  const [page, setPage] = useState(1);
+  const [busqueda, setBusqueda] = useState('');
+  const [filtro, setFiltro] = useState('');
+  const [expandido, setExpandido] = useState<Evento | null>(null);
+  const [porEliminar, setPorEliminar] = useState<Evento | null>(null);
+
+  useEffect(() => {
+    setExpandido(null);
+  }, [pathname]);
+
   const eventos = useQuery({ queryKey: ['eventos-todos'], queryFn: contenidoApi.eventos });
+  const detalle = useQuery({
+    queryKey: ['evento', id],
+    queryFn: () => contenidoApi.eventos().then((todos) => todos.find((evento) => evento.id === id) ?? null),
+    enabled: esEditar,
+  });
 
   const invalidar = () => {
     queryClient.invalidateQueries({ queryKey: ['eventos-todos'] });
     queryClient.invalidateQueries({ queryKey: ['eventos'] });
   };
 
+  const editando = esEditar ? detalle.data : null;
+
   const guardar = useMutation({
-    mutationFn: (datos: Formulario) => {
+    mutationFn: (datos: FormularioEventoForm) => {
       const body = {
         titulo: datos.titulo,
         descripcion: datos.descripcion,
@@ -75,16 +113,14 @@ export function EventosPage() {
     },
     onSuccess: () => {
       toast.success(editando ? 'Evento actualizado' : 'Evento creado');
-      setCreando(false);
-      setEditando(null);
-      form.reset(VACIO);
       invalidar();
+      navigate('/eventos');
     },
     onError: (error) => toast.error('No se pudo guardar', { description: mensajeDeError(error) }),
   });
 
   const eliminar = useMutation({
-    mutationFn: (id: string) => contenidoApi.eliminarEvento(id),
+    mutationFn: (eventoId: string) => contenidoApi.eliminarEvento(eventoId),
     onSuccess: () => {
       toast.success('Evento eliminado');
       setPorEliminar(null);
@@ -93,128 +129,155 @@ export function EventosPage() {
     onError: (error) => toast.error('No se pudo eliminar', { description: mensajeDeError(error) }),
   });
 
-  const abrirEditar = (evento: Evento) => {
-    form.reset({
-      titulo: evento.titulo,
-      descripcion: evento.descripcion,
-      fechaInicio: evento.fechaInicio.slice(0, 16),
-      fechaFin: evento.fechaFin ? evento.fechaFin.slice(0, 16) : '',
-      imagenUrl: evento.imagenUrl ?? '',
-      publicado: evento.publicado,
-      activo: evento.activo,
-    });
-    setEditando(evento);
+  const hayFiltros = Boolean(busqueda || filtro);
+  const limpiarFiltros = () => {
+    setBusqueda('');
+    setFiltro('');
+    setPage(1);
   };
 
-  return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader
-        title="Contenido"
-        subtitle="Eventos publicables en la web."
-        actions={
-          <Button
-            onClick={() => {
-              form.reset(VACIO);
-              setCreando(true);
-            }}
-          >
-            Nuevo evento
-          </Button>
-        }
-      />
-      <ContenidoTabs />
+  const { items: filas, totalPages } = useMemo(() => {
+    const filtradas = (eventos.data ?? []).filter((evento) => {
+      if (!contiene(`${evento.titulo} ${evento.descripcion}`, busqueda)) return false;
+      if (filtro === 'Publicados' && !evento.publicado) return false;
+      if (filtro === 'Proximos' && vigenciaDe(evento) === 'Pasado') return false;
+      if (filtro === 'Pasados' && vigenciaDe(evento) !== 'Pasado') return false;
+      return true;
+    });
+    return paginarEnMemoria(filtradas, page, 10);
+  }, [eventos.data, busqueda, filtro, page]);
 
+  if (esEditor) {
+    if (esEditar && detalle.isLoading) {
+      return (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Skeleton className="h-64 w-full max-w-2xl" />
+        </div>
+      );
+    }
+    if (esEditar && !detalle.data) {
+      return (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-center">
+          <p className="text-sm text-muted-foreground">Este evento no existe o fue eliminado.</p>
+          <Button variant="ghost" onClick={() => navigate('/eventos')}>
+            Volver a eventos
+          </Button>
+        </div>
+      );
+    }
+    return (
+      <div className="absolute inset-0 flex min-h-0 flex-col overflow-hidden p-3 lg:p-4">
+        <FormularioEvento
+          evento={editando}
+          guardando={guardar.isPending}
+          onCancelar={() => navigate('/eventos')}
+          onGuardar={(datos) => guardar.mutate(datos)}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto flex max-w-page flex-col gap-4">
       <Card>
-        <CardHeader>
-          <CardTitle>Eventos</CardTitle>
+        <CardHeader className="flex flex-col items-stretch gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Buscador
+              placeholder="Buscar título o descripción…"
+              value={busqueda}
+              onCambio={(valor) => {
+                setBusqueda(valor);
+                setPage(1);
+              }}
+            />
+            <FiltroDropdown
+              label="Estado"
+              opciones={OPCIONES_ESTADO}
+              valor={filtro}
+              onChange={(valor) => {
+                setFiltro(valor);
+                setPage(1);
+              }}
+            />
+            <div className="ml-auto">
+              <Button size="sm" leftIcon={<CalendarDays size={15} />} onClick={() => navigate('/eventos/nuevo')}>
+                Nuevo evento
+              </Button>
+            </div>
+          </div>
+          <div className="border-b border-border" />
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="ml-auto">
+              <LimpiarFiltros activo={hayFiltros} onClick={limpiarFiltros} />
+            </div>
+          </div>
         </CardHeader>
         <CardBody>
-          <DataTable<Evento>
-            rows={eventos.data ?? []}
-            loading={eventos.isLoading}
-            rowKey={(evento) => evento.id}
-            empty="No hay eventos."
-            columns={[
-              { key: 'titulo', header: 'Título', render: (evento) => <span className="text-foreground">{evento.titulo}</span> },
-              { key: 'inicio', header: 'Inicio', render: (evento) => formatDateTime(evento.fechaInicio) },
-              {
-                key: 'publicado',
-                header: 'Publicado',
-                render: (evento) => (
-                  <Pill tone={evento.publicado ? 'success' : 'neutral'}>{evento.publicado ? 'Sí' : 'No'}</Pill>
-                ),
-              },
-              {
-                key: 'activo',
-                header: 'Activo',
-                render: (evento) => <Pill tone={evento.activo ? 'success' : 'danger'}>{evento.activo ? 'Sí' : 'No'}</Pill>,
-              },
-              {
-                key: 'acciones',
-                header: '',
-                align: 'right',
-                render: (evento) => (
-                  <div className="flex justify-end gap-2">
-                    <Button size="sm" variant="ghost" onClick={() => abrirEditar(evento)}>
-                      Editar
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setPorEliminar(evento)}>
-                      Eliminar
-                    </Button>
-                  </div>
-                ),
-              },
-            ]}
-          />
+          <LayoutGroup>
+            <DataTable<Evento>
+              rows={filas}
+              loading={eventos.isLoading}
+              rowKey={(evento) => evento.id}
+              onRowClick={(evento) => setExpandido((actual) => (actual?.id === evento.id ? null : evento))}
+              expandirKey={expandido?.id ?? null}
+              expandedRow={
+                expandido
+                  ? (evento) =>
+                      evento.id === expandido.id ? (
+                        <PanelDetalleEvento
+                          evento={evento}
+                          imagenId={imagenIdDe(evento)}
+                          onCerrar={() => setExpandido(null)}
+                        />
+                      ) : null
+                  : undefined
+              }
+              empty="No hay eventos."
+              columns={[
+                {
+                  key: 'titulo',
+                  header: 'Evento',
+                  render: (evento) => (
+                    <div className="flex items-center gap-3">
+                      <MiniaturaEvento evento={evento} />
+                      <div>
+                        <p className="text-foreground">{evento.titulo}</p>
+                        <p className="text-xs text-muted-foreground">{formatDateTime(evento.fechaInicio)}</p>
+                      </div>
+                    </div>
+                  ),
+                },
+                { key: 'estado', header: 'Estado', render: (evento) => <EstadoEvento evento={evento} /> },
+                {
+                  key: 'activo',
+                  header: 'Activo',
+                  render: (evento) => <Pill tone={evento.activo ? 'success' : 'danger'}>{evento.activo ? 'Sí' : 'No'}</Pill>,
+                },
+                {
+                  key: 'acciones',
+                  header: '',
+                  align: 'right',
+                  render: (evento) => (
+                    <ActionMenu
+                      label={`Acciones de ${evento.titulo}`}
+                      options={[
+                        { label: 'Editar', icon: <Pencil size={15} />, onClick: () => navigate(`/eventos/${evento.id}/editar`) },
+                        {
+                          label: 'Eliminar',
+                          icon: <Trash2 size={15} />,
+                          danger: true,
+                          onClick: () => setPorEliminar(evento),
+                        },
+                      ]}
+                    />
+                  ),
+                },
+              ]}
+            />
+          </LayoutGroup>
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </CardBody>
       </Card>
-
-      <Modal
-        open={creando || Boolean(editando)}
-        onClose={() => {
-          setCreando(false);
-          setEditando(null);
-        }}
-        title={editando ? 'Editar evento' : 'Nuevo evento'}
-        footer={
-          <>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setCreando(false);
-                setEditando(null);
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" form="form-evento" loading={guardar.isPending}>
-              Guardar
-            </Button>
-          </>
-        }
-      >
-        <form id="form-evento" className="flex flex-col gap-3" onSubmit={form.handleSubmit((d) => guardar.mutate(d))} noValidate>
-          <Input label="Título" error={form.formState.errors.titulo?.message} {...form.register('titulo')} />
-          <Input label="Descripción" error={form.formState.errors.descripcion?.message} {...form.register('descripcion')} />
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="Inicio" type="datetime-local" error={form.formState.errors.fechaInicio?.message} {...form.register('fechaInicio')} />
-            <Input label="Fin (opcional)" type="datetime-local" {...form.register('fechaFin')} />
-          </div>
-          <Input label="Imagen (URL)" {...form.register('imagenUrl')} />
-          <div className="flex gap-6">
-            <label className="flex items-center gap-2 text-sm text-muted-foreground">
-              <input type="checkbox" {...form.register('publicado')} />
-              Publicado
-            </label>
-            {editando && (
-              <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                <input type="checkbox" {...form.register('activo')} />
-                Activo
-              </label>
-            )}
-          </div>
-        </form>
-      </Modal>
 
       <ConfirmDialog
         open={Boolean(porEliminar)}

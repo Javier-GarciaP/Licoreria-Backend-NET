@@ -4,7 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { Wallet } from 'lucide-react';
 import {
+  ActionMenu,
   Button,
   Card,
   CardBody,
@@ -100,9 +102,12 @@ export function CuentasPorCobrarPage() {
                 header: '',
                 align: 'right',
                 render: (fila) => (
-                  <Button size="sm" variant="ghost" onClick={() => setPagando(fila)}>
-                    Registrar pago
-                  </Button>
+                  <ActionMenu
+                    label={`Acciones de ${fila.clienteNombre}`}
+                    options={[
+                      { label: 'Registrar pago', icon: <Wallet size={15} />, onClick: () => setPagando(fila) },
+                    ]}
+                  />
                 ),
               },
             ]}

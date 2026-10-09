@@ -51,7 +51,7 @@ public sealed class LicoreriaApiFactory : WebApplicationFactory<Program>, IAsync
         var login = await Client.PostAsJsonAsync("/api/auth/login", new
         {
             username = "admin@licoreria.com",
-            password = "admin123"
+            password = "demo123"
         });
 
         login.EnsureSuccessStatusCode();

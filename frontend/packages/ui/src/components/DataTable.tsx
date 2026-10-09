@@ -147,18 +147,22 @@ function FragmentoFila<T>({
             </button>
           </TableCell>
         )}
-        {columns.map((column) => (
-          <TableCell
-            key={column.key}
-            className={cn(
-              alignClass(column.align),
-              column.align === 'right' && 'num',
-              column.className,
-            )}
-          >
-            {column.render(row)}
-          </TableCell>
-        ))}
+        {columns.map((column) => {
+          const esAcciones = column.key === 'acciones';
+          return (
+            <TableCell
+              key={column.key}
+              className={cn(
+                alignClass(column.align),
+                column.align === 'right' && !esAcciones && 'num',
+                esAcciones && 'pr-2.5',
+                column.className,
+              )}
+            >
+              {column.render(row)}
+            </TableCell>
+          );
+        })}
       </TableRow>
       {expandida && expandedRow && (
         <TableRow className="border-0 bg-muted/10">

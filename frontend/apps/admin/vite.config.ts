@@ -10,6 +10,7 @@ export default defineConfig({
     alias: {
       '@licoreria/types': resolvePath('../../packages/types/src/index.ts'),
       '@licoreria/api-client': resolvePath('../../packages/api-client/src/index.ts'),
+      '@licoreria/auth': resolvePath('../../packages/auth/src/index.ts'),
       '@licoreria/ui': resolvePath('../../packages/ui/src/index.ts'),
     },
   },

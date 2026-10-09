@@ -12,7 +12,12 @@ export function MobileNavSheet({
   grupos: NavGroup[];
 }) {
   return (
-    <Sheet open={open} onOpenChange={(abierto) => { if (!abierto) onClose(); }}>
+    <Sheet
+      open={open}
+      onOpenChange={(abierto) => {
+        if (!abierto) onClose();
+      }}
+    >
       <SheetPortal>
         <SheetOverlay className="fixed inset-0 z-40 bg-black/50 lg:hidden" />
         <SheetContent
@@ -26,7 +31,7 @@ export function MobileNavSheet({
             return (
               <section key={grupo.id} className="mb-5">
                 <p className="mb-1 flex items-center gap-2 px-2 text-xs font-medium text-muted-foreground">
-                  <Icono className="h-3.5 w-3.5" />
+                  <Icono className="h-3.5 w-3.5 text-accent-ink" />
                   {grupo.label}
                 </p>
                 <div className="flex flex-col">
@@ -47,7 +52,7 @@ export function MobileNavSheet({
                           )
                         }
                       >
-                        <ItemIcono className="h-[18px] w-[18px]" />
+                        <ItemIcono className="h-[18px] w-[18px] text-accent-ink" />
                         {item.label}
                       </NavLink>
                     );

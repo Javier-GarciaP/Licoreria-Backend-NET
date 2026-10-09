@@ -25,6 +25,7 @@ internal static class SeedData
     public static readonly Guid UnidadUnidad = Guid.Parse("66666666-6666-6666-6666-666666666662");
     public static readonly Guid UnidadTobo = Guid.Parse("66666666-6666-6666-6666-666666666663");
     public static readonly Guid UnidadPlato = Guid.Parse("66666666-6666-6666-6666-666666666664");
+    public static readonly Guid UnidadTrago = Guid.Parse("66666666-6666-6666-6666-666666666665");
 
     // --- Impuestos ---
     public static readonly Guid ImpuestoIva = Guid.Parse("77777777-7777-7777-7777-777777777771");

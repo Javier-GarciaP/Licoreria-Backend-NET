@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using Licoreria.Domain.Common;
 using Licoreria.Domain.Entities;
 using Microsoft.EntityFrameworkCore;

@@ -26,7 +26,7 @@ describe('LoginPage', () => {
     renderLogin();
 
     await user.type(screen.getByLabelText('Correo'), 'admin@licoreria.com');
-    await user.type(screen.getByLabelText('Contraseña'), 'admin123');
+    await user.type(screen.getByLabelText('Contraseña'), 'demo123');
     await user.click(screen.getByRole('button', { name: 'Entrar' }));
 
     await waitFor(() => expect(tokens.access()).toBe('test-access-token'));
