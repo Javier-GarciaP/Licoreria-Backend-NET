@@ -20,9 +20,9 @@ import {
   X,
 } from 'lucide-react';
 import { Button, cn, Input, Modal, Select } from '@licoreria/ui';
-import type { Cuenta, EstadoItemComanda, Producto, ProductoVariante } from '@licoreria/types';
-import { catalogoApi, cuentasApi, ventasApi } from '@licoreria/api-client';
-import { formatUSD } from '../../lib/format';
+import type { Cuenta, EstadoItemComanda, Moneda, Producto, ProductoVariante } from '@licoreria/types';
+import { catalogoApi, cuentasApi, finanzasApi, ventasApi } from '@licoreria/api-client';
+import { formatBS, formatUSD } from '../../lib/format';
 import { mensajeDeError } from '../../lib/api';
 import { urlDeImagen } from '../../lib/imagen';
 
@@ -79,20 +79,22 @@ function ImagenProducto({ url, nombre }: { url: string | null; nombre: string })
 
   if (!src) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-muted/60">
-        <span className="text-lg font-medium text-muted-foreground/60">{nombre.trim().charAt(0).toUpperCase()}</span>
+      <div className="flex aspect-[4/3] w-full items-center justify-center bg-muted/40">
+        <span className="text-2xl font-medium text-muted-foreground/60">{nombre.trim().charAt(0).toUpperCase()}</span>
       </div>
     );
   }
 
   return (
-    <img
-      src={src}
-      alt={nombre}
-      className="h-full w-full object-cover"
-      loading="lazy"
-      onError={() => setFalla(true)}
-    />
+    <div className="flex aspect-[4/3] w-full items-center justify-center overflow-hidden bg-muted/40 p-2">
+      <img
+        src={src}
+        alt={nombre}
+        className="h-full w-full object-contain"
+        loading="lazy"
+        onError={() => setFalla(true)}
+      />
+    </div>
   );
 }
 
@@ -123,6 +125,8 @@ export function PosCarta({
       catalogoApi.productos({ busqueda: busqueda.trim() || undefined, categoriaId: categoriaId ?? undefined, pageSize: 100, activo: true }),
   });
   const metodos = useQuery({ queryKey: ['metodos-pago'], queryFn: ventasApi.metodosPago });
+  const tasa = useQuery({ queryKey: ['tasa-actual'], queryFn: () => finanzasApi.tasaActual('Paralelo') });
+  const valorTasa = tasa.data?.valor ?? 0;
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ['mis-cuentas'] });
@@ -198,8 +202,20 @@ export function PosCarta({
     enviar.mutate({ area, items: pendientes.map((l) => ({ varianteId: l.varianteId, cantidad: l.cantidad, esCortesia: l.esCortesia })) });
   };
 
+  const entregar = useMutation({
+    mutationFn: ({ comandaId, detalleId }: { comandaId: string; detalleId: string }) =>
+      cuentasApi.cambiarEstadoItem(cuenta.id, comandaId, detalleId, 'Entregado'),
+    onSuccess: (cuentaActualizada) => {
+      onActualizar(cuentaActualizada);
+      queryClient.invalidateQueries({ queryKey: ['carta-cuenta', cuenta.id] });
+      refresh();
+    },
+    onError: (error) => toast.error('No se pudo marcar como entregado', { description: mensajeDeError(error) }),
+  });
+
   const abonar = useMutation({
-    mutationFn: (body: { metodoPagoId: string; monto: number }) => cuentasApi.abonar(cuenta.id, { ...body, moneda: 'USD' }),
+    mutationFn: (body: { metodoPagoId: string; monto: number; moneda: Moneda }) =>
+      cuentasApi.abonar(cuenta.id, body),
     onSuccess: (cuentaActualizada) => {
       toast.success('Abono registrado');
       setPanel(null);
@@ -220,9 +236,9 @@ export function PosCarta({
   });
 
   const cerrar = useMutation({
-    mutationFn: (body: { metodoPagoId: string; monto: number; descuentoUSD?: number }) =>
+    mutationFn: (body: { metodoPagoId: string; monto: number; descuentoUSD?: number; moneda: Moneda }) =>
       cuentasApi.cerrar(cuenta.id, {
-        pagos: [{ metodoPagoId: body.metodoPagoId, monto: body.monto, moneda: 'USD' }],
+        pagos: [{ metodoPagoId: body.metodoPagoId, monto: body.monto, moneda: body.moneda }],
         descuentoUSD: body.descuentoUSD,
       }),
     onSuccess: () => {
@@ -432,7 +448,21 @@ export function PosCarta({
                               </p>
                               <p className="num text-[10px] text-muted-foreground">{formatUSD(detalle.subtotalUSD)}</p>
                             </div>
-                            <EstadoItem estado={detalle.estado} />
+                            <div className="flex shrink-0 items-center gap-1.5">
+                              <EstadoItem estado={detalle.estado} />
+                              {detalle.estado === 'Preparado' && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    entregar.mutate({ comandaId: comanda.id, detalleId: detalle.id })
+                                  }
+                                  className="rounded-full bg-info/15 px-2 py-0.5 text-[10px] font-medium text-info-fg transition-colors hover:bg-info/25"
+                                  aria-label={`Marcar ${detalle.nombre} como entregado`}
+                                >
+                                  Entregar
+                                </button>
+                              )}
+                            </div>
                           </li>
                         ))}
                       </ul>
@@ -494,9 +524,7 @@ export function PosCarta({
                     onClick={() => seleccionarProducto(producto)}
                     className="flex flex-col overflow-hidden rounded-inner border border-border bg-card transition hover:border-primary hover:bg-primary/10"
                   >
-                    <div className="flex h-20 items-center justify-center overflow-hidden bg-muted/50">
-                      <ImagenProducto url={producto.imagenUrl} nombre={producto.nombre} />
-                    </div>
+                    <ImagenProducto url={producto.imagenUrl} nombre={producto.nombre} />
                     <div className="flex flex-col gap-0.5 p-2">
                       <p className="line-clamp-1 text-xs font-medium text-foreground">{producto.nombre}</p>
                       <div className="flex items-center justify-between gap-1">
@@ -569,9 +597,12 @@ export function PosCarta({
         onCerrar={() => setPanel(null)}
         metodos={metodos.data ?? []}
         saldo={cuentaViva.saldo}
-        onAbonar={(metodoPagoId, monto) => abonar.mutate({ metodoPagoId, monto })}
+        tasa={valorTasa}
+        onAbonar={(metodoPagoId, monto, moneda) => abonar.mutate({ metodoPagoId, monto, moneda })}
         onDividir={(partes) => dividir.mutate(partes)}
-        onCobrar={(metodoPagoId, monto, descuento) => cerrar.mutate({ metodoPagoId, monto, descuentoUSD: descuento })}
+        onCobrar={(metodoPagoId, monto, descuento, moneda) =>
+          cerrar.mutate({ metodoPagoId, monto, descuentoUSD: descuento, moneda: moneda ?? 'USD' })
+        }
       />
     </div>
   );
@@ -603,6 +634,7 @@ function Modales({
   onCerrar,
   metodos,
   saldo,
+  tasa,
   onAbonar,
   onDividir,
   onCobrar,
@@ -611,22 +643,39 @@ function Modales({
   onCerrar: () => void;
   metodos: { id: string; nombre: string }[];
   saldo: number;
-  onAbonar: (metodoPagoId: string, monto: number) => void;
+  /** Tasa de cambio vigente (Bs por USD); 0 si aún no carga. */
+  tasa: number;
+  onAbonar: (metodoPagoId: string, monto: number, moneda: Moneda) => void;
   onDividir: (partes: number) => void;
-  onCobrar: (metodoPagoId: string, monto: number, descuento?: number) => void;
+  onCobrar: (metodoPagoId: string, monto: number, descuento?: number, moneda?: Moneda) => void;
 }) {
   const [monto, setMonto] = useState(saldo);
   const [descuento, setDescuento] = useState(0);
   const [partes, setPartes] = useState(2);
   const [metodo, setMetodo] = useState('');
   const [calc, setCalc] = useState('');
+  const [moneda, setMoneda] = useState<Moneda>('USD');
 
   useEffect(() => {
     if (panel === 'abonar' || panel === 'cobrar') setMonto(saldo);
     if (panel === 'cobrar') setDescuento(0);
+    if (panel === 'abonar' || panel === 'cobrar') setMoneda('USD');
     if (metodos.length > 0 && !metodo) setMetodo(metodos[0].id);
     if (panel === 'calculadora') setCalc('');
   }, [panel, saldo, metodos, metodo]);
+
+  /** Reexpresa el monto ingresado en la nueva moneda conservando su valor en USD. */
+  const cambiarMoneda = (nueva: Moneda) => {
+    if (nueva === moneda) return;
+    if (tasa > 0) {
+      const factor = nueva === 'BS' ? tasa : 1 / tasa;
+      setMonto(Number((monto * factor).toFixed(2)));
+    }
+    setMoneda(nueva);
+  };
+
+  /** Total a cobrar expresado en la moneda seleccionada. */
+  const totalCobrarMoneda = moneda === 'BS' && tasa > 0 ? (saldo - descuento) * tasa : saldo - descuento;
 
   const pie = (confirma: string, onClick: () => void, cargando = false) => (
     <>
@@ -639,12 +688,31 @@ function Modales({
     </>
   );
 
+  const selectorMoneda = (
+    <div className="flex items-center gap-0.5 rounded-lg border border-border p-0.5" role="group" aria-label="Moneda">
+      {(['USD', 'BS'] as const).map((opcion) => (
+        <button
+          key={opcion}
+          type="button"
+          onClick={() => cambiarMoneda(opcion)}
+          className={cn(
+            'h-8 rounded-md px-2.5 text-xs font-medium transition',
+            moneda === opcion ? 'bg-primary/15 text-foreground' : 'text-muted-foreground hover:text-foreground',
+          )}
+          aria-pressed={moneda === opcion}
+        >
+          {opcion === 'USD' ? 'USD $' : 'Bs'}
+        </button>
+      ))}
+    </div>
+  );
+
   if (!panel) return null;
 
   return (
     <>
       {panel === 'descuento' && (
-        <Modal open onClose={onCerrar} title="Descuento" footer={pie('Aplicar', () => onCobrar(metodo, saldo - descuento, descuento))}>
+        <Modal open onClose={onCerrar} title="Descuento" footer={pie('Aplicar', () => onCobrar(metodo, saldo - descuento, descuento, 'USD'))}>
           <Input label="Descuento (USD)" type="number" value={descuento} onChange={(e) => setDescuento(Math.max(0, Number(e.target.value)))} />
         </Modal>
       )}
@@ -673,9 +741,13 @@ function Modales({
       )}
 
       {panel === 'abonar' && (
-        <Modal open onClose={onCerrar} title="Abonar" footer={pie('Abonar', () => metodo && onAbonar(metodo, monto), false)}>
+        <Modal open onClose={onCerrar} title="Abonar" footer={pie('Abonar', () => metodo && onAbonar(metodo, monto, moneda), false)}>
           <div className="flex flex-col gap-3">
-            <Input label="Monto" type="number" value={monto} onChange={(e) => setMonto(Number(e.target.value))} />
+            {selectorMoneda}
+            <Input label={`Monto (${moneda === 'BS' ? 'Bs' : 'USD'})`} type="number" value={monto} onChange={(e) => setMonto(Number(e.target.value))} />
+            {moneda === 'BS' && tasa > 0 && (
+              <p className="num text-xs text-muted-foreground">1 USD = Bs {tasa.toFixed(2)}</p>
+            )}
             <Select label="Método" value={metodo} onChange={(e) => setMetodo(e.target.value)}>
               {metodos.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -697,7 +769,14 @@ function Modales({
       )}
 
       {panel === 'cobrar' && (
-        <Modal open onClose={onCerrar} title="Cobrar" footer={pie('Cobrar', () => metodo && onCobrar(metodo, saldo - descuento, descuento))}>
+        <Modal
+          open
+          onClose={onCerrar}
+          title="Cobrar"
+          footer={pie('Cobrar', () =>
+            metodo && onCobrar(metodo, Number(totalCobrarMoneda.toFixed(2)), descuento, moneda),
+          )}
+        >
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Saldo</span>
@@ -709,8 +788,14 @@ function Modales({
             </div>
             <div className="flex items-center justify-between border-t border-border pt-2 text-sm">
               <span className="font-medium text-foreground">Total a cobrar</span>
-              <span className="num text-lg font-medium text-foreground">{formatUSD(saldo - descuento)}</span>
+              <span className="num text-lg font-medium text-foreground">
+                {moneda === 'BS' ? formatBS(totalCobrarMoneda) : formatUSD(saldo - descuento)}
+              </span>
             </div>
+            {selectorMoneda}
+            {moneda === 'BS' && tasa > 0 && (
+              <p className="num text-xs text-muted-foreground">1 USD = Bs {tasa.toFixed(2)}</p>
+            )}
             <Select label="Método" value={metodo} onChange={(e) => setMetodo(e.target.value)}>
               {metodos.map((m) => (
                 <option key={m.id} value={m.id}>

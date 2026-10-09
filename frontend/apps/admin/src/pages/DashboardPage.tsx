@@ -1,5 +1,13 @@
 import { useEffect, useId, useMemo, type ReactNode } from 'react';
-import { animate, motion, MotionConfig, useMotionValue, useReducedMotion, useTransform, type Variants } from 'framer-motion';
+import {
+  animate,
+  motion,
+  MotionConfig,
+  useMotionValue,
+  useReducedMotion,
+  useTransform,
+  type Variants,
+} from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { Area, AreaChart, Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
 import {
@@ -61,18 +69,7 @@ const item: Variants = {
 };
 
 /** Tramas de carga del bento de KPIs (10 tiles: héroe 2 + caja 2 + 8 sencillos). */
-const KPI_ESQUELETOS = [
-  'col-span-2',
-  'col-span-2',
-  '',
-  '',
-  '',
-  '',
-  '',
-  '',
-  '',
-  '',
-];
+const KPI_ESQUELETOS = ['col-span-2', 'col-span-2', '', '', '', '', '', '', '', ''];
 
 function claveLocal(fecha: Date): string {
   return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
@@ -216,7 +213,7 @@ function Tile({
   return (
     <motion.div
       variants={item}
-            className={cn(
+      className={cn(
         'border border-border bg-card flex h-full flex-col overflow-hidden rounded-xl p-5 transition-colors hover:border-primary/40',
         !children && 'justify-center',
         className,
@@ -225,16 +222,13 @@ function Tile({
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs font-medium text-muted-foreground">{label}</p>
         {icon && (
-          <span className={cn('flex h-8 w-8 items-center justify-center rounded-full', TONE[tone].chip)}>{icon}</span>
+          <span className={cn('flex h-8 w-8 items-center justify-center rounded-full', TONE[tone].chip)}>
+            {icon}
+          </span>
         )}
       </div>
       <div className="relative mt-3 flex flex-wrap items-end justify-between gap-2">
-        <p
-          className={cn(
-            'font-medium tracking-tightest text-foreground',
-            hero ? 'text-3xl' : 'text-2xl',
-          )}
-        >
+        <p className={cn('font-medium tracking-tightest text-foreground', hero ? 'text-3xl' : 'text-2xl')}>
           {value}
         </p>
         {badge}
@@ -259,7 +253,7 @@ function Panel({
   return (
     <motion.div
       variants={item}
-            className={cn(
+      className={cn(
         'border border-border bg-card flex h-full flex-col overflow-hidden rounded-xl p-5 transition-colors hover:border-primary/40',
         className,
       )}
@@ -280,57 +274,61 @@ function Heatmap({ data }: { data?: ReporteHeatmap }) {
 
   const mapa = new Map(data.franjas.map((franja) => [`${franja.diaSemana}-${franja.hora}`, franja.totalUSD]));
   const max = Math.max(1, ...data.franjas.map((franja) => franja.totalUSD));
-  const pico = data.franjas.reduce(
-    (mejor, franja) => (franja.totalUSD > mejor.totalUSD ? franja : mejor),
-    { diaSemana: 0, hora: 0, totalUSD: 0, cantidad: 0 },
-  );
+  const pico = data.franjas.reduce((mejor, franja) => (franja.totalUSD > mejor.totalUSD ? franja : mejor), {
+    diaSemana: 0,
+    hora: 0,
+    totalUSD: 0,
+    cantidad: 0,
+  });
   const hayPico = pico.totalUSD > 0;
 
   return (
     <div className="flex h-full flex-col justify-between gap-4">
-      <motion.div
-        variants={contenedor}
-        initial="oculto"
-        animate="visible"
-        className="flex flex-col gap-1"
-      >
-        <div className="flex gap-1">
-          <div className="w-7 shrink-0" />
-          <div className="flex flex-1 gap-1">
-            {HORAS.map((hora) => (
-              <div key={hora} className="flex-1 text-center text-[9px] text-muted-foreground num">
-                {hora % 3 === 0 ? hora : ''}
-              </div>
-            ))}
-          </div>
-        </div>
-        {DIAS.map((dia, indiceDia) => (
-          <motion.div key={dia} variants={item} className="flex items-center gap-1">
-            <div className="w-7 shrink-0 text-[10px] text-muted-foreground">{dia}</div>
+      <div className="overflow-x-auto">
+        <motion.div
+          variants={contenedor}
+          initial="oculto"
+          animate="visible"
+          className="flex min-w-[560px] flex-col gap-1"
+        >
+          <div className="flex gap-1">
+            <div className="w-7 shrink-0" />
             <div className="flex flex-1 gap-1">
-              {HORAS.map((hora) => {
-                const valor = mapa.get(`${indiceDia}-${hora}`) ?? 0;
-                const intensidad = valor / max;
-                const esPico = hayPico && pico.diaSemana === indiceDia && pico.hora === hora;
-                return (
-                  <div
-                    key={hora}
-                    title={`${dia} ${hora}:00 · ${formatUSD(valor)}`}
-                    className={cn(
-                      'h-5 flex-1 rounded-[4px] border border-border/60',
-                      esPico && 'ring-2 ring-ring-ink',
-                    )}
-                    style={{
-                      backgroundColor:
-                        valor > 0 ? `rgb(var(--color-accent) / ${0.15 + intensidad * 0.8})` : 'transparent',
-                    }}
-                  />
-                );
-              })}
+              {HORAS.map((hora) => (
+                <div key={hora} className="flex-1 text-center text-[9px] text-muted-foreground num">
+                  {hora % 3 === 0 ? hora : ''}
+                </div>
+              ))}
             </div>
-          </motion.div>
-        ))}
-      </motion.div>
+          </div>
+          {DIAS.map((dia, indiceDia) => (
+            <motion.div key={dia} variants={item} className="flex items-center gap-1">
+              <div className="w-7 shrink-0 text-[10px] text-muted-foreground">{dia}</div>
+              <div className="flex flex-1 gap-1">
+                {HORAS.map((hora) => {
+                  const valor = mapa.get(`${indiceDia}-${hora}`) ?? 0;
+                  const intensidad = valor / max;
+                  const esPico = hayPico && pico.diaSemana === indiceDia && pico.hora === hora;
+                  return (
+                    <div
+                      key={hora}
+                      title={`${dia} ${hora}:00 · ${formatUSD(valor)}`}
+                      className={cn(
+                        'h-5 flex-1 rounded-[4px] border border-border/60',
+                        esPico && 'ring-2 ring-ring-ink',
+                      )}
+                      style={{
+                        backgroundColor:
+                          valor > 0 ? `rgb(var(--color-accent) / ${0.15 + intensidad * 0.8})` : 'transparent',
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -396,7 +394,9 @@ function SaludInventario({ data }: { data?: DiagnosticoInventario }) {
           <span key={estado.clave} className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <span className={cn('h-2.5 w-2.5 shrink-0 rounded-full', estado.color)} />
             <span className="truncate">{estado.etiqueta}</span>
-            <span className="ml-auto font-medium text-foreground tabular-nums">{formatNumber(Number(data[estado.clave] ?? 0))}</span>
+            <span className="ml-auto font-medium text-foreground tabular-nums">
+              {formatNumber(Number(data[estado.clave] ?? 0))}
+            </span>
           </span>
         ))}
       </div>
@@ -407,8 +407,14 @@ function SaludInventario({ data }: { data?: DiagnosticoInventario }) {
 export function DashboardPage() {
   const dashboard = useQuery({ queryKey: ['reportes', 'dashboard'], queryFn: reportesApi.dashboard });
   const heatmap = useQuery({ queryKey: ['reportes', 'heatmap'], queryFn: () => reportesApi.heatmap() });
-  const salud = useQuery({ queryKey: ['reportes', 'inventario-salud'], queryFn: reportesApi.inventarioSalud });
-  const mermas = useQuery({ queryKey: ['reportes', 'mermas-vs-ventas'], queryFn: () => reportesApi.mermasVsVentas() });
+  const salud = useQuery({
+    queryKey: ['reportes', 'inventario-salud'],
+    queryFn: reportesApi.inventarioSalud,
+  });
+  const mermas = useQuery({
+    queryKey: ['reportes', 'mermas-vs-ventas'],
+    queryFn: () => reportesApi.mermasVsVentas(),
+  });
 
   const rango = useMemo(() => rangoDashboard(), []);
   const ventas = useQuery({
@@ -456,7 +462,11 @@ export function DashboardPage() {
   }, [ventas.data]);
 
   const ticketSerie = useMemo(
-    () => serie.map((fila) => ({ etiqueta: fila.etiqueta, totalUSD: fila.cantidad > 0 ? fila.totalUSD / fila.cantidad : 0 })),
+    () =>
+      serie.map((fila) => ({
+        etiqueta: fila.etiqueta,
+        totalUSD: fila.cantidad > 0 ? fila.totalUSD / fila.cantidad : 0,
+      })),
     [serie],
   );
 
@@ -468,7 +478,7 @@ export function DashboardPage() {
           variants={contenedor}
           initial="oculto"
           animate="visible"
-          className="grid grid-cols-2 gap-4 lg:grid-cols-4"
+          className="grid grid-cols-2 gap-4 overflow-x-auto lg:grid-cols-4"
         >
           {cargando || !datos ? (
             KPI_ESQUELETOS.map((clase, indice) => (
@@ -499,7 +509,11 @@ export function DashboardPage() {
                   <span className="num text-foreground">{formatUSD(total7)}</span>
                 </div>
                 <div className="mt-2 h-36">
-                  {ventas.data ? <AreaSpark data={serie} tone="mint" /> : <Skeleton className="h-full w-full" />}
+                  {ventas.data ? (
+                    <AreaSpark data={serie} tone="mint" />
+                  ) : (
+                    <Skeleton className="h-full w-full" />
+                  )}
                 </div>
               </Tile>
 
@@ -523,8 +537,8 @@ export function DashboardPage() {
                   </p>
                   <p>
                     El turno se abrió con un fondo inicial de{' '}
-                    <span className="num text-foreground">{formatUSD(datos.cajaFondoInicial)}</span>
-                    {' '}· al cerrar se hace arqueo desde el módulo Caja.
+                    <span className="num text-foreground">{formatUSD(datos.cajaFondoInicial)}</span> · al
+                    cerrar se hace arqueo desde el módulo Caja.
                   </p>
                 </div>
               </Tile>
@@ -553,7 +567,11 @@ export function DashboardPage() {
                 hint={`${formatNumber(datos.ventasMesCantidad)} ventas`}
               >
                 <div className="h-24">
-                  {ventas.data ? <MiniBars data={serieMes} tone="mint" /> : <Skeleton className="h-full w-full" />}
+                  {ventas.data ? (
+                    <MiniBars data={serieMes} tone="mint" />
+                  ) : (
+                    <Skeleton className="h-full w-full" />
+                  )}
                 </div>
               </Tile>
 
@@ -565,7 +583,11 @@ export function DashboardPage() {
                 hint="tendencia diaria"
               >
                 <div className="h-24">
-                  {ventas.data ? <AreaSpark data={ticketSerie} tone="lavender" /> : <Skeleton className="h-full w-full" />}
+                  {ventas.data ? (
+                    <AreaSpark data={ticketSerie} tone="lavender" />
+                  ) : (
+                    <Skeleton className="h-full w-full" />
+                  )}
                 </div>
               </Tile>
 
@@ -612,14 +634,18 @@ export function DashboardPage() {
             <Heatmap data={heatmap.data} />
           </Panel>
 
-          <Panel
-            title="Mermas por motivo"
-            aside={mermas.data ? `${mermas.data.porcentaje}% de ventas` : '—'}
-          >
-            {mermas.data ? <BarrasMotivo items={mermas.data.porMotivo} /> : <Skeleton className="h-40 w-full" />}
+          <Panel title="Mermas por motivo" aside={mermas.data ? `${mermas.data.porcentaje}% de ventas` : '—'}>
+            {mermas.data ? (
+              <BarrasMotivo items={mermas.data.porMotivo} />
+            ) : (
+              <Skeleton className="h-40 w-full" />
+            )}
           </Panel>
 
-          <Panel title="Salud del inventario" aside={salud.data ? `${formatNumber(salud.data.total)} variantes` : '—'}>
+          <Panel
+            title="Salud del inventario"
+            aside={salud.data ? `${formatNumber(salud.data.total)} variantes` : '—'}
+          >
             <SaludInventario data={salud.data} />
           </Panel>
         </motion.div>

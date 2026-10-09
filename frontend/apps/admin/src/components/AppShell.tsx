@@ -1,8 +1,20 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronRight, LogOut, Menu, Moon, PanelLeft, PanelRight, Search, Sun } from 'lucide-react';
+import {
+  ChevronRight,
+  Disc,
+  LogOut,
+  Menu,
+  Moon,
+  PanelLeft,
+  PanelRight,
+  Search,
+  Store,
+  Sun,
+} from 'lucide-react';
 import { cn } from '@licoreria/ui';
 import { useAuth } from '../context/AuthContext';
+import { useModo } from '../context/ModoContext';
 import { useTheme } from '../context/ThemeContext';
 import { esRutaActiva, filtrarGrupos } from '../lib/navigation';
 import { Breadcrumbs } from './Breadcrumbs';
@@ -21,14 +33,18 @@ export function AppShell({ children }: { children: ReactNode }) {
     rolDominio?: string;
   };
   const { esOscuro, alternarTema } = useTheme() as { esOscuro: boolean; alternarTema: () => void };
+  const { modo, alternarModo } = useModo() as {
+    modo: 'discoteca' | 'licoreria';
+    alternarModo: () => void;
+  };
   const navigate = useNavigate();
   const location = useLocation();
   const [sheetAbierto, setSheetAbierto] = useState(false);
   const [paletteAbierto, setPaletteAbierto] = useState(false);
 
   const grupos = useMemo(
-    () => filtrarGrupos(esAdmin, tienePermiso, rolDominio),
-    [esAdmin, tienePermiso, rolDominio],
+    () => filtrarGrupos(esAdmin, tienePermiso, rolDominio, modo),
+    [esAdmin, tienePermiso, rolDominio, modo],
   );
   const primarios = useMemo(
     () => grupos.flatMap((grupo) => grupo.items).filter((item) => item.primario),
@@ -309,6 +325,22 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
 
           <div className="flex items-center gap-2 lg:ml-auto">
+            <button
+              type="button"
+              onClick={alternarModo}
+              className="flex h-9 items-center gap-1.5 rounded-md border border-border px-2 text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground"
+              aria-label={`Cambiar modo (actual: ${modo === 'discoteca' ? 'Discoteca' : 'Licorería'})`}
+              title={
+                modo === 'discoteca'
+                  ? 'Modo Discoteca — cambiar a Licorería'
+                  : 'Modo Licorería — cambiar a Discoteca'
+              }
+            >
+              {modo === 'discoteca' ? <Disc className="h-4 w-4" /> : <Store className="h-4 w-4" />}
+              <span className="hidden text-xs font-medium sm:inline">
+                {modo === 'discoteca' ? 'Discoteca' : 'Licorería'}
+              </span>
+            </button>
             <button
               type="button"
               onClick={alternarTema}

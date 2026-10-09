@@ -13,6 +13,39 @@ y el proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
 ### Agregado
 
+- **Completitud de la Fase 4 (5 brechas):**
+  - **Modo dual real:** `ModoProvider` montado en `main.tsx` (envuelve `ErrorBoundary`,
+    `Toaster` y `AuthProvider`) con botón de conmutación en el header de `AppShell`.
+    `navigation.tsx` añade `modos?: Modo[]` por item/grupo y los helpers
+    `visiblePorModo`/`filtrarGrupos`/`puedeAcceder` filtran por modo **antes** del
+    bypass de admin: licorería oculta el grupo Salón, `/plano` y `/cuentas`;
+    discoteca usa la nav completa; Dashboard visible en ambos. `App.tsx` aterriza en
+    `/pos` (licorería) o `/` (discoteca) según el modo. Tests: `navigation.test.ts` (9).
+  - **Dashboard sin desborde:** el heatmap se envuelve en `overflow-x-auto`
+    (wrapper) con `min-w-[560px]` y el bento de KPI usa scroll horizontal en móvil.
+  - **Máquina de estados conectada:** `MaquinaEstadosComanda` reescrita sobre
+    `EstadoItemComanda` (Recibido → EnProceso/Preparado → Entregado; Cancelado
+    terminal) e inyectada en `ServicioCuentas.CambiarEstadoItemAsync`, que valida
+    transiciones (`ReglaNegocioException`), ignora no-ops y deriva el estado de la
+    comanda (`CalcularEstadoComanda`) + notificación SignalR. El estado **Entregado**
+    es alcanzable desde `PosCarta` (botón junto al badge, mesonero).
+  - **Pagos mixtos USD/Bs:** el backend convierte Bs → USD con la tasa Paralelo
+    vigente en abonos (`ServicioCuentas.RegistrarAbonoAsync`) y en ventas
+    (`ServicioVentas`), validando `tasa > 0`; el abono persiste monto/moneda
+    originales. El frontend añade selector USD/Bs en el cobro y abonos de
+    `CuentaPage`, en `PosCarta` y en el panel de orden de `PosPage` (monto y propina
+    normalizados), con `formatBS`/`formatUSD` en el historial.
+  - **`EvaluadorMerma` integrado** en `ServicioInventario.RegistrarMermaAsync`
+    (movimientos sugeridos Merma/Cortesía con paridad de comportamiento) y
+    acepta `decimal`.
+  - **Pruebas Moq nuevas:** `ServicioVentasTests` (5: pago USD, mixto, insuficientes,
+    sin turno, sin tasa) y `ServicioCuentasTests` (8: abonos con/ sin tasa, cuenta
+    cerrada, transiciones y derivación de comanda). Total backend: **116 tests**.
+  - **Documentación:** `docs/dev/10-fases/fase-4.md` actualiza checklist y registra
+    la **desviación de tema aprobada** (se conserva la paleta lavanda; el azul UNET
+    `#003366` no se adopta), `frontend/README.md` §7.1/§7.5 se armoniza con el
+    comportamiento real y `CHANGELOG.md` queda al día.
+
 - **Flujo de servicio por turno (mesonero ↔ barra/cocina):**
   - **Guard de turno abierto:** abrir mesa, comandas, abonos, dividir, cerrar cuenta y ventas
     POS se rechazan (`422`) si no hay una sesión de caja abierta; `AbrirMesaAsync` además
@@ -210,6 +243,10 @@ y el proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
   contra el origen del API con `urlDeImagen` (mismo criterio que admin y web pública) y la
   foto genérica de Unsplash se sustituye por un marcador con la inicial del producto, con
   `onError` de respaldo si el archivo no existe.
+- **La foto del producto se ve completa en la carta:** la caja fija de 80 px con
+  `object-cover` recortaba la imagen; ahora el área usa `aspect-[4/3]` con
+  `object-contain` y padding (misma proporción que las tarjetas del admin), de modo que
+  todas las tarjetas mantienen altura uniforme con o sin foto.
 
 ### Cambiado
 

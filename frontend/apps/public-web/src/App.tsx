@@ -818,6 +818,7 @@ export default function App() {
       </main>
       <Footer whatsapp={contacto.whatsapp} />
       <FloatingActions whatsapp={contacto.whatsapp} />
+      <div className="vignette-layer" aria-hidden="true" />
     </div>
   );
 }

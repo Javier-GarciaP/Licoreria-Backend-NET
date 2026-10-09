@@ -4,7 +4,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Keyboard, Search } from 'lucide-react';
 import { Button, Card, Input, PageHeader, Pill } from '@licoreria/ui';
-import type { Producto, ProductoVariante, TasaCambio, Venta } from '@licoreria/types';
+import type { Moneda, Producto, ProductoVariante, TasaCambio, Venta } from '@licoreria/types';
 import { catalogoApi, finanzasApi, promocionesApi, ventasApi } from '@licoreria/api-client';
 import { mensajeDeError } from '../lib/api';
 import { formatBS } from '../lib/format';
@@ -25,6 +25,7 @@ export function PosPage() {
   const [productoModal, setProductoModal] = useState<Producto | null>(null);
   const [ayudaAbierta, setAyudaAbierta] = useState(false);
   const [ventaTicket, setVentaTicket] = useState<Venta | null>(null);
+  const [monedaPago, setMonedaPago] = useState<Moneda>('USD');
 
   const busquedaRef = useRef<HTMLInputElement>(null);
   const descuentoRef = useRef<HTMLInputElement>(null);
@@ -64,8 +65,10 @@ export function PosPage() {
   const metodoPredeterminado = metodos.data?.[0] ?? null;
 
   const registrar = useMutation({
-    mutationFn: () =>
-      ventasApi.registrar({
+    mutationFn: () => {
+      // El pago se registra en la moneda elegida; el total en USD se convierte con la tasa vigente.
+      const enBs = monedaPago === 'BS' && valorTasa > 0;
+      return ventasApi.registrar({
         items: activa.lineas.map((linea) => ({
           varianteId: linea.varianteId,
           cantidad: linea.cantidad,
@@ -77,13 +80,14 @@ export function PosPage() {
           ? [
               {
                 metodoPagoId: metodoPredeterminado.id,
-                monto: totalCobrar,
-                moneda: 'USD',
-                propina: activa.propinaUSD,
+                monto: enBs ? Number((totalCobrar * valorTasa).toFixed(2)) : totalCobrar,
+                moneda: monedaPago,
+                propina: enBs ? Number((activa.propinaUSD * valorTasa).toFixed(2)) : activa.propinaUSD,
               },
             ]
           : [],
-      }),
+      });
+    },
     onSuccess: (venta) => {
       setVentaTicket(venta);
       pos.reiniciar();
@@ -261,6 +265,9 @@ export function PosPage() {
             registrando={registrar.isPending}
             onCobrar={cobrar}
             descuentoRef={descuentoRef}
+            moneda={monedaPago}
+            onMonedaChange={setMonedaPago}
+            tasa={valorTasa}
           />
         </Card>
       </div>

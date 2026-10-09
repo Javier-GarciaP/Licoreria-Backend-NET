@@ -119,7 +119,9 @@ Credenciales de prueba (una cuenta por rol, sembradas en la BD):
 ```jsx
 // ModoContext.jsx
 { modo: 'licoreria' | 'discoteca', setModo(m) }
-// El modo filtra la navegación: discoteca = Mesas/Cuentas/KDS/Reservas/Salón; licorería = venta de mostrador.
+// El modo filtra la navegación por grupos (`modos` en navigation.tsx):
+// licorería = nav de mostrador (oculta grupo Salón, /plano y /cuentas); discoteca = nav completa;
+// Dashboard siempre visible. Toggle en el header (AppShell) junto al de tema.
 ```
 
 ## 6. RBAC (guards)
@@ -146,11 +148,16 @@ Leyenda: `[ ]` pendiente · `[~]` en progreso · `[x]` hecho.
 > Salón, Catálogo y almacén, Dinero, Sistema). Los módulos secundarios (Compras,
 > Clientes/CxC, Contenido, Reportes/Auditoría, Promociones, Entradas/VIP, Tesorería)
 > quedan **ocultos** con el flag `oculto` en `apps/admin/src/lib/navigation.tsx`
-> (reversible: quitar el flag). El toggle **Modo Licorería/Discoteca** se retiró; el
-> acceso se rige por rol + permisos.
+> (reversible: quitar el flag). El toggle **Modo Licorería/Discoteca** está
+> reinstalado: `ModoProvider` se monta en `main.tsx`, el botón vive en el header de
+> `AppShell` y `filtrarGrupos`/`puedeAcceder` filtran por el flag `modos` (Modo
+> Licorería oculta el grupo Salón y `/plano`; Modo Discoteca muestra la navegación
+> completa; el Dashboard es visible en ambos). El acceso se rige por rol + permisos.
 
 ### 7.1 Andamiaje
-- [x] workspaces, `tsconfig.base`, ESLint/Prettier, Tailwind con token `#003366`
+- [x] workspaces, `tsconfig.base`, ESLint/Prettier, Tailwind con los tokens del design
+      system (acento lavanda `#c9b8f0`; el azul UNET `#003366` está prohibido por
+      `DESIGN.md` §7 — ver la decisión de tema en `docs/dev/10-fases/fase-4.md`)
 - [x] `packages/types` (DTOs), `packages/api-client`, `packages/ui`
 - [x] `.env.local`, fuentes, layout responsive (Mobile First)
 
@@ -178,14 +185,16 @@ Leyenda: `[ ]` pendiente · `[~]` en progreso · `[x]` hecho.
       evento `mesa:actualizada` → el resto de clientes ven la mesa **Libre**
 - [x] **Cuenta orientada a monitoreo**: resumen (saldo/total/abonado/consumos), consumos
       read-only por comanda, listado con filtro por estado (Abiertas/PorCobrar/Cerradas)
-- [x] **Cobro en modal** con líneas de pago (solo USD), restante por cubrir y ticket
+- [x] **Cobro en modal** con líneas de pago en **USD o Bs** (el total se normaliza a
+      USD con la tasa vigente), restante por cubrir y ticket
       térmico (`TicketVenta`) al cerrar
 - [x] **Agregar a la comanda** (`AgregarComandaModal`): buscador + categorías + fotos de
       producto y **área por ítem** (Auto/Barra/Cocina); envía una comanda por área
-- [x] Abonos (pago parcial) y dividir en partes iguales, **solo USD**
+- [x] Abonos (pago parcial) en **USD o Bs** (el backend convierte Bs → USD con la tasa
+      vigente) y dividir en partes iguales
       (`POST /cuentas/{id}/abonos`, `.../dividir`, `.../cerrar`)
 - [x] **KDS Barra** en tiempo real (`/hubs/comandas`, área `barra`), tiempo transcurrido
-      y botón "Marcar Preparado"
+      y botón "Marcar Preparado"; el mesonero marca **Entregado** en `PosCarta`
 - [x] Reservas VIP: crear/gestionar, validar señas y pedidos anticipados
 - [x] Mermas y cortesías (`GET/POST /api/v1/mermas`)
 
@@ -201,7 +210,8 @@ Leyenda: `[ ]` pendiente · `[~]` en progreso · `[x]` hecho.
 - [x] Selección por variante y modificadores (extras) con receta informativa para
       productos `Preparado`; el precio de los extras se consolida por ítem.
 - [x] Varias órdenes en espera (pestañas), propina, descuento y promoción;
-      `POST /api/v1/ventas` cobrando siempre el total con el método predeterminado.
+      `POST /api/v1/ventas` cobrando el total con el método predeterminado y
+      **moneda USD/Bs** (Bs se convierte con la tasa Paralelo vigente).
 
 ### 7.6 `admin` — Catálogo / Inventario / Administración
 - [x] Productos con variantes (crear/editar/eliminar), paginación server-side y búsqueda

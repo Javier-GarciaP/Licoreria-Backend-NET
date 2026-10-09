@@ -20,16 +20,17 @@ import {
   Skeleton,
   StatusBadge,
 } from '@licoreria/ui';
-import type { Cuenta, MetodoPago, Venta } from '@licoreria/types';
-import { cuentasApi, ventasApi } from '@licoreria/api-client';
+import type { Cuenta, MetodoPago, Moneda, Venta } from '@licoreria/types';
+import { cuentasApi, finanzasApi, ventasApi } from '@licoreria/api-client';
 import { AgregarComandaModal } from '../components/cuentas/AgregarComandaModal';
 import { TicketVenta } from '../components/pos/TicketVenta';
 import { mensajeDeError } from '../lib/api';
-import { formatUSD, haceCuanto } from '../lib/format';
+import { formatBS, formatUSD, haceCuanto } from '../lib/format';
 
 interface PagoLinea {
   metodoPagoId: string;
   monto: number;
+  moneda: Moneda;
 }
 
 function KpiTile({
@@ -80,6 +81,8 @@ export function CuentaPage() {
   const [pagosCierre, setPagosCierre] = useState<PagoLinea[]>([]);
   const [cierreMetodo, setCierreMetodo] = useState('');
   const [cierreMonto, setCierreMonto] = useState('');
+  const [cierreMoneda, setCierreMoneda] = useState<Moneda>('USD');
+  const [abonoMoneda, setAbonoMoneda] = useState<Moneda>('USD');
 
   const abonoForm = useForm<FormularioAbono>({
     resolver: zodResolver(esquemaAbono),
@@ -92,6 +95,15 @@ export function CuentaPage() {
 
   const cuenta = useQuery({ queryKey: ['cuenta', id], queryFn: () => cuentasApi.obtener(id), enabled: Boolean(id) });
   const metodos = useQuery({ queryKey: ['metodos-pago'], queryFn: ventasApi.metodosPago });
+  const tasa = useQuery({ queryKey: ['tasa-actual'], queryFn: () => finanzasApi.tasaActual('Paralelo') });
+  const valorTasa = tasa.data?.valor ?? 0;
+
+  /** Convierte un monto de la moneda indicada a USD con la tasa vigente. */
+  const aUsd = (monto: number, moneda: Moneda) =>
+    moneda === 'BS' && valorTasa > 0 ? monto / valorTasa : monto;
+  /** Convierte un monto en USD a la moneda indicada con la tasa vigente. */
+  const desdeUsd = (monto: number, moneda: Moneda) =>
+    moneda === 'BS' && valorTasa > 0 ? monto * valorTasa : monto;
 
   const invalidar = () => {
     queryClient.invalidateQueries({ queryKey: ['cuenta', id] });
@@ -99,10 +111,11 @@ export function CuentaPage() {
   };
 
   const abonar = useMutation({
-    mutationFn: (datos: FormularioAbono) => cuentasApi.abonar(id, { ...datos, moneda: 'USD' }),
+    mutationFn: (datos: FormularioAbono & { moneda: Moneda }) => cuentasApi.abonar(id, datos),
     onSuccess: () => {
       toast.success('Abono registrado');
       abonoForm.reset({ metodoPagoId: '', monto: 0 });
+      setAbonoMoneda('USD');
       invalidar();
     },
     onError: (error) => toast.error('No se pudo abonar', { description: mensajeDeError(error) }),
@@ -121,7 +134,11 @@ export function CuentaPage() {
   const cerrar = useMutation({
     mutationFn: () =>
       cuentasApi.cerrar(id, {
-        pagos: pagosCierre.map((pago) => ({ metodoPagoId: pago.metodoPagoId, monto: pago.monto, moneda: 'USD' })),
+        pagos: pagosCierre.map((pago) => ({
+          metodoPagoId: pago.metodoPagoId,
+          monto: pago.monto,
+          moneda: pago.moneda,
+        })),
       }),
     onSuccess: (venta) => {
       toast.success('Cuenta cerrada', { description: `Comprobante ${venta.numeroComprobante ?? venta.id.slice(0, 8)}` });
@@ -136,22 +153,39 @@ export function CuentaPage() {
 
   const datos: Cuenta | undefined = cuenta.data;
 
-  const totalCierre = useMemo(() => pagosCierre.reduce((acumulado, pago) => acumulado + pago.monto, 0), [pagosCierre]);
+  // Los pagos del cierre pueden ser USD o Bs: el total se normaliza a USD con la tasa vigente.
+  const totalCierre = useMemo(
+    () =>
+      pagosCierre.reduce(
+        (acumulado, pago) =>
+          acumulado + (pago.moneda === 'BS' && valorTasa > 0 ? pago.monto / valorTasa : pago.monto),
+        0,
+      ),
+    [pagosCierre, valorTasa],
+  );
   const restante = Math.max(0, (datos?.saldo ?? 0) - totalCierre);
   const cubierto = restante <= 0.01;
 
   const abrirCobro = () => {
     setPagosCierre([]);
     setCierreMetodo(metodos.data?.[0]?.id ?? '');
+    setCierreMoneda('USD');
     setCierreMonto(datos ? String(datos.saldo) : '');
     setCobroOpen(true);
+  };
+
+  const cambiarMonedaCierre = (moneda: Moneda) => {
+    setCierreMoneda(moneda);
+    const montoActual = Number(cierreMonto) || 0;
+    // Reexpresa el monto ingresado en la nueva moneda conservando su valor en USD.
+    setCierreMonto(String(Number(desdeUsd(aUsd(montoActual, cierreMoneda), moneda).toFixed(2))));
   };
 
   const agregarPago = () => {
     const monto = Number(cierreMonto);
     if (!cierreMetodo || monto <= 0) return;
-    setPagosCierre((actuales) => [...actuales, { metodoPagoId: cierreMetodo, monto }]);
-    setCierreMonto(String(Math.max(0, restante - monto)));
+    setPagosCierre((actuales) => [...actuales, { metodoPagoId: cierreMetodo, monto, moneda: cierreMoneda }]);
+    setCierreMonto(String(Math.max(0, desdeUsd(restante, cierreMoneda) - monto).toFixed(2)));
   };
 
   if (cuenta.isLoading || !datos) {
@@ -277,7 +311,7 @@ export function CuentaPage() {
               <div className="mt-1 flex items-baseline justify-between">
                 <span className="text-sm text-muted-foreground">Quedará pendiente</span>
                 <span className="num text-sm font-medium text-foreground">
-                  {formatUSD(Math.max(0, datos.saldo - Number(abonoForm.watch('monto'))))}
+                  {formatUSD(Math.max(0, datos.saldo - aUsd(Number(abonoForm.watch('monto')), abonoMoneda)))}
                 </span>
               </div>
             )}
@@ -286,9 +320,33 @@ export function CuentaPage() {
           <form
             id="form-abono"
             className="flex flex-col gap-3"
-            onSubmit={abonoForm.handleSubmit((valores) => abonar.mutate(valores))}
+            onSubmit={abonoForm.handleSubmit((valores) => abonar.mutate({ ...valores, moneda: abonoMoneda }))}
             noValidate
           >
+            <div>
+              <p className="mb-1.5 text-sm font-medium text-foreground">Moneda del abono</p>
+              <div className="flex flex-wrap items-center gap-2">
+                {(['USD', 'BS'] as const).map((moneda) => (
+                  <button
+                    key={moneda}
+                    type="button"
+                    onClick={() => setAbonoMoneda(moneda)}
+                    className={cn(
+                      'flex h-9 items-center gap-2 rounded-full border px-3.5 text-sm transition',
+                      abonoMoneda === moneda
+                        ? 'border-primary bg-primary/15 text-foreground'
+                        : 'border-border text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    {moneda === 'USD' ? 'USD $' : 'Bs'}
+                  </button>
+                ))}
+                {abonoMoneda === 'BS' && valorTasa > 0 && (
+                  <span className="num text-xs text-muted-foreground">1 USD = Bs {valorTasa.toFixed(2)}</span>
+                )}
+              </div>
+            </div>
+
             <div>
               <p className="mb-1.5 text-sm font-medium text-foreground">Método de pago</p>
               <div className="flex flex-wrap gap-2">
@@ -317,15 +375,25 @@ export function CuentaPage() {
             <div className="flex flex-col gap-2">
               <Input
                 type="number"
-                placeholder="Monto (USD)"
+                placeholder={`Monto (${abonoMoneda === 'BS' ? 'Bs' : 'USD'})`}
                 error={abonoForm.formState.errors.monto?.message}
                 {...abonoForm.register('monto')}
               />
               <div className="flex gap-2">
-                <Button type="button" variant="ghost" size="sm" onClick={() => abonoForm.setValue('monto', datos.saldo / 2)}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => abonoForm.setValue('monto', Number(desdeUsd(datos.saldo / 2, abonoMoneda).toFixed(2)))}
+                >
                   Mitad
                 </Button>
-                <Button type="button" variant="ghost" size="sm" onClick={() => abonoForm.setValue('monto', datos.saldo)}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => abonoForm.setValue('monto', Number(desdeUsd(datos.saldo, abonoMoneda).toFixed(2)))}
+                >
                   Saldo completo
                 </Button>
               </div>
@@ -337,8 +405,13 @@ export function CuentaPage() {
             {datos.abonos.length === 0 && <p className="text-sm text-muted-foreground">Sin abonos todavía.</p>}
             {datos.abonos.map((abono) => (
               <div key={abono.id} className="flex justify-between text-xs text-muted-foreground">
-                <span>{abono.metodoPago}</span>
-                <span className="num text-foreground">{formatUSD(abono.monto)}</span>
+                <span>
+                  {abono.metodoPago}
+                  {abono.moneda === 'BS' && <span className="text-muted-foreground"> · Bs</span>}
+                </span>
+                <span className="num text-foreground">
+                  {abono.moneda === 'BS' ? formatBS(abono.monto) : formatUSD(abono.monto)}
+                </span>
               </div>
             ))}
           </div>
@@ -451,7 +524,7 @@ export function CuentaPage() {
             <span className="num text-xl font-medium text-foreground">{formatUSD(datos.saldo)}</span>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Select aria-label="Método de pago" value={cierreMetodo} onChange={(evento) => setCierreMetodo(evento.target.value)}>
               <option value="">Método…</option>
               {metodos.data?.map((metodo: MetodoPago) => (
@@ -460,10 +533,32 @@ export function CuentaPage() {
                 </option>
               ))}
             </Select>
+            <div
+              className="flex items-center gap-0.5 rounded-lg border border-border p-0.5"
+              role="group"
+              aria-label="Moneda del pago"
+            >
+              {(['USD', 'BS'] as const).map((moneda) => (
+                <button
+                  key={moneda}
+                  type="button"
+                  onClick={() => cambiarMonedaCierre(moneda)}
+                  className={cn(
+                    'h-8 rounded-md px-2.5 text-xs font-medium transition',
+                    cierreMoneda === moneda
+                      ? 'bg-primary/15 text-foreground'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                  aria-pressed={cierreMoneda === moneda}
+                >
+                  {moneda === 'USD' ? 'USD $' : 'Bs'}
+                </button>
+              ))}
+            </div>
             <Input
               aria-label="Monto"
               type="number"
-              placeholder="Monto"
+              placeholder={`Monto (${cierreMoneda === 'BS' ? 'Bs' : 'USD'})`}
               value={cierreMonto}
               onChange={(evento) => setCierreMonto(evento.target.value)}
             />
@@ -476,12 +571,21 @@ export function CuentaPage() {
             </Button>
           </div>
 
+          {cierreMoneda === 'BS' && valorTasa > 0 && (
+            <p className="num text-xs text-muted-foreground">1 USD = Bs {valorTasa.toFixed(2)}</p>
+          )}
+
           {pagosCierre.length > 0 && (
             <div className="flex flex-col gap-1">
               {pagosCierre.map((pago, indice) => (
                 <div key={indice} className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                  <span>{metodos.data?.find((metodo) => metodo.id === pago.metodoPagoId)?.nombre ?? '—'}</span>
-                  <span className="num text-foreground">{formatUSD(pago.monto)}</span>
+                  <span className="truncate">
+                    {metodos.data?.find((metodo) => metodo.id === pago.metodoPagoId)?.nombre ?? '—'}
+                    <span className="text-muted-foreground"> · {pago.moneda === 'BS' ? 'Bs' : 'USD'}</span>
+                  </span>
+                  <span className="num text-foreground">
+                    {pago.moneda === 'BS' ? formatBS(pago.monto) : formatUSD(pago.monto)}
+                  </span>
                   <button
                     type="button"
                     aria-label="Quitar pago"

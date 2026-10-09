@@ -5,14 +5,14 @@ namespace Licoreria.Domain.Services;
 /// <summary>
 /// Movimiento de inventario sugerido a partir de una merma.
 /// </summary>
-public sealed record MovimientoInventarioSugerido(string Tipo, int Cantidad, string Motivo);
+public sealed record MovimientoInventarioSugerido(string Tipo, decimal Cantidad, string Motivo);
 
 /// <summary>
 /// Resultado del análisis de una merma y su eventual reposición.
 /// </summary>
 public sealed record ResultadoMerma(
     IReadOnlyList<MovimientoInventarioSugerido> Movimientos,
-    int TotalUnidadesDescontadas);
+    decimal TotalUnidadesDescontadas);
 
 /// <summary>
 /// Evalúa una merma y determina los movimientos de inventario necesarios.
@@ -20,7 +20,7 @@ public sealed record ResultadoMerma(
 /// </summary>
 public sealed class EvaluadorMerma
 {
-    public ResultadoMerma Evaluar(MotivoMerma motivo, int cantidad, bool reponerSinCobro)
+    public ResultadoMerma Evaluar(MotivoMerma motivo, decimal cantidad, bool reponerSinCobro)
     {
         if (cantidad <= 0)
         {

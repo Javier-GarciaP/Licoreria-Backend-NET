@@ -14,7 +14,7 @@ public class EvaluadorMermaTests
 
         Assert.Single(resultado.Movimientos);
         Assert.Equal("Merma", resultado.Movimientos[0].Tipo);
-        Assert.Equal(2, resultado.TotalUnidadesDescontadas);
+        Assert.Equal(2m, resultado.TotalUnidadesDescontadas);
     }
 
     [Fact]
@@ -25,7 +25,7 @@ public class EvaluadorMermaTests
         Assert.Equal(2, resultado.Movimientos.Count);
         Assert.Contains(resultado.Movimientos, m => m.Tipo == "Merma");
         Assert.Contains(resultado.Movimientos, m => m.Tipo == "Cortesia");
-        Assert.Equal(4, resultado.TotalUnidadesDescontadas);
+        Assert.Equal(4m, resultado.TotalUnidadesDescontadas);
     }
 
     [Fact]

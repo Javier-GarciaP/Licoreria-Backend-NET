@@ -4,7 +4,13 @@ const usdFormatter = new Intl.NumberFormat('es-VE', {
   minimumFractionDigits: 2,
 });
 
+const bsFormatter = new Intl.NumberFormat('es-VE', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
 export const formatUSD = (value: number) => usdFormatter.format(Number(value ?? 0));
+export const formatBS = (value: number) => `Bs ${bsFormatter.format(Number(value ?? 0))}`;
 export const formatNumber = (value: number) => new Intl.NumberFormat('es-VE').format(Number(value ?? 0));
 
 export function formatTime(iso: string): string {

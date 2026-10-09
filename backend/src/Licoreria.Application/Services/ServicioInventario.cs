@@ -4,6 +4,7 @@ using Licoreria.Application.Interfaces;
 using Licoreria.Domain.Common;
 using Licoreria.Domain.Entities;
 using Licoreria.Domain.Enums;
+using Licoreria.Domain.Services;
 
 namespace Licoreria.Application.Services;
 
@@ -15,6 +16,7 @@ public sealed class ServicioInventario : IServicioInventario
     private readonly IContextoUsuario _contextoUsuario;
     private readonly IRelojSistema _reloj;
     private readonly IServicioAuditoria _auditoria;
+    private readonly EvaluadorMerma _evaluador;
 
     public ServicioInventario(
         IInventarioRepository inventario,
@@ -22,7 +24,8 @@ public sealed class ServicioInventario : IServicioInventario
         IRepository<Lote> lotes,
         IContextoUsuario contextoUsuario,
         IRelojSistema reloj,
-        IServicioAuditoria auditoria)
+        IServicioAuditoria auditoria,
+        EvaluadorMerma evaluador)
     {
         _inventario = inventario;
         _variantes = variantes;
@@ -30,6 +33,7 @@ public sealed class ServicioInventario : IServicioInventario
         _contextoUsuario = contextoUsuario;
         _reloj = reloj;
         _auditoria = auditoria;
+        _evaluador = evaluador;
     }
 
     public async Task<ResultadoPaginado<StockDto>> ObtenerStockAsync(
@@ -66,59 +70,59 @@ public sealed class ServicioInventario : IServicioInventario
         var variante = await _variantes.GetByIdAsync(dto.VarianteId, cancellationToken)
             ?? throw new NoEncontradoException($"No existe la variante {dto.VarianteId}.");
 
-        await AplicarStockAsync(dto.VarianteId, -dto.Cantidad, cancellationToken);
+        // El evaluador define los movimientos de inventario sugeridos: la merma y,
+        // si aplica, la cortesía por reposición sin cobro.
+        var resultado = _evaluador.Evaluar(dto.Motivo, dto.Cantidad, dto.ReponerSinCobro);
 
-        var movimiento = new MovimientoInventario
+        MovimientoInventario? primerMovimiento = null;
+        Merma? merma = null;
+
+        foreach (var sugerido in resultado.Movimientos)
         {
-            VarianteId = dto.VarianteId,
-            Tipo = TipoMovimientoInventario.Merma,
-            Cantidad = -dto.Cantidad,
-            ReferenciaTipo = "merma",
-            Motivo = $"Merma: {dto.Motivo}"
-        };
+            var esCortesia = sugerido.Tipo == "Cortesia";
 
-        await _inventario.AgregarMovimientoAsync(movimiento, cancellationToken);
-        await _inventario.SaveChangesAsync(cancellationToken);
+            await AplicarStockAsync(dto.VarianteId, -sugerido.Cantidad, cancellationToken);
 
-        var merma = new Merma
-        {
-            MovimientoId = movimiento.Id,
-            Motivo = dto.Motivo,
-            Repuesto = dto.ReponerSinCobro
-        };
-
-        await _inventario.AgregarMermaAsync(merma, cancellationToken);
-
-        if (dto.ReponerSinCobro)
-        {
-            await AplicarStockAsync(dto.VarianteId, -dto.Cantidad, cancellationToken);
-
-            var cortesia = new MovimientoInventario
+            var movimiento = new MovimientoInventario
             {
                 VarianteId = dto.VarianteId,
-                Tipo = TipoMovimientoInventario.Cortesia,
-                Cantidad = -dto.Cantidad,
-                ReferenciaTipo = "cortesia",
-                ReferenciaId = movimiento.Id,
-                Motivo = "Reposición sin cobro"
+                Tipo = esCortesia ? TipoMovimientoInventario.Cortesia : TipoMovimientoInventario.Merma,
+                Cantidad = -sugerido.Cantidad,
+                ReferenciaTipo = esCortesia ? "cortesia" : "merma",
+                ReferenciaId = esCortesia ? primerMovimiento?.Id : null,
+                Motivo = esCortesia ? "Reposición sin cobro" : $"Merma: {dto.Motivo}",
             };
 
-            await _inventario.AgregarMovimientoAsync(cortesia, cancellationToken);
+            await _inventario.AgregarMovimientoAsync(movimiento, cancellationToken);
+            await _inventario.SaveChangesAsync(cancellationToken);
+
+            primerMovimiento ??= movimiento;
+
+            if (merma is null)
+            {
+                merma = new Merma
+                {
+                    MovimientoId = movimiento.Id,
+                    Motivo = dto.Motivo,
+                    Repuesto = dto.ReponerSinCobro,
+                };
+                await _inventario.AgregarMermaAsync(merma, cancellationToken);
+            }
         }
 
         await _inventario.SaveChangesAsync(cancellationToken);
 
-        await _auditoria.RegistrarAsync("registrar", "merma", movimiento.Id, new { dto.VarianteId, dto.Cantidad, Motivo = dto.Motivo.ToString(), dto.ReponerSinCobro }, cancellationToken);
+        await _auditoria.RegistrarAsync("registrar", "merma", primerMovimiento!.Id, new { dto.VarianteId, dto.Cantidad, Motivo = dto.Motivo.ToString(), dto.ReponerSinCobro }, cancellationToken);
 
         return new MermaDto(
-            merma.Id,
-            movimiento.Id,
+            merma!.Id,
+            primerMovimiento.Id,
             dto.VarianteId,
             variante.Sku,
             dto.Cantidad,
             dto.Motivo,
             dto.ReponerSinCobro,
-            movimiento.CreatedAt);
+            primerMovimiento.CreatedAt);
     }
 
     public async Task<ResultadoPaginado<MermaDto>> ObtenerMermasAsync(

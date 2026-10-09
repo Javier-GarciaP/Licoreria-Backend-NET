@@ -18,14 +18,18 @@ frontend/
     ├── config/        tokens Tailwind + presets compartidos
     ├── types/         DTOs TypeScript espejo de la API
     ├── api-client/    fetch + JWT/refresh + RFC 7807
-    └── ui/            design system (tema oscuro / Azul UNET)
+    └── ui/            design system (paleta lavanda/oscuro actual; ver "Tema")
 ```
 
 ## Decisiones clave
 
 - **Context API** para estado global: `AuthContext` (JWT en `localStorage`),
-  `ThemeContext` (Oscuro / Azul UNET, persistente) y `ModoContext`
-  (Modo Licorería / Modo Discoteca).
+  `ThemeContext` (Claro / Oscuro, persistente) y `ModoContext`
+  (Modo Licorería / Modo Discoteca; `ModoProvider` montado en `main.tsx`).
+- **Tema (decisión registrada):** se conserva la paleta **lavanda/álamo** actual del
+  design system (`frontend/DESIGN.md`). El "Azul UNET" (`#003366`) de la especificación
+  original **no se adopta**: `DESIGN.md` §7 lo prohíbe como color de acento y el cambio
+  rompería la deuda visual ya cerrada. Cumplimiento: *desviación aprobada*.
 - **TanStack Query** para datos de servidor, **React Hook Form + Zod** en formularios,
   **Recharts** para gráficas, **SignalR** para tiempo real y **sonner** para toasts.
 - **Accesibilidad básica:** modales con `role="dialog"`/`aria-modal`, cierre con `Escape`,
@@ -37,14 +41,14 @@ frontend/
 
 | Requerimiento | Implementación |
 | :--- | :--- |
-| Modo dual Licorería / Discoteca | `ModoContext` + selector en el layout |
+| Modo dual Licorería / Discoteca | `ModoProvider` en `main.tsx` + botón en `AppShell`; `filtrarGrupos`/`puedeAcceder` filtran por `modos` (Licorería oculta Salón/`/plano`; Discoteca = nav completa; Dashboard en ambos) |
 | Plano interactivo | `PlanoPage` (SVG) con estados Libre/Reservada/Ocupada/En limpieza |
 | KDS Barra | `KdsPage` con SignalR `/hubs/comandas` (área `barra`) |
-| Máquina de estados de comandas | Recibido → Preparado → Entregado en `CuentaPage` |
+| Máquina de estados de comandas | `MaquinaEstadosComanda` inyectada en `ServicioCuentas.CambiarEstadoItemAsync` (Recibido → EnProceso → Preparado → Entregado); estado **Entregado** se marca desde `PosCarta` (mesonero) |
 | Conflictos de reservas VIP | `ReservasPage` con creación, señas y pedidos |
 | Mermas y cortesías | `MermasPage` |
-| Pagos mixtos USD/Bs | `PosPage` y `CuentaPage` (abonos y cierre) |
-| Dashboard analítico | `DashboardPage` con `overflow-x-auto`, heatmap, salud de inventario y mermas vs ventas |
+| Pagos mixtos USD/Bs | Abonos y cierre en `CuentaPage`/`PosCarta` y pago único en `PosPage` con selector USD/Bs; el backend convierte Bs → USD con la tasa Paralelo vigente (`ServicioCuentas` y `ServicioVentas`) |
+| Dashboard analítico | `DashboardPage` con `overflow-x-auto` (heatmap con `min-w` y bento KPI), salud de inventario y mermas vs ventas |
 | RBAC Guards | `ProtectedRoute` y `Can` |
 | RFC 7807 | parser en `packages/api-client` + toasts |
 | Mobile First / Skeletons / paginación servidor / validación / Docker | aplicados en toda la app |
@@ -93,9 +97,11 @@ Pendiente para siguientes iteraciones: el módulo de IA (generaciones y aprobaci
 
 ## Pruebas
 
-- **Backend:** xUnit + Moq (`ServicioCatalogoProductoTests`) y pruebas de integración.
+- **Backend:** xUnit + Moq: `ServicioCatalogoProductoTests`, `ServicioClubReservasTests`,
+  `ServicioVentasTests` (pagos mixtos USD/Bs con tasa) y `ServicioCuentasTests`
+  (abonos con conversión y máquina de estados), más pruebas de integración.
 - **Frontend:** Vitest + React Testing Library + MSW
-  (`npm run test` en `frontend/`).
+  (`npm run test` en `frontend/`); `navigation.test.ts` cubre el filtrado por modo.
 - **CI:** `.github/workflows/frontend.yml` (lint, typecheck, tests y build).
 
 ## Orquestación

@@ -4,6 +4,7 @@ import { Spinner } from '@licoreria/ui';
 import { AppShell } from './components/AppShell';
 import { ProtectedRoute } from './components/Rbac';
 import { useAuth } from './context/AuthContext';
+import { useModo } from './context/ModoContext';
 import { itemDeRuta, puedeAcceder, filtrarGrupos } from './lib/navigation';
 import { LoginPage } from './pages/LoginPage';
 
@@ -16,26 +17,42 @@ const VentasPage = lazy(() => import('./pages/VentasPage').then((m) => ({ defaul
 const ReservasPage = lazy(() => import('./pages/ReservasPage').then((m) => ({ default: m.ReservasPage })));
 const ReservaPage = lazy(() => import('./pages/ReservaPage').then((m) => ({ default: m.ReservaPage })));
 const MermasPage = lazy(() => import('./pages/MermasPage').then((m) => ({ default: m.MermasPage })));
-const InventarioPage = lazy(() => import('./pages/InventarioPage').then((m) => ({ default: m.InventarioPage })));
+const InventarioPage = lazy(() =>
+  import('./pages/InventarioPage').then((m) => ({ default: m.InventarioPage })),
+);
 const KardexPage = lazy(() => import('./pages/KardexPage').then((m) => ({ default: m.KardexPage })));
 const LotesPage = lazy(() => import('./pages/LotesPage').then((m) => ({ default: m.LotesPage })));
-const TomasFisicasPage = lazy(() => import('./pages/TomasFisicasPage').then((m) => ({ default: m.TomasFisicasPage })));
+const TomasFisicasPage = lazy(() =>
+  import('./pages/TomasFisicasPage').then((m) => ({ default: m.TomasFisicasPage })),
+);
 const ComprasPage = lazy(() => import('./pages/ComprasPage').then((m) => ({ default: m.ComprasPage })));
-const ProveedoresPage = lazy(() => import('./pages/ProveedoresPage').then((m) => ({ default: m.ProveedoresPage })));
-const RecepcionesPage = lazy(() => import('./pages/RecepcionesPage').then((m) => ({ default: m.RecepcionesPage })));
-const CuentasPorPagarPage = lazy(() => import('./pages/CuentasPorPagarPage').then((m) => ({ default: m.CuentasPorPagarPage })));
+const ProveedoresPage = lazy(() =>
+  import('./pages/ProveedoresPage').then((m) => ({ default: m.ProveedoresPage })),
+);
+const RecepcionesPage = lazy(() =>
+  import('./pages/RecepcionesPage').then((m) => ({ default: m.RecepcionesPage })),
+);
+const CuentasPorPagarPage = lazy(() =>
+  import('./pages/CuentasPorPagarPage').then((m) => ({ default: m.CuentasPorPagarPage })),
+);
 const PaginasPage = lazy(() => import('./pages/PaginasPage').then((m) => ({ default: m.PaginasPage })));
 const EventosPage = lazy(() => import('./pages/EventosPage').then((m) => ({ default: m.EventosPage })));
 const LocalPage = lazy(() => import('./pages/LocalPage').then((m) => ({ default: m.LocalPage })));
 const MenuMediaPage = lazy(() => import('./pages/MenuMediaPage').then((m) => ({ default: m.MenuMediaPage })));
 const TasasPage = lazy(() => import('./pages/TasasPage').then((m) => ({ default: m.TasasPage })));
 const PlanosPage = lazy(() => import('./pages/PlanosPage').then((m) => ({ default: m.PlanosPage })));
-const SalonMesasPage = lazy(() => import('./pages/SalonMesasPage').then((m) => ({ default: m.SalonMesasPage })));
+const SalonMesasPage = lazy(() =>
+  import('./pages/SalonMesasPage').then((m) => ({ default: m.SalonMesasPage })),
+);
 const SalonLayout = lazy(() => import('./pages/SalonLayout').then((m) => ({ default: m.SalonLayout })));
-const EditorMapaPage = lazy(() => import('./pages/EditorMapaPage').then((m) => ({ default: m.EditorMapaPage })));
+const EditorMapaPage = lazy(() =>
+  import('./pages/EditorMapaPage').then((m) => ({ default: m.EditorMapaPage })),
+);
 const ReportesPage = lazy(() => import('./pages/ReportesPage').then((m) => ({ default: m.ReportesPage })));
 const AuditoriaPage = lazy(() => import('./pages/AuditoriaPage').then((m) => ({ default: m.AuditoriaPage })));
-const PromocionesPage = lazy(() => import('./pages/PromocionesPage').then((m) => ({ default: m.PromocionesPage })));
+const PromocionesPage = lazy(() =>
+  import('./pages/PromocionesPage').then((m) => ({ default: m.PromocionesPage })),
+);
 const CuentasPorCobrarPage = lazy(() =>
   import('./pages/CuentasPorCobrarPage').then((m) => ({ default: m.CuentasPorCobrarPage })),
 );
@@ -67,14 +84,21 @@ function ContenidoProtegido() {
     inicio: string;
     rolDominio?: string;
   };
+  const { modo } = useModo() as { modo: 'discoteca' | 'licoreria' };
   const location = useLocation();
   const item = itemDeRuta(location.pathname);
 
-  const permitido = puedeAcceder(item, esAdmin, tienePermiso, rolDominio);
+  const permitido = puedeAcceder(item, esAdmin, tienePermiso, rolDominio, modo);
 
   if (!permitido) {
-    // Redirige al primer destino permitido (evita bucles si el inicio no aplica).
-    const destino = filtrarGrupos(esAdmin, tienePermiso, rolDominio)[0]?.items[0]?.to ?? inicio;
+    // Si solo lo oculta el modo (el rol lo permitiría), va al home del modo;
+    // si lo niega el rol, al primer destino válido filtrado por rol + modo.
+    const permitidoSinModo = puedeAcceder(item, esAdmin, tienePermiso, rolDominio);
+    const inicioModo = modo === 'licoreria' ? '/pos' : inicio;
+    const destino =
+      (permitidoSinModo ? inicioModo : undefined) ??
+      filtrarGrupos(esAdmin, tienePermiso, rolDominio, modo)[0]?.items[0]?.to ??
+      inicioModo;
     if (destino !== location.pathname) return <Navigate to={destino} replace />;
     return <div className="p-8 text-center text-sm text-muted">No tienes acceso a esta sección.</div>;
   }

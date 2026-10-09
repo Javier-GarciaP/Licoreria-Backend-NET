@@ -1,7 +1,7 @@
 import type { RefObject } from 'react';
-import { Button } from '@licoreria/ui';
-import type { Promocion } from '@licoreria/types';
-import { formatUSD } from '../../lib/format';
+import { Button, cn } from '@licoreria/ui';
+import type { Moneda, Promocion } from '@licoreria/types';
+import { formatBS, formatUSD } from '../../lib/format';
 import { OrdenLineas } from './OrdenLineas';
 import { OrdenTabs } from './OrdenTabs';
 import { subtotalOrden, totalConPropina, totalOrden, type PosApi } from '../../hooks/usePos';
@@ -15,12 +15,20 @@ export function OrdenPanel({
   registrando,
   onCobrar,
   descuentoRef,
+  moneda,
+  onMonedaChange,
+  tasa,
 }: {
   pos: PosApi;
   promociones: Promocion[];
   registrando: boolean;
   onCobrar: () => void;
   descuentoRef: RefObject<HTMLInputElement>;
+  /** Moneda en la que se registrará el pago de la venta. */
+  moneda: Moneda;
+  onMonedaChange: (moneda: Moneda) => void;
+  /** Tasa de cambio vigente (Bs por USD). */
+  tasa: number;
 }) {
   const { activa } = pos;
   const subtotal = subtotalOrden(activa);
@@ -110,12 +118,41 @@ export function OrdenPanel({
           )}
           <div className="flex items-center justify-between text-base font-medium text-foreground">
             <span>Total a cobrar</span>
-            <span className="num">{formatUSD(totalPagar)}</span>
+            <span className="num">
+              {moneda === 'BS' ? formatBS(tasa > 0 ? totalPagar * tasa : 0) : formatUSD(totalPagar)}
+            </span>
           </div>
         </div>
 
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-0.5 rounded-lg border border-border p-0.5" role="group" aria-label="Moneda del pago">
+            {(['USD', 'BS'] as const).map((opcion) => (
+              <button
+                key={opcion}
+                type="button"
+                onClick={() => onMonedaChange(opcion)}
+                disabled={opcion === 'BS' && tasa <= 0}
+                title={opcion === 'BS' && tasa <= 0 ? 'Sin tasa de cambio vigente' : undefined}
+                className={cn(
+                  'h-8 rounded-md px-2.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50',
+                  moneda === opcion ? 'bg-primary/15 text-foreground' : 'text-muted-foreground hover:text-foreground',
+                )}
+                aria-pressed={moneda === opcion}
+              >
+                {opcion === 'USD' ? 'USD $' : 'Bs'}
+              </button>
+            ))}
+          </div>
+          {moneda === 'BS' && tasa > 0 && (
+            <span className="num text-[11px] text-muted-foreground">1 USD = Bs {tasa.toFixed(2)}</span>
+          )}
+        </div>
+
         <Button size="lg" className="w-full" loading={registrando} disabled={!puedeCobrar || registrando} onClick={onCobrar}>
-          Cobrar total <span className="num">{formatUSD(totalPagar)}</span>
+          Cobrar total{' '}
+          <span className="num">
+            {moneda === 'BS' ? formatBS(tasa > 0 ? totalPagar * tasa : 0) : formatUSD(totalPagar)}
+          </span>
         </Button>
       </div>
     </div>

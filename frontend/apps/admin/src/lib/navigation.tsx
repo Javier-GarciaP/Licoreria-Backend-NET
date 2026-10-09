@@ -40,6 +40,9 @@ import {
   Warehouse,
 } from 'lucide-react';
 
+/** Modo de operación dual: venta de mostrador vs. gestión de salón/discoteca. */
+export type Modo = 'discoteca' | 'licoreria';
+
 export interface NavItem {
   to: string;
   label: string;
@@ -56,6 +59,8 @@ export interface NavItem {
   roles?: string[];
   /** Fuera del núcleo mínimo: no aparece en la nav ni es accesible. Reversible. */
   oculto?: boolean;
+  /** Modos en los que aparece este ítem (vacío = ambos). */
+  modos?: Modo[];
 }
 
 export interface NavGroup {
@@ -66,6 +71,8 @@ export interface NavGroup {
   roles?: string[];
   /** Fuera del núcleo mínimo. Reversible. */
   oculto?: boolean;
+  /** Modos en los que aparece este grupo (vacío = ambos). */
+  modos?: Modo[];
   items: NavItem[];
 }
 
@@ -83,12 +90,43 @@ export const GRUPOS: NavGroup[] = [
     icon: Gauge,
     roles: OP,
     items: [
-      { to: '/', label: 'Dashboard', icon: BarChart3, permiso: 'sales:read', end: true, primario: true, corto: 'Inicio', roles: CAJA },
+      {
+        to: '/',
+        label: 'Dashboard',
+        icon: BarChart3,
+        permiso: 'sales:read',
+        end: true,
+        primario: true,
+        corto: 'Inicio',
+        roles: CAJA,
+      },
       { to: '/pos', label: 'POS', icon: ShoppingCart, permiso: 'sales:write', primario: true, roles: CAJA },
-      { to: '/plano', label: 'Mesas', icon: Grid2x2, permiso: 'club:read', primario: true, roles: ['Administrador'] },
-      { to: '/cuentas', label: 'Cuentas', icon: LayoutGrid, permiso: 'sales:read', roles: ['Administrador', 'Cajero', 'Mesero'] },
+      {
+        to: '/plano',
+        label: 'Mesas',
+        icon: Grid2x2,
+        permiso: 'club:read',
+        primario: true,
+        roles: ['Administrador'],
+        modos: ['discoteca'],
+      },
+      {
+        to: '/cuentas',
+        label: 'Cuentas',
+        icon: LayoutGrid,
+        permiso: 'sales:read',
+        roles: ['Administrador', 'Cajero', 'Mesero'],
+        modos: ['discoteca'],
+      },
       { to: '/ventas', label: 'Ventas', icon: Receipt, permiso: 'sales:read', roles: CAJA },
-      { to: '/promociones', label: 'Promociones', icon: Percent, permiso: 'sales:read', roles: CAJA, oculto: true },
+      {
+        to: '/promociones',
+        label: 'Promociones',
+        icon: Percent,
+        permiso: 'sales:read',
+        roles: CAJA,
+        oculto: true,
+      },
     ],
   },
   {
@@ -96,12 +134,46 @@ export const GRUPOS: NavGroup[] = [
     label: 'Salón',
     icon: Armchair,
     roles: SALON,
+    modos: ['discoteca'],
     items: [
-      { to: '/reservas', label: 'Reservas', icon: CalendarClock, permiso: 'reservation:manage', roles: ['Administrador', 'Host'] },
-      { to: '/eventos', label: 'Eventos', icon: CalendarDays, permiso: 'content:read', roles: ['Administrador', 'Host'] },
-      { to: '/salon', label: 'Salón', icon: MapIcon, permiso: 'club:manage', end: true, roles: ['Administrador', 'Host'] },
-      { to: '/entradas', label: 'Entradas', icon: Ticket, permiso: 'club:manage', roles: ['Administrador', 'Host'], oculto: true },
-      { to: '/vip', label: 'Lista VIP', icon: Star, permiso: 'club:read', roles: ['Administrador', 'Host'], oculto: true },
+      {
+        to: '/reservas',
+        label: 'Reservas',
+        icon: CalendarClock,
+        permiso: 'reservation:manage',
+        roles: ['Administrador', 'Host'],
+      },
+      {
+        to: '/eventos',
+        label: 'Eventos',
+        icon: CalendarDays,
+        permiso: 'content:read',
+        roles: ['Administrador', 'Host'],
+      },
+      {
+        to: '/salon',
+        label: 'Salón',
+        icon: MapIcon,
+        permiso: 'club:manage',
+        end: true,
+        roles: ['Administrador', 'Host'],
+      },
+      {
+        to: '/entradas',
+        label: 'Entradas',
+        icon: Ticket,
+        permiso: 'club:manage',
+        roles: ['Administrador', 'Host'],
+        oculto: true,
+      },
+      {
+        to: '/vip',
+        label: 'Lista VIP',
+        icon: Star,
+        permiso: 'club:read',
+        roles: ['Administrador', 'Host'],
+        oculto: true,
+      },
     ],
   },
   {
@@ -113,11 +185,30 @@ export const GRUPOS: NavGroup[] = [
       { to: '/productos', label: 'Catálogo', icon: Package, permiso: 'catalog:read' },
       { to: '/catalogos', label: 'Categorías y marcas', icon: Tags, permiso: 'catalog:read' },
       { to: '/catalogos-avanzado', label: 'Unidades', icon: Ruler, permiso: 'catalog:read' },
-      { to: '/inventario', label: 'Existencias', icon: Warehouse, permiso: 'inventory:read', end: true, oculto: true },
+      {
+        to: '/inventario',
+        label: 'Existencias',
+        icon: Warehouse,
+        permiso: 'inventory:read',
+        end: true,
+        oculto: true,
+      },
       { to: '/inventario/kardex', label: 'Kardex', icon: ScrollText, permiso: 'inventory:read' },
       { to: '/inventario/lotes', label: 'Lotes', icon: PackageOpen, permiso: 'inventory:read', oculto: true },
-      { to: '/inventario/tomas', label: 'Tomas físicas', icon: ClipboardCheck, permiso: 'inventory:read', oculto: true },
-      { to: '/mermas', label: 'Mermas y cortesías', icon: Trash2, permiso: 'inventory:merma', roles: ['Administrador', 'Cajero', 'Mesero'] },
+      {
+        to: '/inventario/tomas',
+        label: 'Tomas físicas',
+        icon: ClipboardCheck,
+        permiso: 'inventory:read',
+        oculto: true,
+      },
+      {
+        to: '/mermas',
+        label: 'Mermas y cortesías',
+        icon: Trash2,
+        permiso: 'inventory:merma',
+        roles: ['Administrador', 'Cajero', 'Mesero'],
+      },
     ],
   },
   {
@@ -190,20 +281,31 @@ function visiblePorRol(roles: string[] | undefined, esAdmin: boolean, rolDominio
   return Boolean(rolDominio && roles.includes(rolDominio));
 }
 
+/** ¿El grupo/ítem pertenece al modo de operación activo? (vacío = ambos modos). */
+function visiblePorModo(modos: Modo[] | undefined, modo?: Modo): boolean {
+  if (!modo || !modos || modos.length === 0) return true;
+  return modos.includes(modo);
+}
+
 /**
- * Muestra cada grupo/ítem según RBAC y rol de dominio; excluye lo marcado como
- * fuera del núcleo mínimo y los grupos vacíos. `esAdmin` omite el filtro de rol.
+ * Muestra cada grupo/ítem según modo de operación, RBAC y rol de dominio; excluye
+ * lo marcado fuera del núcleo mínimo y los grupos vacíos. `esAdmin` omite el filtro de rol.
  */
 export function filtrarGrupos(
   esAdmin: boolean,
   tienePermiso: (clave: string) => boolean,
   rolDominio?: string,
+  modo?: Modo,
 ): NavGroup[] {
-  return GRUPOS.filter((grupo) => !grupo.oculto && visiblePorRol(grupo.roles, esAdmin, rolDominio))
+  return GRUPOS.filter(
+    (grupo) =>
+      !grupo.oculto && visiblePorModo(grupo.modos, modo) && visiblePorRol(grupo.roles, esAdmin, rolDominio),
+  )
     .map((grupo) => ({
       ...grupo,
       items: grupo.items.filter((item) => {
         if (item.oculto) return false;
+        if (!visiblePorModo(item.modos, modo)) return false;
         if (!visiblePorRol(item.roles, esAdmin, rolDominio)) return false;
         if (item.admin) return esAdmin;
         return !item.permiso || esAdmin || tienePermiso(item.permiso);
@@ -232,16 +334,19 @@ export function grupoDeItem(item?: NavItem): NavGroup | undefined {
   return GRUPOS.find((grupo) => grupo.items.some((i) => i.to === item.to));
 }
 
-/** ¿El usuario (rol + permisos) puede acceder a la ruta de un ítem? */
+/** ¿El usuario (rol + permisos) puede acceder a la ruta de un ítem en el modo actual? */
 export function puedeAcceder(
   item: NavItem | undefined,
   esAdmin: boolean,
   tienePermiso: (clave: string) => boolean,
   rolDominio?: string,
+  modo?: Modo,
 ): boolean {
   if (!item) return true; // ruta sin ítem de nav (p. ej. tabs): se permite
-  if (esAdmin) return true;
   const grupo = grupoDeItem(item);
+  // El modo es una preferencia de interfaz: redirige aunque el rol sea admin.
+  if (!visiblePorModo(grupo?.modos, modo) || !visiblePorModo(item.modos, modo)) return false;
+  if (esAdmin) return true;
   if (grupo?.oculto || item.oculto) return false;
   if (!visiblePorRol(grupo?.roles, esAdmin, rolDominio)) return false;
   if (!visiblePorRol(item.roles, esAdmin, rolDominio)) return false;

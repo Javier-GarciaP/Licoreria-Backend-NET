@@ -4,6 +4,7 @@ using Licoreria.Application.Interfaces;
 using Licoreria.Domain.Common;
 using Licoreria.Domain.Entities;
 using Licoreria.Domain.Enums;
+using Licoreria.Domain.Services;
 
 namespace Licoreria.Application.Services;
 
@@ -19,6 +20,8 @@ public sealed class ServicioCuentas : IServicioCuentas
     private readonly IServicioKardex _kardex;
     private readonly IRelojSistema _reloj;
     private readonly INotificadorComandas _notificador;
+    private readonly IServicioFinanzas _finanzas;
+    private readonly MaquinaEstadosComanda _maquinaEstados;
 
     public ServicioCuentas(
         ICuentaRepository cuentaRepository,
@@ -30,7 +33,9 @@ public sealed class ServicioCuentas : IServicioCuentas
         IServicioVentas ventas,
         IServicioKardex kardex,
         IRelojSistema reloj,
-        INotificadorComandas notificador)
+        INotificadorComandas notificador,
+        IServicioFinanzas finanzas,
+        MaquinaEstadosComanda maquinaEstados)
     {
         _cuentaRepository = cuentaRepository;
         _variantes = variantes;
@@ -42,6 +47,8 @@ public sealed class ServicioCuentas : IServicioCuentas
         _kardex = kardex;
         _reloj = reloj;
         _notificador = notificador;
+        _finanzas = finanzas;
+        _maquinaEstados = maquinaEstados;
     }
 
     /// <summary>Exige que exista un turno (sesión de caja) abierto para operar el salón.</summary>
@@ -227,9 +234,23 @@ public sealed class ServicioCuentas : IServicioCuentas
         var metodo = await _metodosPago.GetByIdAsync(dto.MetodoPagoId, cancellationToken)
             ?? throw new NoEncontradoException($"No existe el método de pago {dto.MetodoPagoId}.");
 
+        // Los abonos en Bs se convierten a USD con la tasa vigente para que
+        // TotalAbonado y Saldo de la cuenta siempre estén en USD.
+        var montoUsd = dto.Monto;
+        if (dto.Moneda == Moneda.BS)
+        {
+            var tasa = await _finanzas.ObtenerValorVigenteAsync(TipoTasa.Paralelo, cancellationToken);
+            if (tasa <= 0)
+            {
+                throw new ReglaNegocioException("No hay una tasa de cambio vigente para convertir el abono en Bs.");
+            }
+
+            montoUsd = Math.Round(dto.Monto / tasa, 2);
+        }
+
         try
         {
-            cuenta.Abonar(dto.Monto);
+            cuenta.Abonar(montoUsd);
         }
         catch (InvalidOperationException ex)
         {
@@ -343,6 +364,22 @@ public sealed class ServicioCuentas : IServicioCuentas
         }
 
         var estadoAnterior = detalle.Estado;
+
+        // Transición trivial (mismo estado): no repite kardex ni descuentos.
+        if (dto.Estado == estadoAnterior)
+        {
+            var sinCambios = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, cancellationToken);
+            return sinCambios is null ? null : Mapear(sinCambios);
+        }
+
+        // La máquina de estados valida Recibido → EnProceso → Preparado → Entregado
+        // (y cancelaciones); prohíbe regresiones y estados terminales.
+        if (!_maquinaEstados.PuedeTransicionar(estadoAnterior, dto.Estado))
+        {
+            throw new ReglaNegocioException(
+                $"Transición de comanda no permitida: {estadoAnterior} → {dto.Estado}.");
+        }
+
         var servidoAnterior = estadoAnterior is EstadoItemComanda.Preparado or EstadoItemComanda.Entregado;
         var servidoNuevo = dto.Estado is EstadoItemComanda.Preparado or EstadoItemComanda.Entregado;
 
@@ -364,6 +401,14 @@ public sealed class ServicioCuentas : IServicioCuentas
         }
 
         detalle.CambiarEstado(dto.Estado);
+
+        // El estado general de la comanda se deriva de sus líneas.
+        var comanda = cuenta.Comandas.FirstOrDefault(c => c.Id == comandaId);
+        if (comanda is not null)
+        {
+            comanda.Estado = CalcularEstadoComanda(comanda);
+        }
+
         await _cuentaRepository.SaveChangesAsync(cancellationToken);
 
         await _notificador.ItemActualizadoAsync(cuentaId, comandaId, detalleId, dto.Estado.ToString(), detalle.AreaDestino.ToString(), cancellationToken);
@@ -391,6 +436,28 @@ public sealed class ServicioCuentas : IServicioCuentas
                 motivo,
                 cancellationToken);
         }
+    }
+
+    /// <summary>Deriva el estado general de una comanda a partir del estado de sus líneas.</summary>
+    private static EstadoComanda CalcularEstadoComanda(Comanda comanda)
+    {
+        var detalles = comanda.Detalles.Where(d => !d.IsDeleted).ToList();
+        if (detalles.Count == 0 || detalles.All(d => d.Estado == EstadoItemComanda.Cancelado))
+        {
+            return EstadoComanda.Cancelada;
+        }
+
+        var pendientes = detalles.Where(d => d.Estado is EstadoItemComanda.Recibido or EstadoItemComanda.EnProceso).ToList();
+        if (pendientes.Count > 0)
+        {
+            var enMarcha = pendientes.Any(d => d.Estado == EstadoItemComanda.EnProceso)
+                || detalles.Any(d => d.Estado is EstadoItemComanda.Preparado or EstadoItemComanda.Entregado);
+            return enMarcha ? EstadoComanda.EnPreparacion : EstadoComanda.Pendiente;
+        }
+
+        return detalles.Any(d => d.Estado == EstadoItemComanda.Entregado)
+            ? EstadoComanda.Entregada
+            : EstadoComanda.Lista;
     }
 
     public async Task<VentaDto?> CerrarCuentaAsync(
