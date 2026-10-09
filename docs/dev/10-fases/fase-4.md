@@ -162,13 +162,14 @@ Pendiente para siguientes iteraciones: el módulo de IA (generaciones y aprobaci
 
 ## Orquestación
 
-`docker compose up --build` levanta `postgres`, `api`, `admin`, `public-web` y `edge`
-(nginx reverse proxy con soporte WebSocket para SignalR).
+`docker compose up --build` levanta `postgres`, `api`, `admin`, `public-web`,
+`servicio` y `edge` (nginx reverse proxy con soporte WebSocket para SignalR).
 
 | Servicio | URL local |
 | :--- | :--- |
 | Admin | `http://localhost:4173` |
 | Web pública | `http://localhost:4174` |
+| Servicio (mesonero/KDS) | `http://localhost:4175` |
 | API / Swagger | `http://localhost:5190` |
 | Edge | `http://localhost:8090` |
 

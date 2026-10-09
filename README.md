@@ -74,6 +74,23 @@ cd docs/site && npm install && npm run dev
 > La persistencia usa **PostgreSQL** (ver `docker-compose.yml`); las migraciones se
 > aplican automáticamente al arrancar la API.
 
+### Puertos del despliegue Docker
+
+`docker compose up -d --build` levanta los servicios con estos puertos
+(configurables en `.env`, ver `.env.example`):
+
+| Servicio | Contenido | Puerto |
+| :--- | :--- | :---: |
+| `api` | WebAPI .NET (migraciones + seed al arrancar) | `5190` |
+| `admin` | Panel interno (SPA nginx) | `4173` |
+| `public-web` | Web pública (SPA nginx) | `4174` |
+| `servicio` | Web de servicio: mesonero / KDS (SPA nginx) | `4175` |
+| `edge` | Reverse proxy nginx (API + `/hubs` + web pública) | `8090` |
+| `postgres` | PostgreSQL 15 | `5432` |
+
+Swagger UI queda habilitado en el despliegue Docker (`Swagger:Enabled=true`) en
+`http://localhost:5190/swagger`.
+
 ---
 
 ## Fase 1 · Fundamentos y resiliencia REST
@@ -200,7 +217,7 @@ Lo logrado:
 - **Pruebas frontend:** Vitest + React Testing Library + MSW (42 tests) y
   **backend:** xUnit + Moq (116 tests) con aislamiento de capas por interfaces.
 - **Docker:** `docker compose up -d --build` levanta `postgres`, `api` (aplica
-  migraciones + seed), `admin`, `public-web` y `edge` (nginx con WebSocket).
+  migraciones + seed), `admin`, `public-web`, `servicio` y `edge` (nginx con WebSocket).
 
 Tecnologías: Vite · React 18 · TypeScript · Tailwind CSS · TanStack Query ·
 React Hook Form + Zod · Recharts · SignalR client · dnd-kit · React Three Fiber ·
@@ -232,7 +249,7 @@ La API v1 está implementada sobre PostgreSQL con Onion Architecture. Incluye:
 | :--- | :--- |
 | [Guía para el frontend](docs/dev/04-api/guia-frontend.md) | Cómo consumir la API (auth, errores, paginación, SignalR). |
 | [Contrato OpenAPI](openapi/licoreria.yaml) | Contrato generado desde el código. |
-| Swagger (dev) | `http://localhost:5190/swagger`. |
+| Swagger (dev y Docker) | `http://localhost:5190/swagger`. |
 
 ---
 

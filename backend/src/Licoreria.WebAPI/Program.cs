@@ -235,7 +235,8 @@ if (!esGeneracionEnTiempoDeDiseno)
 // Middleware Global para captura de excepciones según estándar RFC 7807
 app.UseMiddleware<ExceptionMiddleware>();
 
-if (app.Environment.IsDevelopment())
+// Swagger UI: siempre en desarrollo; en el despliegue Docker si Swagger:Enabled=true.
+if (app.Environment.IsDevelopment() || app.Configuration.GetValue("Swagger:Enabled", false))
 {
     app.UseSwagger();
     app.UseSwaggerUI();

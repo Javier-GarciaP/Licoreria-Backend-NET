@@ -45,6 +45,9 @@ services:
       Cors__AllowedOrigins__2: http://localhost:${EDGE_PORT:-8090}
       Cors__AllowedOrigins__3: http://localhost:5173
       Cors__AllowedOrigins__4: http://localhost:5175
+      Cors__AllowedOrigins__5: http://localhost:${SERVICIO_PORT:-4175}
+      # Swagger UI accesible también fuera de Development (despliegue local).
+      Swagger__Enabled: "true"
     ports:
       - "${API_PORT:-5190}:8080"
 
@@ -75,6 +78,20 @@ services:
       - api
     ports:
       - "${PUBLIC_PORT:-4174}:80"
+
+  # =========================================================
+  # Web de servicio (mesonero / KDS) servida por nginx
+  # =========================================================
+  servicio:
+    build:
+      context: ./frontend
+      dockerfile: apps/servicio/Dockerfile
+    container_name: licoreria-servicio
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "${SERVICIO_PORT:-4175}:80"
 
   # =========================================================
   # Reverse proxy / borde (API + hubs + web pública)
