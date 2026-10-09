@@ -1,181 +1,349 @@
 # Fase 4 · Frontend React + Docker
 
-Esta fase implementa el frontend de la plataforma (apps `admin` y `public-web`)
-sobre la API v1 .NET + PostgreSQL, además de la orquestación con Docker.
+> **Cómo usar este documento como diapositivas:** cada `##` es una lámina. La línea
+> *«Dí: …»* es el mensaje clave a decir en voz alta; lo demás es material de apoyo.
 
-> Alcance y checklist de contribución: [`frontend/README.md`](../../../frontend/README.md).
-> Patrón de diseño: [`frontend/DESIGN.md`](../../../frontend/DESIGN.md).
+---
 
-## Tecnologías usadas
+## 1 · La fase en cifras
+
+| Métrica | Valor |
+| :--- | :--- |
+| Apps React (workspaces) | **3** — `admin`, `servicio`, `public-web` |
+| Paquetes compartidos | **5** — `types`, `api-client`, `ui`, `auth`, `config` |
+| Pantallas en el panel interno | **40** páginas + 41 componentes |
+| Pruebas backend | **145 verdes** (116 unitarias + 29 integración) |
+| Pruebas frontend | **42 verdes** en 11 archivos (~13 s) |
+| Servicios Docker | **6** + `pgadmin` opcional (perfil `tools`) |
+| Código frontend | ~25 000 líneas TypeScript/TSX |
+| Errores de build / tests fallidos | **0** |
+
+> **Dí:** «Esta fase entrega tres aplicaciones React sobre la misma API, con tiempo real,
+> seguridad de extremo a extremo y todo orquestado en Docker; 187 pruebas verdes y cero
+> errores de compilación.»
+
+---
+
+## 2 · Objetivo y alcance
+
+- **Objetivo:** implementar el frontend de la plataforma (panel interno, web de servicio
+  y web pública) consumiendo la API v1 .NET + PostgreSQL, con orquestación Docker.
+- **Entró en esta fase:** monorepo npm workspaces, design system propio, JWT + refresh en
+  el cliente, RBAC en UI, SignalR, dashboard analítico, POS, plano interactivo, KDS,
+  pagos mixtos USD/Bs, modo dual y Docker Compose completo.
+- **No entró (siguiente iteración):** módulo de IA (generaciones y aprobación).
+
+> **Dí:** «El alcance fue el frontend completo más la orquestación; lo que quedó fuera
+> está declarado y documentado.»
+
+---
+
+## 3 · Stack tecnológico
 
 | Capa | Tecnología |
 | :--- | :--- |
-| Build / bundler | **Vite** (dev server con HMR, build con code-splitting) |
+| Build / bundler | **Vite** (dev con HMR, build con code-splitting) |
 | UI | **React 18** + **TypeScript** + **Tailwind CSS** (tokens en `packages/config`) |
 | Enrutamiento | **react-router-dom v6** (`createBrowserRouter`) |
 | Estado de servidor | **TanStack Query** (`useQuery`/`useMutation` + invalidación) |
 | Estado global | **Context API** (`AuthContext`, `ThemeContext`, `ModoContext`) |
-| Formularios | **React Hook Form** + validación **Zod**/FluentValidation en servidor |
+| Formularios | **React Hook Form** + validación **Zod** (cliente) / FluentValidation (servidor) |
 | HTTP | Wrapper propio de **fetch** en `packages/api-client` (JWT + refresh + RFC 7807) |
 | Tiempo real | **SignalR** (`@microsoft/signalr`, hub `/hubs/comandas`) |
-| Gráficas / UX | **Recharts**, **sonner** (toasts), **dnd-kit** (editor de planos), skeletons |
-| 3D (web pública) | **React Three Fiber** + glTF (botella de vino) |
-| Pruebas FE | **Vitest** + **React Testing Library** + **MSW** (42 tests) |
-| Pruebas BE | **xUnit** + **Moq** (116 tests, aislamiento de capas) |
-| Empaquetado | **npm workspaces** (monorepo), **Docker Compose** (6 servicios) |
+| Gráficas / UX | **Recharts**, **sonner** (toasts), **dnd-kit** (planos y KDS), skeletons |
+| 3D (web pública) | **React Three Fiber** + glTF (vitrina de botella) |
+| Pruebas FE | **Vitest** + **React Testing Library** + **MSW** (42) |
+| Pruebas BE | **xUnit** + **Moq** (116) + integración con `WebApplicationFactory` (29) |
+| Empaquetado | **npm workspaces** (monorepo) + **Docker Compose** (6 servicios) |
 
-## Arquitectura
+> **Dí:** «Cada capa tiene una tecnología elegida con propósito: nada de estado global
+> improvisado ni de `fetch` disperso por los componentes.»
 
-Monorepo de workspaces npm (ADR [0003](../adr/0003-frontend-react-tailwind.md)):
+---
+
+## 4 · Arquitectura del monorepo
+
+ADR [0003](../adr/0003-frontend-react-tailwind.md).
 
 ```
-frontend/
-├── apps/admin/        SPA interna (staff)
-├── apps/public-web/   Web pública (clientes)
+frontend/                       backend/ (Onion, ya construida en fases 1-3)
+├── apps/
+│   ├── admin/        SPA interna (staff)        WebAPI → Application → Domain
+│   ├── servicio/     mesonero / KDS                     ↑
+│   └── public-web/   web pública                    Infrastructure
 └── packages/
-    ├── config/        tokens Tailwind + presets compartidos
-    ├── types/         DTOs TypeScript espejo de la API
-    ├── api-client/    fetch + JWT/refresh + RFC 7807
-    └── ui/            design system (paleta lavanda/oscuro actual; ver "Tema")
+    ├── config/       tokens Tailwind + presets
+    ├── types/        DTOs TypeScript espejo de la API
+    ├── api-client/   fetch + JWT/refresh + RFC 7807
+    ├── auth/         AuthContext, guards RBAC y login compartido
+    └── ui/           design system (paleta lavanda; ver DESIGN.md)
 ```
 
-## Decisiones clave
+Reglas: las apps **no** se importan entre sí; todo lo compartido vive en `packages/`;
+las apps solo dependen de paquetes y de la API.
 
-- **Context API** para estado global: `AuthContext` (JWT en `localStorage`),
-  `ThemeContext` (Claro / Oscuro, persistente) y `ModoContext`
-  (Modo Licorería / Modo Discoteca; `ModoProvider` montado en `main.tsx`).
-- **Tema (decisión registrada):** se conserva la paleta **lavanda/álamo** actual del
-  design system (`frontend/DESIGN.md`). El "Azul UNET" (`#003366`) de la especificación
-  original **no se adopta**: `DESIGN.md` §7 lo prohíbe como color de acento y el cambio
-  rompería la deuda visual ya cerrada. Cumplimiento: *desviación aprobada*.
-- **TanStack Query** para datos de servidor, **React Hook Form + Zod** en formularios,
-  **Recharts** para gráficas, **SignalR** para tiempo real y **sonner** para toasts.
-- **Accesibilidad básica:** modales con `role="dialog"`/`aria-modal`, cierre con `Escape`,
-  foco gestionado, `scope="col"` en tablas y enlace "saltar al contenido".
-- **RBAC**: la API valida en servidor; el front oculta rutas/acciones con
-  `ProtectedRoute` y `Can`.
+> **Dí:** «Un monorepo con workspaces: una sola instalación, un solo lint y dependencias
+> compartidas sin duplicar código entre las tres apps.»
 
-## Requerimientos del Grupo 5 cubiertos
+---
+
+## 5 · Las tres aplicaciones
+
+| App | Puerto | Para quién | Contenido clave |
+| :--- | :---: | :--- | :--- |
+| **admin** | `4173` | Staff / administración | Dashboard KPI, POS, cuentas, plano, inventario, compras, reportes, usuarios, CRM, caja, contenido |
+| **servicio** | `4175` | Mesonero, barra y cocina | `MesoneroPage` (mesas, carta, comandas), `KdsPage` (tablero Kanban con arrastre), chat de staff |
+| **public-web** | `4174` | Clientes | Menú digital, tasas, eventos, galería, **reserva web con seña** y vitrina 3D |
+
+Módulos de administración: catálogo (productos con variantes), usuarios, clientes/CRM,
+caja (apertura, arqueo Z), inventario (kardex, lotes, tomas, mermas), compras y cuentas
+por pagar, contenido (páginas, eventos, menú con QR), tasas de cambio y salón
+(editor de planos con `dnd-kit`).
+
+> **Dí:** «Tres públicos distintos con tres experiencias distintas, sobre una única API.»
+
+---
+
+## 6 · Decisiones clave (y por qué)
+
+- **Context API para estado global:** `AuthContext` (JWT en `localStorage`),
+  `ThemeContext` (Claro/Oscuro persistente) y `ModoContext` (Licorería/Discoteca).
+  Redux sería peso extra para tres flags compartidos.
+- **TanStack Query para el servidor:** caché, reintentos e invalidación; elimina
+  `useEffect` de carga y peticiones duplicadas.
+- **Tema (desviación aprobada):** se conserva la paleta **lavanda/álamo** del design
+  system (`frontend/DESIGN.md`); el «Azul UNET» `#003366` **no se adopta** porque
+  `DESIGN.md` §7 lo prohíbe como acento y el cambio rompería la deuda visual ya cerrada.
+- **RBAC en dos capas:** la API valida (401/403) y el front oculta rutas/acciones con
+  `ProtectedRoute` y `<Can>` — la UI nunca es la única barrera.
+- **Accesibilidad básica:** modales con `role="dialog"`/`aria-modal`, cierre con
+  `Escape`, foco gestionado, `scope="col"` en tablas y enlace «saltar al contenido».
+
+> **Dí:** «Ninguna decisión fue por moda: cada una resuelve un problema concreto y la
+> desviación de tema está registrada y justificada, no escondida.»
+
+---
+
+## 7 · Tiempo real: del mesonero a la barra
+
+```
+Mesonero (app servicio)        API .NET (.NET + SignalR)        Barra (KDS)
+──────────────────────         ─────────────────────────        ────────────
+1. Enviar pedido  ──POST──▶    guarda comanda + verifica stock
+                               emite "comanda:creada"   ──▶    🔔 sonido + refresca
+                                                               el tablero Kanban
+2.                                                      barra arrastra el ítem a
+                                                          "En proceso"
+                               valida máquina de estados
+                               emite "item:actualizado" ──▶    se repinta
+3.  ◀── toast «En preparación»  (grupo meseros)
+4.  ◀── toast «Pedido listo» cuando la barra marca Preparado
+```
+
+- **Hub:** `/hubs/comandas` con `[Authorize]` (JWT) y grupos `barra`, `cocina`,
+  `meseros`, `mesas`, `staff`; los clientes se unen con `UnirseArea(area)`
+  (`ComandasHub.cs`) y se re-únen tras cada reconexión.
+- **El evento solo lleva IDs** (`cuentaId`, `comandaId`, `detalleId`, `estado`); cada
+  cliente relee los datos con TanStack Query (`invalidateQueries`). Así nadie muestra
+  información vieja ni hay que sincronizar payloads.
+- **Desalojo de mesa:** `POST /api/v1/mesas/{id}/desalojar` emite `mesa:actualizada`
+  y el plano se refresca para todo el personal.
+- **En Docker:** el `edge` (nginx) hace proxy con *upgrade* de WebSocket en `/hubs/`.
+
+> **Dí:** «El patrón es radio por grupos + revalidación: el mensaje solo avisa *qué cambió*
+> y cada pantalla vuelve a leer la fuente de verdad.»
+
+---
+
+## 8 · Seguridad de extremo a extremo
+
+| Capa | Mecanismo |
+| :--- | :--- |
+| Login | `POST /api/v1/auth/login` → **access + refresh token** |
+| Cliente | `AuthContext` persiste en `localStorage`; `api-client` adjunta `Authorization: Bearer` |
+| Renovación | ante **401**, *refresh* silencioso y reintento de la petición; si falla, logout |
+| RBAC | backend `[Authorize(Roles=…)]` → 401/403; frontend `ProtectedRoute` + `<Can>` (oculta rutas y acciones) |
+| Errores | parser **RFC 7807** en `api-client` → toasts `sonner` con mensaje del servidor |
+
+> **Dí:** «La UI oculta lo que el usuario no puede hacer, pero quien igual lo pida a la
+> API recibe 401/403: la autoridad siempre es el servidor.»
+
+---
+
+## 9 · Casos de negocio destacados
+
+- **Modo dual Licorería / Discoteca:** `ModoProvider` en `main.tsx` + conmutador en el
+  header; los helpers `filtrarGrupos`/`puedeAcceder` filtran **antes** del bypass de
+  admin (Licorería oculta Salón/`/plano`/`/cuentas`; Discoteca = navegación completa).
+- **Máquina de estados de comandas:** `MaquinaEstadosComanda` inyectada en
+  `ServicioCuentas.CambiarEstadoItemAsync` — `Recibido → EnProceso → Preparado →
+  Entregado` (con `Cancelado` terminal); prohíbe regresiones, ignora no-ops y deriva el
+  estado de la comanda. El KDS trabaja en 3 columnas (Recibido / En proceso / Terminado).
+- **Pagos mixtos USD/Bs:** el backend convierte Bs → USD con la tasa Paralelo vigente
+  (validando `tasa > 0`) y persiste monto/moneda originales; el front tiene selector de
+  moneda en cobro, abonos, `PosCarta` y POS, con `formatUSD`/`formatBS`.
+- **Inventario en servicio:** al servir un ítem (`Preparado`/`Entregado`) se descuenta
+  por kardex y al cancelar se reintegra; con stock insuficiente la API responde **422**.
+- **Dashboard sin desborde:** heatmap dentro de `overflow-x-auto` con `min-w-[560px]` y
+  bento de KPIs con scroll horizontal en móvil.
+
+> **Dí:** «Los tres casos complejos —modo dual, estados de comanda y pagos mixtos—
+> están conectados de punta a punta, no son maquetas.»
+
+---
+
+## 10 · Requerimientos del Grupo 5 cubiertos
 
 | Requerimiento | Implementación |
 | :--- | :--- |
-| Modo dual Licorería / Discoteca | `ModoProvider` en `main.tsx` + botón en `AppShell`; `filtrarGrupos`/`puedeAcceder` filtran por `modos` (Licorería oculta Salón/`/plano`; Discoteca = nav completa; Dashboard en ambos) |
+| Modo dual Licorería / Discoteca | `ModoProvider` + `filtrarGrupos`/`puedeAcceder` por ítem/grupo |
 | Plano interactivo | `PlanoPage` (SVG) con estados Libre/Reservada/Ocupada/En limpieza |
-| KDS Barra | `KdsPage` con SignalR `/hubs/comandas` (área `barra`) |
-| Máquina de estados de comandas | `MaquinaEstadosComanda` inyectada en `ServicioCuentas.CambiarEstadoItemAsync` (Recibido → EnProceso → Preparado → Entregado); estado **Entregado** se marca desde `PosCarta` (mesonero) |
+| KDS Barra | `KdsPage` con SignalR (área `barra`) y arrastre entre 3 columnas |
+| Máquina de estados de comandas | `MaquinaEstadosComanda` en `ServicioCuentas.CambiarEstadoItemAsync`; `Entregado` se marca desde `PosCarta` |
 | Conflictos de reservas VIP | `ReservasPage` con creación, señas y pedidos |
-| Mermas y cortesías | `MermasPage` |
-| Pagos mixtos USD/Bs | Abonos y cierre en `CuentaPage`/`PosCarta` y pago único en `PosPage` con selector USD/Bs; el backend convierte Bs → USD con la tasa Paralelo vigente (`ServicioCuentas` y `ServicioVentas`) |
-| Dashboard analítico | `DashboardPage` con `overflow-x-auto` (heatmap con `min-w` y bento KPI), salud de inventario y mermas vs ventas |
+| Mermas y cortesías | `MermasPage` + `EvaluadorMerma` integrado en `RegistrarMermaAsync` |
+| Pagos mixtos USD/Bs | Selector en `CuentaPage`/`PosCarta`/`PosPage`; conversión con tasa vigente en el backend |
+| Dashboard analítico | `DashboardPage` con heatmap, salud de inventario y mermas vs ventas |
 | RBAC Guards | `ProtectedRoute` y `Can` |
 | RFC 7807 | parser en `packages/api-client` + toasts |
 | Mobile First / Skeletons / paginación servidor / validación / Docker | aplicados en toda la app |
 
-## Cómo se implementó
+---
 
-La fase se cerró completando **5 brechas** detectadas en la revisión del núcleo,
-sobre una base ya funcional (commit `917d604`, con 94 tests backend y 33 frontend
-verdes):
-
-1. **Modo dual real:** el `ModoContext` existía pero no filtraba nada. Se añadió el
-   campo `modos` por item/grupo en `navigation.tsx` y los helpers `visiblePorModo`,
-   `filtrarGrupos` y `puedeAcceder` (el chequeo de modo ocurre **antes** del bypass
-   de admin). `ModoProvider` se montó en `main.tsx` (envolviendo `ErrorBoundary`,
-   `Toaster` y `AuthProvider`), el botón de conmutación en el header de `AppShell`
-   y `App.tsx` aterriza en `/pos` (licorería) o `/` (discoteca). 9 tests nuevos en
-   `navigation.test.ts`.
-2. **Dashboard sin desborde:** heatmap dentro de `overflow-x-auto` con
-   `min-w-[560px]` interno y bento de KPIs con scroll horizontal en móvil.
-3. **Máquina de estados conectada:** `MaquinaEstadosComanda` se reescribió sobre el
-   enum `EstadoItemComanda` (Recibido → EnProceso/Preparado → Entregado; Cancelado
-   terminal) e inyectó en `ServicioCuentas.CambiarEstadoItemAsync`, que valida
-   transiciones (`ReglaNegocioException`), ignora no-ops y deriva el estado de la
-   comanda (`CalcularEstadoComanda`) + notificación SignalR. El estado **Entregado**
-   se marca desde `PosCarta` (mesonero), manteniendo el KDS en 3 columnas.
-4. **Pagos mixtos USD/Bs:** el backend convierte Bs → USD con la tasa Paralelo
-   vigente en abonos (`ServicioCuentas.RegistrarAbonoAsync`) y en ventas
-   (`ServicioVentas`), validando `tasa > 0`; el abono persiste monto/moneda
-   originales. El frontend añadió selector de moneda en el cobro y abonos de
-   `CuentaPage`, en `PosCarta` y en el panel de orden de `PosPage`, con
-   `formatBS`/`formatUSD` en el historial.
-5. **`EvaluadorMerma` integrado:** `ServicioInventario.RegistrarMermaAsync` consume
-   los movimientos sugeridos por el evaluador (Merma + Cortesía opcional) con
-   paridad de comportamiento; el evaluador pasó a aceptar `decimal`.
-
-La verificación de cierre fue siempre la misma batería: `dotnet build` (0 errores),
-`dotnet test` (116), `npm run typecheck`, `npm run lint` y `npm test` (42), además de
-`prettier --check` (la deuda de formato preexistente no se tocó). Los cambios se
-documentaron en el checklist de este archivo, en `frontend/README.md` y en el
-`CHANGELOG`, y se registró la **desviación de tema aprobada** (se conserva la paleta
-lavanda; el azul UNET `#003366` no se adopta, `DESIGN.md` §7).
-
-## Desalojo de mesa en tiempo real
-
-`POST /api/v1/mesas/{id}/desalojar` cierra la sesión de mesa (deja la cuenta en
-`PorCobrar` si tiene saldo) y emite el evento SignalR **`mesa:actualizada`**
-(`{ mesaId, estado, cuentaId }`). Los clientes que se unen al área `meseros`/`mesas`
-refrescan el plano, de modo que la mesa queda **Libre** para el resto del personal.
-
-## Backend añadido para esta fase
+## 11 · Backend añadido para esta fase
 
 - `GET /api/v1/reportes/heatmap` — consumo por día de la semana y hora.
 - `GET /api/v1/reportes/inventario-salud` — clasificación con mínimos/máximos.
 - `GET /api/v1/reportes/mermas-vs-ventas` — comparativo valorizado.
-- `POST /api/v1/mesas/{id}/desalojar` + evento `mesa:actualizada`.
+- `POST /api/v1/mesas/{id}/desalojar` + evento SignalR `mesa:actualizada`.
 - `MesaDto` enriquecido con `cuentaId` y `reservada`.
+- Guard de turno abierto (422 sin sesión de caja), `POST /cuentas/{id}/reabrir` y
+  auto-desalojo al cerrar el turno (evento `mesa:actualizada`).
 
-## Web pública · tema "Hungry Tiger"
+---
 
-`apps/public-web` no usa el tema operativo: es un póster tipográfico *spice-label*
-(paleta dorado-sobre-óxido, tipografía display `Antonio`) con **vitrina 3D** de la
-botella de vino (glTF renderizado con React Three Fiber, cargado de forma diferida) y
-**reserva web con seña** (selección de mesas y pago).
-Detalle de tokens en [`frontend/DESIGN.md`](../../../frontend/DESIGN.md) §8.
+## 12 · Orquestación con Docker
 
-## Administración (CRUD)
+```
+                 navegador
+        ┌────────────┼────────────┐
+     :4173        :4174        :4175
+   (admin)    (public-web)  (servicio)     ← nginx sirve cada SPA
+        └────────────┼────────────┘
+                   :8090
+                 (edge)  ── proxy nginx: /api, /swagger, /hubs (WebSocket), /uploads
+                     │
+                   :5190
+                  (api)  ── .NET 10: aplica migraciones + seed al arrancar
+                     │
+                  :5432
+               (postgres) ── PostgreSQL 15 (volumen con datos persistentes)
+```
 
-Además de la operación, el panel interno incorpora gestión completa de:
+| Servicio | Imagen / build | URL local |
+| :--- | :--- | :--- |
+| `postgres` | `postgres:15-alpine` | `localhost:5432` |
+| `api` | build `backend/src/Licoreria.WebAPI/Dockerfile` | `http://localhost:5190` · Swagger `…/swagger` |
+| `admin` | build `apps/admin/Dockerfile` (node → nginx) | `http://localhost:4173` |
+| `public-web` | build `apps/public-web/Dockerfile` | `http://localhost:4174` |
+| `servicio` | build `apps/servicio/Dockerfile` | `http://localhost:4175` |
+| `edge` | `nginx:alpine` + `infra/nginx/nginx.conf` | `http://localhost:8090` |
 
-- **Catálogo:** productos con variantes (crear/editar/eliminar), categorías y marcas.
-- **Usuarios:** alta/edición, cambio de contraseña, revocación de sesiones y baja lógica.
-- **Clientes (CRM):** CRUD y acumular/canjear puntos.
-- **Caja:** apertura, movimientos, arqueo/cierre (Z) e historial de sesiones.
-- **Inventario:** existencias con filtros de mínimo, kardex filtrable, ajustes, lotes con
-  vencimientos y tomas físicas con diferencias; registro e historial de mermas.
-- **Compras:** proveedores (CRUD), órdenes de compra con ciclo de aprobación, recepciones
-  que actualizan inventario y cuentas por pagar con registro de pagos.
-- **Contenido:** páginas con secciones y bloques, eventos, horarios de atención,
-  información del local, menú digital con QR y subida de archivos.
-- **Finanzas:** registro e histórico de tasas de cambio.
-- **Salón:** editor de planos con arrastre libre (`dnd-kit`) y CRUD de zonas y mesas.
+- Todo parametrizable por `.env` (puertos, credenciales, `ASPNETCORE_ENVIRONMENT`),
+  con plantilla versionada en `.env.example`.
+- Swagger UI habilitado en el despliegue Docker vía `Swagger:Enabled=true`.
+- Un solo comando: `docker compose up -d --build`.
 
-Pendiente para siguientes iteraciones: el módulo de IA (generaciones y aprobación).
+> **Dí:** «Seis servicios y un proxy único de entrada: el navegador solo conoce el edge,
+> y el WebSocket de SignalR cruza el nginx con upgrade correcto.»
 
-## Pruebas
+---
 
-- **Backend:** xUnit + Moq: `ServicioCatalogoProductoTests`, `ServicioClubReservasTests`,
-  `ServicioVentasTests` (pagos mixtos USD/Bs con tasa) y `ServicioCuentasTests`
-  (abonos con conversión y máquina de estados), más pruebas de integración.
-- **Frontend:** Vitest + React Testing Library + MSW
-  (`npm run test` en `frontend/`); `navigation.test.ts` cubre el filtrado por modo.
-- **CI:** `.github/workflows/frontend.yml` (lint, typecheck, tests y build).
+## 13 · Calidad: pruebas y CI
 
-## Orquestación
+| Suite | Comando | Resultado |
+| :--- | :--- | :--- |
+| Unitarias backend | `dotnet test` (`Licoreria.UnitTests`) | **116/116** |
+| Integración backend | `dotnet test` (`Licoreria.IntegrationTests`, `WebApplicationFactory`) | **29/29** |
+| Frontend | `npm test` (Vitest + RTL + MSW) | **42/42** (~13 s) |
+| Tipos / lint | `npm run typecheck`, `npm run lint` | 0 errores |
 
-`docker compose up --build` levanta `postgres`, `api`, `admin`, `public-web`,
-`servicio` y `edge` (nginx reverse proxy con soporte WebSocket para SignalR).
+Casos representativos: `Comanda_ConStockInsuficiente_Devuelve422`,
+`Item_AlServirse_DescuentaStockYAlCerrarNoDuplica`, `MaquinaEstadosComandaTests`,
+`ServicioVentasTests` (pagos mixtos) y `navigation.test.ts` (filtrado por modo).
 
-| Servicio | URL local |
-| :--- | :--- |
-| Admin | `http://localhost:4173` |
-| Web pública | `http://localhost:4174` |
-| Servicio (mesonero/KDS) | `http://localhost:4175` |
-| API / Swagger | `http://localhost:5190` |
-| Edge | `http://localhost:8090` |
+**CI (GitHub Actions):** `backend.yml` (build + tests con servicio PostgreSQL),
+`frontend.yml` (lint → typecheck → tests → build), `docs.yml` (sitio de documentación).
 
-## Cuestionario de defensa (Fase 4)
+**Batería de cierre de fase (ejecutada en cada entrega):**
+`dotnet build` → `dotnet test` → `npm run typecheck` → `npm run lint` → `npm test` →
+`npm run build`.
 
-Preguntas frecuentes con respuestas breves ancladas al proyecto:
+> **Dí:** «Ninguna entregas se cerró sin las seis verificaciones en verde; la CI lo
+> garantiza también en cada push.»
+
+---
+
+## 14 · Cómo se implementó: 5 brechas cerradas
+
+Sobre una base ya funcional (commit `917d604`, 94 tests backend y 33 frontend verdes):
+
+1. **Modo dual real:** el `ModoContext` existía pero no filtraba nada. Se añadió el campo
+   `modos` por ítem/grupo en `navigation.tsx` y los helpers `visiblePorModo`,
+   `filtrarGrupos` y `puedeAcceder` (el chequeo de modo ocurre **antes** del bypass de
+   admin). `ModoProvider` se montó en `main.tsx` (envolviendo `ErrorBoundary`, `Toaster`
+   y `AuthProvider`), el conmutador en el header de `AppShell` y `App.tsx` aterriza en
+   `/pos` (licorería) o `/` (discoteca). +9 tests en `navigation.test.ts`.
+2. **Dashboard sin desborde:** heatmap en `overflow-x-auto` con `min-w-[560px]` interno
+   y bento de KPIs con scroll horizontal en móvil.
+3. **Máquina de estados conectada:** reescrita sobre el enum `EstadoItemComanda` e
+   inyectada en `ServicioCuentas.CambiarEstadoItemAsync` (valida transiciones con
+   `ReglaNegocioException`, ignora no-ops, deriva el estado de la comanda +
+   notificación SignalR). `Entregado` se marca desde `PosCarta`, manteniendo el KDS en
+   3 columnas.
+4. **Pagos mixtos USD/Bs:** conversión Bs → USD con tasa Paralelo vigente en abonos y
+   ventas (validando `tasa > 0`), persistiendo monto/moneda originales; selector de
+   moneda y formato en el front.
+5. **`EvaluadorMerma` integrado:** `ServicioInventario.RegistrarMermaAsync` consume los
+   movimientos sugeridos (Merma + Cortesía opcional) con paridad de comportamiento; el
+   evaluador pasó a aceptar `decimal`.
+
+Verificación de cierre siempre igual: build 0 errores, 116 tests, typecheck, lint y
+42 tests front; los cambios quedaron en este checklist, `frontend/README.md` y el
+`CHANGELOG`, con la **desviación de tema aprobada** registrada.
+
+---
+
+## 15 · Demo en vivo (≈5 minutos)
+
+1. `docker compose up -d --build` → levanta los 6 servicios (`docker compose ps`).
+2. **Panel interno** `:4173` → login `admin@licoreria.com` / `demo123` → Dashboard
+   (heatmap, KPIs) → POS: buscar producto, cobrar en USD y Bs.
+3. **App de servicio** `:4175` → login `mesero1@licoreria.com` / `demo123` → aterriza en
+   `/mesonero`: abrir mesa y enviar una comanda a **Barra**.
+4. Cerrar sesión y entrar con `barra1@licoreria.com` (misma contraseña) → aterriza en
+   `/kds`: el pedido llega con sonido → arrastrarlo a *En proceso* y *Terminado*.
+5. Volver al mesonero: los toasts «En preparación» y «Pedido listo» aparecen solos;
+   cerrar con el conmutador **Licorería/Discoteca**; Swagger en `:5190/swagger`.
+
+---
+
+## 16 · Limitaciones conocidas y próximos pasos
+
+| Limitación | Impacto | Plan |
+| :--- | :--- | :--- |
+| `UnirseArea(area)` no valida el rol | cualquier JWT autenticado podría escuchar otra área | validar rol/área en el hub con los claims del JWT |
+| Varias conexiones SignalR por pestaña | una conexión por componente que escucha | conexión única compartida en `packages/` con rejoin |
+| `DbUpdateConcurrencyException` responde 500 | carrera entre dos escrituras no se traduce a 409 | mapear a `ConflictoException` en `ExceptionMiddleware` |
+| Sin `CHECK (cantidad >= 0)` en la BD | la guarda de stock negativa es solo de aplicación | restricción CHECK + `SELECT … FOR UPDATE` en kardex |
+| Módulo de IA pendiente | fuera de esta fase | generación y aprobación en iteración siguiente |
+
+> **Dí:** «Conozco los huecos, están priorizados con mitigación, y ninguno afecta el
+> flujo que acaban de ver.»
+
+---
+
+## 17 · Cuestionario de defensa (Fase 4)
 
 ### 1. Frontend SPA y componentización
 
@@ -254,3 +422,65 @@ Los servicios de `Application` dependen de **interfaces** (`IUnitOfWork`,
 `.Returns((op, ct) => op(ct))` y devuelve entidades simuladas, validando la
 conversión Bs→USD sin tocar una base de datos real. El aislamiento garantiza que
 solo se prueba la lógica del servicio.
+
+### 10. ¿Cómo llega en tiempo real lo que pide el mesonero a la barra?
+
+SignalR con el hub `/hubs/comandas` y **grupos por área** (`barra`, `cocina`,
+`meseros`). El backend emite `comanda:creada`/`item:actualizado` **después** de guardar
+en BD, enviándolo al grupo del área y al de los meseros. El KDS de la barra está suscrito
+a su grupo: al recibir el evento reproduce un sonido y hace `invalidateQueries(['kds'])`
+para releer y repintar el tablero. El evento solo lleva IDs, así que siempre se muestra
+la versión vigente de la base de datos.
+
+### 11. ¿Qué pasa si se cae la conexión con el hub?
+
+El cliente usa `withAutomaticReconnect()` y, al reconectar, vuelve a invocar
+`UnirseArea(area)` para recuperar su grupo. Los eventos emitidos durante la desconexión
+se pierden, por eso la UI también revalida al recuperar el foco/la consulta; es una
+limitación documentada con plan de mejora (ver lámina 16).
+
+### 12. ¿Cómo se evita el stock negativo en ventas simultáneas?
+
+Tres defensas: `StockProducto.AplicarMovimiento` rechaza saldos negativos (dominio),
+`ServicioKardex.VerificarStockAsync` valida antes de descontar (→ **422**) y la
+concurrencia optimista con `xmin` de PostgreSQL hace que, si dos transiciones compiten
+por la misma fila, la segunda falle en el `UPDATE` y se revierta en lugar de dejar el
+stock en negativo.
+
+### 13. ¿Por qué Docker y no desplegar a mano?
+
+Repetibilidad: `docker compose up -d --build` levanta las mismas seis piezas en cualquier
+máquina (migraciones y seed automáticos al arrancar la API), con puertos y credenciales
+en `.env`, y el `edge` unifica el origen de la API, el WebSocket y las SPAs.
+
+### 14. ¿Cómo sabes que nada se rompió al cerrar la fase?
+
+Batería fija: `dotnet build` (0 errores), `dotnet test` (145), `npm run typecheck`,
+`npm run lint` y `npm test` (42); la misma batería corre en GitHub Actions en cada push
+(`backend.yml`, `frontend.yml`).
+
+---
+
+## Rúbrica cumplida
+
+| Criterio | Evidencia |
+| :--- | :--- |
+| SPA con enrutamiento cliente | react-router-dom v6 + `ProtectedRoute` (40 páginas en admin) |
+| Estado global y de servidor | Context API (`Auth`/`Theme`/`Modo`) + TanStack Query |
+| Cliente API con JWT y errores | `packages/api-client`: Bearer, refresh ante 401, RFC 7807 → toasts |
+| RBAC en UI | `ProtectedRoute` y `<Can>`; el backend sigue siendo la autoridad (401/403) |
+| Tiempo real | SignalR `/hubs/comandas` con grupos de área (KDS, mesas, chat) |
+| Design system y accesibilidad | `packages/ui` + `DESIGN.md`; diálogos ARIA, foco y «saltar al contenido» |
+| Pruebas | 42 frontend (Vitest/RTL/MSW) + 145 backend, todo en CI |
+| Orquestación | Docker Compose de 6 servicios con edge nginx (WebSocket) |
+| Documentación | Este checklist, `frontend/README.md`, `DESIGN.md` y `CHANGELOG` al día |
+
+## Documentación relacionada
+
+- [Guía de contribución del frontend](../../../frontend/README.md)
+- [Design system (DESIGN.md)](../../../frontend/DESIGN.md)
+- [ADR 0003 · Frontend React + Tailwind](../adr/0003-frontend-react-tailwind.md)
+- [Arquitectura Onion](../02-arquitectura/onion.md)
+- [Errores RFC 7807](../04-api/errores-rfc7807.md)
+- [Evidencias por fase](../../assets/evidencias/README.md)
+- [CHANGELOG](../../../CHANGELOG.md)
