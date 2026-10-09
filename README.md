@@ -26,7 +26,7 @@ Plataforma web integral para la gestión de un local de **licorería y discoteca
 ```
 .
 ├── backend/          # Solución .NET (Onion: Domain, Application, Infrastructure, WebAPI)
-├── frontend/         # Apps React (public-web, admin) y paquetes compartidos
+├── frontend/         # Apps React (admin, public-web, servicio) y paquetes compartidos
 ├── database/         # Scripts PostgreSQL, seeds y diagramas
 ├── openapi/          # Contrato OpenAPI de la API
 ├── docs/             # Documentación
@@ -170,6 +170,46 @@ Colección: [`Licoreria_Fase3_Postman_Collection.json`](docs/assets/evidencias/L
 
 ---
 
+## Fase 4 · Frontend React + Docker
+
+SPA construida con **React 18 + TypeScript + Vite + Tailwind CSS**, organizada como
+monorepo npm con workspaces: `apps/admin` (panel interno), `apps/public-web` (sitio
+público, tema "Hungry Tiger" con vitrina 3D) y `apps/servicio` (mesonero/KDS en
+tiempo real), más paquetes compartidos (`types`, `api-client`, `ui`, `auth`, `config`).
+
+Lo logrado:
+
+- **Componentización por funcionalidad:** `pages/` por pantalla, `components/` por
+  dominio (POS, catálogo, mapa, eventos…) y design system propio en `packages/ui`
+  (tokens lavanda + familias pastel de estado, `DESIGN.md`).
+- **Enrutamiento** con `react-router-dom` v6; rutas protegidas por sesión y permisos
+  (`ProtectedRoute` + `ContenidoProtegido` con RBAC y **filtrado por modo**).
+- **Gestión de estado en 3 niveles:** local (`useState`/hooks como `usePos`),
+  global con Context API (`AuthContext`, `ThemeContext`, `ModoContext`) y de
+  servidor con **TanStack Query** (caché, reintentos, invalidación).
+- **HTTP asíncrono** centralizado en `packages/api-client` (wrapper de `fetch`):
+  JWT automático, refresh silencioso ante 401 y errores **RFC 7807** → toasts;
+  tiempo real con **SignalR** (`/hubs/comandas`).
+- **Autenticación JWT:** access + refresh token; `AuthContext` persiste la sesión en
+  `localStorage` y el `api-client` adjunta `Authorization: Bearer`.
+- **Modo dual Licorería/Discoteca:** `ModoProvider` + filtrado de navegación por grupos
+  (licorería oculta Salón/`/plano`/`/cuentas`; discoteca = nav completa).
+- **Operación completa:** POS con teclado, KDS con SignalR, cuentas/comandas, plano
+  interactivo, reservas VIP con señas, mermas/cortesías, caja (arqueo Z), reportes
+  con heatmap y **pagos mixtos USD/Bs** con tasa vigente.
+- **Pruebas frontend:** Vitest + React Testing Library + MSW (42 tests) y
+  **backend:** xUnit + Moq (116 tests) con aislamiento de capas por interfaces.
+- **Docker:** `docker compose up -d --build` levanta `postgres`, `api` (aplica
+  migraciones + seed), `admin`, `public-web` y `edge` (nginx con WebSocket).
+
+Tecnologías: Vite · React 18 · TypeScript · Tailwind CSS · TanStack Query ·
+React Hook Form + Zod · Recharts · SignalR client · dnd-kit · React Three Fiber ·
+Vitest + RTL + MSW · xUnit + Moq.
+
+📄 [Ver documentación detallada de la Fase 4 (implementación y defensa) →](docs/dev/10-fases/fase-4.md)
+
+---
+
 ## API final · Núcleo operativo y web pública
 
 La API v1 está implementada sobre PostgreSQL con Onion Architecture. Incluye:
@@ -203,7 +243,7 @@ La API v1 está implementada sobre PostgreSQL con Onion Architecture. Incluye:
 | 1 | Fundamentos, DI, RFC 7807 y dominio | Completada |
 | 2 | Persistencia PostgreSQL 15 y seeding | Completada |
 | 3 | Seguridad JWT / RBAC y validación | Completada |
-| 4 | Frontend React | Completada (núcleo) |
+| 4 | Frontend React + Docker | Completada |
 | 5 | Despliegue | Pendiente |
 
 > **Nota:** Las fases de desarrollo académico se rigen por lo indicado por el docente.
