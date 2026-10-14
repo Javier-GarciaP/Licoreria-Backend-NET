@@ -38,6 +38,7 @@ import {
   Users,
   Wallet,
   Warehouse,
+  Wine,
 } from 'lucide-react';
 
 /** Modo de operación dual: venta de mostrador vs. gestión de salón/discoteca. */
@@ -195,6 +196,7 @@ export const GRUPOS: NavGroup[] = [
       },
       { to: '/inventario/kardex', label: 'Kardex', icon: ScrollText, permiso: 'inventory:read' },
       { to: '/inventario/lotes', label: 'Lotes', icon: PackageOpen, permiso: 'inventory:read', oculto: true },
+      { to: '/inventario/envases', label: 'Envases abiertos', icon: Wine, permiso: 'inventory:read', oculto: true },
       {
         to: '/inventario/tomas',
         label: 'Tomas físicas',
@@ -261,10 +263,9 @@ export const GRUPOS: NavGroup[] = [
     label: 'Analítica',
     icon: Activity,
     roles: ADMIN,
-    oculto: true,
     items: [
       { to: '/reportes', label: 'Reportes', icon: BarChart3, oculto: true },
-      { to: '/auditoria', label: 'Auditoría', icon: FileClock, admin: true, oculto: true },
+      { to: '/auditoria', label: 'Auditoría', icon: FileClock, admin: true },
     ],
   },
   {

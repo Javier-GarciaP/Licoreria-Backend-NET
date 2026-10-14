@@ -70,3 +70,25 @@ describe('puedeAcceder por modo', () => {
     expect(puedeAcceder(undefined, esAdmin, sinPermiso, undefined, 'licoreria')).toBe(true);
   });
 });
+
+describe('Auditoría en la navegación', () => {
+  const rutasDe = (admin: boolean, modo?: Modo) =>
+    filtrarGrupos(admin, admin ? conPermiso : sinPermiso, admin ? 'Administrador' : 'Cajero', modo).flatMap((g) =>
+      g.items.map((i) => i.to),
+    );
+
+  it('el administrador ve Auditoría en el menú de Analítica, sin Reportes', () => {
+    for (const modo of ['licoreria', 'discoteca'] as const) {
+      const rutas = rutasDe(true, modo);
+      expect(rutas).toContain('/auditoria');
+      expect(rutas).not.toContain('/reportes');
+    }
+    const analitica = filtrarGrupos(true, conPermiso, 'Administrador').find((g) => g.id === 'analitica');
+    expect(analitica?.items.map((i) => i.to)).toEqual(['/auditoria']);
+  });
+
+  it('el cajero no ve Auditoría ni puede acceder a su ruta', () => {
+    expect(rutasDe(false)).not.toContain('/auditoria');
+    expect(puedeAcceder(itemDeRuta('/auditoria'), false, conPermiso, 'Cajero')).toBe(false);
+  });
+});
