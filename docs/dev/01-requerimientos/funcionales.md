@@ -104,7 +104,6 @@ Identificados por módulo. La prioridad usa MoSCoW: **M** (Must), **S** (Should)
 | :--- | :--- | :---: |
 | RF-FIN-01 | Registrar la tasa de cambio diaria (BCV/paralelo). | M |
 | RF-FIN-02 | Consultar histórico de tasas por fecha. | S |
-| RF-FIN-03 | Gestionar movimientos de tesorería. | S |
 
 ## Contenido y web pública
 

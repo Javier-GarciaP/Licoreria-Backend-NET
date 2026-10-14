@@ -1,0 +1,9 @@
+{
+  "name": "licoreria-openapi-tools",
+  "private": true,
+  "description": "Herramientas para generar y verificar el contrato OpenAPI de la API.",
+  "type": "module",
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  }
+}

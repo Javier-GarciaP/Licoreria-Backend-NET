@@ -1,0 +1,11 @@
+Model Information:
+* title:	Vino Tinto Castaño Colección
+* source:	https://sketchfab.com/3d-models/vino-tinto-castano-coleccion-9f3b51d1dfd84a8fab1ef652de59d8f2
+* author:	anaa_ggarcia (https://sketchfab.com/anagarciaon)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Vino Tinto Castaño Colección" (https://sketchfab.com/3d-models/vino-tinto-castano-coleccion-9f3b51d1dfd84a8fab1ef652de59d8f2) by anaa_ggarcia (https://sketchfab.com/anagarciaon) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

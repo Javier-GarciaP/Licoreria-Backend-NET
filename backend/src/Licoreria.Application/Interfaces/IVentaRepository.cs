@@ -1,0 +1,33 @@
+using Licoreria.Application.Common;
+using Licoreria.Domain.Entities;
+using Licoreria.Domain.Enums;
+
+namespace Licoreria.Application.Interfaces;
+
+public interface IVentaRepository
+{
+    Task<ResultadoPaginado<Venta>> ObtenerPaginadoAsync(
+        PaginacionRequest paginacion,
+        DateTime? desde = null,
+        DateTime? hasta = null,
+        EstadoVenta? estado = null,
+        CancellationToken cancellationToken = default);
+
+    Task<Venta?> ObtenerConDetalleAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task AgregarAsync(Venta venta, CancellationToken cancellationToken = default);
+
+    Task AgregarPagoAsync(Pago pago, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Siguiente número correlativo de comprobante, tomado de una secuencia de la base de datos:
+    /// nunca se repite entre ventas simultáneas (puede haber saltos si una venta se revierte).
+    /// </summary>
+    Task<long> ObtenerSiguienteCorrelativoComprobanteAsync(CancellationToken cancellationToken = default);
+
+    Task AgregarDevolucionAsync(Devolucion devolucion, CancellationToken cancellationToken = default);
+
+    Task<decimal> ObtenerTotalVentasDelTurnoAsync(Guid sesionCajaId, CancellationToken cancellationToken = default);
+
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+}

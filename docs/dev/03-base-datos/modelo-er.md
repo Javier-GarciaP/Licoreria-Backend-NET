@@ -29,7 +29,7 @@ flowchart LR
 | `cash` | Sesiones de caja, movimientos y arqueos. |
 | `club` | Zonas, plano, mesas, reservas y eventos. |
 | `crm` | Clientes, fidelidad y cuentas por cobrar. |
-| `finance` | Monedas, tasas de cambio y tesorería. |
+| `finance` | Tasas de cambio. |
 | `security` | Usuarios, roles, permisos y auditoría. |
 | `content` | Contenido de la web pública y menú digital. |
 | `ai` | Trabajos y resultados del módulo de IA. |

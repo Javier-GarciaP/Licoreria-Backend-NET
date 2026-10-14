@@ -1,0 +1,1174 @@
+using Licoreria.Application.Common;
+using Licoreria.Application.Dtos;
+using Licoreria.Application.Interfaces;
+using Licoreria.Domain.Common;
+using Licoreria.Domain.Entities;
+using Licoreria.Domain.Enums;
+using Licoreria.Domain.Services;
+
+namespace Licoreria.Application.Services;
+
+public sealed class ServicioClub : IServicioClub
+{
+    private readonly IRepository<Zona> _zonas;
+    private readonly IRepository<Mesa> _mesas;
+    private readonly IRepository<Plano> _planos;
+    private readonly IRepository<PlanoElemento> _planoElementos;
+    private readonly IRepository<Evento> _eventos;
+    private readonly IRepository<ListaVip> _vip;
+    private readonly IRepository<Entrada> _entradas;
+    private readonly IRepository<PedidoAnticipado> _pedidos;
+    private readonly IRepository<ProductoVariante> _variantes;
+    private readonly IReservaRepository _reservas;
+    private readonly ICuentaRepository _cuentas;
+    private readonly DetectorConflictosReserva _detector;
+    private readonly IRelojSistema _reloj;
+    private readonly INotificadorComandas _notificador;
+    private readonly IServicioKardex _kardex;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly JornadaOperativa _jornada;
+    private readonly IAlmacenamientoArchivos _almacenamiento;
+
+    public ServicioClub(
+        IRepository<Zona> zonas,
+        IRepository<Mesa> mesas,
+        IRepository<Plano> planos,
+        IRepository<PlanoElemento> planoElementos,
+        IRepository<Evento> eventos,
+        IRepository<ListaVip> vip,
+        IRepository<Entrada> entradas,
+        IRepository<PedidoAnticipado> pedidos,
+        IRepository<ProductoVariante> variantes,
+        IReservaRepository reservas,
+        ICuentaRepository cuentas,
+        DetectorConflictosReserva detector,
+        IRelojSistema reloj,
+        INotificadorComandas notificador,
+        IServicioKardex kardex,
+        IUnitOfWork unitOfWork,
+        JornadaOperativa jornada,
+        IAlmacenamientoArchivos almacenamiento)
+    {
+        _zonas = zonas;
+        _mesas = mesas;
+        _planos = planos;
+        _planoElementos = planoElementos;
+        _eventos = eventos;
+        _vip = vip;
+        _entradas = entradas;
+        _pedidos = pedidos;
+        _variantes = variantes;
+        _reservas = reservas;
+        _cuentas = cuentas;
+        _detector = detector;
+        _reloj = reloj;
+        _notificador = notificador;
+        _kardex = kardex;
+        _unitOfWork = unitOfWork;
+        _almacenamiento = almacenamiento;
+        _jornada = jornada;
+    }
+
+    // ================= Zonas =================
+
+    public async Task<IReadOnlyList<ZonaDto>> ObtenerZonasAsync(CancellationToken cancellationToken = default)
+    {
+        var zonas = await _zonas.GetAllAsync(cancellationToken);
+        return zonas.Where(z => !z.IsDeleted).Select(MapearZona).ToList();
+    }
+
+    public async Task<ZonaDto> CrearZonaAsync(ZonaCrearDto dto, CancellationToken cancellationToken = default)
+    {
+        var zona = new Zona
+        {
+            Nombre = dto.Nombre,
+            Tipo = dto.Tipo,
+            Activo = dto.Activo,
+            Color = dto.Color,
+            PosX = dto.PosX,
+            PosY = dto.PosY,
+            Ancho = dto.Ancho,
+            Alto = dto.Alto
+        };
+        await _zonas.AddAsync(zona, cancellationToken);
+        await _zonas.SaveChangesAsync(cancellationToken);
+        return MapearZona(zona);
+    }
+
+    public async Task<ZonaDto?> EditarZonaAsync(ZonaEditarDto dto, CancellationToken cancellationToken = default)
+    {
+        var zona = await _zonas.GetByIdAsync(dto.Id, cancellationToken);
+        if (zona is null || zona.IsDeleted)
+        {
+            return null;
+        }
+
+        zona.Nombre = dto.Nombre;
+        zona.Tipo = dto.Tipo;
+        zona.Activo = dto.Activo;
+        zona.Color = dto.Color;
+        zona.PosX = dto.PosX;
+        zona.PosY = dto.PosY;
+        zona.Ancho = dto.Ancho;
+        zona.Alto = dto.Alto;
+        _zonas.Update(zona);
+        await _zonas.SaveChangesAsync(cancellationToken);
+        return MapearZona(zona);
+    }
+
+    public async Task<bool> EliminarZonaAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var zona = await _zonas.GetByIdAsync(id, cancellationToken);
+        if (zona is null || zona.IsDeleted)
+        {
+            return false;
+        }
+
+        zona.EliminarLogico();
+        _zonas.Update(zona);
+        await _zonas.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    // ================= Mesas =================
+
+    public async Task<IReadOnlyList<MesaDto>> ObtenerMesasAsync(
+        Guid? zonaId = null,
+        DateTime? fechaHora = null,
+        CancellationToken cancellationToken = default)
+    {
+        var mesas = await _mesas.FindAsync(m => !m.IsDeleted && (zonaId == null || m.ZonaId == zonaId), cancellationToken);
+        var zonas = (await _zonas.GetAllAsync(cancellationToken)).ToDictionary(z => z.Id, z => z.Nombre);
+        var cuentasPorMesa = await _cuentas.ObtenerCuentasAbiertasPorMesaAsync(cancellationToken);
+
+        // Sin fechaHora se marcan las reservas de la jornada en curso (de 12:00 a 06:00 por defecto): una
+        // reserva de las 10 p. m. deja la mesa reservada durante toda esa jornada, no solo en las horas
+        // previas. Con fechaHora, la disponibilidad se calcula sobre el intervalo presunto de cada reserva.
+        var ahora = _reloj.UtcNow;
+        var horas = DetectorConflictosReserva.DuracionReservaPresuntaHoras;
+        DateTime desde;
+        DateTime hasta;
+        if (fechaHora is null)
+        {
+            (desde, hasta) = _jornada.VentanaQueContiene(ahora);
+        }
+        else
+        {
+            // El API puede recibir fechas locales (sin offset); se normalizan a UTC
+            // para que el proveedor de PostgreSQL (timestamptz) acepte la consulta.
+            var fecha = fechaHora.Value.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(fechaHora.Value, DateTimeKind.Utc)
+                : fechaHora.Value;
+            // Dos reservas de 2 horas que se tocan en el borde no se solapan: los extremos quedan fuera (1 µs, la precisión de PostgreSQL).
+            desde = fecha.AddHours(-horas).AddMicroseconds(1);
+            hasta = fecha.AddHours(horas).AddMicroseconds(-1);
+        }
+
+        var reservadas = (await _reservas.ObtenerMesasReservadasAsync(
+            desde,
+            hasta,
+            cancellationToken)).ToHashSet();
+
+        return mesas
+            .Select(m =>
+            {
+                var tieneCuenta = cuentasPorMesa.TryGetValue(m.Id, out var cuentaId);
+                return MapearMesa(
+                    m,
+                    zonas.GetValueOrDefault(m.ZonaId, string.Empty),
+                    !tieneCuenta,
+                    tieneCuenta ? cuentaId : null,
+                    reservadas.Contains(m.Id));
+            })
+            .ToList();
+    }
+
+    public async Task<MesaDto> CrearMesaAsync(MesaCrearDto dto, CancellationToken cancellationToken = default)
+    {
+        var zona = await _zonas.GetByIdAsync(dto.ZonaId, cancellationToken)
+            ?? throw new NoEncontradoException($"No existe la zona {dto.ZonaId}.");
+
+        var mesa = new Mesa
+        {
+            ZonaId = dto.ZonaId,
+            Numero = dto.Numero,
+            Capacidad = dto.Capacidad,
+            Forma = dto.Forma,
+            PosX = dto.PosX,
+            PosY = dto.PosY,
+            Ancho = dto.Ancho,
+            Alto = dto.Alto,
+            Activa = true
+        };
+
+        await _mesas.AddAsync(mesa, cancellationToken);
+        await _mesas.SaveChangesAsync(cancellationToken);
+        return MapearMesa(mesa, zona.Nombre, true);
+    }
+
+    public async Task<MesaDto?> EditarMesaAsync(MesaEditarDto dto, CancellationToken cancellationToken = default)
+    {
+        var mesa = await _mesas.GetByIdAsync(dto.Id, cancellationToken);
+        if (mesa is null || mesa.IsDeleted)
+        {
+            return null;
+        }
+
+        mesa.ZonaId = dto.ZonaId;
+        mesa.Numero = dto.Numero;
+        mesa.Capacidad = dto.Capacidad;
+        mesa.Forma = dto.Forma;
+        mesa.PosX = dto.PosX;
+        mesa.PosY = dto.PosY;
+        mesa.Ancho = dto.Ancho;
+        mesa.Alto = dto.Alto;
+        mesa.Activa = dto.Activa;
+        _mesas.Update(mesa);
+        await _mesas.SaveChangesAsync(cancellationToken);
+
+        var zona = await _zonas.GetByIdAsync(dto.ZonaId, cancellationToken);
+        return MapearMesa(mesa, zona?.Nombre ?? string.Empty, true);
+    }
+
+    public async Task<bool> EliminarMesaAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var mesa = await _mesas.GetByIdAsync(id, cancellationToken);
+        if (mesa is null || mesa.IsDeleted)
+        {
+            return false;
+        }
+
+        mesa.EliminarLogico();
+        _mesas.Update(mesa);
+        await _mesas.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    public async Task<bool> DesalojarMesaAsync(Guid mesaId, CancellationToken cancellationToken = default)
+    {
+        Guid? cuentaId = null;
+
+        await _unitOfWork.EjecutarEnTransaccionAsync(async ct =>
+        {
+            cuentaId = null;
+
+            var cuenta = await _cuentas.ObtenerCuentaAbiertaPorMesaAsync(mesaId, ct);
+            if (cuenta is null)
+            {
+                return;
+            }
+
+            cuenta.SesionMesa.CerradaEn = _reloj.UtcNow;
+            if (cuenta.Saldo > 0m && cuenta.Estado != EstadoCuenta.Cerrada)
+            {
+                cuenta.Estado = EstadoCuenta.PorCobrar;
+            }
+
+            // Lo pedido y no servido deja de estar comprometido: la existencia vuelve a estar disponible.
+            await _kardex.LiberarReservasAsync(cuenta.Comandas.SelectMany(c => c.Detalles), ct);
+
+            cuentaId = cuenta.Id;
+        }, cancellationToken);
+
+        if (cuentaId is not Guid id)
+        {
+            return false;
+        }
+
+        await _notificador.MesaActualizadaAsync(mesaId, "Libre", id, cancellationToken);
+        return true;
+    }
+
+    // ================= Planos =================
+
+    public async Task<IReadOnlyList<PlanoDto>> ObtenerPlanosAsync(
+        bool incluirPlantillas = false,
+        CancellationToken cancellationToken = default)
+    {
+        var planos = await _planos.FindAsync(p => !p.IsDeleted && (incluirPlantillas || !p.EsPlantilla), cancellationToken);
+        if (planos.Count == 0)
+        {
+            return [];
+        }
+
+        // Carga explícita de los elementos (evita depender del lazy-load de la colección).
+        var ids = planos.Select(p => p.Id).ToList();
+        var elementos = await _planoElementos.FindAsync(e => !e.IsDeleted && ids.Contains(e.PlanoId), cancellationToken);
+        var porPlano = elementos
+            .GroupBy(e => e.PlanoId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        return planos.Select(p => MapearPlano(p, porPlano.GetValueOrDefault(p.Id) ?? [])).ToList();
+    }
+
+    public async Task<PlanoDto?> ObtenerPlanoAsync(
+        Guid id,
+        bool puedeVerPlantillas = false,
+        CancellationToken cancellationToken = default)
+    {
+        var plano = await _planos.GetByIdAsync(id, cancellationToken);
+        if (plano is null || plano.IsDeleted || (plano.EsPlantilla && !puedeVerPlantillas))
+        {
+            return null;
+        }
+
+        var elementos = await ElementosDelPlanoAsync(id, cancellationToken);
+        return MapearPlano(plano, elementos);
+    }
+
+    public async Task<PlanoDto> CrearPlanoAsync(PlanoCrearDto dto, CancellationToken cancellationToken = default)
+    {
+        var plano = new Plano
+        {
+            Nombre = dto.Nombre,
+            Version = 1,
+            Activo = true,
+            AnchoFondo = dto.AnchoFondo,
+            AltoFondo = dto.AltoFondo,
+            Rejilla = dto.Rejilla,
+            Piso = dto.Piso,
+            FondoOpacidad = dto.FondoOpacidad,
+            FondoAjuste = dto.FondoAjuste
+        };
+
+        foreach (var elemento in dto.Elementos)
+        {
+            plano.Elementos.Add(CrearElemento(elemento));
+        }
+
+        // Plano activo único: un plano nuevo activo desactiva a los demás.
+        await DesactivarOtrosPlanosAsync(plano.Id, cancellationToken);
+
+        await _planos.AddAsync(plano, cancellationToken);
+        await _planos.SaveChangesAsync(cancellationToken);
+
+        var elementos = await ElementosDelPlanoAsync(plano.Id, cancellationToken);
+        return MapearPlano(plano, elementos);
+    }
+
+    public async Task<PlanoDto?> EditarPlanoAsync(PlanoEditarDto dto, CancellationToken cancellationToken = default)
+    {
+        var plano = await _planos.GetByIdAsync(dto.Id, cancellationToken);
+        if (plano is null || plano.IsDeleted)
+        {
+            return null;
+        }
+
+        if (plano.EsPlantilla && dto.Activo)
+        {
+            throw new ReglaNegocioException("Una plantilla no puede ser el plano activo.");
+        }
+
+        plano.Nombre = dto.Nombre;
+        plano.Activo = dto.Activo;
+        plano.AnchoFondo = dto.AnchoFondo;
+        plano.AltoFondo = dto.AltoFondo;
+        plano.Rejilla = dto.Rejilla;
+        plano.Piso = dto.Piso;
+        plano.FondoOpacidad = dto.FondoOpacidad;
+        plano.FondoAjuste = dto.FondoAjuste;
+        plano.Version += 1;
+
+        var existentes = await _planoElementos.FindAsync(e => e.PlanoId == dto.Id, cancellationToken);
+        var idsExistentes = existentes.Select(e => e.Id).ToHashSet();
+
+        // Upsert: actualiza los elementos que llegan con Id conocido, crea los
+        // nuevos (Id nulo o generado por el cliente) y elimina los que ya no vienen.
+        // Se re-traen con GetByIdAsync (trackeados) para que los cambios persistan.
+        var idsRecibidos = new HashSet<Guid>();
+        foreach (var elemento in dto.Elementos)
+        {
+            if (elemento.Id is Guid id && idsExistentes.Contains(id))
+            {
+                var tracked = await _planoElementos.GetByIdAsync(id, cancellationToken);
+                if (tracked is not null)
+                {
+                    AplicarElemento(tracked, elemento);
+                    _planoElementos.Update(tracked);
+                    idsRecibidos.Add(id);
+                }
+                continue;
+            }
+
+            var nuevo = CrearElemento(elemento);
+            nuevo.PlanoId = dto.Id;
+            await _planoElementos.AddAsync(nuevo, cancellationToken);
+        }
+
+        foreach (var existente in existentes)
+        {
+            if (idsRecibidos.Contains(existente.Id))
+            {
+                continue;
+            }
+
+            var tracked = await _planoElementos.GetByIdAsync(existente.Id, cancellationToken);
+            if (tracked is not null)
+            {
+                _planoElementos.Remove(tracked);
+            }
+        }
+
+        // Plano activo único: al activar este, los demás quedan inactivos.
+        if (dto.Activo)
+        {
+            await DesactivarOtrosPlanosAsync(dto.Id, cancellationToken);
+        }
+
+        _planos.Update(plano);
+        await _planos.SaveChangesAsync(cancellationToken);
+
+        var actualizado = await _planos.GetByIdAsync(dto.Id, cancellationToken);
+        if (actualizado is null)
+        {
+            return null;
+        }
+
+        var elementosFinales = await ElementosDelPlanoAsync(dto.Id, cancellationToken);
+        return MapearPlano(actualizado, elementosFinales);
+    }
+
+    public async Task<bool> EliminarPlanoAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var plano = await _planos.GetByIdAsync(id, cancellationToken);
+        if (plano is null || plano.IsDeleted)
+        {
+            return false;
+        }
+
+        var fondo = plano.FondoImagenUrl;
+        plano.EliminarLogico();
+        _planos.Update(plano);
+        await _planos.SaveChangesAsync(cancellationToken);
+        await EliminarArchivoFondoAsync(fondo, cancellationToken);
+        return true;
+    }
+
+    public async Task<PlanoDto?> AsignarFondoPlanoAsync(
+        Guid id,
+        Stream contenido,
+        string nombreArchivo,
+        string? tipoContenido,
+        long tamano,
+        CancellationToken cancellationToken = default)
+    {
+        var plano = await _planos.GetByIdAsync(id, cancellationToken);
+        if (plano is null || plano.IsDeleted)
+        {
+            return null;
+        }
+
+        var memoria = new MemoryStream();
+        await contenido.CopyToAsync(memoria, cancellationToken);
+        var motivo = ValidadorImagenFondo.Validar(nombreArchivo, tipoContenido, memoria.Length, memoria.GetBuffer().AsSpan(0, (int)Math.Min(memoria.Length, 16)));
+        if (motivo is not null)
+        {
+            throw new ArgumentException(motivo);
+        }
+
+        memoria.Position = 0;
+        var guardado = await _almacenamiento.GuardarAsync(memoria, nombreArchivo, CarpetaPlanos, cancellationToken);
+
+        var anterior = plano.FondoImagenUrl;
+        plano.FondoImagenUrl = guardado.Url;
+        _planos.Update(plano);
+        await _planos.SaveChangesAsync(cancellationToken);
+        await EliminarArchivoFondoAsync(anterior, cancellationToken);
+
+        return MapearPlano(plano, await ElementosDelPlanoAsync(id, cancellationToken));
+    }
+
+    public async Task<PlanoDto?> QuitarFondoPlanoAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var plano = await _planos.GetByIdAsync(id, cancellationToken);
+        if (plano is null || plano.IsDeleted)
+        {
+            return null;
+        }
+
+        var anterior = plano.FondoImagenUrl;
+        plano.FondoImagenUrl = null;
+        _planos.Update(plano);
+        await _planos.SaveChangesAsync(cancellationToken);
+        await EliminarArchivoFondoAsync(anterior, cancellationToken);
+
+        return MapearPlano(plano, await ElementosDelPlanoAsync(id, cancellationToken));
+    }
+
+    public async Task<PlanoDto?> DuplicarPlanoAsync(Guid id, PlanoDuplicarDto dto, CancellationToken cancellationToken = default)
+    {
+        var origen = await _planos.GetByIdAsync(id, cancellationToken);
+        if (origen is null || origen.IsDeleted)
+        {
+            return null;
+        }
+
+        var nombre = string.IsNullOrWhiteSpace(dto.Nombre) ? $"{origen.Nombre} (copia)" : dto.Nombre.Trim();
+        if (nombre.Length > 60)
+        {
+            throw new ArgumentException("El nombre no puede superar los 60 caracteres.");
+        }
+
+        var copia = new Plano
+        {
+            Nombre = nombre,
+            Version = 1,
+            Activo = false,
+            EsPlantilla = dto.ComoPlantilla,
+            AnchoFondo = origen.AnchoFondo,
+            AltoFondo = origen.AltoFondo,
+            Rejilla = origen.Rejilla,
+            Piso = origen.Piso,
+            FondoOpacidad = origen.FondoOpacidad,
+            FondoAjuste = origen.FondoAjuste
+        };
+
+        // Los vínculos con mesas reales solo tienen sentido entre planos normales.
+        var conservarMesas = !origen.EsPlantilla && !dto.ComoPlantilla;
+        foreach (var e in await ElementosDelPlanoAsync(id, cancellationToken))
+        {
+            copia.Elementos.Add(new PlanoElemento
+            {
+                ZonaId = e.ZonaId,
+                MesaId = conservarMesas ? e.MesaId : null,
+                Tipo = e.Tipo,
+                Forma = e.Forma,
+                Color = e.Color,
+                Etiqueta = e.Etiqueta,
+                Z = e.Z,
+                PosX = e.PosX,
+                PosY = e.PosY,
+                Ancho = e.Ancho,
+                Alto = e.Alto,
+                Rotacion = e.Rotacion
+            });
+        }
+
+        if (!string.IsNullOrEmpty(origen.FondoImagenUrl))
+        {
+            var copiado = await _almacenamiento.CopiarAsync(RutaDeFondo(origen.FondoImagenUrl), cancellationToken);
+            copia.FondoImagenUrl = copiado.Url;
+        }
+
+        await _planos.AddAsync(copia, cancellationToken);
+        await _planos.SaveChangesAsync(cancellationToken);
+
+        return MapearPlano(copia, await ElementosDelPlanoAsync(copia.Id, cancellationToken));
+    }
+
+    private const string CarpetaPlanos = "planos";
+
+    /// <summary>La URL solo se asigna al subir un archivo, así que su último segmento es el nombre guardado.</summary>
+    private static string RutaDeFondo(string url) => $"{CarpetaPlanos}/{Path.GetFileName(url)}";
+
+    private async Task EliminarArchivoFondoAsync(string? url, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(url))
+        {
+            return;
+        }
+
+        try
+        {
+            await _almacenamiento.EliminarAsync(RutaDeFondo(url), cancellationToken);
+        }
+        catch (IOException)
+        {
+            // Un archivo huérfano no debe impedir la operación; se puede limpiar a mano.
+        }
+    }
+
+    // ================= Reservas =================
+
+    public async Task<ResultadoPaginado<ReservaDto>> ObtenerReservasAsync(
+        PaginacionRequest paginacion,
+        DateTime? desde = null,
+        DateTime? hasta = null,
+        EstadoReserva? estado = null,
+        CancellationToken cancellationToken = default)
+    {
+        var pagina = await _reservas.ObtenerPaginadoAsync(paginacion, desde, hasta, estado, cancellationToken);
+        var items = pagina.Items.Select(MapearReserva).ToList();
+        return ResultadoPaginado<ReservaDto>.Crear(items, pagina.Page, pagina.PageSize, pagina.TotalItems);
+    }
+
+    public async Task<ReservaDto?> ObtenerReservaAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var reserva = await _reservas.ObtenerConDetalleAsync(id, cancellationToken);
+        return reserva is null ? null : MapearReserva(reserva);
+    }
+
+    public async Task<ReservaDto> CrearReservaAsync(ReservaCrearDto dto, CancellationToken cancellationToken = default)
+    {
+        if (dto.Personas <= 0)
+        {
+            throw new ReglaNegocioException("El número de personas debe ser mayor que cero.");
+        }
+
+        if (dto.Mesas.Count == 0)
+        {
+            throw new ReglaNegocioException("La reserva debe incluir al menos una mesa.");
+        }
+
+        if (dto.FechaHora < _reloj.UtcNow)
+        {
+            throw new ReglaNegocioException("La fecha de la reserva no puede estar en el pasado.");
+        }
+
+        var mesasDistintas = dto.Mesas.Distinct().ToList();
+        Guid reservaId = default;
+
+        // Comprobar solapamientos y guardar son un solo paso atómico por mesa: sin el bloqueo, dos
+        // reservas simultáneas para la misma mesa y hora podrían pasar ambas la comprobación.
+        await _unitOfWork.EjecutarEnTransaccionAsync(async ct =>
+        {
+            var mesasPorId = new Dictionary<Guid, Mesa>();
+            foreach (var mesaId in mesasDistintas)
+            {
+                var mesa = await _mesas.GetByIdAsync(mesaId, ct)
+                    ?? throw new NoEncontradoException($"No existe la mesa {mesaId}.");
+                mesasPorId[mesaId] = mesa;
+            }
+
+            await _reservas.BloquearMesasAsync(mesasDistintas, ct);
+
+            // Evita doble reserva: la misma mesa no puede quedar asignada a dos reservas
+            // vigentes con intervalos presuntos solapados.
+            var horas = DetectorConflictosReserva.DuracionReservaPresuntaHoras;
+            var candidatas = mesasDistintas
+                .Select(mesaId => IntervaloReserva.Presunto(mesaId, dto.FechaHora, horas))
+                .ToList();
+            var existentes = await _reservas.ObtenerIntervalosActivosAsync(
+                mesasDistintas,
+                dto.FechaHora.AddHours(-horas),
+                dto.FechaHora.AddHours(horas),
+                horas,
+                ct);
+
+            foreach (var candidata in candidatas)
+            {
+                if (_detector.HayConflicto(existentes, candidata))
+                {
+                    var numero = mesasPorId[candidata.MesaId].Numero;
+                    throw new ConflictoException($"La mesa {numero} ya está reservada para ese horario.");
+                }
+            }
+
+            var reserva = new Reserva
+            {
+                FechaHora = dto.FechaHora,
+                Personas = dto.Personas,
+                Origen = dto.Origen,
+                NombreContacto = dto.NombreContacto,
+                Telefono = dto.Telefono,
+                Notas = dto.Notas,
+                Estado = EstadoReserva.Pendiente
+            };
+
+            foreach (var mesaId in mesasDistintas)
+            {
+                reserva.Mesas.Add(new ReservaMesa { MesaId = mesaId });
+            }
+
+            await _reservas.AgregarAsync(reserva, ct);
+            reservaId = reserva.Id;
+        }, cancellationToken);
+
+        var creada = await _reservas.ObtenerConDetalleAsync(reservaId, cancellationToken);
+        return MapearReserva(creada!);
+    }
+
+    public async Task<ReservaDto?> RegistrarPagoReservaAsync(
+        Guid reservaId,
+        ReservaPagoCrearDto dto,
+        CancellationToken cancellationToken = default)
+    {
+        var reserva = await _reservas.ObtenerConDetalleAsync(reservaId, cancellationToken);
+        if (reserva is null || reserva.IsDeleted)
+        {
+            return null;
+        }
+
+        if (dto.Monto <= 0)
+        {
+            throw new ReglaNegocioException("El monto de la seña debe ser mayor que cero.");
+        }
+
+        await _reservas.AgregarPagoAsync(new ReservaPago
+        {
+            ReservaId = reservaId,
+            MetodoPagoId = dto.MetodoPagoId,
+            Monto = dto.Monto,
+            Moneda = dto.Moneda,
+            ComprobanteUrl = dto.ComprobanteUrl,
+            Estado = EstadoReservaPago.Pendiente
+        }, cancellationToken);
+
+        await _reservas.SaveChangesAsync(cancellationToken);
+
+        var actualizada = await _reservas.ObtenerConDetalleAsync(reservaId, cancellationToken);
+        return actualizada is null ? null : MapearReserva(actualizada);
+    }
+
+    public async Task<ReservaDto?> ValidarPagoReservaAsync(
+        Guid reservaId,
+        Guid pagoId,
+        ValidarReservaPagoDto dto,
+        CancellationToken cancellationToken = default)
+    {
+        var reserva = await _reservas.ObtenerConDetalleAsync(reservaId, cancellationToken);
+        if (reserva is null || reserva.IsDeleted)
+        {
+            return null;
+        }
+
+        var pago = await _reservas.ObtenerPagoAsync(reservaId, pagoId, cancellationToken);
+        if (pago is null)
+        {
+            return null;
+        }
+
+        if (dto.Aprobar)
+        {
+            pago.Validar();
+            reserva.Confirmar();
+        }
+        else
+        {
+            pago.Rechazar();
+        }
+
+        await _reservas.SaveChangesAsync(cancellationToken);
+
+        var actualizada = await _reservas.ObtenerConDetalleAsync(reservaId, cancellationToken);
+        return actualizada is null ? null : MapearReserva(actualizada);
+    }
+
+    public async Task<ReservaDto?> CambiarEstadoReservaAsync(
+        Guid reservaId,
+        CambiarEstadoReservaDto dto,
+        CancellationToken cancellationToken = default)
+    {
+        var reserva = await _reservas.ObtenerConDetalleAsync(reservaId, cancellationToken);
+        if (reserva is null || reserva.IsDeleted)
+        {
+            return null;
+        }
+
+        switch (dto.Estado)
+        {
+            case EstadoReserva.Confirmada:
+                reserva.Confirmar();
+                break;
+            case EstadoReserva.Cancelada:
+                reserva.Cancelar();
+                break;
+            case EstadoReserva.Asistio:
+                reserva.MarcarAsistencia();
+                break;
+            case EstadoReserva.Finalizada:
+                reserva.Finalizar();
+                break;
+            default:
+                reserva.Estado = dto.Estado;
+                break;
+        }
+
+        await _reservas.SaveChangesAsync(cancellationToken);
+        return MapearReserva(reserva);
+    }
+
+    public async Task<ReservaDto?> MarcarReservaAtendidaAsync(Guid reservaId, CancellationToken cancellationToken = default)
+    {
+        var reserva = await _reservas.ObtenerConDetalleAsync(reservaId, cancellationToken);
+        if (reserva is null || reserva.IsDeleted)
+        {
+            return null;
+        }
+
+        if (reserva.Estado != EstadoReserva.Pendiente && reserva.Estado != EstadoReserva.Confirmada)
+        {
+            throw new ReglaNegocioException("Solo las reservas pendientes o confirmadas pueden marcarse como atendidas.");
+        }
+
+        reserva.Finalizar();
+        await _reservas.SaveChangesAsync(cancellationToken);
+
+        var actualizada = await _reservas.ObtenerConDetalleAsync(reservaId, cancellationToken);
+        return actualizada is null ? null : MapearReserva(actualizada);
+    }
+
+    // ================= Eventos =================
+
+    public async Task<IReadOnlyList<EventoDto>> ObtenerEventosAsync(bool soloPublicados = false, CancellationToken cancellationToken = default)
+    {
+        var eventos = await _eventos.FindAsync(
+            e => !e.IsDeleted && (!soloPublicados || e.Publicado),
+            cancellationToken);
+
+        return eventos.OrderBy(e => e.FechaInicio).Select(MapearEvento).ToList();
+    }
+
+    public async Task<EventoDto> CrearEventoAsync(EventoCrearDto dto, CancellationToken cancellationToken = default)
+    {
+        var evento = new Evento
+        {
+            Titulo = dto.Titulo,
+            Descripcion = dto.Descripcion,
+            FechaInicio = dto.FechaInicio,
+            FechaFin = dto.FechaFin,
+            ImagenUrl = dto.ImagenUrl,
+            Publicado = dto.Publicado,
+            Activo = true
+        };
+
+        await _eventos.AddAsync(evento, cancellationToken);
+        await _eventos.SaveChangesAsync(cancellationToken);
+        return MapearEvento(evento);
+    }
+
+    public async Task<EventoDto?> EditarEventoAsync(EventoEditarDto dto, CancellationToken cancellationToken = default)
+    {
+        var evento = await _eventos.GetByIdAsync(dto.Id, cancellationToken);
+        if (evento is null || evento.IsDeleted)
+        {
+            return null;
+        }
+
+        evento.Titulo = dto.Titulo;
+        evento.Descripcion = dto.Descripcion;
+        evento.FechaInicio = dto.FechaInicio;
+        evento.FechaFin = dto.FechaFin;
+        evento.ImagenUrl = dto.ImagenUrl;
+        evento.Publicado = dto.Publicado;
+        evento.Activo = dto.Activo;
+        _eventos.Update(evento);
+        await _eventos.SaveChangesAsync(cancellationToken);
+        return MapearEvento(evento);
+    }
+
+    public async Task<bool> EliminarEventoAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var evento = await _eventos.GetByIdAsync(id, cancellationToken);
+        if (evento is null || evento.IsDeleted)
+        {
+            return false;
+        }
+
+        evento.EliminarLogico();
+        _eventos.Update(evento);
+        await _eventos.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    // ================= Lista VIP =================
+
+    public async Task<IReadOnlyList<ListaVipDto>> ObtenerListaVipAsync(CancellationToken cancellationToken = default)
+    {
+        var vip = await _vip.GetAllAsync(cancellationToken);
+        return vip.Where(v => !v.IsDeleted).OrderBy(v => v.Nombre).Select(MapearVip).ToList();
+    }
+
+    public async Task<ListaVipDto> CrearVipAsync(ListaVipCrearDto dto, CancellationToken cancellationToken = default)
+    {
+        var vip = new ListaVip
+        {
+            Nombre = dto.Nombre,
+            ClienteId = dto.ClienteId,
+            Documento = dto.Documento,
+            Telefono = dto.Telefono,
+            Notas = dto.Notas,
+            Activo = true
+        };
+
+        await _vip.AddAsync(vip, cancellationToken);
+        await _vip.SaveChangesAsync(cancellationToken);
+        return MapearVip(vip);
+    }
+
+    public async Task<ListaVipDto?> EditarVipAsync(ListaVipEditarDto dto, CancellationToken cancellationToken = default)
+    {
+        var vip = await _vip.GetByIdAsync(dto.Id, cancellationToken);
+        if (vip is null || vip.IsDeleted)
+        {
+            return null;
+        }
+
+        vip.Nombre = dto.Nombre;
+        vip.ClienteId = dto.ClienteId;
+        vip.Documento = dto.Documento;
+        vip.Telefono = dto.Telefono;
+        vip.Notas = dto.Notas;
+        vip.Activo = dto.Activo;
+        _vip.Update(vip);
+        await _vip.SaveChangesAsync(cancellationToken);
+        return MapearVip(vip);
+    }
+
+    public async Task<bool> EliminarVipAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var vip = await _vip.GetByIdAsync(id, cancellationToken);
+        if (vip is null || vip.IsDeleted)
+        {
+            return false;
+        }
+
+        vip.EliminarLogico();
+        _vip.Update(vip);
+        await _vip.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    // ================= Entradas =================
+
+    public async Task<ResultadoPaginado<EntradaDto>> ObtenerEntradasAsync(
+        PaginacionRequest paginacion,
+        Guid? eventoId = null,
+        EstadoEntrada? estado = null,
+        CancellationToken cancellationToken = default)
+    {
+        var todas = await _entradas.FindAsync(
+            e => !e.IsDeleted
+                 && (eventoId == null || e.EventoId == eventoId)
+                 && (estado == null || e.Estado == estado),
+            cancellationToken);
+
+        var eventos = (await _eventos.GetAllAsync(cancellationToken)).ToDictionary(e => e.Id, e => e.Titulo);
+
+        var page = paginacion.PaginaNormalizada;
+        var size = paginacion.TamanoNormalizado;
+        var items = todas
+            .OrderByDescending(e => e.EmitidaEn)
+            .Skip((page - 1) * size)
+            .Take(size)
+            .Select(e => MapearEntrada(e, eventos.GetValueOrDefault(e.EventoId ?? Guid.Empty)))
+            .ToList();
+
+        return ResultadoPaginado<EntradaDto>.Crear(items, page, size, todas.Count);
+    }
+
+    public async Task<EntradaDto> EmitirEntradaAsync(EmitirEntradaDto dto, CancellationToken cancellationToken = default)
+    {
+        if (dto.Precio < 0)
+        {
+            throw new ReglaNegocioException("El precio de la entrada no puede ser negativo.");
+        }
+
+        var entrada = new Entrada
+        {
+            Codigo = $"ENT-{Guid.NewGuid().ToString("N")[..10].ToUpperInvariant()}",
+            EventoId = dto.EventoId,
+            ReservaId = dto.ReservaId,
+            ClienteId = dto.ClienteId,
+            Precio = dto.Precio,
+            Moneda = dto.Moneda,
+            Estado = EstadoEntrada.Valida,
+            EmitidaEn = _reloj.UtcNow
+        };
+
+        await _entradas.AddAsync(entrada, cancellationToken);
+        await _entradas.SaveChangesAsync(cancellationToken);
+
+        string? titulo = null;
+        if (entrada.EventoId is Guid eventoId)
+        {
+            var evento = await _eventos.GetByIdAsync(eventoId, cancellationToken);
+            titulo = evento?.Titulo;
+        }
+
+        return MapearEntrada(entrada, titulo);
+    }
+
+    public async Task<EntradaDto?> ValidarEntradaAsync(string codigo, CancellationToken cancellationToken = default)
+    {
+        var entradas = await _entradas.FindAsync(e => !e.IsDeleted && e.Codigo == codigo, cancellationToken);
+        var entrada = entradas.FirstOrDefault();
+        if (entrada is null)
+        {
+            return null;
+        }
+
+        var tracked = await _entradas.GetByIdAsync(entrada.Id, cancellationToken) ?? entrada;
+
+        try
+        {
+            tracked.Validar(_reloj.UtcNow);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new ReglaNegocioException(ex.Message);
+        }
+
+        _entradas.Update(tracked);
+        await _entradas.SaveChangesAsync(cancellationToken);
+
+        string? titulo = null;
+        if (tracked.EventoId is Guid eventoId)
+        {
+            var evento = await _eventos.GetByIdAsync(eventoId, cancellationToken);
+            titulo = evento?.Titulo;
+        }
+
+        return MapearEntrada(tracked, titulo);
+    }
+
+    public async Task<bool> CancelarEntradaAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var entrada = await _entradas.GetByIdAsync(id, cancellationToken);
+        if (entrada is null || entrada.IsDeleted)
+        {
+            return false;
+        }
+
+        entrada.Cancelar();
+        _entradas.Update(entrada);
+        await _entradas.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    // ================= Pedidos anticipados =================
+
+    public async Task<IReadOnlyList<PedidoAnticipadoDto>> ObtenerPedidosAsync(Guid reservaId, CancellationToken cancellationToken = default)
+    {
+        var pedidos = await _pedidos.FindAsync(p => !p.IsDeleted && p.ReservaId == reservaId, cancellationToken);
+        var variantes = (await _variantes.GetAllAsync(cancellationToken)).ToDictionary(v => v.Id, v => v);
+
+        return pedidos.Select(p =>
+        {
+            variantes.TryGetValue(p.VarianteId, out var variante);
+            return MapearPedido(p, variante);
+        }).ToList();
+    }
+
+    public async Task<PedidoAnticipadoDto> AgregarPedidoAsync(Guid reservaId, PedidoAnticipadoCrearDto dto, CancellationToken cancellationToken = default)
+    {
+        var reserva = await _reservas.ObtenerConDetalleAsync(reservaId, cancellationToken)
+            ?? throw new NoEncontradoException($"No existe la reserva {reservaId}.");
+
+        if (dto.Cantidad <= 0)
+        {
+            throw new ReglaNegocioException("La cantidad debe ser mayor que cero.");
+        }
+
+        var variante = await _variantes.GetByIdAsync(dto.VarianteId, cancellationToken)
+            ?? throw new NoEncontradoException($"No existe la variante {dto.VarianteId}.");
+
+        var pedido = new PedidoAnticipado
+        {
+            ReservaId = reserva.Id,
+            VarianteId = variante.Id,
+            Cantidad = dto.Cantidad,
+            PrecioUnitarioUSD = dto.PrecioUnitarioUSD ?? variante.PrecioVentaUSD
+        };
+
+        await _pedidos.AddAsync(pedido, cancellationToken);
+        await _pedidos.SaveChangesAsync(cancellationToken);
+        return MapearPedido(pedido, variante);
+    }
+
+    public async Task<bool> EliminarPedidoAsync(Guid reservaId, Guid pedidoId, CancellationToken cancellationToken = default)
+    {
+        var pedidos = await _pedidos.FindAsync(p => !p.IsDeleted && p.Id == pedidoId && p.ReservaId == reservaId, cancellationToken);
+        var pedido = pedidos.FirstOrDefault();
+        if (pedido is null)
+        {
+            return false;
+        }
+
+        var tracked = await _pedidos.GetByIdAsync(pedido.Id, cancellationToken) ?? pedido;
+        _pedidos.Remove(tracked);
+        await _pedidos.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    // ================= Mapeos =================
+
+    private static void AplicarElemento(PlanoElemento destino, PlanoElementoCrearDto dto)
+    {
+        destino.ZonaId = dto.ZonaId;
+        destino.MesaId = dto.MesaId;
+        destino.Tipo = dto.Tipo;
+        destino.Forma = dto.Forma;
+        destino.Color = dto.Color;
+        destino.Etiqueta = dto.Etiqueta;
+        destino.Z = dto.Z;
+        destino.PosX = dto.PosX;
+        destino.PosY = dto.PosY;
+        destino.Ancho = dto.Ancho;
+        destino.Alto = dto.Alto;
+        destino.Rotacion = dto.Rotacion;
+    }
+
+    private static PlanoElemento CrearElemento(PlanoElementoCrearDto dto)
+    {
+        var elemento = new PlanoElemento();
+        AplicarElemento(elemento, dto);
+        return elemento;
+    }
+
+    private static ZonaDto MapearZona(Zona z) => new(z.Id, z.Nombre, z.Tipo, z.Activo, z.Color, z.PosX, z.PosY, z.Ancho, z.Alto);
+
+    private static MesaDto MapearMesa(Mesa m, string zonaNombre, bool disponible, Guid? cuentaId = null, bool reservada = false)
+        => new(m.Id, m.ZonaId, zonaNombre, m.Numero, m.Capacidad, m.Forma, m.PosX, m.PosY, m.Ancho, m.Alto, m.Activa, disponible, cuentaId, reservada);
+
+    private static PlanoDto MapearPlano(Plano p, IReadOnlyList<PlanoElemento> elementos)
+        => new(p.Id, p.Nombre, p.Version, p.Activo, p.AnchoFondo, p.AltoFondo, p.Rejilla, p.Piso,
+            elementos.OrderBy(e => e.Z).Select(e => new PlanoElementoDto(
+                e.Id, e.ZonaId, e.MesaId, e.Tipo, e.Forma, e.Color, e.Etiqueta, e.Z, e.PosX, e.PosY, e.Ancho, e.Alto, e.Rotacion)).ToList(),
+            p.FondoImagenUrl, p.FondoOpacidad, p.FondoAjuste, p.EsPlantilla);
+
+    private static PlanoDto MapearPlano(Plano p) => MapearPlano(p, p.Elementos.ToList());
+
+    private async Task<IReadOnlyList<PlanoElemento>> ElementosDelPlanoAsync(Guid planoId, CancellationToken cancellationToken)
+        => await _planoElementos.FindAsync(e => !e.IsDeleted && e.PlanoId == planoId, cancellationToken);
+
+    /// <summary>Desactiva los demás planos para garantizar un único plano activo.</summary>
+    private async Task DesactivarOtrosPlanosAsync(Guid exceptoId, CancellationToken cancellationToken)
+    {
+        var otros = await _planos.FindAsync(p => !p.IsDeleted && p.Id != exceptoId, cancellationToken);
+        foreach (var otro in otros)
+        {
+            var tracked = await _planos.GetByIdAsync(otro.Id, cancellationToken);
+            if (tracked is not null && tracked.Activo)
+            {
+                tracked.Activo = false;
+                _planos.Update(tracked);
+            }
+        }
+    }
+
+    private static ReservaDto MapearReserva(Reserva r)
+        => new(
+            r.Id,
+            r.FechaHora,
+            r.Personas,
+            r.Estado,
+            r.Origen,
+            r.NombreContacto,
+            r.Telefono,
+            r.Notas,
+            r.Mesas.Select(rm => new ReservaMesaResumenDto(
+                rm.MesaId,
+                rm.Mesa?.Numero ?? string.Empty,
+                rm.Mesa?.Zona?.Nombre ?? string.Empty)).ToList(),
+            r.Pagos.Select(p => new ReservaPagoDto(
+                p.Id,
+                p.MetodoPagoId,
+                p.MetodoPago?.Nombre ?? string.Empty,
+                p.Monto,
+                p.Moneda,
+                p.ComprobanteUrl,
+                p.Estado)).ToList());
+
+    private static EventoDto MapearEvento(Evento e)
+        => new(e.Id, e.Titulo, e.Descripcion, e.FechaInicio, e.FechaFin, e.ImagenUrl, e.Publicado, e.Activo);
+
+    private static ListaVipDto MapearVip(ListaVip v)
+        => new(v.Id, v.ClienteId, v.Nombre, v.Documento, v.Telefono, v.Notas, v.Activo);
+
+    private static EntradaDto MapearEntrada(Entrada e, string? eventoTitulo)
+        => new(e.Id, e.Codigo, e.EventoId, eventoTitulo, e.ReservaId, e.ClienteId, e.Precio, e.Moneda, e.Estado, e.EmitidaEn, e.UsadaEn);
+
+    private static PedidoAnticipadoDto MapearPedido(PedidoAnticipado p, ProductoVariante? variante)
+        => new(p.Id, p.VarianteId, variante?.Sku ?? string.Empty, variante?.Producto?.Nombre ?? variante?.Nombre ?? string.Empty, p.Cantidad, p.PrecioUnitarioUSD, p.Cantidad * p.PrecioUnitarioUSD);
+}

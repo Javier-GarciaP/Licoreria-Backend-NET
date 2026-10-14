@@ -78,7 +78,7 @@ export default defineConfig({
             },
             {
               label: 'Seguridad',
-              items: ['dev/05-seguridad/jwt', 'dev/05-seguridad/rbac'],
+              items: ['dev/05-seguridad/jwt', 'dev/05-seguridad/rbac', 'dev/05-seguridad/auditoria'],
             },
             {
               label: 'Módulos',

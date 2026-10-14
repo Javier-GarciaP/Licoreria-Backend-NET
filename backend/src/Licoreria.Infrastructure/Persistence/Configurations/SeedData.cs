@@ -25,8 +25,34 @@ internal static class SeedData
     public static readonly Guid UnidadUnidad = Guid.Parse("66666666-6666-6666-6666-666666666662");
     public static readonly Guid UnidadTobo = Guid.Parse("66666666-6666-6666-6666-666666666663");
     public static readonly Guid UnidadPlato = Guid.Parse("66666666-6666-6666-6666-666666666664");
+    public static readonly Guid UnidadTrago = Guid.Parse("66666666-6666-6666-6666-666666666665");
+
+    // --- Impuestos ---
+    public static readonly Guid ImpuestoIva = Guid.Parse("77777777-7777-7777-7777-777777777771");
+    public static readonly Guid ImpuestoIgtf = Guid.Parse("77777777-7777-7777-7777-777777777772");
+
+    // --- Listas de precio ---
+    public static readonly Guid ListaDetal = Guid.Parse("88888888-8888-8888-8888-888888888881");
+    public static readonly Guid ListaMayorista = Guid.Parse("88888888-8888-8888-8888-888888888882");
 
     // --- Usuarios ---
     public static readonly Guid UsuarioAdmin = Guid.Parse("20000000-0000-0000-0000-000000000001");
     public static readonly Guid UsuarioCajero = Guid.Parse("20000000-0000-0000-0000-000000000002");
+    public static readonly Guid UsuarioMesero = Guid.Parse("20000000-0000-0000-0000-000000000003");
+    public static readonly Guid UsuarioBarra = Guid.Parse("20000000-0000-0000-0000-000000000004");
+    public static readonly Guid UsuarioCocina = Guid.Parse("20000000-0000-0000-0000-000000000005");
+    public static readonly Guid UsuarioHost = Guid.Parse("20000000-0000-0000-0000-000000000006");
+    public static readonly Guid UsuarioEditor = Guid.Parse("20000000-0000-0000-0000-000000000007");
+
+    // --- Tasas de cambio ---
+    public static readonly Guid TasaBcv = Guid.Parse("aaaa0000-0000-0000-0000-000000000001");
+    public static readonly Guid TasaParalelo = Guid.Parse("aaaa0000-0000-0000-0000-000000000002");
+
+    // --- Métodos de pago ---
+    public static readonly Guid PagoEfectivoUsd = Guid.Parse("bbbb0000-0000-0000-0000-000000000001");
+    public static readonly Guid PagoEfectivoBs = Guid.Parse("bbbb0000-0000-0000-0000-000000000002");
+    public static readonly Guid PagoPagoMovil = Guid.Parse("bbbb0000-0000-0000-0000-000000000003");
+    public static readonly Guid PagoZelle = Guid.Parse("bbbb0000-0000-0000-0000-000000000004");
+    public static readonly Guid PagoPunto = Guid.Parse("bbbb0000-0000-0000-0000-000000000005");
+    public static readonly Guid PagoCredito = Guid.Parse("bbbb0000-0000-0000-0000-000000000006");
 }

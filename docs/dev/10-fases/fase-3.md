@@ -51,8 +51,10 @@ Respuestas HTTP:
 
 | Usuario | Contraseña | Rol de dominio | Rol de seguridad |
 | :--- | :--- | :--- | :--- |
-| `admin@licoreria.com` | `admin123` | Administrador | `Admin` |
-| `cajero1@licoreria.com` | `cajero123` | Cajero | `Employee` |
+| `admin@licoreria.com` | `demo123` | Administrador | `Admin` |
+| `cajero1@licoreria.com` | `demo123` | Cajero | `Employee` |
+
+> Todas las cuentas de prueba comparten la misma contraseña: `demo123`.
 
 ## Evidencia (Postman)
 

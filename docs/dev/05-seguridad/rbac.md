@@ -21,7 +21,7 @@ Los permisos se nombran `modulo:accion`:
 | Módulo | Permisos |
 | :--- | :--- |
 | Catálogo | `catalog:read`, `catalog:write` |
-| Inventario | `inventory:read`, `inventory:write`, `inventory:merma` |
+| Inventario | `inventory:read`, `inventory:write`, `inventory:merma`, `inventory:open` |
 | Compras | `purchasing:read`, `purchasing:write` |
 | Ventas | `sales:read`, `sales:write`, `sales:void` |
 | Cuentas | `account:read`, `account:abono`, `account:close` |
@@ -41,11 +41,13 @@ Los permisos se nombran `modulo:accion`:
 | `catalog:write` | ✅ | — | — | — | — | — | — |
 | `inventory:read` | ✅ | ✅ | ✅ | ✅ | ✅ | — | — |
 | `inventory:merma` | ✅ | ✅ | ✅ | — | — | — | — |
+| `inventory:open` (destapar y descartar envases) | ✅ | ✅ | — | ✅ | — | — | — |
 | `sales:write` | ✅ | ✅ | ✅ | — | — | — | — |
 | `account:abono` | ✅ | ✅ | — | — | — | — | — |
 | `account:close` | ✅ | ✅ | — | — | — | — | — |
 | `cash:open` / `cash:close` | ✅ | ✅ | — | — | — | — | — |
-| `club:manage` | ✅ | — | — | — | — | ✅ | — |
+| `club:manage` (lista VIP y entradas) | ✅ | — | — | — | — | ✅ | — |
+| `club:layout` (editar planos, zonas y mesas) | ✅ | — | — | — | — | — | — |
 | `reservation:manage` | ✅ | ✅ | ✅ | — | — | ✅ | — |
 | `content:publish` | ✅ | — | — | — | — | — | ✅ |
 | `ai:approve` | ✅ | — | — | — | — | — | — |

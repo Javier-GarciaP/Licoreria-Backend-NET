@@ -79,7 +79,7 @@ POST /api/v1/ventas
 | Caja | `/api/v1/sesiones-caja`, `/api/v1/movimientos-caja` |
 | Club | `/api/v1/zonas`, `/api/v1/mesas`, `/api/v1/planos`, `/api/v1/reservas` |
 | CRM | `/api/v1/clientes` |
-| Finanzas | `/api/v1/tasas-cambio`, `/api/v1/monedas` |
+| Finanzas | `/api/v1/tasas-cambio` |
 | Contenido | `/api/v1/paginas`, `/api/v1/eventos`, `/api/v1/menu-digital` |
 | IA | `/api/v1/ai/generaciones`, `/api/v1/ai/planos` |
 | Seguridad | `/api/v1/auth`, `/api/v1/usuarios`, `/api/v1/roles` |

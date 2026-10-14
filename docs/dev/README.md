@@ -13,7 +13,7 @@ web y un módulo de IA.
 | [01 · Requerimientos](01-requerimientos/funcionales.md) | Requerimientos funcionales y no funcionales, historias de usuario. |
 | [02 · Arquitectura](02-arquitectura/onion.md) | Onion Architecture, diagramas C4 y patrones. |
 | [03 · Base de Datos](03-base-datos/modelo-er.md) | Modelo entidad-relación y estrategia PostgreSQL. |
-| [04 · API](04-api/convenciones.md) | Convenciones REST y errores RFC 7807. |
+| [04 · API](04-api/convenciones.md) | Convenciones REST, errores RFC 7807, [referencia de endpoints](04-api/endpoints.md) y [guía para el frontend](04-api/guia-frontend.md). |
 | [05 · Seguridad](05-seguridad/jwt.md) | Autenticación JWT y control de acceso por roles. |
 | [06 · Módulos](06-modulos/catalogo.md) | Reglas y flujos de cada módulo de negocio. |
 | [07 · Frontend](07-frontend/overview.md) | Aplicaciones React y design system. |

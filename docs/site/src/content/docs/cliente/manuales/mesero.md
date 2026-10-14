@@ -10,9 +10,12 @@ title: Manual del mesero
 
 ## Tomar el pedido
 
-1. Busca el producto por nombre o código de barras.
-2. Agrega los ítems; el sistema los envía automáticamente a **barra** o **cocina**.
-3. Puedes seguir agregando ítems durante la estadía.
+1. Busca el producto por nombre o categoría.
+2. Toca el producto para agregarlo; cada ítem queda en su **área** (Barra/Cocina).
+   - El área se toma del producto registrado en el catálogo (modo **Auto**).
+   - Puedes forzarla con el interruptor Barra/Cocina o mover un ítem con →/←.
+3. Revisa las bolsas de pendientes y envía: se crea **una comanda por área**.
+4. Puedes seguir agregando ítems durante la estadía.
 
 ## Cargar una reserva
 

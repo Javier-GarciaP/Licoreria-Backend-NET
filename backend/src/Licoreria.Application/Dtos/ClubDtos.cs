@@ -1,0 +1,272 @@
+using Licoreria.Domain.Enums;
+
+namespace Licoreria.Application.Dtos;
+
+public sealed record ZonaDto(
+    Guid Id,
+    string Nombre,
+    TipoZona Tipo,
+    bool Activo,
+    string? Color,
+    decimal PosX,
+    decimal PosY,
+    decimal Ancho,
+    decimal Alto);
+
+public sealed record ZonaCrearDto(
+    string Nombre,
+    TipoZona Tipo,
+    bool Activo = true,
+    string? Color = null,
+    decimal PosX = 0,
+    decimal PosY = 0,
+    decimal Ancho = 0,
+    decimal Alto = 0);
+
+public sealed record ZonaEditarDto(
+    Guid Id,
+    string Nombre,
+    TipoZona Tipo,
+    bool Activo,
+    string? Color = null,
+    decimal PosX = 0,
+    decimal PosY = 0,
+    decimal Ancho = 0,
+    decimal Alto = 0);
+
+public sealed record MesaDto(
+    Guid Id,
+    Guid ZonaId,
+    string ZonaNombre,
+    string Numero,
+    int Capacidad,
+    string Forma,
+    decimal PosX,
+    decimal PosY,
+    decimal Ancho,
+    decimal Alto,
+    bool Activa,
+    bool Disponible,
+    Guid? CuentaId = null,
+    bool Reservada = false);
+
+public sealed record MesaCrearDto(
+    Guid ZonaId,
+    string Numero,
+    int Capacidad,
+    string Forma = "redonda",
+    decimal PosX = 0,
+    decimal PosY = 0,
+    decimal Ancho = 1,
+    decimal Alto = 1);
+
+public sealed record MesaEditarDto(
+    Guid Id,
+    Guid ZonaId,
+    string Numero,
+    int Capacidad,
+    string Forma,
+    decimal PosX,
+    decimal PosY,
+    decimal Ancho,
+    decimal Alto,
+    bool Activa);
+
+public sealed record PlanoElementoDto(
+    Guid Id,
+    Guid? ZonaId,
+    Guid? MesaId,
+    string Tipo,
+    string? Forma,
+    string? Color,
+    string? Etiqueta,
+    int Z,
+    decimal PosX,
+    decimal PosY,
+    decimal Ancho,
+    decimal Alto,
+    decimal Rotacion);
+
+public sealed record PlanoElementoCrearDto(
+    Guid? ZonaId,
+    string Tipo,
+    string? Etiqueta,
+    decimal PosX,
+    decimal PosY,
+    decimal Ancho,
+    decimal Alto,
+    decimal Rotacion = 0,
+    string? Forma = null,
+    string? Color = null,
+    int Z = 0,
+    Guid? MesaId = null,
+    Guid? Id = null);
+
+public sealed record PlanoDto(
+    Guid Id,
+    string Nombre,
+    int Version,
+    bool Activo,
+    decimal AnchoFondo,
+    decimal AltoFondo,
+    decimal Rejilla,
+    string Piso,
+    IReadOnlyList<PlanoElementoDto> Elementos,
+    string? FondoImagenUrl = null,
+    decimal FondoOpacidad = 0.5m,
+    string FondoAjuste = "contener",
+    bool EsPlantilla = false);
+
+public sealed record PlanoCrearDto(
+    string Nombre,
+    IReadOnlyList<PlanoElementoCrearDto> Elementos,
+    decimal AnchoFondo = 24m,
+    decimal AltoFondo = 16m,
+    decimal Rejilla = 0.5m,
+    string Piso = "madera",
+    decimal FondoOpacidad = 0.5m,
+    string FondoAjuste = "contener");
+
+public sealed record PlanoEditarDto(
+    Guid Id,
+    string Nombre,
+    bool Activo,
+    IReadOnlyList<PlanoElementoCrearDto> Elementos,
+    decimal AnchoFondo = 24m,
+    decimal AltoFondo = 16m,
+    decimal Rejilla = 0.5m,
+    string Piso = "madera",
+    decimal FondoOpacidad = 0.5m,
+    string FondoAjuste = "contener");
+
+/// <summary>Opciones al duplicar un plano; sin nombre se usa el original seguido de "(copia)".</summary>
+public sealed record PlanoDuplicarDto(string? Nombre = null, bool ComoPlantilla = false);
+
+public sealed record ReservaMesaResumenDto(Guid MesaId, string Numero, string Zona);
+
+public sealed record ReservaPagoDto(
+    Guid Id,
+    Guid MetodoPagoId,
+    string MetodoPago,
+    decimal Monto,
+    Moneda Moneda,
+    string? ComprobanteUrl,
+    EstadoReservaPago Estado);
+
+public sealed record ReservaDto(
+    Guid Id,
+    DateTime FechaHora,
+    int Personas,
+    EstadoReserva Estado,
+    OrigenReserva Origen,
+    string NombreContacto,
+    string Telefono,
+    string? Notas,
+    IReadOnlyList<ReservaMesaResumenDto> Mesas,
+    IReadOnlyList<ReservaPagoDto> Pagos);
+
+public sealed record ReservaCrearDto(
+    DateTime FechaHora,
+    int Personas,
+    IReadOnlyList<Guid> Mesas,
+    string NombreContacto,
+    string Telefono,
+    OrigenReserva Origen = OrigenReserva.Web,
+    string? Notas = null);
+
+public sealed record ReservaPagoCrearDto(
+    Guid MetodoPagoId,
+    decimal Monto,
+    Moneda Moneda = Moneda.USD,
+    string? ComprobanteUrl = null);
+
+public sealed record ValidarReservaPagoDto(bool Aprobar);
+
+public sealed record CambiarEstadoReservaDto(EstadoReserva Estado);
+
+public sealed record EventoDto(
+    Guid Id,
+    string Titulo,
+    string Descripcion,
+    DateTime FechaInicio,
+    DateTime? FechaFin,
+    string? ImagenUrl,
+    bool Publicado,
+    bool Activo);
+
+public sealed record EventoCrearDto(
+    string Titulo,
+    string Descripcion,
+    DateTime FechaInicio,
+    DateTime? FechaFin,
+    string? ImagenUrl,
+    bool Publicado = false);
+
+public sealed record EventoEditarDto(
+    Guid Id,
+    string Titulo,
+    string Descripcion,
+    DateTime FechaInicio,
+    DateTime? FechaFin,
+    string? ImagenUrl,
+    bool Publicado,
+    bool Activo);
+
+public sealed record ListaVipDto(
+    Guid Id,
+    Guid? ClienteId,
+    string Nombre,
+    string? Documento,
+    string? Telefono,
+    string? Notas,
+    bool Activo);
+
+public sealed record ListaVipCrearDto(
+    string Nombre,
+    Guid? ClienteId = null,
+    string? Documento = null,
+    string? Telefono = null,
+    string? Notas = null);
+
+public sealed record ListaVipEditarDto(
+    Guid Id,
+    string Nombre,
+    Guid? ClienteId,
+    string? Documento,
+    string? Telefono,
+    string? Notas,
+    bool Activo);
+
+public sealed record EntradaDto(
+    Guid Id,
+    string Codigo,
+    Guid? EventoId,
+    string? EventoTitulo,
+    Guid? ReservaId,
+    Guid? ClienteId,
+    decimal Precio,
+    Moneda Moneda,
+    EstadoEntrada Estado,
+    DateTime EmitidaEn,
+    DateTime? UsadaEn);
+
+public sealed record EmitirEntradaDto(
+    decimal Precio,
+    Moneda Moneda = Moneda.USD,
+    Guid? EventoId = null,
+    Guid? ReservaId = null,
+    Guid? ClienteId = null);
+
+public sealed record PedidoAnticipadoDto(
+    Guid Id,
+    Guid VarianteId,
+    string Sku,
+    string Nombre,
+    decimal Cantidad,
+    decimal PrecioUnitarioUSD,
+    decimal SubtotalUSD);
+
+public sealed record PedidoAnticipadoCrearDto(
+    Guid VarianteId,
+    decimal Cantidad,
+    decimal? PrecioUnitarioUSD = null);

@@ -1,26 +1,18 @@
-namespace Licoreria.Domain.Services;
+using Licoreria.Domain.Enums;
 
-/// <summary>
-/// Motivos por los que un producto deja de ser vendible.
-/// </summary>
-public enum MotivoMerma
-{
-    Danado = 1,
-    Partido = 2,
-    Vencido = 3
-}
+namespace Licoreria.Domain.Services;
 
 /// <summary>
 /// Movimiento de inventario sugerido a partir de una merma.
 /// </summary>
-public sealed record MovimientoInventarioSugerido(string Tipo, int Cantidad, string Motivo);
+public sealed record MovimientoInventarioSugerido(string Tipo, decimal Cantidad, string Motivo);
 
 /// <summary>
 /// Resultado del análisis de una merma y su eventual reposición.
 /// </summary>
 public sealed record ResultadoMerma(
     IReadOnlyList<MovimientoInventarioSugerido> Movimientos,
-    int TotalUnidadesDescontadas);
+    decimal TotalUnidadesDescontadas);
 
 /// <summary>
 /// Evalúa una merma y determina los movimientos de inventario necesarios.
@@ -28,7 +20,7 @@ public sealed record ResultadoMerma(
 /// </summary>
 public sealed class EvaluadorMerma
 {
-    public ResultadoMerma Evaluar(MotivoMerma motivo, int cantidad, bool reponerSinCobro)
+    public ResultadoMerma Evaluar(MotivoMerma motivo, decimal cantidad, bool reponerSinCobro)
     {
         if (cantidad <= 0)
         {

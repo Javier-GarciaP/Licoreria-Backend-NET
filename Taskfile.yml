@@ -36,6 +36,17 @@ tasks:
     cmds:
       - dotnet test Licoreria.slnx
 
+  backend:openapi:
+    desc: Genera el contrato OpenAPI desde el código y exporta el YAML
+    cmds:
+      - dotnet build backend/src/Licoreria.WebAPI/Licoreria.WebAPI.csproj -t:GenerateOpenApiDocuments
+      - node scripts/openapi/generar-contrato.mjs
+
+  backend:openapi:check:
+    desc: Verifica que el contrato OpenAPI esté sincronizado con los controladores
+    cmds:
+      - node scripts/openapi/verificar-paridad.mjs
+
   # ---------- Base de datos ----------
   db:up:
     desc: Levanta PostgreSQL con Docker Compose
@@ -74,3 +85,15 @@ tasks:
     dir: frontend
     cmds:
       - npm run dev
+
+  frontend:build:
+    desc: Compila las apps del frontend (admin + public-web)
+    dir: frontend
+    cmds:
+      - npm run build
+
+  frontend:typecheck:
+    desc: Verifica tipos del frontend
+    dir: frontend
+    cmds:
+      - npm run typecheck

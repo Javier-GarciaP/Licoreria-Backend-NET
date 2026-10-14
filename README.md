@@ -26,7 +26,7 @@ Plataforma web integral para la gestión de un local de **licorería y discoteca
 ```
 .
 ├── backend/          # Solución .NET (Onion: Domain, Application, Infrastructure, WebAPI)
-├── frontend/         # Apps React (public-web, admin) y paquetes compartidos
+├── frontend/         # Apps React (admin, public-web, servicio) y paquetes compartidos
 ├── database/         # Scripts PostgreSQL, seeds y diagramas
 ├── openapi/          # Contrato OpenAPI de la API
 ├── docs/             # Documentación
@@ -74,114 +74,79 @@ cd docs/site && npm install && npm run dev
 > La persistencia usa **PostgreSQL** (ver `docker-compose.yml`); las migraciones se
 > aplican automáticamente al arrancar la API.
 
----
+### Puertos del despliegue Docker
 
-## Fase 1 · Fundamentos y resiliencia REST
+`docker compose up -d --build` levanta los servicios con estos puertos
+(configurables en `.env`, ver `.env.example`):
 
-Lo logrado:
+| Servicio | Contenido | Puerto |
+| :--- | :--- | :---: |
+| `api` | WebAPI .NET (migraciones + seed al arrancar) | `5190` |
+| `admin` | Panel interno (SPA nginx) | `4173` |
+| `public-web` | Web pública (SPA nginx) | `4174` |
+| `servicio` | Web de servicio: mesonero / KDS (SPA nginx) | `4175` |
+| `edge` | Reverse proxy nginx (API + `/hubs` + web pública) | `8090` |
+| `postgres` | PostgreSQL 15 | `5432` |
 
-- **Onion Architecture** en 4 proyectos (`Domain` sin dependencias de frameworks).
-- **Inyección de dependencias** con ciclos de vida `Transient`, `Scoped` y `Singleton`
-  y validación de scopes (sin dependencias cautivas).
-- **Middleware global RFC 7807** (`application/problem+json`) con títulos en español,
-  mapeo de `404/400/401/500` y ocultamiento de trazas en producción.
-- **CORS** configurable desde `appsettings.json` para el frontend React.
-- **Lógica de dominio** con C# 14: salud de stock, generador de SKU, cuenta/abonos,
-  merma/cortesía, conversión de moneda, estados de comanda y conflictos de reserva.
-- **61 pruebas unitarias** (xUnit) ejecutadas correctamente.
+Swagger UI queda habilitado en el despliegue Docker (`Swagger:Enabled=true`) en
+`http://localhost:5190/swagger`.
 
-### Evidencia (RFC 7807 · Postman)
-
-![Respuesta de la API](docs/assets/evidencias/fase-1/postman1.jpeg)
-
-![Respuesta RFC 7807](docs/assets/evidencias/fase-1/postman2.jpeg)
-
-Colección: [`Licoreria_Fase1_Postman_Collection.json`](docs/assets/evidencias/Licoreria_Fase1_Postman_Collection.json).
-
-📄 [Ver documentación detallada de la Fase 1 →](docs/dev/10-fases/fase-1.md)
-
----
-
-## Fase 2 · Persistencia PostgreSQL 15
-
-Lo logrado:
-
-- **PostgreSQL 15** con Npgsql, migraciones versionadas y `MigrateAsync` al arrancar.
-- **Fluent API** por entidad (tablas en minúsculas, UUID, `numeric(18,2)`, índice único
-  en `Sku`, `DeleteBehavior.Restrict`), sin Data Annotations en el dominio.
-- **Data seeding** de categorías, marcas, unidades, productos y usuarios.
-- Repositorios con **`AsNoTracking`** y script DDL en
-  [`database/scripts/initial-infrastructure-catalog.sql`](database/scripts/initial-infrastructure-catalog.sql).
-
-### Evidencia (PostgreSQL · DBeaver)
-
-**Tablas creadas:**
-
-![Tablas](docs/assets/evidencias/fase-2/tablas.png)
-
-**DDL con restricciones (UUID, `numeric(18,2)`, PK/FK, único):**
-
-![DDL de productos](docs/assets/evidencias/fase-2/genera-sql-productos.png)
-
-**Datos sembrados:**
-
-![Siembra de datos](docs/assets/evidencias/fase-2/siembra-datos.png)
-
-📄 [Ver documentación detallada de la Fase 2 →](docs/dev/10-fases/fase-2.md)
-
-## Fase 3 · Seguridad JWT, RBAC y validación
-
-Lo logrado:
-
-- Login `POST /api/auth/login` con **JWT HMAC-SHA256** y contraseñas **PBKDF2 + salt**.
-- **RBAC**: `Admin` (CRUD total) y `Employee` (sin eliminación).
-- **401** sin token y **403** con rol insuficiente.
-- Validación con **FluentValidation** → **400** con errores por campo.
-
-Credenciales de prueba: `admin@licoreria.com` / `admin123` (Admin) y
-`cajero1@licoreria.com` / `cajero123` (Employee).
-
-### Evidencia (Postman)
-
-| Login Admin | Login Employee |
-| :---: | :---: |
-| ![Login Admin](docs/assets/evidencias/fase-3/login-admin.png) | ![Login Employee](docs/assets/evidencias/fase-3/login-empleado.png) |
-
-**Listar productos con Employee (200):**
-
-![Listar productos](docs/assets/evidencias/fase-3/fase3-listrarproductos.png)
-
-**Endpoint protegido sin token (401):**
-
-![Sin token 401](docs/assets/evidencias/fase-3/fase3-401.png)
-
-**Eliminar con rol Employee (403):**
-
-![Eliminar con Employee 403](docs/assets/evidencias/fase-3/fase3-403.png)
-
-**Producto con precio negativo (400 con validación):**
-
-![Precio negativo 400](docs/assets/evidencias/fase-3/fase3-400.png)
-
-Colección: [`Licoreria_Fase3_Postman_Collection.json`](docs/assets/evidencias/Licoreria_Fase3_Postman_Collection.json).
-
-📄 [Ver documentación detallada de la Fase 3 →](docs/dev/10-fases/fase-3.md)
+Credenciales de prueba (contraseña `demo123`): `admin@licoreria.com`, `cajero1@licoreria.com`,
+`mesero1@licoreria.com`, `barra1@licoreria.com`, `cocina1@licoreria.com`, `host1@licoreria.com`
+y `editor1@licoreria.com`.
 
 ---
 
 ## Fases del proyecto
 
-| Fase | Alcance | Estado |
-| :---: | :--- | :---: |
-| 1 | Fundamentos, DI, RFC 7807 y dominio | Completada |
-| 2 | Persistencia PostgreSQL 15 y seeding | Completada |
-| 3 | Seguridad JWT / RBAC y validación | Completada |
-| 4 | Frontend React | Pendiente |
-| 5 | Despliegue | Pendiente |
+Cada fase tiene su propio documento con alcance, decisiones, evidencias y pruebas.
 
-> **Nota:** Las fases de desarrollo académico se rigen por lo indicado por el docente.
-> Las mejoras de estructura, documentación e infraestructura de este repositorio son
-> independientes de dichas fases. Ver [roadmap](docs/dev/10-fases/roadmap.md).
+| Fase | Alcance | Estado | Documentación |
+| :---: | :--- | :---: | :--- |
+| 1 | Fundamentos, DI, RFC 7807 y dominio | Completada | [fase-1](docs/dev/10-fases/fase-1.md) |
+| 2 | Persistencia PostgreSQL 15 y seeding | Completada | [fase-2](docs/dev/10-fases/fase-2.md) |
+| 3 | Seguridad JWT / RBAC y validación | Completada | [fase-3](docs/dev/10-fases/fase-3.md) |
+| 4 | Frontend React + Docker | Completada | [fase-4](docs/dev/10-fases/fase-4.md) |
+| 5 | Despliegue | Pendiente | [roadmap](docs/dev/10-fases/roadmap.md) |
+
+> Las fases académicas se rigen por lo indicado por el docente; las mejoras de estructura,
+> documentación e infraestructura del repositorio son independientes. Ver el
+> [roadmap](docs/dev/10-fases/roadmap.md). La API final está descrita en la
+> [guía para el frontend](docs/dev/04-api/guia-frontend.md).
+
+---
+
+## Arreglo de bugs y mejoras por spec (OpenSpec)
+
+Las mejoras posteriores a la Fase 4 (observaciones del docente y bugs detectados) se planifican
+como cambios [OpenSpec](openspec/changes) y se implementan con `/opsx:apply <cambio>`.
+
+### Estado
+
+| Spec | Qué resuelve | Estado |
+| :--- | :--- | :---: |
+| [`concurrencia-stock`](openspec/changes/concurrencia-stock) | Reserva de stock al pedir, transacciones con reintento, 409/422 y restricciones en BD. | Hecho (25/25) |
+| [`presentaciones-y-porciones`](openspec/changes/presentaciones-y-porciones) | Varias presentaciones por producto, porciones (vaso/trago) y envases abiertos por la barra. | Hecho (30/30) · falta archivar |
+| [`auditoria-total`](openspec/changes/auditoria-total) | Bitácora automática de quién cambió qué, con antes y después. | Pendiente (0/21) |
+| [`modulos-complementarios`](openspec/changes/modulos-complementarios) | Reactivar Promociones, Clientes/CxC, Compras, Existencias, Entradas y Lista VIP. | Pendiente (0/25) |
+| [`reportes-kpis-export`](openspec/changes/reportes-kpis-export) | KPIs (incl. desempeño del mesonero) y exportación PDF/Excel. | Pendiente (0/30) |
+| [`croquis-planos`](openspec/changes/croquis-planos) | Precargar un croquis como fondo del lienzo, plantillas y duplicar. | Hecho (22/22) · falta archivar |
+| [`pruebas-y-cobertura`](openspec/changes/pruebas-y-cobertura) | Pruebas con Moq, concurrencia, separar integración y cobertura con coverlet. | Pendiente (0/32) |
+
+### Orden sugerido y dependencias
+
+| Orden | Spec | Depende de | Comparte archivos con |
+| :---: | :--- | :--- | :--- |
+| 1 | `concurrencia-stock` | — | — |
+| 2 | `presentaciones-y-porciones` | `concurrencia-stock` | Rutas de comanda, venta y cierre |
+| 3 | `auditoria-total` | `concurrencia-stock` (reintentos y transacciones) | `lib/navigation.tsx` (con `reportes-kpis-export`) |
+| 4 | `modulos-complementarios` | — (conviene tras auditoría para quedar trazados) | `lib/navigation.tsx` |
+| 5 | `reportes-kpis-export` | — (migraciones ordenadas tras `concurrencia-stock`) | `lib/navigation.tsx`, `ComandaDetalle` |
+| 6 | `croquis-planos` | — | Plano y reservas |
+| 7 | `pruebas-y-cobertura` | `concurrencia-stock`; cubre además el resto | Pruebas de todos los módulos |
+
+`presentaciones-y-porciones` registra aperturas y descartes en la bitácora cuando se aplique
+`auditoria-total`. `pruebas-y-cobertura` va al final para medir la cobertura del sistema completo.
 
 ---
 

@@ -1,0 +1,231 @@
+{
+  "info": {
+    "name": "Licoreria API Final",
+    "description": "Coleccion de la API v1 (nucleo operativo y web publica). Ejecutar primero 'Auth > Login Admin' para guardar el token.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5190" },
+    { "key": "token", "value": "" },
+    { "key": "varianteId", "value": "" },
+    { "key": "cuentaId", "value": "" },
+    { "key": "ordenId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.accessToken) { pm.collectionVariables.set('token', data.accessToken); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"admin@licoreria.com\",\n  \"password\": \"admin123\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/me", "host": ["{{baseUrl}}"], "path": ["api", "auth", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Catalogo",
+      "item": [
+        {
+          "name": "Listar productos",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/productos?page=1&pageSize=20", "host": ["{{baseUrl}}"], "path": ["api", "v1", "productos"], "query": [{ "key": "page", "value": "1" }, { "key": "pageSize", "value": "20" }] }
+          }
+        },
+        {
+          "name": "Crear producto con variante",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Producto Postman\",\n  \"categoriaId\": \"11111111-1111-1111-1111-111111111111\",\n  \"tipo\": \"Simple\",\n  \"variantes\": [\n    { \"id\": null, \"nombre\": \"Presentacion\", \"sku\": \"PM-0001\", \"unidadMedidaId\": \"66666666-6666-6666-6666-666666666662\", \"precioCompraUSD\": 2, \"precioVentaUSD\": 5, \"codigosBarras\": [\"999000111\"] }\n  ]\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/productos", "host": ["{{baseUrl}}"], "path": ["api", "v1", "productos"] }
+          }
+        },
+        { "name": "Categorias", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/api/v1/categorias", "host": ["{{baseUrl}}"], "path": ["api", "v1", "categorias"] } } },
+        { "name": "Precios por lista", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/api/v1/precios-producto", "host": ["{{baseUrl}}"], "path": ["api", "v1", "precios-producto"] } } }
+      ]
+    },
+    {
+      "name": "Inventario",
+      "item": [
+        { "name": "Stock", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/api/v1/stock", "host": ["{{baseUrl}}"], "path": ["api", "v1", "stock"] } } },
+        {
+          "name": "Ajuste de inventario",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"varianteId\": \"{{varianteId}}\",\n  \"cantidad\": 10,\n  \"motivo\": \"Carga inicial\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/ajustes-inventario", "host": ["{{baseUrl}}"], "path": ["api", "v1", "ajustes-inventario"] }
+          }
+        },
+        {
+          "name": "Registrar merma",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"varianteId\": \"{{varianteId}}\",\n  \"cantidad\": 1,\n  \"motivo\": \"Danado\",\n  \"reponerSinCobro\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/mermas", "host": ["{{baseUrl}}"], "path": ["api", "v1", "mermas"] }
+          }
+        },
+        { "name": "Kardex", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/api/v1/movimientos-inventario", "host": ["{{baseUrl}}"], "path": ["api", "v1", "movimientos-inventario"] } } }
+      ]
+    },
+    {
+      "name": "Ventas",
+      "item": [
+        { "name": "Metodos de pago", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/api/v1/metodos-pago", "host": ["{{baseUrl}}"], "path": ["api", "v1", "metodos-pago"] } } },
+        {
+          "name": "Registrar venta",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"items\": [ { \"varianteId\": \"{{varianteId}}\", \"cantidad\": 1 } ],\n  \"pagos\": [ { \"metodoPagoId\": \"bbbb0000-0000-0000-0000-000000000001\", \"monto\": 5, \"moneda\": \"USD\" } ]\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/ventas", "host": ["{{baseUrl}}"], "path": ["api", "v1", "ventas"] }
+          }
+        },
+        { "name": "Listar ventas", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/api/v1/ventas", "host": ["{{baseUrl}}"], "path": ["api", "v1", "ventas"] } } }
+      ]
+    },
+    {
+      "name": "Cuentas y comandas",
+      "item": [
+        {
+          "name": "Abrir mesa",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["const d = pm.response.json(); if (d.id) { pm.collectionVariables.set('cuentaId', d.id); }"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{ \"nombreMesa\": \"Mesa 1\" }" },
+            "url": { "raw": "{{baseUrl}}/api/v1/cuentas", "host": ["{{baseUrl}}"], "path": ["api", "v1", "cuentas"] }
+          }
+        },
+        {
+          "name": "Agregar comanda",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"area\": \"Barra\",\n  \"items\": [ { \"varianteId\": \"{{varianteId}}\", \"cantidad\": 1 } ]\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/cuentas/{{cuentaId}}/comandas", "host": ["{{baseUrl}}"], "path": ["api", "v1", "cuentas", "{{cuentaId}}", "comandas"] }
+          }
+        },
+        {
+          "name": "Dividir cuenta",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{ \"partes\": 2 }" },
+            "url": { "raw": "{{baseUrl}}/api/v1/cuentas/{{cuentaId}}/dividir", "host": ["{{baseUrl}}"], "path": ["api", "v1", "cuentas", "{{cuentaId}}", "dividir"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Caja",
+      "item": [
+        {
+          "name": "Abrir caja",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{ \"fondoInicial\": 100 }" },
+            "url": { "raw": "{{baseUrl}}/api/v1/sesiones-caja", "host": ["{{baseUrl}}"], "path": ["api", "v1", "sesiones-caja"] }
+          }
+        },
+        { "name": "Sesion activa", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/api/v1/sesiones-caja/activa", "host": ["{{baseUrl}}"], "path": ["api", "v1", "sesiones-caja", "activa"] } } }
+      ]
+    },
+    {
+      "name": "Compras",
+      "item": [
+        {
+          "name": "Crear proveedor",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{ \"nombre\": \"Proveedor Postman\", \"rif\": \"J-99999999\", \"diasCredito\": 30 }" },
+            "url": { "raw": "{{baseUrl}}/api/v1/proveedores", "host": ["{{baseUrl}}"], "path": ["api", "v1", "proveedores"] }
+          }
+        },
+        {
+          "name": "Crear orden de compra",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["const d = pm.response.json(); if (d.id) { pm.collectionVariables.set('ordenId', d.id); }"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"proveedorId\": \"\",\n  \"detalles\": [ { \"varianteId\": \"{{varianteId}}\", \"cantidad\": 12, \"costoUnitarioUSD\": 2 } ]\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/ordenes-compra", "host": ["{{baseUrl}}"], "path": ["api", "v1", "ordenes-compra"] }
+          }
+        },
+        { "name": "Cuentas por pagar", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/api/v1/cuentas-por-pagar", "host": ["{{baseUrl}}"], "path": ["api", "v1", "cuentas-por-pagar"] } } }
+      ]
+    },
+    {
+      "name": "Club y reservas",
+      "item": [
+        { "name": "Zonas", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/api/v1/zonas", "host": ["{{baseUrl}}"], "path": ["api", "v1", "zonas"] } } },
+        { "name": "Mesas (publico)", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/mesas", "host": ["{{baseUrl}}"], "path": ["api", "v1", "mesas"] } } },
+        { "name": "Eventos (publico)", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/eventos", "host": ["{{baseUrl}}"], "path": ["api", "v1", "eventos"] } } },
+        { "name": "Lista VIP", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/api/v1/lista-vip", "host": ["{{baseUrl}}"], "path": ["api", "v1", "lista-vip"] } } }
+      ]
+    },
+    {
+      "name": "CRM",
+      "item": [
+        {
+          "name": "Crear cliente",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{ \"nombre\": \"Cliente Postman\", \"rif\": \"V-11111111\" }" },
+            "url": { "raw": "{{baseUrl}}/api/v1/clientes", "host": ["{{baseUrl}}"], "path": ["api", "v1", "clientes"] }
+          }
+        },
+        { "name": "Listar clientes", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/api/v1/clientes", "host": ["{{baseUrl}}"], "path": ["api", "v1", "clientes"] } } }
+      ]
+    },
+    {
+      "name": "Contenido y web",
+      "item": [
+        { "name": "Menu digital (publico)", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/menu-digital", "host": ["{{baseUrl}}"], "path": ["api", "v1", "menu-digital"] } } },
+        { "name": "QR del menu (publico)", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/menu-digital/qr", "host": ["{{baseUrl}}"], "path": ["api", "v1", "menu-digital", "qr"] } } },
+        { "name": "Menu PDF (publico)", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/menu-digital/pdf", "host": ["{{baseUrl}}"], "path": ["api", "v1", "menu-digital", "pdf"] } } },
+        { "name": "Tasa actual (publico)", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/tasas-cambio/actual?tipo=Paralelo", "host": ["{{baseUrl}}"], "path": ["api", "v1", "tasas-cambio", "actual"], "query": [{ "key": "tipo", "value": "Paralelo" }] } } },
+        { "name": "Info del local (publico)", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/local-info", "host": ["{{baseUrl}}"], "path": ["api", "v1", "local-info"] } } },
+        { "name": "WhatsApp (publico)", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/local-info/whatsapp?mensaje=Hola", "host": ["{{baseUrl}}"], "path": ["api", "v1", "local-info", "whatsapp"], "query": [{ "key": "mensaje", "value": "Hola" }] } } }
+      ]
+    },
+    {
+      "name": "Reportes y administracion",
+      "item": [
+        { "name": "Dashboard (Admin)", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/api/v1/reportes/dashboard", "host": ["{{baseUrl}}"], "path": ["api", "v1", "reportes", "dashboard"] } } },
+        { "name": "Auditoria (Admin)", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/api/v1/auditoria", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auditoria"] } } },
+        { "name": "Usuarios", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/api/v1/usuarios", "host": ["{{baseUrl}}"], "path": ["api", "v1", "usuarios"] } } }
+      ]
+    }
+  ]
+}

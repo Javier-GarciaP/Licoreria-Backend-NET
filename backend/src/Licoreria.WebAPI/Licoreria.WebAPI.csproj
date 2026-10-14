@@ -4,6 +4,10 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Genera el contrato OpenAPI desde el código al compilar (dotnet build). -->
+    <OpenApiGenerateDocuments>true</OpenApiGenerateDocuments>
+    <OpenApiGenerateDocumentsOnBuild>true</OpenApiGenerateDocumentsOnBuild>
+    <OpenApiDocumentsDirectory>$(MSBuildProjectDirectory)/../../../openapi/generated</OpenApiDocumentsDirectory>
   </PropertyGroup>
 
   <ItemGroup>

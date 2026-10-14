@@ -1,34 +1,42 @@
+using Licoreria.Domain.Enums;
+
 namespace Licoreria.Domain.Services;
 
 /// <summary>
-/// Estados por los que transita un ítem de comanda.
-/// </summary>
-public enum EstadoComanda
-{
-    Recibido = 1,
-    Preparado = 2,
-    Entregado = 3,
-    Cancelado = 4
-}
-
-/// <summary>
-/// Controla las transiciones válidas del estado de una comanda.
+/// Controla las transiciones válidas del estado de una línea de comanda
+/// (<see cref="EstadoItemComanda"/>): Recibido → EnProceso → Preparado → Entregado.
+/// Recibido → Preparado directo se permite para no romper el arrastre del KDS;
+/// Entregado y Cancelado son estados terminales.
 /// </summary>
 public sealed class MaquinaEstadosComanda
 {
-    private static readonly IReadOnlyDictionary<EstadoComanda, EstadoComanda[]> Transiciones =
-        new Dictionary<EstadoComanda, EstadoComanda[]>
+    private static readonly IReadOnlyDictionary<EstadoItemComanda, EstadoItemComanda[]> Transiciones =
+        new Dictionary<EstadoItemComanda, EstadoItemComanda[]>
         {
-            [EstadoComanda.Recibido] = [EstadoComanda.Preparado, EstadoComanda.Cancelado],
-            [EstadoComanda.Preparado] = [EstadoComanda.Entregado, EstadoComanda.Cancelado],
-            [EstadoComanda.Entregado] = [],
-            [EstadoComanda.Cancelado] = []
+            [EstadoItemComanda.Recibido] =
+            [
+                EstadoItemComanda.EnProceso,
+                EstadoItemComanda.Preparado,
+                EstadoItemComanda.Cancelado
+            ],
+            [EstadoItemComanda.EnProceso] =
+            [
+                EstadoItemComanda.Preparado,
+                EstadoItemComanda.Cancelado
+            ],
+            [EstadoItemComanda.Preparado] =
+            [
+                EstadoItemComanda.Entregado,
+                EstadoItemComanda.Cancelado
+            ],
+            [EstadoItemComanda.Entregado] = [],
+            [EstadoItemComanda.Cancelado] = []
         };
 
-    public bool PuedeTransicionar(EstadoComanda actual, EstadoComanda nuevo)
+    public bool PuedeTransicionar(EstadoItemComanda actual, EstadoItemComanda nuevo)
         => Transiciones[actual].Contains(nuevo);
 
-    public EstadoComanda Transicionar(EstadoComanda actual, EstadoComanda nuevo)
+    public EstadoItemComanda Transicionar(EstadoItemComanda actual, EstadoItemComanda nuevo)
     {
         if (!PuedeTransicionar(actual, nuevo))
         {
