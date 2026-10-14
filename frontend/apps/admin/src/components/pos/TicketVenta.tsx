@@ -111,6 +111,7 @@ export function TicketVenta({ venta, onCerrar }: { venta: Venta | null; onCerrar
               <Fila etiqueta="Estado" valor={venta.estado} />
               <Fila etiqueta="Tasa" valor={formatBS(venta.tasaCambio)} />
               <Fila etiqueta="Artículos" valor={String(unidades)} />
+              {venta.clienteNombre && <Fila etiqueta="Cliente" valor={venta.clienteNombre} />}
             </div>
 
             <Separador />
@@ -166,6 +167,20 @@ export function TicketVenta({ venta, onCerrar }: { venta: Venta | null; onCerrar
                 />
               ))}
             </div>
+
+            {(venta.creditoUSD ?? 0) > 0 && (
+              <>
+                <Separador />
+                <Fila etiqueta="A crédito (fiado)" valor={formatUSD(venta.creditoUSD ?? 0)} fuerte />
+              </>
+            )}
+
+            {(venta.puntosGanados ?? 0) > 0 && (
+              <>
+                <Separador />
+                <Fila etiqueta="Puntos ganados" valor={`+${venta.puntosGanados}`} fuerte />
+              </>
+            )}
 
             <Separador />
 

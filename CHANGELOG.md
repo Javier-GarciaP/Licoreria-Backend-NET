@@ -13,6 +13,38 @@ y el proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
 ### Agregado
 
+- **Módulos complementarios (`modulos-complementarios`):**
+  - **Reactivación por modo y rol:** Promociones, Existencias, Clientes, Cuentas por cobrar, Entradas y
+    Lista VIP vuelven al menú (Compras ya estaba). Promociones, Existencias, Clientes, Cuentas por cobrar
+    y Compras aparecen en ambos modos; Entradas y Lista VIP solo en Discoteca (Administrador y Host).
+    Lotes, tomas físicas y contenido siguen ocultos.
+  - **Cliente en la venta:** `ventas.ClienteId` opcional en el POS y en el cierre de cuenta; cliente
+    inexistente `404`, inactivo `422`. Migración `ModulosComplementarios` (`ventas.ClienteId`,
+    `cuentas_por_cobrar.VentaId`, sin relleno de datos previos).
+  - **Puntos automáticos:** ⌊USD pagado sin crédito × `Fidelidad:PuntosPorUSD`⌋ (1 por defecto, `0`
+    desactiva) en la misma transacción de la venta; la devolución revierte los puntos proporcionales
+    (`Reversion`), sin dejar el saldo negativo.
+  - **Fiado:** pagar con Crédito exige un cliente activo y crea una cuenta por cobrar enlazada a la venta
+    (vence a `Credito:DiasVencimiento` días, 30 por defecto, o en la fecha indicada). Las cuentas con
+    saldo y fecha pasada se muestran `Vencida`. El crédito no se acepta como abono de cuenta (`422`) y la
+    devolución de una venta fiada avisa que la cuenta se ajusta a mano.
+  - **POS:** selector de método de pago (efectivo en la moneda elegida por defecto), buscador de
+    clientes con creación rápida, condición de Crédito (cliente obligatorio y vencimiento visible);
+    ticket con cliente, puntos y crédito; cierre de cuenta con cliente y crédito.
+  - **API:** `GET /api/v1/clientes/{id}/ventas` (`crm:read`); `puntosGanados`, `creditoUSD`, `clienteId`
+    y `ventaId` en las respuestas; `aviso` en la devolución.
+  - **Pantallas:** detalle del cliente (ventas, puntos y cuentas por cobrar) y venta enlazada y estado
+    `Vencida` en Cuentas por cobrar.
+  - **Configuración:** `FIDELIDAD_PUNTOS_POR_USD` y `CREDITO_DIAS_VENCIMIENTO` (`.env.example`,
+    `docker-compose.yml`, `appsettings.json`).
+  - **Pruebas:** unitarias con Moq (puntos, crédito, devolución), de integración (venta con cliente y
+    fiado, permisos, Compras de punta a punta) y de página de cada módulo reactivado.
+  - **BREAKING — permiso `promotions:manage`:** crear, editar y eliminar promociones pasa a exigir
+    `promotions:manage`, asignado solo al Administrador; Cajero, Mesero, Barra y Cocina siguen
+    consultándolas desde el POS pero ya no pueden gestionarlas. El Cajero recibe `crm:read` y
+    `crm:write`. Los permisos viajan en el JWT: las sesiones abiertas se actualizan al renovar el token
+    (60 minutos).
+
 - **Croquis, duplicado y plantillas de plano (`croquis-planos`):**
   - **Croquis de fondo:** imagen PNG/JPG/WebP (máx. 5 MB) por plano con opacidad y ajuste
     (`contener`, `cubrir`, `estirar`); `POST/DELETE /api/v1/planos/{id}/fondo` con validación de

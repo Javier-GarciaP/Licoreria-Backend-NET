@@ -95,6 +95,9 @@ Credenciales de prueba (contraseña `demo123`): `admin@licoreria.com`, `cajero1@
 `mesero1@licoreria.com`, `barra1@licoreria.com`, `cocina1@licoreria.com`, `host1@licoreria.com`
 y `editor1@licoreria.com`.
 
+Variables de negocio opcionales (`.env`): `FIDELIDAD_PUNTOS_POR_USD` (puntos por USD pagado, `1` por defecto, `0` los desactiva) y
+`CREDITO_DIAS_VENCIMIENTO` (días de plazo del fiado, `30` por defecto).
+
 ---
 
 ## Fases del proyecto
@@ -128,7 +131,7 @@ como cambios [OpenSpec](openspec/changes) y se implementan con `/opsx:apply <cam
 | [`concurrencia-stock`](openspec/changes/archive/2026-10-14-concurrencia-stock) | Reserva de stock al pedir, transacciones con reintento, 409/422 y restricciones en BD. | Hecho (25/25) ✅ archivado |
 | [`presentaciones-y-porciones`](openspec/changes/archive/2026-10-14-presentaciones-y-porciones) | Varias presentaciones por producto, porciones (vaso/trago) y envases abiertos por la barra. | Hecho (30/30) ✅ archivado |
 | [`auditoria-total`](openspec/changes/archive/2026-10-14-auditoria-total) | Bitácora automática de quién cambió qué, con antes y después. | Hecho (21/21) ✅ archivado |
-| [`modulos-complementarios`](openspec/changes/modulos-complementarios) | Reactivar Promociones, Clientes/CxC, Compras, Existencias, Entradas y Lista VIP. | Pendiente (0/25) |
+| [`modulos-complementarios`](openspec/changes/archive/2026-10-14-modulos-complementarios) | Reactivar Promociones, Clientes/CxC, Compras, Existencias, Entradas y Lista VIP; cliente en la venta, puntos automáticos y fiado. | Hecho (25/25) ✅ archivado |
 | [`reportes-kpis-export`](openspec/changes/reportes-kpis-export) | KPIs (incl. desempeño del mesonero) y exportación PDF/Excel. | Pendiente (0/30) |
 | [`croquis-planos`](openspec/changes/archive/2026-10-14-croquis-planos) | Precargar un croquis como fondo del lienzo, plantillas y duplicar. | Hecho (22/22) ✅ archivado |
 | [`pruebas-y-cobertura`](openspec/changes/pruebas-y-cobertura) | Pruebas con Moq, concurrencia, separar integración y cobertura con coverlet. | Pendiente (0/32) |

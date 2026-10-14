@@ -10,8 +10,15 @@ namespace Licoreria.Application.Services;
 public sealed class ServicioCrm : IServicioCrm
 {
     private readonly IClienteRepository _clientes;
+    private readonly IVentaRepository _ventas;
+    private readonly IRelojSistema _reloj;
 
-    public ServicioCrm(IClienteRepository clientes) => _clientes = clientes;
+    public ServicioCrm(IClienteRepository clientes, IVentaRepository ventas, IRelojSistema reloj)
+    {
+        _clientes = clientes;
+        _ventas = ventas;
+        _reloj = reloj;
+    }
 
     public async Task<ResultadoPaginado<ClienteDto>> ObtenerClientesAsync(
         PaginacionRequest paginacion,
@@ -221,6 +228,34 @@ public sealed class ServicioCrm : IServicioCrm
     private static ClienteDto MapearCliente(Cliente c)
         => new(c.Id, c.Nombre, c.Rif, c.Ci, c.Email, c.Telefono, c.Direccion, c.Puntos, c.Activo);
 
-    private static CuentaPorCobrarDto MapearCuenta(CuentaPorCobrar c)
-        => new(c.Id, c.ClienteId, c.Cliente?.Nombre ?? string.Empty, c.MontoUSD, c.SaldoUSD, c.Vencimiento, c.Estado);
+    /// <summary>
+    /// La vigencia se deriva al leer: una cuenta con saldo cuyo vencimiento ya pasó se muestra vencida,
+    /// sin tarea programada ni escritura. Una cuenta pagada nunca se muestra vencida.
+    /// </summary>
+    private CuentaPorCobrarDto MapearCuenta(CuentaPorCobrar c)
+    {
+        var estado = c.Estado == EstadoCuentaPorCobrar.Pendiente && c.SaldoUSD > 0 && c.Vencimiento < _reloj.UtcNow
+            ? EstadoCuentaPorCobrar.Vencida
+            : c.Estado;
+
+        return new(c.Id, c.ClienteId, c.Cliente?.Nombre ?? string.Empty, c.MontoUSD, c.SaldoUSD, c.Vencimiento, estado, c.VentaId);
+    }
+
+    public async Task<ResultadoPaginado<ClienteVentaDto>?> ObtenerVentasDeClienteAsync(
+        Guid clienteId,
+        PaginacionRequest paginacion,
+        CancellationToken cancellationToken = default)
+    {
+        var cliente = await _clientes.ObtenerConDetalleAsync(clienteId, cancellationToken);
+        if (cliente is null)
+        {
+            return null;
+        }
+
+        var pagina = await _ventas.ObtenerPorClienteAsync(clienteId, paginacion, cancellationToken);
+        var items = pagina.Items
+            .Select(v => new ClienteVentaDto(v.Id, v.Fecha, v.TotalUSD, v.Comprobante?.Numero, v.Estado))
+            .ToList();
+        return ResultadoPaginado<ClienteVentaDto>.Crear(items, pagina.Page, pagina.PageSize, pagina.TotalItems);
+    }
 }

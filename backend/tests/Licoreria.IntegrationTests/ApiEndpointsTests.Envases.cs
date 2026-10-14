@@ -9,15 +9,7 @@ namespace Licoreria.IntegrationTests;
 /// <summary>Destapar, listar y descartar envases contra PostgreSQL real.</summary>
 public partial class ApiEndpointsTests
 {
-    private async Task<HttpClient> ClienteComoAsync(string correo)
-    {
-        var cliente = _factory.CreateClient();
-        var login = await cliente.PostAsJsonAsync("/api/auth/login", new { username = correo, password = "demo123" });
-        login.EnsureSuccessStatusCode();
-        var token = (await JsonAsync(login)).GetProperty("accessToken").GetString()!;
-        cliente.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return cliente;
-    }
+    private Task<HttpClient> ClienteComoAsync(string correo) => ClienteDeAsync(correo);
 
     private Task<HttpResponseMessage> DestaparAsync(Guid vaso, Guid presentacion, HttpClient? cliente = null)
         => (cliente ?? _factory.Client).PostAsJsonAsync(

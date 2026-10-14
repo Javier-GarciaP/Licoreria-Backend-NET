@@ -95,6 +95,12 @@ export function CuentasPorCobrarPage() {
               { key: 'cliente', header: 'Cliente', render: (fila) => fila.clienteNombre },
               { key: 'monto', header: 'Monto', align: 'right', render: (fila) => formatUSD(fila.montoUSD) },
               { key: 'saldo', header: 'Saldo', align: 'right', render: (fila) => formatUSD(fila.saldoUSD) },
+              {
+                key: 'venta',
+                header: 'Venta',
+                render: (fila) =>
+                  fila.ventaId ? <span className="num text-xs">Venta {fila.ventaId.slice(0, 8)}</span> : <span className="text-muted-foreground">Manual</span>,
+              },
               { key: 'vencimiento', header: 'Vencimiento', render: (fila) => fila.vencimiento.slice(0, 10) },
               { key: 'estado', header: 'Estado', render: (fila) => <StatusBadge status={fila.estado} /> },
               {

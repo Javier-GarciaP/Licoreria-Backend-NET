@@ -10,13 +10,21 @@ public partial class ApiEndpointsTests
 {
     private static readonly byte[] PngMinimo = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0, 0, 0, 0, 0];
 
+    // El login tiene un límite de 10 por minuto: el token de cada usuario sembrado se reutiliza entre pruebas.
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> TokensPorCorreo = new();
+
     /// <summary>Cliente autenticado con otro usuario sembrado (contraseña demo123).</summary>
     private async Task<HttpClient> ClienteDeAsync(string email)
     {
         var cliente = _factory.CreateClient();
-        var login = await cliente.PostAsJsonAsync("/api/auth/login", new { username = email, password = "demo123" });
-        login.EnsureSuccessStatusCode();
-        var token = (await JsonAsync(login)).GetProperty("accessToken").GetString()!;
+        if (!TokensPorCorreo.TryGetValue(email, out var token))
+        {
+            var login = await cliente.PostAsJsonAsync("/api/auth/login", new { username = email, password = "demo123" });
+            login.EnsureSuccessStatusCode();
+            token = (await JsonAsync(login)).GetProperty("accessToken").GetString()!;
+            TokensPorCorreo[email] = token;
+        }
+
         cliente.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return cliente;
     }

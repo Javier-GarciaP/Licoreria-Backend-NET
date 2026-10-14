@@ -23,6 +23,12 @@ public class VentaConfiguration : IEntityTypeConfiguration<Venta>
                .HasForeignKey(v => v.UsuarioId)
                .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(v => v.Cliente)
+               .WithMany()
+               .HasForeignKey(v => v.ClienteId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(v => v.ClienteId);
         builder.HasIndex(v => v.Fecha);
         builder.HasIndex(v => v.SesionCajaId);
 

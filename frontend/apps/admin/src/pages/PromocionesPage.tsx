@@ -23,6 +23,7 @@ import type { Promocion } from '@licoreria/types';
 import { promocionesApi } from '@licoreria/api-client';
 import { mensajeDeError } from '../lib/api';
 import { formatUSD } from '../lib/format';
+import { useAuth } from '../context/AuthContext';
 
 const esquema = z.object({
   nombre: z.string().min(1, 'Ingresa el nombre'),
@@ -37,6 +38,8 @@ type Formulario = z.infer<typeof esquema>;
 
 export function PromocionesPage() {
   const queryClient = useQueryClient();
+  const { esAdmin, tienePermiso } = useAuth() as { esAdmin: boolean; tienePermiso: (clave: string) => boolean };
+  const puedeGestionar = esAdmin || tienePermiso('promotions:manage');
   const [editando, setEditando] = useState<Promocion | null>(null);
   const [creando, setCreando] = useState(false);
   const [eliminar, setEliminar] = useState<Promocion | null>(null);
@@ -109,7 +112,7 @@ export function PromocionesPage() {
       <PageHeader
         title="Promociones"
         subtitle="Descuentos y promociones aplicables en caja y POS."
-        actions={<Button onClick={abrirCrear}>Nueva promoción</Button>}
+        actions={puedeGestionar ? <Button onClick={abrirCrear}>Nueva promoción</Button> : undefined}
       />
 
       <Card>
@@ -137,20 +140,24 @@ export function PromocionesPage() {
                 header: 'Estado',
                 render: (fila) => <Pill tone={fila.activo ? 'success' : 'neutral'}>{fila.activo ? 'Activa' : 'Inactiva'}</Pill>,
               },
-              {
-                key: 'acciones',
-                header: '',
-                align: 'right',
-                render: (fila) => (
-                  <ActionMenu
-                    label={`Acciones de ${fila.nombre}`}
-                    options={[
-                      { label: 'Editar', icon: <Pencil size={15} />, onClick: () => abrirEditar(fila) },
-                      { label: 'Eliminar', icon: <Trash2 size={15} />, danger: true, onClick: () => setEliminar(fila) },
-                    ]}
-                  />
-                ),
-              },
+              ...(puedeGestionar
+                ? [
+                    {
+                      key: 'acciones',
+                      header: '',
+                      align: 'right' as const,
+                      render: (fila: Promocion) => (
+                        <ActionMenu
+                          label={`Acciones de ${fila.nombre}`}
+                          options={[
+                            { label: 'Editar', icon: <Pencil size={15} />, onClick: () => abrirEditar(fila) },
+                            { label: 'Eliminar', icon: <Trash2 size={15} />, danger: true, onClick: () => setEliminar(fila) },
+                          ]}
+                        />
+                      ),
+                    },
+                  ]
+                : []),
             ]}
           />
         </CardBody>

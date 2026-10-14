@@ -28,6 +28,7 @@ public sealed class ServicioVentasTests
     private readonly Mock<IRelojSistema> _reloj = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<IServicioAuditoria> _auditoria = new();
+    private readonly Mock<IServicioClienteVenta> _clienteVenta = new();
 
     private readonly Guid _varianteId = Guid.NewGuid();
     private readonly Guid _metodoId = Guid.NewGuid();
@@ -81,7 +82,8 @@ public sealed class ServicioVentasTests
             _contexto.Object,
             _reloj.Object,
             _unitOfWork.Object,
-            _auditoria.Object);
+            _auditoria.Object,
+            _clienteVenta.Object);
 
     private RegistrarVentaDto VentaUnica(decimal pago, Moneda moneda = Moneda.USD)
         => new(
@@ -180,5 +182,158 @@ public sealed class ServicioVentasTests
 
         await Assert.ThrowsAsync<NoEncontradoException>(
             () => CrearServicio().RegistrarVentaAsync(VentaUnica(100m)));
+    }
+
+    // ===================== Cliente, puntos y crédito =====================
+
+    private readonly Guid _clienteId = Guid.NewGuid();
+    private readonly Guid _metodoCreditoId = Guid.NewGuid();
+
+    private void ConMetodoCredito()
+        => _metodos
+            .Setup(m => m.GetByIdAsync(_metodoCreditoId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MetodoPago { Codigo = MetodoPago.CodigoCredito, Nombre = "Crédito" });
+
+    [Fact]
+    public async Task RegistrarVentaAsync_ConCliente_ValidaAsociaYDevuelvePuntos()
+    {
+        _clienteVenta
+            .Setup(c => c.AcumularPorVentaAsync(It.IsAny<Venta>(), 0m, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(100);
+
+        var dto = VentaUnica(100m) with { ClienteId = _clienteId };
+        var venta = await CrearServicio().RegistrarVentaAsync(dto);
+
+        _clienteVenta.Verify(c => c.ValidarClienteAsync(_clienteId, It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Equal(_clienteId, _creada.ClienteId);
+        Assert.Equal(_clienteId, venta.ClienteId);
+        Assert.Equal(100, venta.PuntosGanados);
+        Assert.Equal(0m, venta.CreditoUSD);
+    }
+
+    [Fact]
+    public async Task RegistrarVentaAsync_ClienteInactivo_NoRegistraLaVenta()
+    {
+        _clienteVenta
+            .Setup(c => c.ValidarClienteAsync(_clienteId, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ReglaNegocioException("El cliente está inactivo."));
+
+        await Assert.ThrowsAsync<ReglaNegocioException>(
+            () => CrearServicio().RegistrarVentaAsync(VentaUnica(100m) with { ClienteId = _clienteId }));
+
+        Assert.Null(_creada);
+        _ventas.Verify(v => v.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RegistrarVentaAsync_SinCliente_NoGeneraPuntosNiCredito()
+    {
+        var venta = await CrearServicio().RegistrarVentaAsync(VentaUnica(100m));
+
+        Assert.Null(venta.ClienteId);
+        _clienteVenta.Verify(c => c.ValidarClienteAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RegistrarVentaAsync_CreditoSinCliente_LanzaReglaDeNegocio()
+    {
+        ConMetodoCredito();
+        var dto = new RegistrarVentaDto(
+            Items: [new VentaItemDto(_varianteId, Cantidad: 1)],
+            Pagos: [new VentaPagoDto(_metodoCreditoId, 100m)]);
+
+        var excepcion = await Assert.ThrowsAsync<ReglaNegocioException>(() => CrearServicio().RegistrarVentaAsync(dto));
+
+        Assert.Contains("cliente", excepcion.Message);
+        Assert.Null(_creada);
+    }
+
+    [Fact]
+    public async Task RegistrarVentaAsync_VentaMixta_RegistraCreditoYCalculaPuntosSinEl()
+    {
+        ConMetodoCredito();
+        IReadOnlyList<Pago>? pagosCredito = null;
+        _clienteVenta
+            .Setup(c => c.RegistrarCreditoAsync(It.IsAny<Venta>(), It.IsAny<IReadOnlyList<Pago>>(), null, It.IsAny<CancellationToken>()))
+            .Callback<Venta, IReadOnlyList<Pago>, DateTime?, CancellationToken>((_, pagos, _, _) => pagosCredito = pagos)
+            .ReturnsAsync(40m);
+        _clienteVenta
+            .Setup(c => c.AcumularPorVentaAsync(It.IsAny<Venta>(), 40m, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(60);
+
+        var dto = new RegistrarVentaDto(
+            Items: [new VentaItemDto(_varianteId, Cantidad: 1)],
+            Pagos: [new VentaPagoDto(_metodoId, 60m), new VentaPagoDto(_metodoCreditoId, 40m)],
+            ClienteId: _clienteId);
+        var venta = await CrearServicio().RegistrarVentaAsync(dto);
+
+        var credito = Assert.Single(pagosCredito!);
+        Assert.Equal(40m, credito.Monto);
+        Assert.Equal(40m, venta.CreditoUSD);
+        Assert.Equal(60, venta.PuntosGanados);
+    }
+
+    [Fact]
+    public async Task RegistrarVentaAsync_FallaDeStock_NoDejaPuntosNiCuentaPorCobrar()
+    {
+        ConMetodoCredito();
+        _kardex
+            .Setup(k => k.DesglosarInsumosAsync(It.IsAny<Guid>(), It.IsAny<decimal>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<KardexInsumo> { new(_varianteId, 1m) });
+        _kardex
+            .Setup(k => k.VerificarStockAsync(It.IsAny<IReadOnlyList<KardexInsumo>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ExistenciaAgotadaException("Ron", 1m, 0m));
+
+        var dto = new RegistrarVentaDto(
+            Items: [new VentaItemDto(_varianteId, Cantidad: 1)],
+            Pagos: [new VentaPagoDto(_metodoCreditoId, 100m)],
+            ClienteId: _clienteId);
+
+        await Assert.ThrowsAsync<ExistenciaAgotadaException>(() => CrearServicio().RegistrarVentaAsync(dto));
+
+        _clienteVenta.Verify(
+            c => c.RegistrarCreditoAsync(It.IsAny<Venta>(), It.IsAny<IReadOnlyList<Pago>>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        _clienteVenta.Verify(
+            c => c.AcumularPorVentaAsync(It.IsAny<Venta>(), It.IsAny<decimal>(), It.IsAny<CancellationToken>()), Times.Never);
+        _ventas.Verify(v => v.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    // ===================== Devolución =====================
+
+    private async Task<Venta> VentaExistenteAsync()
+    {
+        await CrearServicio().RegistrarVentaAsync(VentaUnica(100m) with { ClienteId = _clienteId });
+        return _creada;
+    }
+
+    [Fact]
+    public async Task RegistrarDevolucionAsync_RevierteLosPuntosDelMontoDevuelto()
+    {
+        var venta = await VentaExistenteAsync();
+        _clienteVenta
+            .Setup(c => c.RevertirPorDevolucionAsync(venta, 100m, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(100);
+
+        var dto = new RegistrarDevolucionDto("Defecto", false, [new DevolucionDetalleCrearDto(venta.Detalles.First().VarianteId, 1m)]);
+        var resultado = await CrearServicio().RegistrarDevolucionAsync(venta.Id, dto);
+
+        Assert.NotNull(resultado);
+        _clienteVenta.Verify(c => c.RevertirPorDevolucionAsync(venta, 100m, It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Null(resultado!.Aviso);
+    }
+
+    [Fact]
+    public async Task RegistrarDevolucionAsync_VentaFiada_AvisaQueLaCuentaSeAjustaAMano()
+    {
+        var venta = await VentaExistenteAsync();
+        _clienteVenta
+            .Setup(c => c.TieneCuentaPendienteAsync(venta.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var dto = new RegistrarDevolucionDto("Defecto", false, [new DevolucionDetalleCrearDto(venta.Detalles.First().VarianteId, 1m)]);
+        var resultado = await CrearServicio().RegistrarDevolucionAsync(venta.Id, dto);
+
+        Assert.Contains("manualmente", resultado!.Aviso);
     }
 }

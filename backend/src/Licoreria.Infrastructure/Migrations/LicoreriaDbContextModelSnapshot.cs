@@ -930,6 +930,9 @@ namespace Licoreria.Infrastructure.Migrations
                     b.Property<DateTime>("Vencimiento")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("VentaId")
+                        .HasColumnType("uuid");
+
                     b.Property<uint>("xmin")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
@@ -939,6 +942,11 @@ namespace Licoreria.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ClienteId");
+
+                    b.HasIndex("VentaId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_cuentas_por_cobrar_por_venta")
+                        .HasFilter("\"VentaId\" IS NOT NULL");
 
                     b.ToTable("cuentas_por_cobrar", (string)null);
                 });
@@ -4596,6 +4604,9 @@ namespace Licoreria.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("ClienteId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -4658,6 +4669,8 @@ namespace Licoreria.Infrastructure.Migrations
                         .HasColumnName("xmin");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ClienteId");
 
                     b.HasIndex("CuentaId")
                         .IsUnique()
@@ -5448,11 +5461,18 @@ namespace Licoreria.Infrastructure.Migrations
 
             modelBuilder.Entity("Licoreria.Domain.Entities.Venta", b =>
                 {
+                    b.HasOne("Licoreria.Domain.Entities.Cliente", "Cliente")
+                        .WithMany()
+                        .HasForeignKey("ClienteId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Licoreria.Domain.Entities.Usuario", "Usuario")
                         .WithMany()
                         .HasForeignKey("UsuarioId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Cliente");
 
                     b.Navigation("Usuario");
                 });

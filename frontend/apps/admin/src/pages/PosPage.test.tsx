@@ -432,4 +432,146 @@ describe('PosPage', () => {
     expect(cuerpo.pagos[0].metodoPagoId).toBe('met-1');
     expect(cuerpo.pagos[0].monto).toBe(20);
   });
+
+  describe('método de pago y cliente', () => {
+    const METODOS = [
+      { id: 'met-usd', codigo: 'EfectivoUSD', nombre: 'Efectivo en dólares' },
+      { id: 'met-bs', codigo: 'EfectivoBS', nombre: 'Efectivo en bolívares' },
+      { id: 'met-pm', codigo: 'PagoMovil', nombre: 'Pago móvil' },
+      { id: 'met-cr', codigo: 'Credito', nombre: 'Crédito' },
+    ];
+    const ANA = { id: 'cli-1', nombre: 'Ana Pérez', rif: null, ci: null, email: null, telefono: null, direccion: null, puntos: 42, activo: true };
+
+    function conMetodosYClientes(onVenta?: (body: unknown) => void) {
+      usarHandlers(onVenta);
+      server.use(
+        http.get(`${BASE}/api/v1/metodos-pago`, () => HttpResponse.json(METODOS)),
+        http.get(`${BASE}/api/v1/clientes`, () =>
+          HttpResponse.json({ items: [ANA], page: 1, pageSize: 6, totalItems: 1, totalPages: 1 }),
+        ),
+      );
+    }
+
+    async function agregarWhisky() {
+      await userEvent.click(await screen.findByRole('gridcell', { name: /Whisky Etiqueta Negra/ }));
+      await waitFor(() => expect(screen.getByRole('combobox', { name: 'Método de pago' })).toHaveValue('met-usd'));
+    }
+
+    async function elegirCliente() {
+      await userEvent.type(screen.getByLabelText('Buscar cliente'), 'Ana');
+      await userEvent.click(await screen.findByRole('button', { name: /Ana Pérez/ }));
+    }
+
+    it('usa efectivo en la moneda seleccionada cuando no se elige un método', async () => {
+      const onVenta = vi.fn();
+      conMetodosYClientes(onVenta);
+      renderPos();
+      await agregarWhisky();
+
+      await userEvent.click(screen.getByRole('button', { name: /Cobrar total/ }));
+
+      await waitFor(() => expect(onVenta).toHaveBeenCalledTimes(1));
+      const cuerpo = onVenta.mock.calls[0][0] as { pagos: { metodoPagoId: string }[]; clienteId: string | null };
+      expect(cuerpo.pagos[0].metodoPagoId).toBe('met-usd');
+      expect(cuerpo.clienteId).toBeNull();
+    });
+
+    it('registra la venta con el método elegido', async () => {
+      const onVenta = vi.fn();
+      conMetodosYClientes(onVenta);
+      renderPos();
+      await agregarWhisky();
+
+      await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Método de pago' }), 'met-pm');
+      await userEvent.click(screen.getByRole('button', { name: /Cobrar total/ }));
+
+      await waitFor(() => expect(onVenta).toHaveBeenCalledTimes(1));
+      expect((onVenta.mock.calls[0][0] as { pagos: { metodoPagoId: string }[] }).pagos[0].metodoPagoId).toBe('met-pm');
+    });
+
+    it('busca un cliente, muestra su nombre y puntos, y lo envía con la venta', async () => {
+      const onVenta = vi.fn();
+      conMetodosYClientes(onVenta);
+      renderPos();
+      await agregarWhisky();
+
+      await elegirCliente();
+
+      expect(screen.getByText('Ana Pérez')).toBeInTheDocument();
+      expect(screen.getByText('42 puntos')).toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole('button', { name: /Cobrar total/ }));
+      await waitFor(() => expect(onVenta).toHaveBeenCalledTimes(1));
+      expect((onVenta.mock.calls[0][0] as { clienteId: string }).clienteId).toBe('cli-1');
+    });
+
+    it('al quitar el cliente la venta se cobra sin cliente', async () => {
+      const onVenta = vi.fn();
+      conMetodosYClientes(onVenta);
+      renderPos();
+      await agregarWhisky();
+      await elegirCliente();
+
+      await userEvent.click(screen.getByRole('button', { name: 'Quitar cliente' }));
+      await userEvent.click(screen.getByRole('button', { name: /Cobrar total/ }));
+
+      await waitFor(() => expect(onVenta).toHaveBeenCalledTimes(1));
+      expect((onVenta.mock.calls[0][0] as { clienteId: string | null }).clienteId).toBeNull();
+    });
+
+    it('con Crédito y sin cliente el cobro queda deshabilitado con el motivo visible', async () => {
+      conMetodosYClientes();
+      renderPos();
+      await agregarWhisky();
+
+      await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Método de pago' }), 'met-cr');
+
+      expect(screen.getByRole('button', { name: /Cobrar total/ })).toBeDisabled();
+      expect(screen.getByRole('alert').textContent).toContain('Elige un cliente');
+      expect(screen.getByLabelText('Vencimiento del crédito')).toBeInTheDocument();
+    });
+
+    it('con Crédito y cliente muestra el vencimiento, cobra y envía la fecha', async () => {
+      const onVenta = vi.fn();
+      conMetodosYClientes(onVenta);
+      renderPos();
+      await agregarWhisky();
+
+      await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Método de pago' }), 'met-cr');
+      await elegirCliente();
+
+      expect(screen.getByRole('button', { name: /Cobrar total/ })).toBeEnabled();
+      await userEvent.click(screen.getByRole('button', { name: /Cobrar total/ }));
+
+      await waitFor(() => expect(onVenta).toHaveBeenCalledTimes(1));
+      const cuerpo = onVenta.mock.calls[0][0] as {
+        pagos: { metodoPagoId: string }[];
+        clienteId: string;
+        vencimientoCredito: string | null;
+      };
+      expect(cuerpo.pagos[0].metodoPagoId).toBe('met-cr');
+      expect(cuerpo.clienteId).toBe('cli-1');
+      expect(new Date(cuerpo.vencimientoCredito!).getTime()).toBeGreaterThan(Date.now());
+    });
+
+    it('crea un cliente con los datos mínimos y lo deja seleccionado', async () => {
+      conMetodosYClientes();
+      let creado: unknown;
+      server.use(
+        http.post(`${BASE}/api/v1/clientes`, async ({ request }) => {
+          creado = await request.json();
+          return HttpResponse.json({ ...ANA, id: 'cli-2', nombre: 'Luis Gómez', puntos: 0 }, { status: 201 });
+        }),
+      );
+      renderPos();
+      await agregarWhisky();
+
+      await userEvent.click(screen.getByRole('button', { name: 'Nuevo cliente' }));
+      await userEvent.type(screen.getByLabelText('Nombre del cliente'), 'Luis Gómez');
+      await userEvent.click(screen.getByRole('button', { name: 'Crear cliente' }));
+
+      expect(await screen.findByText('Luis Gómez')).toBeInTheDocument();
+      expect(creado).toMatchObject({ nombre: 'Luis Gómez' });
+    });
+  });
 });

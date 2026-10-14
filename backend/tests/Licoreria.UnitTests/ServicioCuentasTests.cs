@@ -148,6 +148,21 @@ public sealed class ServicioCuentasTests
     }
 
     [Fact]
+    public async Task RegistrarAbonoAsync_ConMetodoCredito_LanzaReglaDeNegocio()
+    {
+        var creditoId = Guid.NewGuid();
+        _metodos
+            .Setup(m => m.GetByIdAsync(creditoId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MetodoPago { Codigo = MetodoPago.CodigoCredito, Nombre = "Crédito" });
+
+        var excepcion = await Assert.ThrowsAsync<ReglaNegocioException>(
+            () => CrearServicio().RegistrarAbonoAsync(_cuentaId, new RegistrarAbonoCuentaDto(creditoId, 50m, Moneda.USD)));
+
+        Assert.Contains("cerrar la cuenta", excepcion.Message);
+        Assert.Equal(0m, _cuenta.TotalAbonado);
+    }
+
+    [Fact]
     public async Task RegistrarAbonoAsync_CuentaCerrada_RetornaNull()
     {
         _cuenta.Cerrar();
@@ -467,6 +482,27 @@ public sealed class ServicioCuentasTests
         Assert.Equal(["liberar", "venta"], orden);
         Assert.Equal(EstadoCuenta.Cerrada, _cuenta.Estado);
         Assert.NotNull(_cuenta.SesionMesa.CerradaEn);
+    }
+
+    [Fact]
+    public async Task CerrarCuentaAsync_ConClienteYVencimiento_LosPasaALaVenta()
+    {
+        var clienteId = Guid.NewGuid();
+        var vence = new DateTime(2026, 12, 1, 0, 0, 0, DateTimeKind.Utc);
+        RegistrarVentaDto? enviado = null;
+        _ventas
+            .Setup(v => v.RegistrarVentaAsync(It.IsAny<RegistrarVentaDto>(), It.IsAny<CancellationToken>()))
+            .Callback<RegistrarVentaDto, CancellationToken>((d, _) => enviado = d)
+            .ReturnsAsync(VentaRegistrada());
+
+        var venta = await CrearServicio().CerrarCuentaAsync(
+            _cuentaId,
+            new CerrarCuentaDto([new VentaPagoDto(_metodoId, 100m, Moneda.USD)], ClienteId: clienteId, VencimientoCredito: vence));
+
+        Assert.NotNull(venta);
+        Assert.Equal(clienteId, enviado!.ClienteId);
+        Assert.Equal(vence, enviado.VencimientoCredito);
+        Assert.Equal(_cuenta.Id, enviado.CuentaId);
     }
 
     [Fact]

@@ -53,6 +53,7 @@ Las rutas marcadas como **publica** no requieren token.
 | `DELETE` | `/api/v1/clientes/{id}` | token |
 | `GET` | `/api/v1/clientes/{id}` | token |
 | `PUT` | `/api/v1/clientes/{id}` | token |
+| `GET` | `/api/v1/clientes/{id}/ventas` | token (`crm:read`) |
 | `GET` | `/api/v1/clientes/{id}/puntos` | token |
 | `POST` | `/api/v1/clientes/{id}/puntos/acumular` | token |
 | `POST` | `/api/v1/clientes/{id}/puntos/canjear` | token |
@@ -293,9 +294,9 @@ Las rutas marcadas como **publica** no requieren token.
 | Metodo | Ruta | Acceso |
 | :--- | :--- | :--- |
 | `GET` | `/api/v1/promociones` | token |
-| `POST` | `/api/v1/promociones` | token |
-| `DELETE` | `/api/v1/promociones/{id}` | token |
-| `PUT` | `/api/v1/promociones/{id}` | token |
+| `POST` | `/api/v1/promociones` | token (`promotions:manage`) |
+| `DELETE` | `/api/v1/promociones/{id}` | token (`promotions:manage`) |
+| `PUT` | `/api/v1/promociones/{id}` | token (`promotions:manage`) |
 
 ## Proveedores
 

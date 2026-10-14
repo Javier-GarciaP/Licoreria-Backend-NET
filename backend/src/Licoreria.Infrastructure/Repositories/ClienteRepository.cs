@@ -73,6 +73,11 @@ public class ClienteRepository : IClienteRepository
             .Include(c => c.Cliente)
             .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted, cancellationToken);
 
+    public Task<CuentaPorCobrar?> ObtenerCuentaPorCobrarDeVentaAsync(Guid ventaId, CancellationToken cancellationToken = default)
+        => _context.CuentasPorCobrar
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.VentaId == ventaId && !c.IsDeleted, cancellationToken);
+
     public async Task AgregarCuentaPorCobrarAsync(CuentaPorCobrar cuenta, CancellationToken cancellationToken = default)
         => await _context.CuentasPorCobrar.AddAsync(cuenta, cancellationToken);
 

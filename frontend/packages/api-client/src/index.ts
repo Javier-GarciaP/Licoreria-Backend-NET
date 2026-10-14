@@ -5,6 +5,10 @@ import type {
   Categoria,
   ChatMensaje,
   Cliente,
+  ClienteVenta,
+  CerrarCuentaRequest,
+  DevolucionVenta,
+  PuntosMovimiento,
   Cuenta,
   CuentaPorCobrar,
   CuentaPorPagar,
@@ -121,7 +125,7 @@ export const ventasApi = {
   registrar: (body: RegistrarVentaRequest) => apiFetch<Venta>('/api/v1/ventas', { method: 'POST', body }),
   metodosPago: () => apiFetch<MetodoPago[]>('/api/v1/metodos-pago'),
   devolver: (id: string, body: unknown) =>
-    apiFetch<unknown>(`/api/v1/ventas/${id}/devoluciones`, { method: 'POST', body }),
+    apiFetch<DevolucionVenta>(`/api/v1/ventas/${id}/devoluciones`, { method: 'POST', body }),
 };
 
 export const promocionesApi = {
@@ -154,7 +158,7 @@ export const cuentasApi = {
     apiFetch<Cuenta>(`/api/v1/cuentas/${id}/abonos`, { method: 'POST', body }),
   dividir: (id: string, body: { partes?: number; montos?: number[] }) =>
     apiFetch<unknown>(`/api/v1/cuentas/${id}/dividir`, { method: 'POST', body }),
-  cerrar: (id: string, body: unknown) =>
+  cerrar: (id: string, body: CerrarCuentaRequest) =>
     apiFetch<Venta>(`/api/v1/cuentas/${id}/cerrar`, { method: 'POST', body }),
 };
 
@@ -288,7 +292,8 @@ export const listaVipApi = {
 };
 
 export const entradasApi = {
-  listar: (query: { eventoId?: string } = {}) => apiFetch<Entrada[]>('/api/v1/entradas', { query }),
+  listar: (query: { eventoId?: string; page?: number; pageSize?: number } = {}) =>
+    apiFetch<ResultadoPaginado<Entrada>>('/api/v1/entradas', { query }),
   emitir: (body: unknown) => apiFetch<Entrada>('/api/v1/entradas', { method: 'POST', body }),
   validar: (codigo: string) => apiFetch<Entrada>(`/api/v1/entradas/${codigo}/validar`, { method: 'POST' }),
   cancelar: (id: string) => apiFetch<Entrada>(`/api/v1/entradas/${id}/cancelar`, { method: 'POST' }),
@@ -312,6 +317,9 @@ export const clientesApi = {
   crear: (body: unknown) => apiFetch<Cliente>('/api/v1/clientes', { method: 'POST', body }),
   actualizar: (id: string, body: unknown) => apiFetch<Cliente>(`/api/v1/clientes/${id}`, { method: 'PUT', body }),
   eliminar: (id: string) => apiFetch<void>(`/api/v1/clientes/${id}`, { method: 'DELETE' }),
+  ventas: (id: string, query: PaginaQuery = {}) =>
+    apiFetch<ResultadoPaginado<ClienteVenta>>(`/api/v1/clientes/${id}/ventas`, { query }),
+  puntos: (id: string) => apiFetch<PuntosMovimiento[]>(`/api/v1/clientes/${id}/puntos`),
   acumularPuntos: (id: string, body: { puntos: number; motivo: string }) =>
     apiFetch<Cliente>(`/api/v1/clientes/${id}/puntos/acumular`, { method: 'POST', body }),
   canjearPuntos: (id: string, body: { puntos: number; motivo: string }) =>

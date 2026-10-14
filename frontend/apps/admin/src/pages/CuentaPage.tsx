@@ -20,12 +20,14 @@ import {
   Skeleton,
   StatusBadge,
 } from '@licoreria/ui';
-import type { Cuenta, MetodoPago, Moneda, Venta } from '@licoreria/types';
+import type { Cliente, Cuenta, MetodoPago, Moneda, Venta } from '@licoreria/types';
 import { cuentasApi, finanzasApi, ventasApi } from '@licoreria/api-client';
 import { AgregarComandaModal } from '../components/cuentas/AgregarComandaModal';
+import { ClienteVentaPicker } from '../components/pos/ClienteVentaPicker';
 import { TicketVenta } from '../components/pos/TicketVenta';
 import { mensajeDeError } from '../lib/api';
 import { formatBS, formatUSD, haceCuanto } from '../lib/format';
+import { DIAS_CREDITO_PREDETERMINADO, esMetodoCredito, fechaEnDias, vencimientoIso } from '../lib/credito';
 
 interface PagoLinea {
   metodoPagoId: string;
@@ -83,6 +85,8 @@ export function CuentaPage() {
   const [cierreMonto, setCierreMonto] = useState('');
   const [cierreMoneda, setCierreMoneda] = useState<Moneda>('USD');
   const [abonoMoneda, setAbonoMoneda] = useState<Moneda>('USD');
+  const [clienteCierre, setClienteCierre] = useState<Cliente | null>(null);
+  const [vencimientoCierre, setVencimientoCierre] = useState(() => fechaEnDias(DIAS_CREDITO_PREDETERMINADO));
 
   const abonoForm = useForm<FormularioAbono>({
     resolver: zodResolver(esquemaAbono),
@@ -139,11 +143,16 @@ export function CuentaPage() {
           monto: pago.monto,
           moneda: pago.moneda,
         })),
+        clienteId: clienteCierre?.id ?? null,
+        vencimientoCredito: hayCredito ? vencimientoIso(vencimientoCierre) : null,
       }),
     onSuccess: (venta) => {
       toast.success('Cuenta cerrada', { description: `Comprobante ${venta.numeroComprobante ?? venta.id.slice(0, 8)}` });
       setPagosCierre([]);
       setCobroOpen(false);
+      setClienteCierre(null);
+      queryClient.invalidateQueries({ queryKey: ['clientes'] });
+      queryClient.invalidateQueries({ queryKey: ['cuentas-por-cobrar'] });
       queryClient.invalidateQueries({ queryKey: ['cuentas'] });
       queryClient.invalidateQueries({ queryKey: ['mesas'] });
       setVentaTicket(venta);
@@ -152,6 +161,13 @@ export function CuentaPage() {
   });
 
   const datos: Cuenta | undefined = cuenta.data;
+
+  // El crédito no se acepta como abono: se otorga al cobrar y cerrar la cuenta.
+  const metodosAbono = useMemo(() => (metodos.data ?? []).filter((metodo) => !esMetodoCredito(metodo)), [metodos.data]);
+  const hayCredito = pagosCierre.some((pago) =>
+    esMetodoCredito(metodos.data?.find((metodo) => metodo.id === pago.metodoPagoId)),
+  );
+  const faltaCliente = hayCredito && !clienteCierre;
 
   // Los pagos del cierre pueden ser USD o Bs: el total se normaliza a USD con la tasa vigente.
   const totalCierre = useMemo(
@@ -169,6 +185,8 @@ export function CuentaPage() {
   const abrirCobro = () => {
     setPagosCierre([]);
     setCierreMetodo(metodos.data?.[0]?.id ?? '');
+    setClienteCierre(null);
+    setVencimientoCierre(fechaEnDias(DIAS_CREDITO_PREDETERMINADO));
     setCierreMoneda('USD');
     setCierreMonto(datos ? String(datos.saldo) : '');
     setCobroOpen(true);
@@ -350,7 +368,7 @@ export function CuentaPage() {
             <div>
               <p className="mb-1.5 text-sm font-medium text-foreground">Método de pago</p>
               <div className="flex flex-wrap gap-2">
-                {metodos.data?.map((metodo: MetodoPago) => {
+                {metodosAbono.map((metodo: MetodoPago) => {
                   const activo = abonoForm.watch('metodoPagoId') === metodo.id;
                   return (
                     <button
@@ -508,7 +526,7 @@ export function CuentaPage() {
               Cancelar
             </Button>
             <Button
-              disabled={pagosCierre.length === 0 || !cubierto}
+              disabled={pagosCierre.length === 0 || !cubierto || faltaCliente}
               loading={cerrar.isPending}
               onClick={() => cerrar.mutate()}
               leftIcon={<Wallet size={16} />}
@@ -523,6 +541,8 @@ export function CuentaPage() {
             <span className="text-sm text-muted-foreground">Saldo a cobrar</span>
             <span className="num text-xl font-medium text-foreground">{formatUSD(datos.saldo)}</span>
           </div>
+
+          <ClienteVentaPicker cliente={clienteCierre} onChange={setClienteCierre} />
 
           <div className="flex flex-wrap gap-2">
             <Select aria-label="Método de pago" value={cierreMetodo} onChange={(evento) => setCierreMetodo(evento.target.value)}>
@@ -596,6 +616,26 @@ export function CuentaPage() {
                   </button>
                 </div>
               ))}
+              {hayCredito && (
+                <div className="flex flex-col gap-1.5 rounded-control border border-border bg-muted/40 p-2">
+                  <label className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                    Vence el
+                    <input
+                      aria-label="Vencimiento del crédito"
+                      type="date"
+                      min={fechaEnDias(1)}
+                      value={vencimientoCierre}
+                      onChange={(evento) => setVencimientoCierre(evento.target.value)}
+                      className="h-8 rounded-control border border-border bg-card px-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/50"
+                    />
+                  </label>
+                  {faltaCliente && (
+                    <p role="alert" className="text-xs text-destructive-fg">
+                      Elige un cliente para cerrar la cuenta a crédito.
+                    </p>
+                  )}
+                </div>
+              )}
               <span className="text-right text-xs text-foreground">
                 Registrado: {formatUSD(totalCierre)} · {cubierto ? <span className="text-success-fg">Saldo cubierto</span> : <span>Falta {formatUSD(restante)}</span>}
               </span>

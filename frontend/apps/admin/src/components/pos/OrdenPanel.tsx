@@ -1,7 +1,8 @@
 import type { RefObject } from 'react';
 import { Button, cn } from '@licoreria/ui';
-import type { Moneda, Promocion } from '@licoreria/types';
+import type { Cliente, MetodoPago, Moneda, Promocion } from '@licoreria/types';
 import { formatBS, formatUSD } from '../../lib/format';
+import { ClienteVentaPicker } from './ClienteVentaPicker';
 import { OrdenLineas } from './OrdenLineas';
 import { OrdenTabs } from './OrdenTabs';
 import { subtotalOrden, totalConPropina, totalOrden, type PosApi } from '../../hooks/usePos';
@@ -18,6 +19,15 @@ export function OrdenPanel({
   moneda,
   onMonedaChange,
   tasa,
+  metodos,
+  metodoPagoId,
+  onMetodoChange,
+  cliente,
+  onClienteChange,
+  esCredito,
+  vencimiento,
+  onVencimientoChange,
+  vencimientoMinimo,
 }: {
   pos: PosApi;
   promociones: Promocion[];
@@ -29,12 +39,27 @@ export function OrdenPanel({
   onMonedaChange: (moneda: Moneda) => void;
   /** Tasa de cambio vigente (Bs por USD). */
   tasa: number;
+  /** Métodos de pago disponibles. */
+  metodos: MetodoPago[];
+  /** Método elegido para cobrar. */
+  metodoPagoId: string;
+  onMetodoChange: (id: string) => void;
+  /** Cliente asociado a la venta (opcional salvo con Crédito). */
+  cliente: Cliente | null;
+  onClienteChange: (cliente: Cliente | null) => void;
+  /** El método elegido es Crédito: exige cliente y fecha de vencimiento. */
+  esCredito: boolean;
+  /** Vencimiento previsto del crédito (AAAA-MM-DD). */
+  vencimiento: string;
+  onVencimientoChange: (fecha: string) => void;
+  vencimientoMinimo: string;
 }) {
   const { activa } = pos;
   const subtotal = subtotalOrden(activa);
   const total = totalOrden(activa);
   const totalPagar = totalConPropina(activa);
-  const puedeCobrar = activa.lineas.length > 0;
+  const faltaCliente = esCredito && !cliente;
+  const puedeCobrar = activa.lineas.length > 0 && !faltaCliente;
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
@@ -123,6 +148,42 @@ export function OrdenPanel({
             </span>
           </div>
         </div>
+
+        <ClienteVentaPicker cliente={cliente} onChange={onClienteChange} />
+
+        <select
+          aria-label="Método de pago"
+          value={metodoPagoId}
+          onChange={(evento) => onMetodoChange(evento.target.value)}
+          className="h-10 w-full rounded-control border border-border bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/50"
+        >
+          {metodos.map((metodo) => (
+            <option key={metodo.id} value={metodo.id}>
+              {metodo.nombre}
+            </option>
+          ))}
+        </select>
+
+        {esCredito && (
+          <div className="flex flex-col gap-1.5 rounded-control border border-border bg-muted/40 p-2">
+            <label className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+              Vence el
+              <input
+                aria-label="Vencimiento del crédito"
+                type="date"
+                min={vencimientoMinimo}
+                value={vencimiento}
+                onChange={(evento) => onVencimientoChange(evento.target.value)}
+                className="h-8 rounded-control border border-border bg-card px-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/50"
+              />
+            </label>
+            {faltaCliente && (
+              <p role="alert" className="text-xs text-destructive-fg">
+                Elige un cliente para vender a crédito.
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-0.5 rounded-lg border border-border p-0.5" role="group" aria-label="Moneda del pago">

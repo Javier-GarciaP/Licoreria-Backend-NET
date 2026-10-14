@@ -659,6 +659,62 @@ paths:
       responses:
         '200':
           description: OK
+  /api/v1/clientes/{id}/ventas:
+    get:
+      tags:
+        - Clientes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: Page
+          in: query
+          schema:
+            pattern: ^-?(?:0|[1-9]\d*)$
+            type:
+              - integer
+              - string
+            format: int32
+        - name: PageSize
+          in: query
+          schema:
+            pattern: ^-?(?:0|[1-9]\d*)$
+            type:
+              - integer
+              - string
+            format: int32
+        - name: PaginaNormalizada
+          in: query
+          schema:
+            pattern: ^-?(?:0|[1-9]\d*)$
+            type:
+              - integer
+              - string
+            format: int32
+        - name: TamanoNormalizado
+          in: query
+          schema:
+            pattern: ^-?(?:0|[1-9]\d*)$
+            type:
+              - integer
+              - string
+            format: int32
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ResultadoPaginadoOfClienteVentaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoPaginadoOfClienteVentaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoPaginadoOfClienteVentaDto'
   /api/v1/clientes/{id}/puntos:
     get:
       tags:
@@ -6308,6 +6364,16 @@ components:
             - string
           format: double
           default: 0
+        clienteId:
+          type:
+            - 'null'
+            - string
+          format: uuid
+        vencimientoCredito:
+          type:
+            - 'null'
+            - string
+          format: date-time
     ChatEnviarDto:
       required:
         - mensaje
@@ -6452,6 +6518,33 @@ components:
             - string
         activo:
           type: boolean
+    ClienteVentaDto:
+      required:
+        - id
+        - fecha
+        - totalUSD
+        - numeroComprobante
+        - estado
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        fecha:
+          type: string
+          format: date-time
+        totalUSD:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        numeroComprobante:
+          type:
+            - 'null'
+            - string
+        estado:
+          $ref: '#/components/schemas/EstadoVenta'
     ComandaDetalleDto:
       required:
         - id
@@ -6728,6 +6821,11 @@ components:
           format: date-time
         estado:
           $ref: '#/components/schemas/EstadoCuentaPorCobrar'
+        ventaId:
+          type:
+            - 'null'
+            - string
+          format: uuid
     CuentaPorPagarDto:
       required:
         - id
@@ -6986,6 +7084,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DevolucionDetalleDto'
+        aviso:
+          type:
+            - 'null'
+            - string
     DiagnosticoInventarioDto:
       required:
         - total
@@ -10103,6 +10205,16 @@ components:
             - 'null'
             - string
           format: uuid
+        clienteId:
+          type:
+            - 'null'
+            - string
+          format: uuid
+        vencimientoCredito:
+          type:
+            - 'null'
+            - string
+          format: date-time
     ReporteComprasDto:
       required:
         - desde
@@ -10567,6 +10679,42 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ClienteDto'
+        page:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+        pageSize:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+        totalItems:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+        totalPages:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+    ResultadoPaginadoOfClienteVentaDto:
+      required:
+        - items
+        - page
+        - pageSize
+        - totalItems
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClienteVentaDto'
         page:
           pattern: ^-?(?:0|[1-9]\d*)$
           type:
@@ -11791,6 +11939,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/VentaPagoRegistradoDto'
+        clienteId:
+          type:
+            - 'null'
+            - string
+          format: uuid
+        clienteNombre:
+          type:
+            - 'null'
+            - string
+        puntosGanados:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+          default: 0
+        creditoUSD:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+          default: 0
     VentaItemDto:
       required:
         - varianteId

@@ -28,6 +28,26 @@ public class Cliente : BaseEntity
         MarcarModificado();
     }
 
+    /// <summary>
+    /// Resta puntos sin dejar el saldo por debajo de cero. Devuelve los puntos realmente revertidos.
+    /// </summary>
+    public int RevertirPuntos(int puntos)
+    {
+        if (puntos <= 0)
+        {
+            return 0;
+        }
+
+        var revertidos = Math.Min(puntos, Puntos);
+        if (revertidos > 0)
+        {
+            Puntos -= revertidos;
+            MarcarModificado();
+        }
+
+        return revertidos;
+    }
+
     public void CanjearPuntos(int puntos)
     {
         if (puntos <= 0)
@@ -63,6 +83,9 @@ public class CuentaPorCobrar : BaseEntity
 {
     public Guid ClienteId { get; set; }
     public Cliente Cliente { get; set; } = null!;
+
+    /// <summary>Venta que originó el crédito; nulo en las cuentas registradas a mano.</summary>
+    public Guid? VentaId { get; set; }
 
     public decimal MontoUSD { get; set; }
     public decimal SaldoUSD { get; private set; }

@@ -40,6 +40,8 @@ services:
       Jwt__Key: ${JWT_KEY:-licoreria-dev-secret-key-change-in-production-0123456789}
       Jwt__Issuer: ${JWT_ISSUER:-LicoreriaAPI}
       Jwt__Audience: ${JWT_AUDIENCE:-LicoreriaClientes}
+      Fidelidad__PuntosPorUSD: ${FIDELIDAD_PUNTOS_POR_USD:-1}
+      Credito__DiasVencimiento: ${CREDITO_DIAS_VENCIMIENTO:-30}
       Cors__AllowedOrigins__0: http://localhost:${ADMIN_PORT:-4173}
       Cors__AllowedOrigins__1: http://localhost:${PUBLIC_PORT:-4174}
       Cors__AllowedOrigins__2: http://localhost:${EDGE_PORT:-8090}

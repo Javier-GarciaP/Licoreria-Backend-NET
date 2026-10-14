@@ -272,6 +272,11 @@ public sealed class ServicioCuentas : IServicioCuentas
             var metodo = await _metodosPago.GetByIdAsync(dto.MetodoPagoId, ct)
                 ?? throw new NoEncontradoException($"No existe el método de pago {dto.MetodoPagoId}.");
 
+            if (metodo.Codigo == MetodoPago.CodigoCredito)
+            {
+                throw new ReglaNegocioException("El crédito no se acepta como abono: se otorga al cerrar la cuenta.");
+            }
+
             // Los abonos en Bs se convierten a USD con la tasa vigente para que
             // TotalAbonado y Saldo de la cuenta siempre estén en USD.
             var montoUsd = dto.Monto;
@@ -616,7 +621,7 @@ public sealed class ServicioCuentas : IServicioCuentas
             await _kardex.LiberarReservasAsync(cuenta.Comandas.SelectMany(c => c.Detalles), ct);
 
             venta = await _ventas.RegistrarVentaAsync(
-                new RegistrarVentaDto(items, pagos, dto.DescuentoUSD, cuenta.Id),
+                new RegistrarVentaDto(items, pagos, dto.DescuentoUSD, cuenta.Id, ClienteId: dto.ClienteId, VencimientoCredito: dto.VencimientoCredito),
                 ct);
 
             cuenta.Cerrar();

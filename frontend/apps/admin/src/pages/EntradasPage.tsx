@@ -102,11 +102,11 @@ export function EntradasPage() {
       <Card>
         <CardHeader>
           <CardTitle>Entradas</CardTitle>
-          <span className="text-xs text-muted-foreground">{entradas.data?.length ?? 0} emitidas</span>
+          <span className="text-xs text-muted-foreground">{entradas.data?.totalItems ?? 0} emitidas</span>
         </CardHeader>
         <CardBody>
           <DataTable<Entrada>
-            rows={entradas.data ?? []}
+            rows={entradas.data?.items ?? []}
             loading={entradas.isLoading}
             rowKey={(fila) => fila.id}
             empty="Sin entradas emitidas."

@@ -23,6 +23,10 @@ public class Venta : BaseEntity
     public Guid? SesionCajaId { get; set; }
 
     public Guid? CuentaId { get; set; }
+
+    /// <summary>Cliente al que se asocia la venta (puntos, crédito e historial); opcional.</summary>
+    public Guid? ClienteId { get; set; }
+    public Cliente? Cliente { get; set; }
     public Guid? PromocionId { get; set; }
 
     public ICollection<DetalleVenta> Detalles { get; set; } = new List<DetalleVenta>();

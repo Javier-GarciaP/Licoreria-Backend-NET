@@ -74,6 +74,7 @@ public static class DependencyInjection
         services.AddScoped<IServicioSeguridad, ServicioSeguridad>();
         services.AddScoped<IServicioFinanzas, ServicioFinanzas>();
         services.AddScoped<IServicioKardex, ServicioKardex>();
+        services.AddScoped<IServicioClienteVenta, ServicioClienteVenta>();
         services.AddScoped<IServicioVentas, ServicioVentas>();
         services.AddScoped<IServicioCuentas, ServicioCuentas>();
         services.AddScoped<IServicioCaja, ServicioCaja>();
@@ -184,6 +185,14 @@ public static class DependencyInjection
             configuration.GetSection(OpcionesAutenticacion.SectionName).Get<OpcionesAutenticacion>()
             ?? new OpcionesAutenticacion());
         services.AddSingleton<ITokenService, TokenService>();
+
+        // Reglas de fidelidad (puntos por USD) y de crédito (días de vencimiento).
+        services.AddSingleton(
+            configuration.GetSection(OpcionesFidelidad.SectionName).Get<OpcionesFidelidad>()
+            ?? new OpcionesFidelidad());
+        services.AddSingleton(
+            configuration.GetSection(OpcionesCredito.SectionName).Get<OpcionesCredito>()
+            ?? new OpcionesCredito());
 
         return services;
     }

@@ -262,6 +262,7 @@ export function VentasPage() {
             columns={[
               { key: 'fecha', header: 'Fecha', render: (venta) => formatDateTime(venta.fecha) },
               { key: 'comprobante', header: 'Comprobante', render: (venta) => venta.numeroComprobante ?? venta.id.slice(0, 8) },
+              { key: 'cliente', header: 'Cliente', render: (venta) => venta.clienteNombre ?? '—' },
               { key: 'estado', header: 'Estado', render: (venta) => <StatusBadge status={venta.estado} /> },
               { key: 'total', header: 'Total', align: 'right', render: (venta) => formatUSD(venta.totalUSD) },
               { key: 'bs', header: 'Total Bs', align: 'right', render: (venta) => `Bs ${venta.totalBS.toFixed(2)}` },

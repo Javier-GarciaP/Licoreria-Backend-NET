@@ -24,7 +24,9 @@ public sealed record RegistrarAbonoCuentaDto(
 
 public sealed record CerrarCuentaDto(
     IReadOnlyList<VentaPagoDto> Pagos,
-    decimal DescuentoUSD = 0);
+    decimal DescuentoUSD = 0,
+    Guid? ClienteId = null,
+    DateTime? VencimientoCredito = null);
 
 public sealed record AbonoDto(
     Guid Id,

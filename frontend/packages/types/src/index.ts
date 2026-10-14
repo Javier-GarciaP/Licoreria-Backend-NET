@@ -410,6 +410,29 @@ export interface RegistrarVentaRequest {
   descuentoUSD?: number;
   cuentaId?: string | null;
   promocionId?: string | null;
+  /** Cliente al que se asocia la venta (puntos, crédito e historial). */
+  clienteId?: string | null;
+  /** Vencimiento de la cuenta por cobrar si hay un pago con el método Crédito. */
+  vencimientoCredito?: string | null;
+}
+
+/** Cuerpo del cierre de una cuenta de mesa. */
+export interface CerrarCuentaRequest {
+  pagos: VentaPago[];
+  descuentoUSD?: number;
+  clienteId?: string | null;
+  vencimientoCredito?: string | null;
+}
+
+export interface DevolucionVenta {
+  id: string;
+  ventaId: string;
+  motivo: string;
+  montoUSD: number;
+  reintegrarInventario: boolean;
+  fecha: string;
+  /** Aviso informativo, p. ej. cuando la venta tiene una cuenta por cobrar que se ajusta a mano. */
+  aviso: string | null;
 }
 
 export interface VentaDetalle {
@@ -447,6 +470,12 @@ export interface Venta {
   numeroComprobante: string | null;
   detalles: VentaDetalle[];
   pagos: VentaPagoRegistrado[];
+  clienteId?: string | null;
+  clienteNombre?: string | null;
+  /** Puntos de fidelidad otorgados por la venta (solo en la respuesta de registro/cierre). */
+  puntosGanados?: number;
+  /** Monto de la venta pagado con Crédito, en USD (solo en la respuesta de registro/cierre). */
+  creditoUSD?: number;
 }
 
 /* ===================== Cuentas / Comandas ===================== */
@@ -734,6 +763,22 @@ export interface Cliente {
   activo: boolean;
 }
 
+export interface ClienteVenta {
+  id: string;
+  fecha: string;
+  totalUSD: number;
+  numeroComprobante: string | null;
+  estado: string;
+}
+
+export interface PuntosMovimiento {
+  id: string;
+  tipo: 'Acumulacion' | 'Canje' | 'Reversion';
+  puntos: number;
+  motivo: string;
+  fecha: string;
+}
+
 export interface Denominacion {
   id: string;
   moneda: Moneda;
@@ -877,7 +922,10 @@ export interface CuentaPorCobrar {
   montoUSD: number;
   saldoUSD: number;
   vencimiento: string;
+  /** `Pendiente`, `Pagada` o `Vencida` (derivada: saldo pendiente con vencimiento pasado). */
   estado: string;
+  /** Venta que originó el crédito; nulo en las cuentas registradas a mano. */
+  ventaId?: string | null;
 }
 
 export interface ListaVip {

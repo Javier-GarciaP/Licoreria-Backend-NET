@@ -4,7 +4,8 @@ namespace Licoreria.Domain.Enums;
 public enum TipoMovimientoPuntos
 {
     Acumulacion = 1,
-    Canje = 2
+    Canje = 2,
+    Reversion = 3
 }
 
 /// <summary>Estado de una cuenta por cobrar.</summary>

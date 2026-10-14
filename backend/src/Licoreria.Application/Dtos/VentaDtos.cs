@@ -26,7 +26,9 @@ public sealed record RegistrarVentaDto(
     IReadOnlyList<VentaPagoDto> Pagos,
     decimal DescuentoUSD = 0,
     Guid? CuentaId = null,
-    Guid? PromocionId = null);
+    Guid? PromocionId = null,
+    Guid? ClienteId = null,
+    DateTime? VencimientoCredito = null);
 
 public sealed record RegistrarPagoVentaDto(
     Guid MetodoPagoId,
@@ -66,7 +68,11 @@ public sealed record VentaDto(
     Guid? SesionCajaId,
     string? NumeroComprobante,
     IReadOnlyList<VentaDetalleDto> Detalles,
-    IReadOnlyList<VentaPagoRegistradoDto> Pagos);
+    IReadOnlyList<VentaPagoRegistradoDto> Pagos,
+    Guid? ClienteId = null,
+    string? ClienteNombre = null,
+    int PuntosGanados = 0,
+    decimal CreditoUSD = 0);
 
 public sealed record DevolucionDetalleCrearDto(
     Guid VarianteId,
@@ -90,4 +96,5 @@ public sealed record DevolucionDto(
     decimal MontoUSD,
     bool ReintegrarInventario,
     DateTime Fecha,
-    IReadOnlyList<DevolucionDetalleDto> Detalles);
+    IReadOnlyList<DevolucionDetalleDto> Detalles,
+    string? Aviso = null);
