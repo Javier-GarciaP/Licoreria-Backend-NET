@@ -1,6 +1,7 @@
 using Licoreria.Application.Common;
 using Licoreria.Application.Dtos;
 using Licoreria.Application.Interfaces;
+using Licoreria.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,6 +24,20 @@ public class AuditoriaController : ControllerBase
         [FromQuery] Guid? usuarioId,
         [FromQuery] DateTime? desde,
         [FromQuery] DateTime? hasta,
+        [FromQuery] string? accion,
+        [FromQuery] TipoAuditoria? tipo,
         CancellationToken cancellationToken)
-        => Ok(await _servicio.ObtenerAsync(paginacion, entidad, usuarioId, desde, hasta, cancellationToken));
+        => Ok(await _servicio.ObtenerAsync(paginacion, entidad, usuarioId, desde, hasta, accion, tipo, cancellationToken));
+
+    /// <summary>Entidades con registros, para poblar el filtro de la vista.</summary>
+    [HttpGet("entidades")]
+    public async Task<ActionResult<IReadOnlyList<string>>> ObtenerEntidades(CancellationToken cancellationToken)
+        => Ok(await _servicio.ObtenerEntidadesAsync(cancellationToken));
+
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<AuditLogDto>> ObtenerPorId(Guid id, CancellationToken cancellationToken)
+    {
+        var entrada = await _servicio.ObtenerPorIdAsync(id, cancellationToken);
+        return entrada is null ? NotFound() : Ok(entrada);
+    }
 }

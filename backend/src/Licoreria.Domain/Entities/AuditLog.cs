@@ -1,4 +1,5 @@
 using Licoreria.Domain.Common;
+using Licoreria.Domain.Enums;
 
 namespace Licoreria.Domain.Entities;
 
@@ -12,4 +13,5 @@ public class AuditLog : BaseEntity
     public Guid? EntidadId { get; set; }
     public string? Datos { get; set; }
     public string? Ip { get; set; }
+    public TipoAuditoria Tipo { get; set; } = TipoAuditoria.Cambio;
 }

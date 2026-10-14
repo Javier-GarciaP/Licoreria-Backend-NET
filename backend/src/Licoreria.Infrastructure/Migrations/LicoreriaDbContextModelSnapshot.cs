@@ -22,6 +22,8 @@ namespace Licoreria.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.HasSequence("comprobante_numero_seq");
+
             modelBuilder.Entity("Licoreria.Domain.Entities.Abono", b =>
                 {
                     b.Property<Guid>("Id")
@@ -220,6 +222,13 @@ namespace Licoreria.Infrastructure.Migrations
                     b.Property<DateTime?>("LastModifiedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("Cambio");
+
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uuid");
 
@@ -238,9 +247,17 @@ namespace Licoreria.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Accion");
+
                     b.HasIndex("CreatedAt");
 
                     b.HasIndex("Entidad");
+
+                    b.HasIndex("Tipo");
+
+                    b.HasIndex("Entidad", "EntidadId");
+
+                    b.HasIndex("UsuarioId", "CreatedAt");
 
                     b.ToTable("audit_log", (string)null);
                 });
@@ -686,6 +703,11 @@ namespace Licoreria.Infrastructure.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<bool>("Reservado")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uuid");
 
@@ -759,6 +781,10 @@ namespace Licoreria.Infrastructure.Migrations
                         .HasColumnName("xmin");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Numero")
+                        .IsUnique()
+                        .HasDatabaseName("ux_comprobantes_numero");
 
                     b.HasIndex("VentaId")
                         .IsUnique();
@@ -1368,6 +1394,80 @@ namespace Licoreria.Infrastructure.Migrations
                     b.HasIndex("ReservaId");
 
                     b.ToTable("entradas", (string)null);
+                });
+
+            modelBuilder.Entity("Licoreria.Domain.Entities.EnvaseAbierto", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AbiertoEn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("AbiertoPorUsuarioId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CerradoEn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("MotivoDescarte")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("PorcionVarianteId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("PorcionesIniciales")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PorcionesRestantes")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("PresentacionVarianteId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PresentacionVarianteId");
+
+                    b.HasIndex("PorcionVarianteId", "Estado", "AbiertoEn")
+                        .HasDatabaseName("ix_envases_porcion_estado_fecha");
+
+                    b.ToTable("envases_abiertos", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_envase_iniciales_positivas", "\"PorcionesIniciales\" >= 1");
+
+                            t.HasCheckConstraint("ck_envase_restantes_no_negativas", "\"PorcionesRestantes\" >= 0");
+
+                            t.HasCheckConstraint("ck_envase_restantes_no_superan_iniciales", "\"PorcionesRestantes\" <= \"PorcionesIniciales\"");
+                        });
                 });
 
             modelBuilder.Entity("Licoreria.Domain.Entities.Evento", b =>
@@ -2839,6 +2939,56 @@ namespace Licoreria.Infrastructure.Migrations
                     b.ToTable("planos_generados", (string)null);
                 });
 
+            modelBuilder.Entity("Licoreria.Domain.Entities.PorcionOrigen", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PorcionVarianteId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("PorcionesPorUnidad")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("PresentacionVarianteId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PresentacionVarianteId");
+
+                    b.HasIndex("PorcionVarianteId", "PresentacionVarianteId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_porcion_origen_par");
+
+                    b.ToTable("porcion_origenes", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_porcion_origen_porciones_por_unidad", "\"PorcionesPorUnidad\" >= 1");
+                        });
+                });
+
             modelBuilder.Entity("Licoreria.Domain.Entities.Producto", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3859,6 +4009,11 @@ namespace Licoreria.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Estado")
+                        .IsUnique()
+                        .HasDatabaseName("ux_sesiones_caja_abierta")
+                        .HasFilter("\"Estado\" = 'Abierta' AND \"IsDeleted\" = false");
+
                     b.HasIndex("UsuarioId");
 
                     b.ToTable("sesiones_caja", (string)null);
@@ -3913,7 +4068,57 @@ namespace Licoreria.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("MesaId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_sesiones_mesa_abierta_por_mesa")
+                        .HasFilter("\"MesaId\" IS NOT NULL AND \"CerradaEn\" IS NULL AND \"IsDeleted\" = false");
+
                     b.ToTable("sesiones_mesa", (string)null);
+                });
+
+            modelBuilder.Entity("Licoreria.Domain.Entities.StockPorcion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PorcionesReservadas")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("VarianteId")
+                        .HasColumnType("uuid");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VarianteId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_stock_porcion_variante");
+
+                    b.ToTable("stock_porcion", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_stock_porcion_reservadas_no_negativas", "\"PorcionesReservadas\" >= 0");
+                        });
                 });
 
             modelBuilder.Entity("Licoreria.Domain.Entities.StockProducto", b =>
@@ -3967,7 +4172,14 @@ namespace Licoreria.Infrastructure.Migrations
                     b.HasIndex("VarianteId")
                         .IsUnique();
 
-                    b.ToTable("stock_producto", (string)null);
+                    b.ToTable("stock_producto", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_stock_cantidad_no_negativa", "\"Cantidad\" >= 0");
+
+                            t.HasCheckConstraint("ck_stock_reservada_no_negativa", "\"CantidadReservada\" >= 0");
+
+                            t.HasCheckConstraint("ck_stock_reservada_no_supera_cantidad", "\"CantidadReservada\" <= \"Cantidad\"");
+                        });
                 });
 
             modelBuilder.Entity("Licoreria.Domain.Entities.TasaCambio", b =>
@@ -4425,6 +4637,11 @@ namespace Licoreria.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CuentaId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_ventas_por_cuenta")
+                        .HasFilter("\"CuentaId\" IS NOT NULL AND \"Estado\" <> 'Anulada' AND \"IsDeleted\" = false");
+
                     b.HasIndex("Fecha");
 
                     b.HasIndex("SesionCajaId");
@@ -4727,6 +4944,25 @@ namespace Licoreria.Infrastructure.Migrations
                     b.Navigation("Reserva");
                 });
 
+            modelBuilder.Entity("Licoreria.Domain.Entities.EnvaseAbierto", b =>
+                {
+                    b.HasOne("Licoreria.Domain.Entities.ProductoVariante", "PorcionVariante")
+                        .WithMany()
+                        .HasForeignKey("PorcionVarianteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Licoreria.Domain.Entities.ProductoVariante", "PresentacionVariante")
+                        .WithMany()
+                        .HasForeignKey("PresentacionVarianteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("PorcionVariante");
+
+                    b.Navigation("PresentacionVariante");
+                });
+
             modelBuilder.Entity("Licoreria.Domain.Entities.ListaVip", b =>
                 {
                     b.HasOne("Licoreria.Domain.Entities.Cliente", "Cliente")
@@ -4905,6 +5141,25 @@ namespace Licoreria.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("AiGeneracion");
+                });
+
+            modelBuilder.Entity("Licoreria.Domain.Entities.PorcionOrigen", b =>
+                {
+                    b.HasOne("Licoreria.Domain.Entities.ProductoVariante", "PorcionVariante")
+                        .WithMany("Origenes")
+                        .HasForeignKey("PorcionVarianteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Licoreria.Domain.Entities.ProductoVariante", "PresentacionVariante")
+                        .WithMany()
+                        .HasForeignKey("PresentacionVarianteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("PorcionVariante");
+
+                    b.Navigation("PresentacionVariante");
                 });
 
             modelBuilder.Entity("Licoreria.Domain.Entities.Producto", b =>
@@ -5117,6 +5372,17 @@ namespace Licoreria.Infrastructure.Migrations
                     b.Navigation("Usuario");
                 });
 
+            modelBuilder.Entity("Licoreria.Domain.Entities.StockPorcion", b =>
+                {
+                    b.HasOne("Licoreria.Domain.Entities.ProductoVariante", "Variante")
+                        .WithMany()
+                        .HasForeignKey("VarianteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Variante");
+                });
+
             modelBuilder.Entity("Licoreria.Domain.Entities.StockProducto", b =>
                 {
                     b.HasOne("Licoreria.Domain.Entities.ProductoVariante", "Variante")
@@ -5245,6 +5511,8 @@ namespace Licoreria.Infrastructure.Migrations
             modelBuilder.Entity("Licoreria.Domain.Entities.ProductoVariante", b =>
                 {
                     b.Navigation("CodigosBarras");
+
+                    b.Navigation("Origenes");
 
                     b.Navigation("RecetasVendidas");
                 });

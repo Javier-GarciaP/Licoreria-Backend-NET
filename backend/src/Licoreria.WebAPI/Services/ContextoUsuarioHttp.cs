@@ -35,6 +35,18 @@ public sealed class ContextoUsuarioHttp : IContextoUsuario
     public bool EstaAutenticado
         => _accessor.HttpContext?.User.Identity?.IsAuthenticated ?? false;
 
+    /// <summary>IP del cliente; las direcciones IPv4 mapeadas (::ffff:a.b.c.d) se registran como IPv4.</summary>
     public string? Ip
-        => _accessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
+    {
+        get
+        {
+            var ip = _accessor.HttpContext?.Connection.RemoteIpAddress;
+            if (ip is null)
+            {
+                return null;
+            }
+
+            return (ip.IsIPv4MappedToIPv6 ? ip.MapToIPv4() : ip).ToString();
+        }
+    }
 }

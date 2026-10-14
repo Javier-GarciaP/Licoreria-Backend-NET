@@ -9,4 +9,5 @@ public sealed record AuditLogDto(
     Guid? EntidadId,
     string? Datos,
     string? Ip,
-    DateTime Fecha);
+    DateTime Fecha,
+    string Tipo);

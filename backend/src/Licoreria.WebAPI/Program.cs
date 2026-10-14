@@ -12,6 +12,7 @@ using Licoreria.WebAPI.Hubs;
 using Licoreria.WebAPI.Middlewares;
 using Licoreria.WebAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
@@ -122,6 +123,24 @@ var jwtKey = jwtSection["Key"] ?? throw new InvalidOperationException("Falta la 
 var jwtIssuer = jwtSection["Issuer"];
 var jwtAudience = jwtSection["Audience"];
 
+// IP real del cliente detrás del proxy (nginx): solo se confía en X-Forwarded-For si la conexión
+// directa viene de una red de confianza (por defecto, redes privadas y loopback). Un cliente
+// externo que llegue directo a la API tiene IP pública y su encabezado se ignora.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.ForwardLimit = 1;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+
+    var redes = builder.Configuration.GetSection("ForwardedHeaders:RedesConfiables").Get<string[]>()
+        ?? ["127.0.0.0/8", "::1/128", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"];
+    foreach (var red in redes)
+    {
+        options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(red));
+    }
+});
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -165,6 +184,12 @@ builder.Services.AddAuthorization(options =>
 });
 
 // Límite de peticiones para proteger la API (global por IP y política estricta para auth).
+// El límite global es configurable (RateLimiting:PermitLimitPorMinuto); las pruebas de
+// integración lo suben porque lanzan ráfagas de peticiones desde una sola IP.
+// Se lee de forma diferida (al crear la partición de cada IP) para respetar la configuración
+// que añaden las pruebas de integración después de construir el generador.
+int LimiteGlobalPorMinuto() => builder.Configuration.GetValue("RateLimiting:PermitLimitPorMinuto", 300);
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -174,7 +199,7 @@ builder.Services.AddRateLimiter(options =>
             context.Connection.RemoteIpAddress?.ToString() ?? "anon",
             _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 300,
+                PermitLimit = LimiteGlobalPorMinuto(),
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));
@@ -231,6 +256,9 @@ if (!esGeneracionEnTiempoDeDiseno)
         }
     }
 }
+
+// Debe ir antes de limitador, autenticación y auditoría: fija Connection.RemoteIpAddress.
+app.UseForwardedHeaders();
 
 // Middleware Global para captura de excepciones según estándar RFC 7807
 app.UseMiddleware<ExceptionMiddleware>();

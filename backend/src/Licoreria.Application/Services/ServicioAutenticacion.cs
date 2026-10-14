@@ -15,6 +15,7 @@ public sealed class ServicioAutenticacion : IServicioAutenticacion
     private readonly IRelojSistema _reloj;
     private readonly IContextoUsuario _contextoUsuario;
     private readonly OpcionesAutenticacion _opciones;
+    private readonly IServicioAuditoria _auditoria;
 
     public ServicioAutenticacion(
         IUsuarioRepository usuarioRepository,
@@ -23,7 +24,8 @@ public sealed class ServicioAutenticacion : IServicioAutenticacion
         ITokenService tokenService,
         IRelojSistema reloj,
         IContextoUsuario contextoUsuario,
-        OpcionesAutenticacion opciones)
+        OpcionesAutenticacion opciones,
+        IServicioAuditoria auditoria)
     {
         _usuarioRepository = usuarioRepository;
         _refreshTokenRepository = refreshTokenRepository;
@@ -32,6 +34,7 @@ public sealed class ServicioAutenticacion : IServicioAutenticacion
         _reloj = reloj;
         _contextoUsuario = contextoUsuario;
         _opciones = opciones;
+        _auditoria = auditoria;
     }
 
     public async Task<AuthResponseDto?> IniciarSesionAsync(
@@ -40,17 +43,18 @@ public sealed class ServicioAutenticacion : IServicioAutenticacion
     {
         var usuario = await _usuarioRepository.ObtenerPorEmailAsync(dto.Username, cancellationToken);
 
-        if (usuario is null || !usuario.Activo)
+        // Mismo resultado para correo inexistente, usuario inactivo y contraseña errónea:
+        // la respuesta no revela cuál fue (el evento guarda el correo, nunca la contraseña).
+        if (usuario is null || !usuario.Activo || !_passwordHasher.Verify(dto.Password, usuario.PasswordHash))
         {
+            await _auditoria.RegistrarAccesoAsync(
+                "intento-fallido", null, dto.Username, new { correo = dto.Username }, cancellationToken);
             return null;
         }
 
-        if (!_passwordHasher.Verify(dto.Password, usuario.PasswordHash))
-        {
-            return null;
-        }
-
-        return await EmitirTokensAsync(usuario, cancellationToken);
+        var respuesta = await EmitirTokensAsync(usuario, cancellationToken);
+        await _auditoria.RegistrarAccesoAsync("iniciar-sesion", usuario.Id, usuario.Email, null, cancellationToken);
+        return respuesta;
     }
 
     public async Task<AuthResponseDto?> RefrescarAsync(
@@ -91,6 +95,9 @@ public sealed class ServicioAutenticacion : IServicioAutenticacion
         token.Revocar(_reloj.UtcNow);
         _refreshTokenRepository.Update(token);
         await _refreshTokenRepository.SaveChangesAsync(cancellationToken);
+
+        var usuario = await _usuarioRepository.GetByIdAsync(token.UsuarioId, cancellationToken);
+        await _auditoria.RegistrarAccesoAsync("cerrar-sesion", token.UsuarioId, usuario?.Email, null, cancellationToken);
         return true;
     }
 
