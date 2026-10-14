@@ -334,9 +334,11 @@ Verificación de cierre siempre igual: build 0 errores, 116 tests, typecheck, li
 | :--- | :--- | :--- |
 | `UnirseArea(area)` no valida el rol | cualquier JWT autenticado podría escuchar otra área | validar rol/área en el hub con los claims del JWT |
 | Varias conexiones SignalR por pestaña | una conexión por componente que escucha | conexión única compartida en `packages/` con rejoin |
-| `DbUpdateConcurrencyException` responde 500 | carrera entre dos escrituras no se traduce a 409 | mapear a `ConflictoException` en `ExceptionMiddleware` |
-| Sin `CHECK (cantidad >= 0)` en la BD | la guarda de stock negativa es solo de aplicación | restricción CHECK + `SELECT … FOR UPDATE` en kardex |
 | Módulo de IA pendiente | fuera de esta fase | generación y aprobación en iteración siguiente |
+
+> Resueltas por el cambio `concurrencia-stock`: los conflictos de versión
+> (`DbUpdateConcurrencyException`) y las violaciones de unicidad responden **409**, el
+> stock tiene `CHECK` en la base de datos y los pedidos reservan existencia al tomarse.
 
 > **Dí:** «Conozco los huecos, están priorizados con mitigación, y ninguno afecta el
 > flujo que acaban de ver.»

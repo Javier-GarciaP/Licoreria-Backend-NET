@@ -64,4 +64,5 @@ sequenceDiagram
 ## Auditoría
 
 Los claims alimentan `created_by` y `updated_by` a través del interceptor de EF Core,
-de modo que cada cambio queda asociado al usuario autenticado.
+de modo que cada cambio queda asociado al usuario autenticado. El detalle completo de la bitácora
+(`audit_log`) está en [Auditoría](auditoria.md).

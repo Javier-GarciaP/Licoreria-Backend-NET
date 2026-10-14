@@ -13,6 +13,60 @@ y el proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
 ### Agregado
 
+- **Auditoría total (`auditoria-total`):**
+  - **Captura automática:** `AuditoriaInterceptor` registra un `AuditLog` por cada alta, edición y
+    borrado (lógico, `restaurar` o físico) de cualquier entidad, con usuario, correo, IP y los
+    valores antes/después (solo los campos cambiados), en el mismo `SaveChanges` y la misma
+    transacción. `PasswordHash` y `Token` se enmascaran; `AuditLog`, `RefreshToken` y `ChatMensaje`
+    quedan fuera. Migración `AuditoriaTotal` (columna `tipo`, filas previas como `Evento`, índices).
+  - **Eventos:** `IServicioAuditoria.Registrar` (sin guardar, viaja con el cambio) y `RegistrarAsync`;
+    se agregan inicio de sesión, cierre de sesión e intento fallido, y se eliminan los eventos de
+    crear/editar/eliminar usuario que duplicaban el cambio automático.
+  - **IP real:** `UseForwardedHeaders` con redes de confianza configurables
+    (`ForwardedHeaders:RedesConfiables`).
+  - **API:** filtros `accion` y `tipo`, `GET /api/v1/auditoria/{id}` y `/entidades`.
+  - **Interfaz:** `/auditoria` visible para el Administrador (Analítica) con filtros en la URL,
+    paginación y detalle antes/después.
+  - **Documentación:** `docs/dev/05-seguridad/auditoria.md`.
+- **Presentaciones y porciones (`presentaciones-y-porciones`):**
+  - **Modelo:** una variante de Barra simple es *presentación* (botella 1 L, 2 L: existencia
+    propia; puede haber varias por producto), *porción* (vaso, trago: se sirve de una presentación
+    del mismo producto, con porciones enteras por unidad) o *receta* (preparados y heredadas, sin
+    conversión automática). Nuevas entidades `PorcionOrigen`, `EnvaseAbierto` y `StockPorcion`
+    (migración `PresentacionesYPorciones`, con `CHECK` de integridad).
+  - **Barra destapa a mano:** `GET/POST /api/v1/envases-abiertos` y `POST .../{id}/descartar`;
+    el barman elige qué botella abrir. Movimiento de kardex `Apertura`. Permiso nuevo
+    **`inventory:open`** (Administrador, Barra y Cajero; se aplica al iniciar sesión de nuevo).
+  - **Control de porciones:** reserva al pedir, consumo FIFO de envases al servir, sin reintegro de
+    lo servido, venta directa en el POS y porciones como insumo de preparados. `422` con código
+    `porciones-sin-abrir` («Falta destapar una botella») distinto de `existencia-agotada`.
+  - **Orígenes:** `GET/PUT /api/v1/variantes/{id}/origenes`; el DTO de variante agrega
+    `naturaleza`, `porcionesDisponibles`, `porcionesPotenciales` y `envasesCerradosAbribles`.
+  - **Interfaz:** selector de naturaleza y editor de orígenes en el formulario de producto;
+    disponibilidad («Quedan N», «N porciones abiertas», «Sin abrir · M botellas», «Agotado») en el
+    POS y en la carta del mesonero; panel **Envases abiertos** en el KDS y pestaña en Inventario
+    con el historial; evento en tiempo real `envase:actualizado`. La app de servicio incorpora
+    Vitest.
+  - **Migración manual del caso Coca-Cola:** ver `docs/dev/06-modulos/catalogo.md`.
+- **Consistencia de mesonero, reservas y existencias:**
+  - **Selector de variantes del mesonero:** la carta ya no usa siempre la primera variante; un producto
+    con varias presentaciones abre un selector con precio y existencia disponible de cada una (las
+    agotadas no se pueden pedir). La existencia se calcula por variante.
+  - **Mesas reservadas por fecha:** el formulario de reservas del admin pide las mesas para el horario
+    elegido y deshabilita las ya reservadas. En operación, `reservada` se marca por **jornada**
+    (`Jornada:DesfaseUtcHoras`, `InicioHora`, `FinHora`; por defecto 12:00 a 06:00 hora local, UTC-4)
+    y no por una ventana fija de 12 h; los extremos de dos reservas de 2 h no cuentan como solape.
+  - **Existencias:** columnas Existencia, Reservada y Disponible (existencia menos reservado).
+- **Concurrencia de stock y operaciones simultáneas (`concurrencia-stock`):**
+  - **Reserva al pedir:** `AgregarComandaAsync` reserva los insumos (`StockProducto.Reservar`)
+    en la misma transacción que crea la comanda; servir consume la reserva, cancelar,
+    desalojar la mesa, cerrar la cuenta o el turno la liberan. `ComandaDetalle.Reservado`.
+  - **409/422 y reintento:** `ExceptionMiddleware` mapea `DbUpdateConcurrencyException` y las
+    violaciones de unicidad (23505) a 409 y de CHECK (23514) a 422; `UnitOfWork` es reentrante
+    y reintenta hasta 3 veces los conflictos de versión.
+  - **Base de datos:** migraciones `ReservaStockComanda` y `RestriccionesConcurrencia` (CHECK de
+    stock, secuencia y unicidad de comprobantes, un turno y una sesión de mesa abiertos).
+
 - **Completitud de la Fase 4 (5 brechas):**
   - **Modo dual real:** `ModoProvider` montado en `main.tsx` (envuelve `ErrorBoundary`,
     `Toaster` y `AuthProvider`) con botón de conmutación en el header de `AppShell`.
@@ -187,6 +241,9 @@ y el proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
 ### Corregido
 
+- **Edición de productos con códigos de barras:** guardar un producto existente con códigos de
+  barras fallaba con un conflicto de versión (`Update(producto)` sobre entidades nuevas con clave
+  asignada); ahora los códigos se agregan sin marcar todo el grafo como modificado.
 - **Control de stock en el servicio (mesonero ↔ POS):**
   - `AgregarComandaAsync` verifica la existencia actual (desglosando recetas) y rechaza
     (`422`) pedidos que la barra/cocina no podría servir, con mensaje que nombra el
