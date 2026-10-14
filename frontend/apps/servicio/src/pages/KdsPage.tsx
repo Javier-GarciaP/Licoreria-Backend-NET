@@ -14,16 +14,16 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { ChefHat, Clock3, GripVertical, LogOut, Martini, UserRound } from 'lucide-react';
+import { ChefHat, Clock3, GripVertical, LogOut, Martini, UserRound, Wine } from 'lucide-react';
 import { cn } from '@licoreria/ui';
 import { cuentasApi } from '@licoreria/api-client';
 import { useAuth } from '../context/AuthContext';
 import { useRealtime } from '../hooks/useRealtime';
 import { Chat } from '../components/Chat';
+import { PanelEnvasesAbiertos } from '../components/barra/PanelEnvasesAbiertos';
 import { etiquetaRol } from '../lib/roles';
 import { formatTime, minutosTranscurridos } from '../lib/format';
-import { mensajeDeError } from '../lib/api';
+import { avisarError } from '../lib/api';
 import { sonidoNotificacion } from '../lib/sonido';
 
 type Area = 'barra' | 'cocina';
@@ -60,7 +60,9 @@ function horaActual(): string {
 
 export function KdsPage() {
   const queryClient = useQueryClient();
-  const { usuario, logout, rolDominio } = useAuth();
+  const { usuario, logout, rolDominio, tienePermiso } = useAuth();
+  const puedeDestapar = tienePermiso('inventory:open');
+  const [panelEnvases, setPanelEnvases] = useState(false);
   const [area, setArea] = useState<Area>(rolDominio === 'Cocina' ? 'cocina' : 'barra');
   const [hora, setHora] = useState(horaActual);
   const [activo, setActivo] = useState<ItemKds | null>(null);
@@ -86,6 +88,8 @@ export function KdsPage() {
     'item:actualizado': () => queryClient.invalidateQueries({ queryKey: ['kds'] }),
     'turno:abierto': () => queryClient.invalidateQueries({ queryKey: ['kds'] }),
     'turno:cerrado': () => queryClient.invalidateQueries({ queryKey: ['kds'] }),
+    // Alguien destapó o descartó una botella: cambia lo que se puede servir.
+    'envase:actualizado': () => queryClient.invalidateQueries({ queryKey: ['envases'] }),
   });
 
   const cuentas = useQuery({
@@ -124,7 +128,7 @@ export function KdsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['kds'] });
     },
-    onError: (error) => toast.error('No se pudo mover', { description: mensajeDeError(error) }),
+    onError: (error) => avisarError('No se pudo mover', error, () => queryClient.invalidateQueries({ queryKey: ['kds'] })),
   });
 
   const alIniciar = (evento: DragStartEvent) => {
@@ -174,6 +178,16 @@ export function KdsPage() {
             ))}
           </div>
 
+          {puedeDestapar && (
+            <button
+              type="button"
+              onClick={() => setPanelEnvases(true)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs text-foreground transition hover:border-primary hover:bg-primary/10"
+            >
+              <Wine size={14} /> Envases abiertos
+            </button>
+          )}
+
           <button
             type="button"
             aria-label="Salir"
@@ -216,6 +230,8 @@ export function KdsPage() {
           </DndContext>
         )}
       </div>
+
+      {puedeDestapar && <PanelEnvasesAbiertos abierto={panelEnvases} onCerrar={() => setPanelEnvases(false)} />}
 
       <Chat />
     </div>

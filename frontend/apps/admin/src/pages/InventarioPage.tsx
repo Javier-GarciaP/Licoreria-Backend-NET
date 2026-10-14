@@ -51,8 +51,15 @@ function FormularioAjuste({
   return (
     <form className="flex flex-col gap-3" onSubmit={form.handleSubmit(onGuardar)} noValidate>
       <p className="text-xs text-muted-foreground">
-        Disponible actual: <span className="num text-foreground">{formatNumber(item.cantidad)}</span>. Usa valores negativos
-        para descontar.
+        Existencia actual: <span className="num text-foreground">{formatNumber(item.cantidad)}</span>
+        {item.cantidadReservada > 0 && (
+          <>
+            {' '}
+            (<span className="num text-foreground">{formatNumber(item.cantidadReservada)}</span> reservada por comandas
+            pendientes). Usa valores negativos para descontar.
+          </>
+        )}
+        {item.cantidadReservada <= 0 && <> Usa valores negativos para descontar.</>}
       </p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Input
@@ -162,8 +169,27 @@ export function InventarioPage() {
                     </div>
                   ),
                 },
-                { key: 'cantidad', header: 'Disponible', align: 'right', render: (item) => formatNumber(item.cantidad) },
-                { key: 'reservada', header: 'Reservada', align: 'right', render: (item) => formatNumber(item.cantidadReservada) },
+                { key: 'cantidad', header: 'Existencia', align: 'right', render: (item) => formatNumber(item.cantidad) },
+                {
+                  key: 'reservada',
+                  header: 'Reservada',
+                  align: 'right',
+                  render: (item) => (
+                    <span className={item.cantidadReservada > 0 ? 'text-warning-fg' : undefined}>
+                      {formatNumber(item.cantidadReservada)}
+                    </span>
+                  ),
+                },
+                {
+                  key: 'disponible',
+                  header: 'Disponible',
+                  align: 'right',
+                  render: (item) => (
+                    <span className="font-medium text-foreground">
+                      {formatNumber(Math.max(0, item.cantidad - item.cantidadReservada))}
+                    </span>
+                  ),
+                },
                 { key: 'minimo', header: 'Mín', align: 'right', render: (item) => formatNumber(item.stockMinimo) },
                 { key: 'maximo', header: 'Máx', align: 'right', render: (item) => formatNumber(item.stockMaximo) },
                 {

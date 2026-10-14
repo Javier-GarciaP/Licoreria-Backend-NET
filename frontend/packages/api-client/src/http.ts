@@ -32,6 +32,21 @@ export class ApiError extends Error {
     this.problem = problem;
   }
 
+  /** 409: otra operación modificó los mismos datos (o creó el mismo registro) al mismo tiempo. */
+  get esConflicto(): boolean {
+    return this.status === 409;
+  }
+
+  /** 422 por producto agotado: distinto de una carrera, el stock realmente no alcanza. */
+  get esExistenciaAgotada(): boolean {
+    return this.status === 422 && this.problem.codigo === 'existencia-agotada';
+  }
+
+  /** 422: se pidió una porción (vaso, trago) y hay botellas cerradas pero ningún envase abierto: la barra debe destapar una. */
+  get esPorcionesSinAbrir(): boolean {
+    return this.status === 422 && this.problem.codigo === 'porciones-sin-abrir';
+  }
+
   /** Mensajes por campo devueltos por FluentValidation (400). */
   get fieldErrors(): Record<string, string[]> {
     return this.problem.errors ?? {};

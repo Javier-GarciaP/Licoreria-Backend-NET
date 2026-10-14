@@ -18,6 +18,14 @@ export interface ProblemDetails {
   detail?: string;
   instance?: string;
   errors?: Record<string, string[]>;
+  /** Código estable: `existencia-agotada` (422) o `conflicto` (409, carrera de concurrencia o duplicado). */
+  codigo?: string;
+  /** `porciones-sin-abrir` (422): hay botellas cerradas pero ningún envase abierto para servir la porción. */
+  envasesCerrados?: number;
+  /** Solo con `existencia-agotada` y `porciones-sin-abrir`: producto, cantidad pedida y cantidad disponible. */
+  producto?: string;
+  requerido?: number;
+  disponible?: number;
 }
 
 /* ===================== Auth ===================== */
@@ -67,6 +75,46 @@ export interface ProductoVariante {
   cantidadReservada: number;
   stockMinimo: number;
   stockMaximo: number;
+  /** Cómo obtiene su existencia: presentación (stock propio), porción (vaso/trago), receta o directa (cocina). */
+  naturaleza: NaturalezaVariante;
+  /** Solo porciones: porciones abiertas menos las reservadas por comandas pendientes. */
+  porcionesDisponibles: number;
+  /** Solo porciones: porciones que darían las presentaciones cerradas si se destaparan. */
+  porcionesPotenciales: number;
+  /** Solo porciones: unidades cerradas de sus presentaciones de origen que se pueden destapar. */
+  envasesCerradosAbribles: number;
+}
+
+export type NaturalezaVariante = 'Presentacion' | 'Porcion' | 'Receta' | 'Directa' | 'SinDefinir';
+
+export interface OrigenPorcion {
+  id: string;
+  presentacionVarianteId: string;
+  presentacionNombre: string;
+  sku: string;
+  porcionesPorUnidad: number;
+}
+
+export interface OrigenPorcionCrear {
+  presentacionVarianteId: string;
+  porcionesPorUnidad: number;
+}
+
+export type EstadoEnvase = 'Abierto' | 'Agotado' | 'Descartado';
+
+export interface EnvaseAbierto {
+  id: string;
+  porcionVarianteId: string;
+  porcionNombre: string;
+  presentacionVarianteId: string;
+  presentacionNombre: string;
+  porcionesIniciales: number;
+  porcionesRestantes: number;
+  estado: EstadoEnvase;
+  abiertoEn: string;
+  abiertoPorUsuarioId: string | null;
+  cerradoEn: string | null;
+  motivoDescarte: string | null;
 }
 
 export interface Producto {
@@ -125,7 +173,8 @@ export type TipoMovimientoInventario =
   | 'Ajuste'
   | 'Merma'
   | 'Cortesia'
-  | 'ConsumoInterno';
+  | 'ConsumoInterno'
+  | 'Apertura';
 
 export interface MovimientoKardex {
   id: string;
@@ -783,6 +832,9 @@ export interface PedidoAnticipado {
 
 /* ===================== Gerencia (R0) ===================== */
 
+/** Un cambio de datos capturado automáticamente o un evento de negocio/acceso registrado a mano. */
+export type TipoAuditoria = 'Cambio' | 'Evento';
+
 export interface AuditLog {
   id: string;
   usuarioId: string | null;
@@ -790,9 +842,19 @@ export interface AuditLog {
   accion: string;
   entidad: string;
   entidadId: string | null;
+  /** JSON con `antes` y/o `despues` (cambios) o datos libres del evento. */
   datos: string | null;
   ip: string | null;
   fecha: string;
+  tipo: TipoAuditoria;
+}
+
+/** Valores de un detalle de auditoría: campo → valor (los sensibles llegan enmascarados). */
+export type AuditValores = Record<string, unknown>;
+
+export interface AuditDetalle {
+  antes?: AuditValores;
+  despues?: AuditValores;
 }
 
 export interface CuentaPorCobrar {
@@ -923,3 +985,4 @@ export interface RecetaCrear {
   varianteInsumoId: string;
   cantidad: number;
 }
+export * from './existencia';

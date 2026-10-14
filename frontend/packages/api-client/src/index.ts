@@ -1,5 +1,6 @@
 import type {
   AuditLog,
+  TipoAuditoria,
   AuthResponse,
   Categoria,
   ChatMensaje,
@@ -37,6 +38,10 @@ import type {
   Proveedor,
   QrMenu,
   Receta,
+  EnvaseAbierto,
+  EstadoEnvase,
+  OrigenPorcion,
+  OrigenPorcionCrear,
   Recepcion,
   ReporteCompras,
   ReporteHeatmap,
@@ -86,6 +91,11 @@ export const catalogoApi = {
     apiFetch<Receta>(`/api/v1/variantes/${varianteId}/recetas`, { method: 'POST', body }),
   eliminarReceta: (varianteId: string, recetaId: string) =>
     apiFetch<void>(`/api/v1/variantes/${varianteId}/recetas/${recetaId}`, { method: 'DELETE' }),
+  /** De qué presentaciones sale una porción (vaso, trago) y cuántas porciones da cada una. */
+  origenes: (varianteId: string) => apiFetch<OrigenPorcion[]>(`/api/v1/variantes/${varianteId}/origenes`),
+  /** Reemplaza la lista de orígenes de la porción. */
+  guardarOrigenes: (varianteId: string, origenes: OrigenPorcionCrear[]) =>
+    apiFetch<OrigenPorcion[]>(`/api/v1/variantes/${varianteId}/origenes`, { method: 'PUT', body: origenes }),
   productoModificadores: (id: string) =>
     apiFetch<ProductoModificador[]>(`/api/v1/productos/${id}/modificadores`),
   crear: (body: unknown) => apiFetch<Producto>('/api/v1/productos', { method: 'POST', body }),
@@ -152,7 +162,8 @@ export const clubApi = {
   crearZona: (body: unknown) => apiFetch<Zona>('/api/v1/zonas', { method: 'POST', body }),
   actualizarZona: (id: string, body: unknown) => apiFetch<Zona>(`/api/v1/zonas/${id}`, { method: 'PUT', body }),
   eliminarZona: (id: string) => apiFetch<void>(`/api/v1/zonas/${id}`, { method: 'DELETE' }),
-  mesas: (zonaId?: string) => apiFetch<Mesa[]>('/api/v1/mesas', { query: { zonaId } }),
+  /** Con `fechaHora` marca `reservada` según las reservas que se solapan con ese horario; sin ella, según la jornada actual. */
+  mesas: (zonaId?: string, fechaHora?: string) => apiFetch<Mesa[]>('/api/v1/mesas', { query: { zonaId, fechaHora } }),
   crearMesa: (body: unknown) => apiFetch<Mesa>('/api/v1/mesas', { method: 'POST', body }),
   actualizarMesa: (id: string, body: unknown) => apiFetch<Mesa>(`/api/v1/mesas/${id}`, { method: 'PUT', body }),
   eliminarMesa: (id: string) => apiFetch<void>(`/api/v1/mesas/${id}`, { method: 'DELETE' }),
@@ -177,6 +188,17 @@ export const clubApi = {
     apiFetch<PedidoAnticipado>(`/api/v1/reservas/${id}/pedidos`, { method: 'POST', body }),
   eliminarPedido: (id: string, pedidoId: string) =>
     apiFetch<void>(`/api/v1/reservas/${id}/pedidos/${pedidoId}`, { method: 'DELETE' }),
+};
+
+/** Envases (botellas) destapados para servir porciones. */
+export const envasesApi = {
+  /** Sin filtros devuelve los abiertos; con `todos` el historial (abiertos, agotados y descartados). */
+  listar: (query: { porcionVarianteId?: string; estado?: EstadoEnvase; todos?: boolean; limite?: number } = {}) =>
+    apiFetch<EnvaseAbierto[]>('/api/v1/envases-abiertos', { query }),
+  destapar: (body: { porcionVarianteId: string; presentacionVarianteId: string }) =>
+    apiFetch<EnvaseAbierto>('/api/v1/envases-abiertos', { method: 'POST', body }),
+  descartar: (id: string, motivo: string) =>
+    apiFetch<EnvaseAbierto>(`/api/v1/envases-abiertos/${id}/descartar`, { method: 'POST', body: { motivo } }),
 };
 
 export const inventarioApi = {
@@ -223,8 +245,18 @@ export const reportesApi = {
 };
 
 export const auditoriaApi = {
-  listar: (query: PaginaQuery & { entidad?: string; usuarioId?: string } = {}) =>
-    apiFetch<ResultadoPaginado<AuditLog>>('/api/v1/auditoria', { query }),
+  listar: (
+    query: PaginaQuery & {
+      entidad?: string;
+      usuarioId?: string;
+      desde?: string;
+      hasta?: string;
+      accion?: string;
+      tipo?: TipoAuditoria;
+    } = {},
+  ) => apiFetch<ResultadoPaginado<AuditLog>>('/api/v1/auditoria', { query }),
+  obtener: (id: string) => apiFetch<AuditLog>(`/api/v1/auditoria/${id}`),
+  entidades: () => apiFetch<string[]>('/api/v1/auditoria/entidades'),
 };
 
 export const cuentasPorCobrarApi = {

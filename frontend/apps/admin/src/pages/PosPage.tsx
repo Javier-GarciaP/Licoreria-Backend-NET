@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Keyboard, Search } from 'lucide-react';
 import { Button, Card, Input, PageHeader, Pill } from '@licoreria/ui';
-import type { Moneda, Producto, ProductoVariante, TasaCambio, Venta } from '@licoreria/types';
+import { estadoExistencia, type Moneda, type Producto, type ProductoVariante, type TasaCambio, type Venta } from '@licoreria/types';
 import { catalogoApi, finanzasApi, promocionesApi, ventasApi } from '@licoreria/api-client';
-import { mensajeDeError } from '../lib/api';
+import { avisarError } from '../lib/api';
 import { formatBS } from '../lib/format';
 import { precioUnitario, totalConPropina, usePos } from '../hooks/usePos';
 import { usePosHotkeys, type HotkeyMap } from '../hooks/usePosHotkeys';
@@ -18,6 +18,7 @@ import { SelectorProductoModal, type SeleccionProducto } from '../components/pos
 import { TicketVenta } from '../components/pos/TicketVenta';
 
 export function PosPage() {
+  const queryClient = useQueryClient();
   const [params] = useSearchParams();
   const [busqueda, setBusqueda] = useState(params.get('busqueda') ?? '');
   const [busquedaDebounced, setBusquedaDebounced] = useState(busqueda.trim());
@@ -92,7 +93,12 @@ export function PosPage() {
       setVentaTicket(venta);
       pos.reiniciar();
     },
-    onError: (error) => toast.error('No se pudo registrar la venta', { description: mensajeDeError(error) }),
+    // La orden en pantalla se conserva: solo se limpia al registrar con éxito.
+    onError: (error) =>
+      avisarError('No se pudo registrar la venta', error, () => {
+        queryClient.invalidateQueries({ queryKey: ['pos', 'productos'] });
+        queryClient.invalidateQueries({ queryKey: ['stock'] });
+      }),
   });
 
   const agregarVariante = (producto: Producto, variante: ProductoVariante) =>
@@ -108,7 +114,12 @@ export function PosPage() {
     });
 
   const seleccionarProducto = (producto: Producto) => {
-    if (producto.variantes.length === 1 && producto.tipo !== 'Preparado') {
+    // Una variante sin existencia ni envase abierto abre el selector para explicar qué falta.
+    if (
+      producto.variantes.length === 1 &&
+      producto.tipo !== 'Preparado' &&
+      !estadoExistencia(producto, producto.variantes[0]).bloqueada
+    ) {
       agregarVariante(producto, producto.variantes[0]);
       return;
     }

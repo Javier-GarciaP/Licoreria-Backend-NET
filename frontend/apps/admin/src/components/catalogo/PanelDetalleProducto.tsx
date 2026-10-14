@@ -96,14 +96,15 @@ export function PanelDetalleProducto({ producto, imagenId, onCerrar }: { product
                     <tr key={variante.id} className="border-t border-border">
                       <td className="px-4 py-2.5 text-foreground">
                         {variante.nombre}
-                        {variante.esBase && <Pill tone="accent" className="ml-2">Base</Pill>}
+                        {variante.esBase && <Pill tone="accent" className="ml-2">Presentación</Pill>}
+                        {variante.naturaleza === 'Porcion' && <Pill tone="info" className="ml-2">Porción</Pill>}
                       </td>
                       <td className="num px-4 py-2.5 text-muted-foreground">{variante.sku}</td>
                       <td className="px-4 py-2.5">
                         {variante.codigosBarras?.[0] ? <CodigoBarras valor={variante.codigosBarras[0]} /> : <span className="text-muted-foreground">—</span>}
                       </td>
                       <td className="px-4 py-2.5">
-                        {variante.esBase ? <span className="text-xs text-muted-foreground">—</span> : <ConsumoVariante varianteId={variante.id} />}
+                        {variante.esBase ? <span className="text-xs text-muted-foreground">—</span> : <ConsumoVariante varianteId={variante.id} naturaleza={variante.naturaleza} />}
                       </td>
                       <td className="num px-4 py-2.5 text-right text-foreground">{formatNumber(variante.cantidad)}</td>
                       <td className="num px-4 py-2.5 text-right text-muted-foreground">{formatNumber(variante.cantidadReservada)}</td>

@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ArrowLeft, ArrowRight, Minus, Package, Plus, Sparkles, UtensilsCrossed, Wine, X } from 'lucide-react';
 import { Button, cn, Input, Modal, Skeleton } from '@licoreria/ui';
 import type { AreaDestino, Producto, ProductoVariante } from '@licoreria/types';
 import { catalogoApi, cuentasApi } from '@licoreria/api-client';
-import { mensajeDeError } from '../../lib/api';
+import { avisarError } from '../../lib/api';
 import { urlDeImagen } from '../../lib/imagenProducto';
 import { formatUSD } from '../../lib/format';
 
@@ -62,6 +62,7 @@ export function AgregarComandaModal({
   onCerrar: () => void;
   onEnviado: () => void;
 }) {
+  const queryClient = useQueryClient();
   const [busqueda, setBusqueda] = useState('');
   const [categoriaId, setCategoriaId] = useState<string | null>(null);
   const [areaActual, setAreaActual] = useState<'Auto' | AreaDestino>('Auto');
@@ -152,7 +153,13 @@ export function AgregarComandaModal({
       onEnviado();
       onCerrar();
     },
-    onError: (error) => toast.error('No se pudo enviar la comanda', { description: mensajeDeError(error) }),
+    // El pedido armado se conserva para reenviarlo; se refresca la cuenta y la existencia.
+    onError: (error) =>
+      avisarError('No se pudo enviar la comanda', error, () => {
+        queryClient.invalidateQueries({ queryKey: ['cuenta', cuentaId] });
+        queryClient.invalidateQueries({ queryKey: ['stock'] });
+        queryClient.invalidateQueries({ queryKey: ['cuenta', 'productos'] });
+      }),
   });
 
   return (

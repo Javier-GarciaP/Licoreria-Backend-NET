@@ -6,7 +6,7 @@ import { inventarioApi } from '@licoreria/api-client';
 import { formatDateTime, formatNumber, formatUSD } from '../lib/format';
 import { contiene, paginarEnMemoria, PAGE_SIZE_FILTRO_LOCAL } from '../lib/filtros';
 
-const TIPOS: TipoMovimientoInventario[] = ['Compra', 'Venta', 'Ajuste', 'Merma', 'Cortesia', 'ConsumoInterno'];
+const TIPOS: TipoMovimientoInventario[] = ['Compra', 'Venta', 'Ajuste', 'Merma', 'Cortesia', 'ConsumoInterno', 'Apertura'];
 
 const tono: Record<string, 'success' | 'danger' | 'warning' | 'info' | 'accent' | 'neutral'> = {
   Compra: 'success',
@@ -15,6 +15,7 @@ const tono: Record<string, 'success' | 'danger' | 'warning' | 'info' | 'accent' 
   Merma: 'danger',
   Cortesia: 'warning',
   ConsumoInterno: 'neutral',
+  Apertura: 'accent',
 };
 
 export function KardexPage() {

@@ -24,7 +24,7 @@ import { catalogoApi } from '@licoreria/api-client';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Can } from '../components/Rbac';
 import { FormularioProducto, type DatosProductoForm } from '../components/catalogo/FormularioProducto';
-import { INSUMO_BASE } from '../components/catalogo/EditorConsumo';
+import { sincronizarVariantes } from '../lib/sincronizarVariantes';
 import { PanelDetalleProducto } from '../components/catalogo/PanelDetalleProducto';
 import { mensajeDeError } from '../lib/api';
 import { formatNumber, formatUSD } from '../lib/format';
@@ -128,6 +128,18 @@ export function ProductosPage() {
     enabled: esEditar && Boolean(detalle.data),
   });
 
+  const origenesPorVariante = useQuery({
+    queryKey: ['origenes', 'producto', id],
+    queryFn: async () => {
+      const porciones = detalle.data!.variantes.filter((variante) => variante.naturaleza === 'Porcion');
+      const entradas = await Promise.all(
+        porciones.map(async (variante) => [variante.id, await catalogoApi.origenes(variante.id)] as const),
+      );
+      return Object.fromEntries(entradas);
+    },
+    enabled: esEditar && Boolean(detalle.data),
+  });
+
   const invalidar = () => {
     queryClient.invalidateQueries({ queryKey: ['productos'] });
     queryClient.invalidateQueries({ queryKey: ['stock'] });
@@ -159,25 +171,6 @@ export function ProductosPage() {
 
   const editando = esEditar ? detalle.data : null;
 
-  const sincronizarConsumos = async (datos: DatosProductoForm, guardado: Producto) => {
-    const baseId = guardado.variantes.find((variante) => variante.esBase)?.id;
-    for (let indice = 0; indice < datos.variantes.length; indice += 1) {
-      const variante = datos.variantes[indice];
-      const guardada =
-        guardado.variantes.find((v) => v.sku.trim() === (variante.sku ?? '').trim()) ?? guardado.variantes[indice];
-      if (!guardada) continue;
-      const actuales = await catalogoApi.recetas(guardada.id);
-      for (const receta of actuales) await catalogoApi.eliminarReceta(guardada.id, receta.id);
-      for (const consumo of variante.recetas ?? []) {
-        const insumoId = consumo.varianteInsumoId === INSUMO_BASE ? baseId : consumo.varianteInsumoId;
-        const cantidad = Number(consumo.cantidad);
-        if (insumoId && cantidad > 0) {
-          await catalogoApi.agregarReceta(guardada.id, { varianteInsumoId: insumoId, cantidad });
-        }
-      }
-    }
-  };
-
   const guardar = useMutation({
     mutationFn: async (datos: DatosProductoForm) => {
       // Cocina y preparados no llevan stock propio: no se ordena al proveedor.
@@ -200,7 +193,8 @@ export function ProductosPage() {
           precioCompraUSD: variante.precioCompraUSD === '' ? 0 : variante.precioCompraUSD,
           precioVentaUSD: variante.precioVentaUSD === '' ? 0 : variante.precioVentaUSD,
           codigosBarras: variante.codigoBarras ? [variante.codigoBarras] : [],
-          esBase: datos.areaDestino === 'Barra' && datos.tipo !== 'Preparado' && variante.esBase,
+          esBase:
+            datos.areaDestino === 'Barra' && datos.tipo !== 'Preparado' && variante.naturaleza === 'Presentacion',
           stockInicial: sinStock ? null : (variante.stockInicial === '' ? null : variante.stockInicial),
           stockMinimo: sinStock ? null : (variante.stockMinimo === '' ? 0 : variante.stockMinimo),
           stockMaximo: sinStock ? null : (variante.stockMaximo === '' ? 0 : variante.stockMaximo),
@@ -211,12 +205,14 @@ export function ProductosPage() {
         ? await catalogoApi.actualizar(editando.id, { id: editando.id, activo: datos.activo, ...body })
         : await catalogoApi.crear(body);
 
-      await sincronizarConsumos(datos, guardado);
+      await sincronizarVariantes(datos, guardado, editando ?? null);
       return guardado;
     },
     onSuccess: () => {
       toast.success(editando ? 'Producto actualizado' : 'Producto creado');
       queryClient.invalidateQueries({ queryKey: ['recetas'] });
+      queryClient.invalidateQueries({ queryKey: ['origenes'] });
+      queryClient.invalidateQueries({ queryKey: ['producto'] });
       navigate('/productos');
       invalidar();
     },
@@ -237,7 +233,7 @@ export function ProductosPage() {
   const cerrarFormulario = () => navigate('/productos');
 
   if (esEditor) {
-    if (esEditar && (detalle.isLoading || recetasPorVariante.isLoading)) {
+    if (esEditar && (detalle.isLoading || recetasPorVariante.isLoading || origenesPorVariante.isLoading)) {
       return (
         <div className="absolute inset-0 flex items-center justify-center">
           <Skeleton className="h-64 w-full max-w-2xl" />
@@ -262,6 +258,7 @@ export function ProductosPage() {
           marcas={marcas.data ?? []}
           unidades={unidades.data ?? []}
           recetasPorVariante={recetasPorVariante.data ?? {}}
+          origenesPorVariante={origenesPorVariante.data ?? {}}
           guardando={guardar.isPending}
           onCancelar={cerrarFormulario}
           onGuardar={(datos) => guardar.mutate(datos)}

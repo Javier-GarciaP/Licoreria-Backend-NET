@@ -68,6 +68,8 @@ export function MesoneroPage() {
     queryClient.invalidateQueries({ queryKey: ['mis-cuentas'] });
     queryClient.invalidateQueries({ queryKey: ['mesas'] });
     queryClient.invalidateQueries({ queryKey: ['carta-cuenta'] });
+    // Lo que piden otras mesas cambia la existencia disponible que muestra la carta.
+    queryClient.invalidateQueries({ queryKey: ['carta-productos'] });
   }, [queryClient]);
 
   const notificar = useCallback((texto: string, tipo: Notificacion['tipo'] = 'info') => {
@@ -90,6 +92,8 @@ export function MesoneroPage() {
 
   useRealtime('meseros', {
     'mesa:actualizada': invalidar,
+    // Barra destapó o descartó una botella: cambia lo que se puede pedir de las porciones.
+    'envase:actualizado': () => queryClient.invalidateQueries({ queryKey: ['carta-productos'] }),
     'turno:abierto': () => queryClient.invalidateQueries({ queryKey: ['turno'] }),
     'turno:cerrado': () => {
       queryClient.invalidateQueries({ queryKey: ['turno'] });
@@ -113,7 +117,7 @@ export function MesoneroPage() {
       }
       invalidar();
     },
-  });
+  }, invalidar);
 
   const entrarCarta = (cuenta: Cuenta) => {
     setCuentaActiva(cuenta);

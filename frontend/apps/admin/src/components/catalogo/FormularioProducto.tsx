@@ -4,10 +4,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft, Copy, Save, Trash2 } from 'lucide-react';
 import { Button, cn, Input, Select } from '@licoreria/ui';
-import type { Categoria, Marca, Producto, Receta, UnidadMedida } from '@licoreria/types';
+import type { Categoria, Marca, OrigenPorcion, Producto, Receta, UnidadMedida } from '@licoreria/types';
 import { formatoRango, metricasDeProducto } from '../../lib/imagenProducto';
 import { CodigoBarras } from './CodigoBarras';
 import { EditorConsumo } from './EditorConsumo';
+import { EditorOrigenes } from './EditorOrigenes';
 import { PanelImagenProducto } from './PanelImagenProducto';
 
 /** Precio opcional: vacío muestra el placeholder; al guardar se convierte en número. */
@@ -24,8 +25,21 @@ const esquemaReceta = z.object({
   cantidad: numeroNoNegativo,
 });
 
+const esquemaOrigen = z.object({
+  /** Clave de la presentación dentro del formulario (el id si ya existe). */
+  presentacionClave: z.string().min(1, 'Elige la presentación'),
+  porcionesPorUnidad: numeroNoNegativo,
+});
+
+/** Naturaleza elegida en las variantes de Barra Simple; vacía = sin definir. */
+const esquemaNaturaleza = z.enum(['', 'Presentacion', 'Porcion', 'Receta']);
+
 const esquemaVariante = z.object({
   id: z.string().optional(),
+  /** Identificador estable en el formulario: el id de la variante o uno temporal si es nueva. */
+  clave: z.string().optional(),
+  naturaleza: esquemaNaturaleza.optional(),
+  origenes: z.array(esquemaOrigen).optional(),
   nombre: z.string().min(1, 'Nombre de la variante'),
   sku: z.string().optional(),
   unidadMedidaId: z.string().min(1, 'Selecciona la unidad'),
@@ -38,6 +52,54 @@ const esquemaVariante = z.object({
   stockMaximo: numeroNoNegativo,
   recetas: z.array(esquemaReceta).optional(),
 });
+
+type VarianteForm = z.infer<typeof esquemaVariante>;
+
+/** Valida la naturaleza de cada variante de Barra Simple y los orígenes de las porciones. */
+function validarNaturalezas(variantes: VarianteForm[], ctx: z.RefinementCtx) {
+  const presentaciones = new Set(
+    variantes.filter((v) => v.naturaleza === 'Presentacion').map((v) => v.clave ?? v.id ?? ''),
+  );
+  variantes.forEach((variante, indice) => {
+    const ruta = ['variantes', indice, 'naturaleza'];
+    if (!variante.naturaleza) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ruta,
+        message: `"${variante.nombre || `Variante ${indice + 1}`}" no está definida: elige si es presentación, porción o receta.`,
+      });
+      return;
+    }
+    if (variante.naturaleza !== 'Porcion') return;
+    const origenes = variante.origenes ?? [];
+    if (origenes.length === 0) {
+      ctx.addIssue({ code: 'custom', path: ruta, message: 'Una porción necesita al menos una presentación de origen.' });
+      return;
+    }
+    const vistos = new Set<string>();
+    origenes.forEach((origen, i) => {
+      const rutaOrigen = ['variantes', indice, 'origenes', i];
+      if (!presentaciones.has(origen.presentacionClave)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [...rutaOrigen, 'presentacionClave'],
+          message: 'El origen debe ser una presentación de este producto.',
+        });
+      } else if (vistos.has(origen.presentacionClave)) {
+        ctx.addIssue({ code: 'custom', path: [...rutaOrigen, 'presentacionClave'], message: 'Origen repetido.' });
+      }
+      vistos.add(origen.presentacionClave);
+      const porciones = Number(origen.porcionesPorUnidad);
+      if (origen.porcionesPorUnidad === '' || !Number.isInteger(porciones) || porciones < 1) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [...rutaOrigen, 'porcionesPorUnidad'],
+          message: 'Debe ser un entero mayor que cero.',
+        });
+      }
+    });
+  });
+}
 
 const esquemaProducto = z
   .object({
@@ -60,6 +122,7 @@ const esquemaProducto = z
         message: 'El producto de Barra simple debe tener al menos una presentación base activa para ordenarlo al proveedor.',
       });
     }
+    if (datos.areaDestino === 'Barra' && datos.tipo === 'Simple') validarNaturalezas(datos.variantes, ctx);
     if (datos.tipo === 'Preparado') {
       const sinReceta = datos.variantes.filter(
         (variante) => !(variante.recetas ?? []).some((r) => r.varianteInsumoId !== '' && Number(r.cantidad) > 0),
@@ -106,6 +169,24 @@ function completarSkus(datos: FormularioProductoForm): FormularioProductoForm {
   };
 }
 
+/** Clave temporal para referenciar variantes todavía sin id (orígenes de porciones). */
+function nuevaClave(): string {
+  return `n-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function naturalezaInicial(variante: Producto['variantes'][number]): VarianteForm['naturaleza'] {
+  switch (variante.naturaleza) {
+    case 'Presentacion':
+      return 'Presentacion';
+    case 'Porcion':
+      return 'Porcion';
+    case 'Receta':
+      return 'Receta';
+    default:
+      return variante.esBase ? 'Presentacion' : '';
+  }
+}
+
 const VACIO: FormularioProductoForm = {
   nombre: '',
   descripcion: '',
@@ -116,10 +197,14 @@ const VACIO: FormularioProductoForm = {
   gradoAlcoholico: '',
   imagenUrl: '',
   activo: true,
-  variantes: [{ nombre: '', sku: '', unidadMedidaId: '', precioCompraUSD: '', precioVentaUSD: '', codigoBarras: '', esBase: true, stockInicial: '', stockMinimo: '', stockMaximo: '', recetas: [] }],
+  variantes: [{ clave: nuevaClave(), naturaleza: 'Presentacion', origenes: [], nombre: '', sku: '', unidadMedidaId: '', precioCompraUSD: '', precioVentaUSD: '', codigoBarras: '', esBase: true, stockInicial: '', stockMinimo: '', stockMaximo: '', recetas: [] }],
 };
 
-function desdeProducto(producto: Producto, recetasPorVariante: Record<string, Receta[]> = {}): FormularioProductoForm {
+function desdeProducto(
+  producto: Producto,
+  recetasPorVariante: Record<string, Receta[]> = {},
+  origenesPorVariante: Record<string, OrigenPorcion[]> = {},
+): FormularioProductoForm {
   return {
     nombre: producto.nombre,
     descripcion: producto.descripcion ?? '',
@@ -132,6 +217,12 @@ function desdeProducto(producto: Producto, recetasPorVariante: Record<string, Re
     activo: producto.activo,
     variantes: producto.variantes.map((variante) => ({
       id: variante.id,
+      clave: variante.id,
+      naturaleza: naturalezaInicial(variante),
+      origenes: (origenesPorVariante[variante.id] ?? []).map((origen) => ({
+        presentacionClave: origen.presentacionVarianteId,
+        porcionesPorUnidad: origen.porcionesPorUnidad,
+      })),
       nombre: variante.nombre,
       sku: variante.sku,
       unidadMedidaId: variante.unidadMedidaId,
@@ -148,6 +239,15 @@ function desdeProducto(producto: Producto, recetasPorVariante: Record<string, Re
       })),
     })),
   };
+}
+
+type ErroresVariantes = Array<{
+  naturaleza?: { message?: string };
+  origenes?: Array<{ presentacionClave?: { message?: string }; porcionesPorUnidad?: { message?: string } }>;
+}>;
+
+function errorNaturaleza(errores: unknown, indice: number): string | undefined {
+  return (errores as ErroresVariantes | undefined)?.[indice]?.naturaleza?.message;
 }
 
 function Metrica({ etiqueta, valor }: { etiqueta: string; valor: string }) {
@@ -185,6 +285,7 @@ export function FormularioProducto({
   marcas,
   unidades,
   recetasPorVariante,
+  origenesPorVariante,
   guardando,
   onCancelar,
   onGuardar,
@@ -194,13 +295,14 @@ export function FormularioProducto({
   marcas: Marca[];
   unidades: UnidadMedida[];
   recetasPorVariante?: Record<string, Receta[]>;
+  origenesPorVariante?: Record<string, OrigenPorcion[]>;
   guardando: boolean;
   onCancelar: () => void;
   onGuardar: (datos: FormularioProductoForm) => void;
 }) {
   const productoForm = useForm<FormularioProductoForm>({
     resolver: zodResolver(esquemaProducto),
-    defaultValues: producto ? desdeProducto(producto, recetasPorVariante ?? {}) : VACIO,
+    defaultValues: producto ? desdeProducto(producto, recetasPorVariante ?? {}, origenesPorVariante ?? {}) : VACIO,
   });
   const { fields, append, remove } = useFieldArray({ control: productoForm.control, name: 'variantes' });
   const imagenUrl = useWatch({ control: productoForm.control, name: 'imagenUrl' });
@@ -239,13 +341,16 @@ export function FormularioProducto({
   const duplicar = (indice: number) => {
     const actual = fields[indice];
     append({
+      clave: nuevaClave(),
+      naturaleza: actual.naturaleza === 'Porcion' ? 'Porcion' : actual.naturaleza,
+      origenes: (actual.origenes ?? []).map((origen) => ({ ...origen })),
       nombre: actual.nombre,
       sku: actual.sku ? `${actual.sku}-2` : '',
       unidadMedidaId: actual.unidadMedidaId,
       precioCompraUSD: actual.precioCompraUSD,
       precioVentaUSD: actual.precioVentaUSD,
       codigoBarras: '',
-      esBase: false,
+      esBase: actual.naturaleza === 'Presentacion',
       stockInicial: '',
       stockMinimo: actual.stockMinimo,
       stockMaximo: actual.stockMaximo,
@@ -253,13 +358,19 @@ export function FormularioProducto({
     });
   };
 
-  const marcarBase = (indice: number, base: boolean) => {
-    productoForm.setValue(`variantes.${indice}.esBase`, base);
-    if (base) {
-      (variantes ?? []).forEach((_, i) => {
-        if (i !== indice) productoForm.setValue(`variantes.${i}.esBase`, false);
-      });
+  /** Cada variante de Barra Simple es una sola naturaleza; `esBase` solo vale para presentaciones. */
+  const cambiarNaturaleza = (indice: number, naturaleza: VarianteForm['naturaleza']) => {
+    productoForm.setValue(`variantes.${indice}.naturaleza`, naturaleza, { shouldValidate: false });
+    productoForm.setValue(`variantes.${indice}.esBase`, naturaleza === 'Presentacion');
+    if (naturaleza !== 'Porcion') productoForm.setValue(`variantes.${indice}.origenes`, []);
+    if (naturaleza === 'Porcion') {
+      productoForm.setValue(`variantes.${indice}.recetas`, []);
+      productoForm.setValue(`variantes.${indice}.stockInicial`, '');
+      productoForm.setValue(`variantes.${indice}.stockMinimo`, '');
+      productoForm.setValue(`variantes.${indice}.stockMaximo`, '');
     }
+    if (naturaleza === 'Presentacion') productoForm.setValue(`variantes.${indice}.recetas`, []);
+    productoForm.clearErrors('variantes');
   };
 
   return (
@@ -366,7 +477,7 @@ export function FormularioProducto({
                 type="button"
                 size="sm"
                 variant="ghost"
-                onClick={() => append({ nombre: '', sku: '', unidadMedidaId: '', precioCompraUSD: '', precioVentaUSD: '', codigoBarras: '', esBase: false, stockInicial: '', stockMinimo: '', stockMaximo: '', recetas: [] })}
+                onClick={() => append({ clave: nuevaClave(), naturaleza: areaDestino === 'Barra' && tipo === 'Simple' ? 'Presentacion' : '', origenes: [], nombre: '', sku: '', unidadMedidaId: '', precioCompraUSD: '', precioVentaUSD: '', codigoBarras: '', esBase: areaDestino === 'Barra' && tipo === 'Simple', stockInicial: '', stockMinimo: '', stockMaximo: '', recetas: [] })}
               >
                 Agregar variante
               </Button>
@@ -434,7 +545,7 @@ export function FormularioProducto({
                       />
                     )}
                   </div>
-                  {areaDestino === 'Barra' && tipo === 'Simple' && (
+                  {areaDestino === 'Barra' && tipo === 'Simple' && variantes?.[indice]?.naturaleza !== 'Porcion' && (
                     <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
                       {esNuevo && (
                         <Input
@@ -462,14 +573,38 @@ export function FormularioProducto({
                     </div>
                   )}
                   {areaDestino === 'Barra' && tipo === 'Simple' && (
-                    <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                      <input
-                        type="checkbox"
-                        checked={Boolean(variantes?.[indice]?.esBase)}
-                        onChange={(evento) => marcarBase(indice, evento.target.checked)}
+                    <div className="mt-2">
+                      <Select
+                        label="Naturaleza"
+                        value={variantes?.[indice]?.naturaleza ?? ''}
+                        error={errorNaturaleza(productoForm.formState.errors.variantes, indice)}
+                        onChange={(evento) => cambiarNaturaleza(indice, evento.target.value as VarianteForm['naturaleza'])}
+                      >
+                        <option value="">Selecciona…</option>
+                        <option value="Presentacion">Presentación (botella, lata: existencia propia)</option>
+                        <option value="Porcion">Porción (vaso, trago: se sirve de una presentación)</option>
+                        <option value="Receta">Receta heredada (consumo fraccionario)</option>
+                      </Select>
+                      {variantes?.[indice]?.naturaleza === 'Receta' && (
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          Receta heredada: descuenta una fracción de otra presentación. Para controlar vasos y tragos por
+                          botella destapada, conviértela en porción.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {areaDestino === 'Barra' && tipo === 'Simple' && variantes?.[indice]?.naturaleza === 'Porcion' && (
+                    <div className="mt-1.5">
+                      <EditorOrigenes
+                        control={productoForm.control}
+                        register={productoForm.register}
+                        indice={indice}
+                        presentaciones={(variantes ?? [])
+                          .filter((v) => v.naturaleza === 'Presentacion')
+                          .map((v) => ({ clave: v.clave ?? v.id ?? '', nombre: v.nombre || 'Presentación sin nombre' }))}
+                        errores={(productoForm.formState.errors.variantes as unknown as ErroresVariantes)?.[indice]?.origenes}
                       />
-                      Presentación base (se ordena a proveedor)
-                    </label>
+                    </div>
                   )}
                   {areaDestino === 'Barra' && tipo === 'Preparado' && (
                     <p className="mt-2 text-[11px] text-muted-foreground">
@@ -477,7 +612,7 @@ export function FormularioProducto({
                       vendida.
                     </p>
                   )}
-                  {areaDestino === 'Barra' && (tipo === 'Preparado' || !(variantes?.[indice]?.esBase)) && (
+                  {areaDestino === 'Barra' && (tipo === 'Preparado' || variantes?.[indice]?.naturaleza === 'Receta') && (
                     <div className="mt-1.5">
                       <EditorConsumo
                         control={productoForm.control}

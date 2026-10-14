@@ -15,10 +15,10 @@ import {
 import { publicApi } from '@licoreria/api-client';
 import type { Evento, MenuSeccion, MetodoPago, Reserva } from '@licoreria/types';
 import { BotanicalWatermark } from './components/BotanicalWatermark';
+import { Imagen } from './components/Imagen';
 import { MapaView, type EstadoMesaPlano } from './components/mapa/MapaView';
 import { estadoMesaPublic, planoVisible } from './lib/plano';
 import { formatBS, formatFecha, formatUSD } from './lib/format';
-import { urlDeImagen } from './lib/imagenes';
 
 const Bottle3D = lazy(() => import('./components/Bottle3D').then((m) => ({ default: m.Bottle3D })));
 
@@ -254,11 +254,10 @@ function CartaSection({ secciones, cargando, error }: { secciones: MenuSeccion[]
                   {seccion.items.map((item) => (
                     <li key={item.varianteId} className="flex items-center gap-3.5 py-2.5">
                       {item.imagenUrl ? (
-                        <img
-                          src={urlDeImagen(item.imagenUrl)}
+                        <Imagen
+                          src={item.imagenUrl}
                           alt={item.nombre}
-                          loading="lazy"
-                          className="h-14 w-14 shrink-0 rounded-card border border-cardamom-brown/40 object-cover"
+                          className="h-14 w-14 shrink-0 rounded-card border border-cardamom-brown/40"
                         />
                       ) : (
                         <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-card border border-cardamom-brown/40 bg-charred-clove">
@@ -326,11 +325,15 @@ function EventosSection({ eventos, cargando }: { eventos: Evento[]; cargando: bo
             eventos.map((evento) => (
               <article key={evento.id} className="overflow-hidden rounded-card bg-dark-spice">
                 {evento.imagenUrl ? (
-                  <img
-                    src={urlDeImagen(evento.imagenUrl)}
+                  <Imagen
+                    src={evento.imagenUrl}
                     alt={evento.titulo}
-                    className="h-44 w-full object-cover"
-                    loading="lazy"
+                    className="h-44 w-full border-b border-cardamom-brown/40"
+                    fallback={
+                      <span className="display-type text-[64px] leading-none text-tiger-gold">
+                        {evento.titulo.charAt(0)}
+                      </span>
+                    }
                   />
                 ) : (
                   <div className="flex h-44 w-full items-center justify-center bg-charred-clove">

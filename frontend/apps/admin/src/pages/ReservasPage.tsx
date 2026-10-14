@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -105,8 +105,24 @@ export function ReservasPage() {
         pageSize: hayFiltroLocal ? PAGE_SIZE_FILTRO_LOCAL : 15,
       }),
   });
-  const mesas = useQuery({ queryKey: ['mesas'], queryFn: () => clubApi.mesas(), enabled: crearOpen });
+  // Disponibilidad de las mesas para el horario elegido: así se ve cuáles ya están reservadas ese día.
+  const fechaElegida = watch('fechaHora');
+  const fechaIso = fechaElegida ? new Date(fechaElegida).toISOString() : undefined;
+  const mesas = useQuery({
+    queryKey: ['mesas', 'reserva', fechaIso ?? null],
+    queryFn: () => clubApi.mesas(undefined, fechaIso),
+    enabled: crearOpen && fechaElegida !== '',
+  });
   const metodos = useQuery({ queryKey: ['metodos-pago'], queryFn: ventasApi.metodosPago, enabled: crearOpen });
+
+  // Si al cambiar la fecha una mesa ya elegida queda reservada, se quita de la selección.
+  useEffect(() => {
+    const reservadas = new Set((mesas.data ?? []).filter((mesa) => mesa.reservada).map((mesa) => mesa.id));
+    if (reservadas.size === 0) return;
+    const vigentes = mesasSeleccionadas.filter((id) => !reservadas.has(id));
+    if (vigentes.length !== mesasSeleccionadas.length) setValue('mesas', vigentes, { shouldValidate: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mesas.data]);
 
   const { items: filas, totalPages } = useMemo(() => {
     const personasMinN = Number(personasMin);
@@ -336,21 +352,32 @@ export function ReservasPage() {
           <div>
             <p className="mb-1 text-xs font-medium text-muted-foreground">Mesas</p>
             <div className="flex flex-wrap gap-2">
-              {mesas.data?.map((mesa: Mesa) => (
-                <button
-                  key={mesa.id}
-                  type="button"
-                  aria-pressed={mesasSeleccionadas.includes(mesa.id)}
-                  onClick={() => toggleMesa(mesa.id)}
-                  className={`rounded-full border px-3 py-1.5 text-xs transition ${
-                    mesasSeleccionadas.includes(mesa.id)
-                      ? 'border-primary text-foreground'
-                      : 'border-border text-muted-foreground'
-                  }`}
-                >
-                  {mesa.numero}
-                </button>
-              ))}
+              {fechaElegida === '' && (
+                <p className="text-xs text-muted-foreground">Elige la fecha y la hora para ver qué mesas están libres.</p>
+              )}
+              {mesas.data?.map((mesa: Mesa) => {
+                const noDisponible = mesa.reservada || !mesa.activa;
+                return (
+                  <button
+                    key={mesa.id}
+                    type="button"
+                    disabled={noDisponible}
+                    title={mesa.reservada ? 'Ya reservada para ese horario' : !mesa.activa ? 'Mesa inactiva' : undefined}
+                    aria-pressed={mesasSeleccionadas.includes(mesa.id)}
+                    onClick={() => toggleMesa(mesa.id)}
+                    className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                      noDisponible
+                        ? 'cursor-not-allowed border-border text-muted-foreground/50 line-through'
+                        : mesasSeleccionadas.includes(mesa.id)
+                          ? 'border-primary text-foreground'
+                          : 'border-border text-muted-foreground'
+                    }`}
+                  >
+                    {mesa.numero}
+                    {mesa.reservada ? ' · reservada' : ''}
+                  </button>
+                );
+              })}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">

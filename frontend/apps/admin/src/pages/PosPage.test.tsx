@@ -4,9 +4,15 @@ import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
+import { toast } from 'sonner';
 import { server } from '../test/server';
 import { formatUSD } from '../lib/format';
 import { PosPage } from './PosPage';
+
+vi.mock('sonner', () => ({
+  toast: Object.assign(vi.fn(), { warning: vi.fn(), error: vi.fn(), success: vi.fn(), info: vi.fn() }),
+  Toaster: () => null,
+}));
 
 const BASE = 'http://localhost:5190';
 
@@ -185,6 +191,36 @@ describe('PosPage', () => {
     );
   });
 
+  it('muestra la disponibilidad de presentaciones y porciones y bloquea el vaso sin abrir', async () => {
+    usarHandlers();
+    const cola = {
+      ...productoSimple,
+      id: 'prod-cola',
+      nombre: 'Coca-Cola',
+      areaDestino: 'Barra',
+      variantes: [
+        { ...varianteSimple, id: 'cola-1l', nombre: 'Botella 1 L', sku: 'CO-1', esBase: true, naturaleza: 'Presentacion', cantidad: 5, cantidadReservada: 0, precioVentaUSD: 3 },
+        { ...varianteSimple, id: 'cola-v', nombre: 'Vaso', sku: 'CO-V', esBase: false, naturaleza: 'Porcion', porcionesDisponibles: 0, envasesCerradosAbribles: 2, precioVentaUSD: 1 },
+      ],
+    };
+    server.use(
+      http.get(`${BASE}/api/v1/productos`, () =>
+        HttpResponse.json({ items: [cola], page: 1, pageSize: 100, totalItems: 1, totalPages: 1 }),
+      ),
+      http.get(`${BASE}/api/v1/productos/prod-cola/modificadores`, () => HttpResponse.json([])),
+    );
+    renderPos();
+
+    await userEvent.click(await screen.findByRole('gridcell', { name: /Coca-Cola/ }));
+    const dialog = await screen.findByRole('dialog', { name: 'Coca-Cola' });
+
+    expect(within(dialog).getByRole('button', { name: /Botella 1 L.*Quedan 5/ })).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole('button', { name: /Vaso.*Sin abrir · 2 botellas/ }));
+
+    expect(within(dialog).getByRole('alert').textContent).toContain('Pide a barra que destape una botella');
+    expect(within(dialog).getByRole('button', { name: /^Agregar / })).toBeDisabled();
+  });
+
   it('suma los modificadores al precio de la línea', async () => {
     usarHandlers();
     renderPos();
@@ -257,6 +293,122 @@ describe('PosPage', () => {
     expect(await screen.findByRole('dialog', { name: 'Venta registrada' })).toBeInTheDocument();
     expect(await screen.findByText('Licorería Test')).toBeInTheDocument();
     expect(screen.getByText('¡Gracias por su compra!')).toBeInTheDocument();
+  });
+
+  it('ante un 409 conserva la orden, avisa y refresca los productos', async () => {
+    usarHandlers();
+    let consultasProductos = 0;
+    server.use(
+      http.get(`${BASE}/api/v1/productos`, () => {
+        consultasProductos += 1;
+        return HttpResponse.json({ items: [productoSimple], page: 1, pageSize: 100, totalItems: 1, totalPages: 1 });
+      }),
+      http.post(`${BASE}/api/v1/ventas`, () =>
+        HttpResponse.json(
+          {
+            title: 'Conflicto',
+            status: 409,
+            detail: 'Otra operación modificó los mismos datos al mismo tiempo.',
+            codigo: 'conflicto',
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+    renderPos();
+
+    await userEvent.click(await screen.findByRole('gridcell', { name: /Whisky Etiqueta Negra/ }));
+    const cobrar = screen.getByRole('button', { name: /Cobrar total/ });
+    await waitFor(() => expect(cobrar).toBeEnabled());
+    const antes = consultasProductos;
+    await userEvent.click(cobrar);
+
+    await waitFor(() =>
+      expect(toast.warning).toHaveBeenCalledWith(
+        'Los datos cambiaron mientras trabajabas',
+        expect.objectContaining({ description: expect.stringMatching(/al mismo tiempo/) }),
+      ),
+    );
+    // No se muestra el ticket de una venta que no ocurrió y la orden sigue lista para reintentar.
+    expect(screen.queryByRole('dialog', { name: 'Venta registrada' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Cobrar total/ })).toBeInTheDocument();
+    await waitFor(() => expect(consultasProductos).toBeGreaterThan(antes));
+  });
+
+  it('ante un producto agotado (422) avisa con el producto y no cierra la venta', async () => {
+    usarHandlers();
+    server.use(
+      http.post(`${BASE}/api/v1/ventas`, () =>
+        HttpResponse.json(
+          {
+            title: 'Regla de Negocio Incumplida',
+            status: 422,
+            detail: "Stock insuficiente para 'Whisky Etiqueta Negra'",
+            codigo: 'existencia-agotada',
+            producto: 'Whisky Etiqueta Negra',
+            requerido: 1,
+            disponible: 0,
+          },
+          { status: 422 },
+        ),
+      ),
+    );
+    renderPos();
+
+    await userEvent.click(await screen.findByRole('gridcell', { name: /Whisky Etiqueta Negra/ }));
+    const cobrar = screen.getByRole('button', { name: /Cobrar total/ });
+    await waitFor(() => expect(cobrar).toBeEnabled());
+    await userEvent.click(cobrar);
+
+    await waitFor(() =>
+      expect(toast.warning).toHaveBeenCalledWith(
+        'Producto agotado',
+        expect.objectContaining({ description: 'Se agotó Whisky Etiqueta Negra: se piden 1 y quedan 0.' }),
+      ),
+    );
+    expect(screen.getByRole('button', { name: /Cobrar total/ })).toBeInTheDocument();
+  });
+
+  it('ante porciones sin abrir (422) avisa que falta destapar, conserva la orden y refresca', async () => {
+    usarHandlers();
+    let consultasProductos = 0;
+    server.use(
+      http.get(`${BASE}/api/v1/productos`, () => {
+        consultasProductos += 1;
+        return HttpResponse.json({ items: [productoSimple], page: 1, pageSize: 100, totalItems: 1, totalPages: 1 });
+      }),
+      http.post(`${BASE}/api/v1/ventas`, () =>
+        HttpResponse.json(
+          {
+            title: 'Regla de Negocio Incumplida',
+            status: 422,
+            codigo: 'porciones-sin-abrir',
+            producto: 'Vaso de Whisky',
+            requerido: 1,
+            disponible: 0,
+            envasesCerrados: 3,
+          },
+          { status: 422 },
+        ),
+      ),
+    );
+    renderPos();
+
+    await userEvent.click(await screen.findByRole('gridcell', { name: /Whisky Etiqueta Negra/ }));
+    const cobrar = screen.getByRole('button', { name: /Cobrar total/ });
+    await waitFor(() => expect(cobrar).toBeEnabled());
+    const antes = consultasProductos;
+    await userEvent.click(cobrar);
+
+    await waitFor(() =>
+      expect(toast.warning).toHaveBeenCalledWith(
+        'Falta destapar una botella',
+        expect.objectContaining({ description: expect.stringContaining('pide a barra que destape una botella') }),
+      ),
+    );
+    expect(screen.queryByRole('dialog', { name: 'Venta registrada' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Cobrar total/ })).toBeInTheDocument();
+    await waitFor(() => expect(consultasProductos).toBeGreaterThan(antes));
   });
 
   it('cobra el total automáticamente al registrar la venta', async () => {

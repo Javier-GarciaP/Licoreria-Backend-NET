@@ -16,7 +16,7 @@
     "build:public": "npm run build -w @licoreria/public-web",
     "build:servicio": "npm run build -w @licoreria/servicio",
     "typecheck": "npm run typecheck -w @licoreria/admin && npm run typecheck -w @licoreria/servicio",
-    "test": "npm run test -w @licoreria/admin",
+    "test": "npm run test -w @licoreria/admin && npm run test -w @licoreria/servicio",
     "lint": "eslint \"apps/**/src/**/*.{ts,tsx,js,jsx}\" \"packages/**/src/**/*.{ts,tsx,js,jsx}\"",
     "lint:fix": "npm run lint -- --fix",
     "format": "prettier --write \"apps/**/src/**/*.{ts,tsx,js,jsx,css,json}\" \"packages/**/*.{ts,tsx,css,json}\""

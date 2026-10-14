@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Modal, Spinner, cn } from '@licoreria/ui';
-import type { Producto, ProductoVariante } from '@licoreria/types';
+import { estadoExistencia, type Producto, type ProductoVariante } from '@licoreria/types';
 import { catalogoApi } from '@licoreria/api-client';
 import { formatUSD } from '../../lib/format';
 import type { ModificadorSeleccionado } from '../../hooks/usePos';
@@ -28,6 +28,8 @@ export function SelectorProductoModal({
 
   const variantes = producto?.variantes ?? [];
   const variante = variantes[indiceVariante] ?? null;
+  const estadoVariante = producto && variante ? estadoExistencia(producto, variante) : null;
+  const bloqueada = estadoVariante?.bloqueada ?? false;
 
   const modificadoresQuery = useQuery({
     queryKey: ['pos', 'producto-modificadores', producto?.id],
@@ -37,7 +39,7 @@ export function SelectorProductoModal({
   const recetasQuery = useQuery({
     queryKey: ['pos', 'producto-recetas', producto?.id, indiceVariante],
     queryFn: () => catalogoApi.recetas(variante!.id),
-    enabled: abierto && variante != null && !variante.esBase,
+    enabled: abierto && variante != null && !variante.esBase && variante.naturaleza !== 'Porcion',
   });
 
   useEffect(() => {
@@ -72,7 +74,7 @@ export function SelectorProductoModal({
     });
 
   const confirmar = () => {
-    if (!variante || !cumpleRequeridos) return;
+    if (!variante || !cumpleRequeridos || bloqueada) return;
     onConfirmar({
       variante,
       cantidad,
@@ -125,7 +127,7 @@ export function SelectorProductoModal({
     document.addEventListener('keydown', alPresionar);
     return () => document.removeEventListener('keydown', alPresionar);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [abierto, variante, seleccionados, cantidad, modificadores, cumpleRequeridos]);
+  }, [abierto, variante, seleccionados, cantidad, modificadores, cumpleRequeridos, bloqueada]);
 
   if (!producto) return null;
 
@@ -141,7 +143,7 @@ export function SelectorProductoModal({
           <Button variant="ghost" onClick={onCerrar}>
             Cancelar
           </Button>
-          <Button onClick={confirmar} disabled={!cumpleRequeridos || !variante}>
+          <Button onClick={confirmar} disabled={!cumpleRequeridos || !variante || bloqueada}>
             Agregar {formatUSD(totalLinea)}
           </Button>
         </>
@@ -153,6 +155,7 @@ export function SelectorProductoModal({
           <div className="flex flex-wrap gap-2">
             {variantes.map((item, indice) => {
               const activa = indice === indiceVariante;
+              const existencia = estadoExistencia(producto, item);
               return (
                 <button
                   key={item.id}
@@ -168,11 +171,26 @@ export function SelectorProductoModal({
                   {variantes.length > 1 && <kbd className="num text-[11px] text-muted-foreground">{indice + 1}</kbd>}
                   <span className="text-foreground">{item.nombre}</span>
                   <span className="num text-xs text-foreground">{formatUSD(item.precioVentaUSD)}</span>
+                  {existencia.etiqueta && (
+                    <span
+                      className={cn('num text-[11px]', existencia.bloqueada ? 'text-destructive-fg' : 'text-muted-foreground')}
+                    >
+                      {existencia.etiqueta}
+                    </span>
+                  )}
                 </button>
               );
             })}
           </div>
         </section>
+
+        {estadoVariante?.bloqueada && (
+          <p role="alert" className="rounded-inner border border-border bg-muted/40 p-3 text-sm text-foreground">
+            {estadoVariante.sinAbrir
+              ? `${estadoVariante.aviso}: no hay vasos abiertos de ${variante?.nombre}.`
+              : `No quedan unidades de ${variante?.nombre}.`}
+          </p>
+        )}
 
         <section className="flex flex-col gap-2">
           <div className="flex items-center justify-between">

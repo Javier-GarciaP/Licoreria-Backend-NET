@@ -23,8 +23,10 @@ import { Button, cn, Input, Modal, Select } from '@licoreria/ui';
 import type { Cuenta, EstadoItemComanda, Moneda, Producto, ProductoVariante } from '@licoreria/types';
 import { catalogoApi, cuentasApi, finanzasApi, ventasApi } from '@licoreria/api-client';
 import { formatBS, formatUSD } from '../../lib/format';
-import { mensajeDeError } from '../../lib/api';
+import { avisarError, mensajeDeError } from '../../lib/api';
 import { urlDeImagen } from '../../lib/imagen';
+import { estadoExistencia, etiquetaExistencia, productoAgotado, productoBloqueado, variantesVendibles } from '../../lib/existencia';
+import { SelectorVarianteModal } from './SelectorVarianteModal';
 
 type Area = 'Barra' | 'Cocina';
 type AreaAuto = 'Auto' | Area;
@@ -115,6 +117,7 @@ export function PosCarta({
   const [categoriaId, setCategoriaId] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
   const [areaActual, setAreaActual] = useState<AreaAuto>('Auto');
+  const [productoElegido, setProductoElegido] = useState<Producto | null>(null);
   const [tab, setTab] = useState<'comanda' | 'consumos'>('comanda');
   const [panel, setPanel] = useState<'descuento' | 'calculadora' | 'abonar' | 'dividir' | 'cobrar' | null>(null);
 
@@ -131,6 +134,13 @@ export function PosCarta({
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ['mis-cuentas'] });
     queryClient.invalidateQueries({ queryKey: ['carta-cuenta'] });
+  };
+
+  // Tras una carrera (409) o un agotado (422) se refresca la cuenta y la existencia que ve la carta.
+  const refrescarTrasConflicto = () => {
+    refresh();
+    queryClient.invalidateQueries({ queryKey: ['carta-productos'] });
+    queryClient.invalidateQueries({ queryKey: ['mesas'] });
   };
 
   const cuentaQuery = useQuery({
@@ -167,9 +177,27 @@ export function PosCarta({
     );
   };
 
+  // Un producto con varias presentaciones (1 L, 2 L, vaso, trago…) pide elegir cuál; con una sola, se agrega directo.
   const seleccionarProducto = (producto: Producto) => {
-    const variante = producto.variantes[0];
-    if (variante) agregar(producto, variante);
+    const vendibles = variantesVendibles(producto);
+    if (vendibles.length === 0) {
+      toast.info(`${producto.nombre} no tiene presentaciones disponibles`);
+      return;
+    }
+    if (vendibles.length === 1) {
+      const estado = estadoExistencia(producto, vendibles[0]);
+      if (estado.sinAbrir) {
+        toast.warning('Falta destapar una botella', { description: `${estado.aviso} para servir ${vendibles[0].nombre}.` });
+        return;
+      }
+      if (estado.agotada) {
+        toast.warning('Producto agotado', { description: `No quedan unidades de ${producto.nombre}.` });
+        return;
+      }
+      agregar(producto, vendibles[0]);
+      return;
+    }
+    setProductoElegido(producto);
   };
 
   const cambiarCantidad = (key: string, delta: number) =>
@@ -190,7 +218,7 @@ export function PosCarta({
       onLineasChange(lineas.filter((l) => l.area !== variables.area));
       refresh();
     },
-    onError: (error) => toast.error('No se pudo enviar', { description: mensajeDeError(error) }),
+    onError: (error) => avisarError('No se pudo enviar', error, refrescarTrasConflicto),
   });
 
   const enviarArea = (area: Area) => {
@@ -210,7 +238,7 @@ export function PosCarta({
       queryClient.invalidateQueries({ queryKey: ['carta-cuenta', cuenta.id] });
       refresh();
     },
-    onError: (error) => toast.error('No se pudo marcar como entregado', { description: mensajeDeError(error) }),
+    onError: (error) => avisarError('No se pudo marcar como entregado', error, refrescarTrasConflicto),
   });
 
   const abonar = useMutation({
@@ -222,7 +250,7 @@ export function PosCarta({
       onActualizar(cuentaActualizada);
       queryClient.invalidateQueries({ queryKey: ['carta-cuenta', cuenta.id] });
     },
-    onError: (error) => toast.error('No se pudo abonar', { description: mensajeDeError(error) }),
+    onError: (error) => avisarError('No se pudo abonar', error, refrescarTrasConflicto),
   });
 
   const dividir = useMutation({
@@ -246,7 +274,7 @@ export function PosCarta({
       setPanel(null);
       onVolver();
     },
-    onError: (error) => toast.error('No se pudo cobrar', { description: mensajeDeError(error) }),
+    onError: (error) => avisarError('No se pudo cobrar', error, refrescarTrasConflicto),
   });
 
   const pendientesBarra = lineas.filter((l) => l.area === 'Barra');
@@ -517,18 +545,33 @@ export function PosCarta({
               <p className="py-10 text-center text-sm text-muted-foreground">Sin productos en esta categoría.</p>
             ) : (
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
-                {productos.data?.items?.map((producto) => (
+                {productos.data?.items?.map((producto) => {
+                  // Existencia disponible (menos lo reservado por otras mesas) para anticipar agotados.
+                  const vendibles = variantesVendibles(producto);
+                  const agotado = productoAgotado(producto);
+                  const bloqueado = productoBloqueado(producto);
+                  const precios = vendibles.map((variante) => variante.precioVentaUSD);
+                  const precioMinimo = precios.length > 0 ? Math.min(...precios) : 0;
+                  const etiqueta = vendibles.length === 1 ? etiquetaExistencia(producto, vendibles[0]) : null;
+                  return (
                   <button
                     key={producto.id}
                     type="button"
+                    disabled={bloqueado}
                     onClick={() => seleccionarProducto(producto)}
-                    className="flex flex-col overflow-hidden rounded-inner border border-border bg-card transition hover:border-primary hover:bg-primary/10"
+                    className={cn(
+                      'flex flex-col overflow-hidden rounded-inner border border-border bg-card transition',
+                      bloqueado ? 'cursor-not-allowed opacity-50' : 'hover:border-primary hover:bg-primary/10',
+                    )}
                   >
                     <ImagenProducto url={producto.imagenUrl} nombre={producto.nombre} />
                     <div className="flex flex-col gap-0.5 p-2">
                       <p className="line-clamp-1 text-xs font-medium text-foreground">{producto.nombre}</p>
                       <div className="flex items-center justify-between gap-1">
-                        <p className="num text-[11px] text-foreground">{formatUSD(producto.variantes[0]?.precioVentaUSD ?? 0)}</p>
+                        <p className="num text-[11px] text-foreground">
+                          {vendibles.length > 1 ? 'desde ' : ''}
+                          {formatUSD(precioMinimo)}
+                        </p>
                         <span
                           className={cn(
                             'inline-flex items-center gap-1 text-[10px]',
@@ -539,9 +582,21 @@ export function PosCarta({
                           {producto.areaDestino ?? 'Barra'}
                         </span>
                       </div>
+                      {vendibles.length > 1 ? (
+                        <p className={cn('num text-[10px]', bloqueado ? 'font-medium text-destructive-fg' : 'text-muted-foreground')}>
+                          {agotado ? 'Agotado' : bloqueado ? 'Sin abrir' : `${vendibles.length} presentaciones`}
+                        </p>
+                      ) : (
+                        etiqueta && (
+                          <p className={cn('num text-[10px]', bloqueado ? 'font-medium text-destructive-fg' : 'text-muted-foreground')}>
+                            {etiqueta}
+                          </p>
+                        )
+                      )}
                     </div>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -604,6 +659,7 @@ export function PosCarta({
           cerrar.mutate({ metodoPagoId, monto, descuentoUSD: descuento, moneda: moneda ?? 'USD' })
         }
       />
+      <SelectorVarianteModal producto={productoElegido} onCerrar={() => setProductoElegido(null)} onElegir={agregar} />
     </div>
   );
 }

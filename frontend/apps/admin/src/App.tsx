@@ -21,6 +21,7 @@ const InventarioPage = lazy(() =>
   import('./pages/InventarioPage').then((m) => ({ default: m.InventarioPage })),
 );
 const KardexPage = lazy(() => import('./pages/KardexPage').then((m) => ({ default: m.KardexPage })));
+const EnvasesAbiertosPage = lazy(() => import('./pages/EnvasesAbiertosPage').then((m) => ({ default: m.EnvasesAbiertosPage })));
 const LotesPage = lazy(() => import('./pages/LotesPage').then((m) => ({ default: m.LotesPage })));
 const TomasFisicasPage = lazy(() =>
   import('./pages/TomasFisicasPage').then((m) => ({ default: m.TomasFisicasPage })),
@@ -139,6 +140,7 @@ export default function App() {
         <Route path="/mermas" element={<MermasPage />} />
         <Route path="/inventario" element={<InventarioPage />} />
         <Route path="/inventario/kardex" element={<KardexPage />} />
+        <Route path="/inventario/envases" element={<EnvasesAbiertosPage />} />
         <Route path="/inventario/lotes" element={<LotesPage />} />
         <Route path="/inventario/tomas" element={<TomasFisicasPage />} />
         <Route path="/compras" element={<ComprasPage />} />
