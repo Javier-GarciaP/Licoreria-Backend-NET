@@ -16,7 +16,40 @@ public sealed record ProductoVarianteDto(
     decimal Cantidad,
     decimal CantidadReservada,
     decimal StockMinimo,
-    decimal StockMaximo);
+    decimal StockMaximo,
+    string Naturaleza = NaturalezaVariante.SinDefinir,
+    int PorcionesDisponibles = 0,
+    int PorcionesPotenciales = 0,
+    int EnvasesCerradosAbribles = 0);
+
+/// <summary>Cómo obtiene su existencia una variante.</summary>
+public static class NaturalezaVariante
+{
+    /// <summary>Existencia propia: se compra al proveedor (botella 1 L, lata).</summary>
+    public const string Presentacion = "Presentacion";
+
+    /// <summary>Se sirve abriendo una presentación (vaso, trago).</summary>
+    public const string Porcion = "Porcion";
+
+    /// <summary>Consume insumos según una receta (preparados y recetas heredadas).</summary>
+    public const string Receta = "Receta";
+
+    /// <summary>Se vende sin inventario (productos de Cocina).</summary>
+    public const string Directa = "Directa";
+
+    public const string SinDefinir = "SinDefinir";
+}
+
+public sealed record OrigenPorcionDto(
+    Guid Id,
+    Guid PresentacionVarianteId,
+    string PresentacionNombre,
+    string Sku,
+    int PorcionesPorUnidad);
+
+public sealed record OrigenPorcionCrearDto(
+    Guid PresentacionVarianteId,
+    int PorcionesPorUnidad);
 
 public sealed record ProductoDto(
     Guid Id,

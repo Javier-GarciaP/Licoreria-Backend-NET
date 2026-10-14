@@ -12,6 +12,7 @@ public static class Permisos
     public const string InventarioLeer = "inventory:read";
     public const string InventarioEscribir = "inventory:write";
     public const string InventarioMerma = "inventory:merma";
+    public const string InventarioAbrir = "inventory:open";
 
     public const string ComprasLeer = "purchasing:read";
     public const string ComprasEscribir = "purchasing:write";
@@ -57,6 +58,7 @@ public static class Permisos
         new(InventarioLeer, "inventory", "Consultar existencias y kardex."),
         new(InventarioEscribir, "inventory", "Registrar ajustes y tomas físicas."),
         new(InventarioMerma, "inventory", "Registrar mermas y cortesías."),
+        new(InventarioAbrir, "inventory", "Destapar y descartar envases para servir porciones."),
         new(ComprasLeer, "purchasing", "Consultar proveedores y órdenes de compra."),
         new(ComprasEscribir, "purchasing", "Crear órdenes y recepciones."),
         new(VentasLeer, "sales", "Consultar ventas y comprobantes."),

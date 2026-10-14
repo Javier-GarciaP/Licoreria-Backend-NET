@@ -26,6 +26,9 @@ public class ProductoVariante : BaseEntity
     public ICollection<CodigoBarras> CodigosBarras { get; set; } = new List<CodigoBarras>();
     public ICollection<Receta> RecetasVendidas { get; set; } = new List<Receta>();
 
+    /// <summary>Presentaciones de las que sale esta variante si es una porción (vaso, trago).</summary>
+    public ICollection<PorcionOrigen> Origenes { get; set; } = new List<PorcionOrigen>();
+
     public void ActualizarDatos(
         string nombre,
         string sku,

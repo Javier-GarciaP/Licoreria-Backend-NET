@@ -62,6 +62,7 @@ public static class RolesSeguridad
                 Permisos.CatalogoLeer,
                 Permisos.InventarioLeer,
                 Permisos.InventarioMerma,
+                Permisos.InventarioAbrir,
                 Permisos.VentasLeer,
                 Permisos.VentasEscribir,
                 Permisos.CuentasLeer,
@@ -88,6 +89,7 @@ public static class RolesSeguridad
             [
                 Permisos.CatalogoLeer,
                 Permisos.InventarioLeer,
+                Permisos.InventarioAbrir,
                 Permisos.VentasLeer,
                 Permisos.VentasEscribir
             ],

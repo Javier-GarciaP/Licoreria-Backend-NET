@@ -10,5 +10,6 @@ public enum TipoMovimientoInventario
     Ajuste = 3,
     Merma = 4,
     Cortesia = 5,
-    ConsumoInterno = 6
+    ConsumoInterno = 6,
+    Apertura = 7
 }

@@ -51,6 +51,10 @@ public interface IServicioCatalogo
     Task<RecetaDto> AgregarRecetaAsync(Guid varianteVendidaId, RecetaCrearDto dto, CancellationToken cancellationToken = default);
     Task<bool> EliminarRecetaAsync(Guid varianteVendidaId, Guid recetaId, CancellationToken cancellationToken = default);
 
+    // Orígenes de porción (de qué presentaciones sale un vaso o un trago)
+    Task<IReadOnlyList<OrigenPorcionDto>> ObtenerOrigenesAsync(Guid porcionVarianteId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<OrigenPorcionDto>> ReemplazarOrigenesAsync(Guid porcionVarianteId, IReadOnlyList<OrigenPorcionCrearDto> origenes, CancellationToken cancellationToken = default);
+
     // Modificadores / extras por producto
     Task<IReadOnlyList<ModificadorDto>> ObtenerModificadoresAsync(CancellationToken cancellationToken = default);
     Task<ModificadorDto> CrearModificadorAsync(ModificadorCrearDto dto, CancellationToken cancellationToken = default);

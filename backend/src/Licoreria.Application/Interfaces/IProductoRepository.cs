@@ -34,5 +34,11 @@ public interface IProductoRepository : IRepository<Producto>
 
     Task AgregarVarianteAsync(ProductoVariante variante, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Registra un código de barras nuevo de una variante ya existente. Debe agregarse explícitamente: una entidad
+    /// con clave asignada que solo cuelga de una colección rastreada se interpretaría como existente (modificada).
+    /// </summary>
+    Task AgregarCodigoBarrasAsync(CodigoBarras codigo, CancellationToken cancellationToken = default);
+
     void EliminarReceta(Receta receta);
 }

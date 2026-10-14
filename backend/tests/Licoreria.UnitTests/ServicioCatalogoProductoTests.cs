@@ -20,6 +20,7 @@ public sealed class ServicioCatalogoProductoTests
     private readonly Mock<IProductoRepository> _productos = new();
     private readonly Mock<ICategoriaRepository> _categorias = new();
     private readonly Mock<IInventarioRepository> _inventario = new();
+    private readonly Mock<IPorcionRepository> _porciones = new();
 
     public ServicioCatalogoProductoTests()
     {
@@ -47,6 +48,17 @@ public sealed class ServicioCatalogoProductoTests
         _inventario
             .Setup(i => i.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
+
+        // Sin porciones ni recetas por defecto.
+        _porciones
+            .Setup(p => p.ObtenerOrigenesDeVariantesAsync(It.IsAny<IReadOnlyList<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PorcionOrigen>());
+        _porciones
+            .Setup(p => p.ObtenerResumenAsync(It.IsAny<IReadOnlyList<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<Guid, ResumenPorcion>());
+        _porciones
+            .Setup(p => p.ObtenerIdsConRecetaAsync(It.IsAny<IReadOnlyList<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HashSet<Guid>());
     }
 
     private ServicioCatalogo CrearServicio()
@@ -60,7 +72,8 @@ public sealed class ServicioCatalogoProductoTests
             Mock.Of<IRepository<ProductoVariante>>(),
             Mock.Of<IRepository<Modificador>>(),
             Mock.Of<IRepository<ProductoModificador>>(),
-            _inventario.Object);
+            _inventario.Object,
+            _porciones.Object);
 
     private static ProductoCrearDto CrearDto(params VarianteCrearDto[] variantes)
         => new(
@@ -219,7 +232,7 @@ public sealed class ServicioCatalogoProductoTests
     {
         var producto = new Producto { Nombre = "Vodka", Activo = true };
         _productos
-            .Setup(r => r.GetByIdAsync(producto.Id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.ObtenerConDetalleAsync(producto.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(producto);
 
         var servicio = CrearServicio();

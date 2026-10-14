@@ -19,6 +19,7 @@ public sealed class ServicioCatalogo : IServicioCatalogo
     private readonly IRepository<Modificador> _modificadorRepository;
     private readonly IRepository<ProductoModificador> _productoModificadorRepository;
     private readonly IInventarioRepository _inventario;
+    private readonly IPorcionRepository _porciones;
 
     public ServicioCatalogo(
         IProductoRepository productoRepository,
@@ -30,7 +31,8 @@ public sealed class ServicioCatalogo : IServicioCatalogo
         IRepository<ProductoVariante> variantes,
         IRepository<Modificador> modificadorRepository,
         IRepository<ProductoModificador> productoModificadorRepository,
-        IInventarioRepository inventario)
+        IInventarioRepository inventario,
+        IPorcionRepository porciones)
     {
         _productoRepository = productoRepository;
         _categoriaRepository = categoriaRepository;
@@ -42,6 +44,7 @@ public sealed class ServicioCatalogo : IServicioCatalogo
         _modificadorRepository = modificadorRepository;
         _productoModificadorRepository = productoModificadorRepository;
         _inventario = inventario;
+        _porciones = porciones;
     }
 
     // ================= Categorías =================
@@ -333,8 +336,9 @@ public sealed class ServicioCatalogo : IServicioCatalogo
 
         var porVariante = (await _inventario.ObtenerStockDeVariantesAsync(varianteIds, cancellationToken))
             .ToDictionary(s => s.VarianteId);
+        var porciones = await CargarDatosPorcionAsync(varianteIds, cancellationToken);
 
-        var items = pagina.Items.Select(p => MapearProducto(p, porVariante)).ToList();
+        var items = pagina.Items.Select(p => MapearProducto(p, porVariante, porciones)).ToList();
         return ResultadoPaginado<ProductoDto>.Crear(items, pagina.Page, pagina.PageSize, pagina.TotalItems);
     }
 
@@ -429,7 +433,8 @@ public sealed class ServicioCatalogo : IServicioCatalogo
 
         await SincronizarVariantesAsync(producto, dto.Variantes, cancellationToken);
 
-        _productoRepository.Update(producto);
+        // El producto ya está rastreado: no se llama a Update, que marcaría como modificadas las entidades
+        // nuevas con clave asignada (los códigos de barras recreados) y fallaría con un conflicto de versión.
         await _productoRepository.SaveChangesAsync(cancellationToken);
 
         var actualizado = await _productoRepository.ObtenerConDetalleAsync(producto.Id, cancellationToken);
@@ -438,10 +443,15 @@ public sealed class ServicioCatalogo : IServicioCatalogo
 
     public async Task<bool> EliminarProductoAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var producto = await _productoRepository.GetByIdAsync(id, cancellationToken);
+        var producto = await _productoRepository.ObtenerConDetalleAsync(id, cancellationToken);
         if (producto is null || producto.IsDeleted)
         {
             return false;
+        }
+
+        foreach (var variante in producto.Variantes.Where(v => v.Activo && !v.IsDeleted))
+        {
+            await ExigirSinVinculosDePorcionAsync(variante, "eliminar el producto", cancellationToken);
         }
 
         producto.EliminarLogico();
@@ -481,6 +491,12 @@ public sealed class ServicioCatalogo : IServicioCatalogo
             throw new ReglaNegocioException("Una variante no puede consumirse a sí misma.");
         }
 
+        if (await _porciones.TieneOrigenesAsync(varianteVendidaId, cancellationToken))
+        {
+            throw new ReglaNegocioException(
+                "Una porción no lleva receta: se sirve de sus presentaciones de origen. Elige una sola naturaleza para la variante.");
+        }
+
         var insumo = await _variantes.GetByIdAsync(dto.VarianteInsumoId, cancellationToken);
         if (insumo is null || insumo.IsDeleted)
         {
@@ -494,11 +510,24 @@ public sealed class ServicioCatalogo : IServicioCatalogo
 
         // Los insumos deben tener existencia propia (base o con fila de stock) para
         // que la salida por receta pueda descontarse del inventario.
-        var stockInsumo = await _inventario.ObtenerStockAsync(insumo.Id, cancellationToken);
-        if (!insumo.EsBase && stockInsumo is null)
+        // Un insumo puede ser una porción (un trago de ron): entonces se consumen porciones enteras.
+        var insumoEsPorcion = await _porciones.TieneOrigenesAsync(insumo.Id, cancellationToken);
+        if (insumoEsPorcion)
         {
-            throw new ReglaNegocioException(
-                $"El insumo '{insumo.Nombre}' no guarda existencia propia; usa una presentación base o con stock.");
+            if (dto.Cantidad != Math.Truncate(dto.Cantidad))
+            {
+                throw new ReglaNegocioException(
+                    $"'{insumo.Nombre}' es una porción: la cantidad de la receta debe ser un número entero de porciones.");
+            }
+        }
+        else
+        {
+            var stockInsumo = await _inventario.ObtenerStockAsync(insumo.Id, cancellationToken);
+            if (!insumo.EsBase && stockInsumo is null)
+            {
+                throw new ReglaNegocioException(
+                    $"El insumo '{insumo.Nombre}' no guarda existencia propia; usa una presentación base, una porción o una variante con stock.");
+            }
         }
 
         var receta = new Receta
@@ -528,6 +557,124 @@ public sealed class ServicioCatalogo : IServicioCatalogo
         await _productoRepository.SaveChangesAsync(cancellationToken);
         return true;
     }
+
+    // ================= Orígenes de porción =================
+
+    public async Task<IReadOnlyList<OrigenPorcionDto>> ObtenerOrigenesAsync(Guid porcionVarianteId, CancellationToken cancellationToken = default)
+    {
+        var variante = await _variantes.GetByIdAsync(porcionVarianteId, cancellationToken);
+        if (variante is null || variante.IsDeleted)
+        {
+            throw new NoEncontradoException($"No existe la variante {porcionVarianteId}.");
+        }
+
+        var origenes = await _porciones.ObtenerOrigenesAsync(porcionVarianteId, cancellationToken);
+        return origenes.Select(MapearOrigen).ToList();
+    }
+
+    public async Task<IReadOnlyList<OrigenPorcionDto>> ReemplazarOrigenesAsync(
+        Guid porcionVarianteId,
+        IReadOnlyList<OrigenPorcionCrearDto> origenes,
+        CancellationToken cancellationToken = default)
+    {
+        var porcion = await _inventario.ObtenerVarianteConRecetasAsync(porcionVarianteId, cancellationToken);
+        if (porcion is null || porcion.IsDeleted)
+        {
+            throw new NoEncontradoException($"No existe la variante {porcionVarianteId}.");
+        }
+
+        if (porcion.Producto.AreaDestino == AreaDestino.Cocina || porcion.Producto.Tipo == TipoProducto.Preparado)
+        {
+            throw new ReglaNegocioException("Solo los productos simples de Barra pueden tener porciones.");
+        }
+
+        if (porcion.EsBase)
+        {
+            throw new ReglaNegocioException(
+                $"'{porcion.Nombre}' es una presentación con existencia propia: no puede ser además una porción. Elige una sola naturaleza.");
+        }
+
+        if (origenes.Count > 0 && porcion.RecetasVendidas.Any(r => !r.IsDeleted))
+        {
+            throw new ReglaNegocioException(
+                $"'{porcion.Nombre}' ya tiene una receta: no puede ser además una porción. Elige una sola naturaleza.");
+        }
+
+        var nuevos = new List<PorcionOrigen>();
+        var vistos = new HashSet<Guid>();
+        foreach (var dto in origenes)
+        {
+            if (dto.PorcionesPorUnidad < 1)
+            {
+                throw new ReglaNegocioException("Las porciones por unidad deben ser un número entero mayor que cero.");
+            }
+
+            if (dto.PresentacionVarianteId == porcionVarianteId)
+            {
+                throw new ReglaNegocioException("Una porción no puede salir de sí misma.");
+            }
+
+            if (!vistos.Add(dto.PresentacionVarianteId))
+            {
+                throw new ReglaNegocioException("Una presentación solo puede aparecer una vez como origen.");
+            }
+
+            var presentacion = await _inventario.ObtenerVarianteConRecetasAsync(dto.PresentacionVarianteId, cancellationToken);
+            if (presentacion is null || presentacion.IsDeleted)
+            {
+                throw new NoEncontradoException($"No existe la presentación {dto.PresentacionVarianteId}.");
+            }
+
+            if (presentacion.ProductoId != porcion.ProductoId)
+            {
+                throw new ReglaNegocioException(
+                    $"'{presentacion.Nombre}' pertenece a otro producto: el origen debe ser una presentación del mismo producto.");
+            }
+
+            if (!presentacion.Activo || !presentacion.EsBase)
+            {
+                throw new ReglaNegocioException(
+                    $"'{presentacion.Nombre}' no es una presentación activa con existencia propia.");
+            }
+
+            nuevos.Add(new PorcionOrigen
+            {
+                PorcionVarianteId = porcionVarianteId,
+                PresentacionVarianteId = presentacion.Id,
+                PresentacionVariante = presentacion,
+                PorcionesPorUnidad = dto.PorcionesPorUnidad
+            });
+        }
+
+        // No se puede quitar un origen del que hay un envase abierto sirviéndose.
+        var actuales = await _porciones.ObtenerOrigenesAsync(porcionVarianteId, cancellationToken);
+        var quitados = actuales.Select(o => o.PresentacionVarianteId).Except(vistos).ToList();
+        if (quitados.Count > 0)
+        {
+            var abiertos = await _porciones.ObtenerAbiertosAsync(porcionVarianteId, cancellationToken);
+            if (abiertos.Any(e => quitados.Contains(e.PresentacionVarianteId)))
+            {
+                throw new ConflictoException(
+                    "Hay envases abiertos de un origen que intentas quitar: ciérralos o descártalos primero.");
+            }
+        }
+
+        await _porciones.ReemplazarOrigenesAsync(porcionVarianteId, nuevos, cancellationToken);
+
+        // La fila de reservas de la porción se crea al definirla: así la primera reserva simultánea no compite
+        // por insertarla.
+        if (nuevos.Count > 0 && await _porciones.ObtenerStockPorcionAsync(porcionVarianteId, cancellationToken) is null)
+        {
+            await _porciones.AgregarStockPorcionAsync(new StockPorcion { VarianteId = porcionVarianteId }, cancellationToken);
+        }
+
+        await _porciones.SaveChangesAsync(cancellationToken);
+
+        return nuevos.Select(MapearOrigen).ToList();
+    }
+
+    private static OrigenPorcionDto MapearOrigen(PorcionOrigen o)
+        => new(o.Id, o.PresentacionVarianteId, o.PresentacionVariante?.Nombre ?? string.Empty, o.PresentacionVariante?.Sku ?? string.Empty, o.PorcionesPorUnidad);
 
     // ================= Modificadores / extras =================
 
@@ -815,6 +962,17 @@ public sealed class ServicioCatalogo : IServicioCatalogo
         {
             if (dto.Id is Guid id && existentes.TryGetValue(id, out var variante))
             {
+                if (variante.EsBase && !dto.EsBase)
+                {
+                    await ExigirSinVinculosDePorcionAsync(variante, "dejar de ser presentación", cancellationToken);
+                }
+
+                if (dto.EsBase && !variante.EsBase && await _porciones.TieneOrigenesAsync(variante.Id, cancellationToken))
+                {
+                    throw new ReglaNegocioException(
+                        $"'{variante.Nombre}' es una porción: quita sus orígenes antes de convertirla en presentación con existencia propia.");
+                }
+
                 variante.ActualizarDatos(dto.Nombre, dto.Sku, dto.UnidadMedidaId, dto.PrecioCompraUSD, dto.PrecioVentaUSD);
                 variante.EsBase = dto.EsBase;
                 variante.Activar();
@@ -823,7 +981,9 @@ public sealed class ServicioCatalogo : IServicioCatalogo
                 variante.CodigosBarras.Clear();
                 foreach (var codigo in dto.CodigosBarras ?? [])
                 {
-                    variante.CodigosBarras.Add(new CodigoBarras { Codigo = codigo, Principal = false });
+                    await _productoRepository.AgregarCodigoBarrasAsync(
+                        new CodigoBarras { VarianteId = variante.Id, Codigo = codigo, Principal = false },
+                        cancellationToken);
                 }
 
                 await AsegurarStockAsync(variante.Id, dto.EsBase, null, dto.StockMinimo, dto.StockMaximo, cancellationToken);
@@ -839,7 +999,27 @@ public sealed class ServicioCatalogo : IServicioCatalogo
 
         foreach (var sobrante in existentes.Values)
         {
+            await ExigirSinVinculosDePorcionAsync(sobrante, "eliminarla", cancellationToken);
             sobrante.Desactivar();
+        }
+    }
+
+    /// <summary>
+    /// Una presentación que es origen de una porción, o con envases abiertos, no puede eliminarse ni
+    /// dejar de ser presentación sin retirar antes esos vínculos o cerrar los envases.
+    /// </summary>
+    private async Task ExigirSinVinculosDePorcionAsync(ProductoVariante variante, string accion, CancellationToken cancellationToken)
+    {
+        if (await _porciones.EsOrigenAsync(variante.Id, cancellationToken))
+        {
+            throw new ConflictoException(
+                $"'{variante.Nombre}' es origen de una porción: quita ese vínculo antes de {accion}.");
+        }
+
+        if (await _porciones.HayEnvasesAbiertosAsync(variante.Id, cancellationToken))
+        {
+            throw new ConflictoException(
+                $"'{variante.Nombre}' tiene envases abiertos: ciérralos o descártalos antes de {accion}.");
         }
     }
 
@@ -865,10 +1045,31 @@ public sealed class ServicioCatalogo : IServicioCatalogo
 
         var porVariante = (await _inventario.ObtenerStockDeVariantesAsync(varianteIds, cancellationToken))
             .ToDictionary(s => s.VarianteId);
-        return MapearProducto(p, porVariante);
+        var porciones = await CargarDatosPorcionAsync(varianteIds, cancellationToken);
+        return MapearProducto(p, porVariante, porciones);
     }
 
-    private static ProductoDto MapearProducto(Producto p, IReadOnlyDictionary<Guid, StockProducto> porVariante)
+    /// <summary>Datos de porciones de un lote de variantes, para no consultar variante por variante.</summary>
+    private sealed record DatosPorcion(
+        ILookup<Guid, PorcionOrigen> OrigenesPorPorcion,
+        IReadOnlyDictionary<Guid, ResumenPorcion> Resumen,
+        IReadOnlySet<Guid> ConReceta);
+
+    private async Task<DatosPorcion> CargarDatosPorcionAsync(IReadOnlyList<Guid> varianteIds, CancellationToken cancellationToken)
+    {
+        var origenes = await _porciones.ObtenerOrigenesDeVariantesAsync(varianteIds, cancellationToken);
+        var porcionIds = origenes.Select(o => o.PorcionVarianteId).Distinct().ToList();
+        var resumen = porcionIds.Count == 0
+            ? new Dictionary<Guid, ResumenPorcion>()
+            : (await _porciones.ObtenerResumenAsync(porcionIds, cancellationToken)).ToDictionary(x => x.Key, x => x.Value);
+        var conReceta = await _porciones.ObtenerIdsConRecetaAsync(varianteIds, cancellationToken);
+        return new DatosPorcion(origenes.ToLookup(o => o.PorcionVarianteId), resumen, conReceta);
+    }
+
+    private static ProductoDto MapearProducto(
+        Producto p,
+        IReadOnlyDictionary<Guid, StockProducto> porVariante,
+        DatosPorcion porciones)
         => new(
             p.Id,
             p.Nombre,
@@ -886,6 +1087,28 @@ public sealed class ServicioCatalogo : IServicioCatalogo
             p.Variantes.Where(v => v.Activo && !v.IsDeleted).Select(v =>
             {
                 var stock = porVariante.GetValueOrDefault(v.Id);
+                var origenes = porciones.OrigenesPorPorcion[v.Id].ToList();
+                var esPorcion = origenes.Count > 0;
+                var naturaleza = esPorcion ? NaturalezaVariante.Porcion
+                    : v.EsBase ? NaturalezaVariante.Presentacion
+                    : porciones.ConReceta.Contains(v.Id) ? NaturalezaVariante.Receta
+                    : p.AreaDestino == AreaDestino.Cocina ? NaturalezaVariante.Directa
+                    : NaturalezaVariante.SinDefinir;
+
+                var abiertas = esPorcion ? porciones.Resumen.GetValueOrDefault(v.Id) : null;
+                var disponibles = abiertas is null ? 0 : Math.Max(0, abiertas.PorcionesAbiertas - abiertas.PorcionesReservadas);
+
+                // Presentaciones cerradas que se pueden destapar para esta porción y las porciones que darían.
+                var cerradas = 0;
+                var potenciales = 0;
+                foreach (var origen in origenes)
+                {
+                    var existencia = porVariante.GetValueOrDefault(origen.PresentacionVarianteId);
+                    var libres = existencia is null ? 0 : (int)Math.Max(0m, Math.Floor(existencia.Disponible));
+                    cerradas += libres;
+                    potenciales += libres * origen.PorcionesPorUnidad;
+                }
+
                 return new ProductoVarianteDto(
                     v.Id,
                     v.Nombre,
@@ -900,7 +1123,11 @@ public sealed class ServicioCatalogo : IServicioCatalogo
                     stock?.Cantidad ?? 0m,
                     stock?.CantidadReservada ?? 0m,
                     stock?.StockMinimo ?? 0m,
-                    stock?.StockMaximo ?? 0m);
+                    stock?.StockMaximo ?? 0m,
+                    naturaleza,
+                    disponibles,
+                    potenciales,
+                    cerradas);
             }).ToList());
 
     /// <summary>

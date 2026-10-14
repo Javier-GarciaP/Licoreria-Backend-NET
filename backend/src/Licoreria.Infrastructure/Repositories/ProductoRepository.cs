@@ -89,5 +89,8 @@ public class ProductoRepository : Repository<Producto>, IProductoRepository
     public async Task AgregarVarianteAsync(ProductoVariante variante, CancellationToken cancellationToken = default)
         => await _context.Set<ProductoVariante>().AddAsync(variante, cancellationToken);
 
+    public async Task AgregarCodigoBarrasAsync(CodigoBarras codigo, CancellationToken cancellationToken = default)
+        => await _context.Set<CodigoBarras>().AddAsync(codigo, cancellationToken);
+
     public void EliminarReceta(Receta receta) => _context.Set<Receta>().Remove(receta);
 }

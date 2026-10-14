@@ -36,4 +36,19 @@ public class VariantesController : ControllerBase
     [Authorize(Policy = Permisos.CatalogoEscribir)]
     public async Task<IActionResult> EliminarReceta(Guid id, Guid recetaId, CancellationToken cancellationToken)
         => await _servicio.EliminarRecetaAsync(id, recetaId, cancellationToken) ? NoContent() : NotFound();
+
+    /// <summary>De qué presentaciones sale una porción (vaso, trago) y cuántas porciones da cada una.</summary>
+    [HttpGet("{id:guid}/origenes")]
+    [Authorize(Policy = Permisos.CatalogoLeer)]
+    public async Task<ActionResult<IReadOnlyList<OrigenPorcionDto>>> ObtenerOrigenes(Guid id, CancellationToken cancellationToken)
+        => Ok(await _servicio.ObtenerOrigenesAsync(id, cancellationToken));
+
+    /// <summary>Reemplaza la lista de orígenes de la porción.</summary>
+    [HttpPut("{id:guid}/origenes")]
+    [Authorize(Policy = Permisos.CatalogoEscribir)]
+    public async Task<ActionResult<IReadOnlyList<OrigenPorcionDto>>> ReemplazarOrigenes(
+        Guid id,
+        [FromBody] IReadOnlyList<OrigenPorcionCrearDto> origenes,
+        CancellationToken cancellationToken)
+        => Ok(await _servicio.ReemplazarOrigenesAsync(id, origenes, cancellationToken));
 }
