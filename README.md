@@ -125,12 +125,12 @@ como cambios [OpenSpec](openspec/changes) y se implementan con `/opsx:apply <cam
 
 | Spec | Qué resuelve | Estado |
 | :--- | :--- | :---: |
-| [`concurrencia-stock`](openspec/changes/concurrencia-stock) | Reserva de stock al pedir, transacciones con reintento, 409/422 y restricciones en BD. | Hecho (25/25) |
-| [`presentaciones-y-porciones`](openspec/changes/presentaciones-y-porciones) | Varias presentaciones por producto, porciones (vaso/trago) y envases abiertos por la barra. | Hecho (30/30) · falta archivar |
-| [`auditoria-total`](openspec/changes/auditoria-total) | Bitácora automática de quién cambió qué, con antes y después. | Pendiente (0/21) |
+| [`concurrencia-stock`](openspec/changes/archive/2026-10-14-concurrencia-stock) | Reserva de stock al pedir, transacciones con reintento, 409/422 y restricciones en BD. | Hecho (25/25) ✅ archivado |
+| [`presentaciones-y-porciones`](openspec/changes/archive/2026-10-14-presentaciones-y-porciones) | Varias presentaciones por producto, porciones (vaso/trago) y envases abiertos por la barra. | Hecho (30/30) ✅ archivado |
+| [`auditoria-total`](openspec/changes/archive/2026-10-14-auditoria-total) | Bitácora automática de quién cambió qué, con antes y después. | Hecho (21/21) ✅ archivado |
 | [`modulos-complementarios`](openspec/changes/modulos-complementarios) | Reactivar Promociones, Clientes/CxC, Compras, Existencias, Entradas y Lista VIP. | Pendiente (0/25) |
 | [`reportes-kpis-export`](openspec/changes/reportes-kpis-export) | KPIs (incl. desempeño del mesonero) y exportación PDF/Excel. | Pendiente (0/30) |
-| [`croquis-planos`](openspec/changes/croquis-planos) | Precargar un croquis como fondo del lienzo, plantillas y duplicar. | Hecho (22/22) · falta archivar |
+| [`croquis-planos`](openspec/changes/archive/2026-10-14-croquis-planos) | Precargar un croquis como fondo del lienzo, plantillas y duplicar. | Hecho (22/22) ✅ archivado |
 | [`pruebas-y-cobertura`](openspec/changes/pruebas-y-cobertura) | Pruebas con Moq, concurrencia, separar integración y cobertura con coverlet. | Pendiente (0/32) |
 
 ### Orden sugerido y dependencias
@@ -145,8 +145,8 @@ como cambios [OpenSpec](openspec/changes) y se implementan con `/opsx:apply <cam
 | 6 | `croquis-planos` | — | Plano y reservas |
 | 7 | `pruebas-y-cobertura` | `concurrencia-stock`; cubre además el resto | Pruebas de todos los módulos |
 
-`presentaciones-y-porciones` registra aperturas y descartes en la bitácora cuando se aplique
-`auditoria-total`. `pruebas-y-cobertura` va al final para medir la cobertura del sistema completo.
+`presentaciones-y-porciones` registra aperturas y descartes en la bitácora de `auditoria-total`
+(ya aplicada). `pruebas-y-cobertura` va al final para medir la cobertura del sistema completo.
 
 ---
 
