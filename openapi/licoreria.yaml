@@ -3308,6 +3308,11 @@ paths:
     get:
       tags:
         - Planos
+      parameters:
+        - name: plantillas
+          in: query
+          schema:
+            type: boolean
       responses:
         '200':
           description: OK
@@ -3427,6 +3432,103 @@ paths:
       responses:
         '200':
           description: OK
+  /api/v1/planos/{id}/fondo:
+    post:
+      tags:
+        - Planos
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                archivo:
+                  $ref: '#/components/schemas/IFormFile'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/PlanoDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanoDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/PlanoDto'
+    delete:
+      tags:
+        - Planos
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/PlanoDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanoDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/PlanoDto'
+  /api/v1/planos/{id}/duplicar:
+    post:
+      tags:
+        - Planos
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: 'null'
+                - $ref: '#/components/schemas/PlanoDuplicarDto'
+          text/json:
+            schema:
+              oneOf:
+                - type: 'null'
+                - $ref: '#/components/schemas/PlanoDuplicarDto'
+          application/*+json:
+            schema:
+              oneOf:
+                - type: 'null'
+                - $ref: '#/components/schemas/PlanoDuplicarDto'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/PlanoDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanoDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/PlanoDto'
   /api/v1/productos:
     get:
       tags:
@@ -8759,6 +8861,16 @@ components:
         piso:
           type: string
           default: madera
+        fondoOpacidad:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+          default: 0.5
+        fondoAjuste:
+          type: string
+          default: contener
     PlanoDto:
       required:
         - id
@@ -8809,6 +8921,33 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PlanoElementoDto'
+        fondoImagenUrl:
+          type:
+            - 'null'
+            - string
+        fondoOpacidad:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+          default: 0.5
+        fondoAjuste:
+          type: string
+          default: contener
+        esPlantilla:
+          type: boolean
+          default: false
+    PlanoDuplicarDto:
+      type: object
+      properties:
+        nombre:
+          type:
+            - 'null'
+            - string
+        comoPlantilla:
+          type: boolean
+          default: false
     PlanoEditarDto:
       required:
         - id
@@ -8852,6 +8991,16 @@ components:
         piso:
           type: string
           default: madera
+        fondoOpacidad:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+          default: 0.5
+        fondoAjuste:
+          type: string
+          default: contener
     PlanoElementoCrearDto:
       required:
         - zonaId
