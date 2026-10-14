@@ -82,3 +82,19 @@ public sealed class PedidoAnticipadoCrearDtoValidator : AbstractValidator<Pedido
         RuleFor(x => x.Cantidad).GreaterThan(0).WithMessage("La cantidad debe ser mayor que cero.");
     }
 }
+
+public static class FondoPlano
+{
+    public static readonly string[] Ajustes = ["contener", "cubrir", "estirar"];
+}
+
+public sealed class PlanoCrearDtoValidator : AbstractValidator<PlanoCrearDto>
+{
+    public PlanoCrearDtoValidator()
+    {
+        RuleFor(x => x.FondoOpacidad).InclusiveBetween(0m, 1m)
+            .WithMessage("La opacidad del fondo debe estar entre 0 y 1.");
+        RuleFor(x => x.FondoAjuste).Must(a => FondoPlano.Ajustes.Contains(a))
+            .WithMessage("El ajuste del fondo debe ser contener, cubrir o estirar.");
+    }
+}

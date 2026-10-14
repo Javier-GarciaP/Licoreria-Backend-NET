@@ -33,6 +33,10 @@ public sealed class PlanoEditarDtoValidator : AbstractValidator<PlanoEditarDto>
         RuleFor(x => x.Id).NotEmpty().WithMessage("El identificador es obligatorio.");
         RuleFor(x => x.Nombre).NotEmpty().WithMessage("El nombre es obligatorio.")
             .MaximumLength(60).WithMessage("El nombre no puede superar los 60 caracteres.");
+        RuleFor(x => x.FondoOpacidad).InclusiveBetween(0m, 1m)
+            .WithMessage("La opacidad del fondo debe estar entre 0 y 1.");
+        RuleFor(x => x.FondoAjuste).Must(a => FondoPlano.Ajustes.Contains(a))
+            .WithMessage("El ajuste del fondo debe ser contener, cubrir o estirar.");
     }
 }
 

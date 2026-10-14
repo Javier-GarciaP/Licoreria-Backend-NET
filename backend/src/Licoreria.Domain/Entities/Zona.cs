@@ -51,6 +51,15 @@ public class Plano : BaseEntity
     public decimal Rejilla { get; set; } = 0.5m;
     public string Piso { get; set; } = "madera";
 
+    /// <summary>Croquis del local: URL de la imagen de fondo, solo asignable al subir un archivo.</summary>
+    public string? FondoImagenUrl { get; set; }
+    public decimal FondoOpacidad { get; set; } = 0.5m;
+    /// <summary>Ajuste de la imagen al lienzo: contener, cubrir o estirar.</summary>
+    public string FondoAjuste { get; set; } = "contener";
+
+    /// <summary>Las plantillas sirven de punto de partida: no se activan ni se publican.</summary>
+    public bool EsPlantilla { get; set; }
+
     public ICollection<PlanoElemento> Elementos { get; set; } = new List<PlanoElemento>();
 }
 

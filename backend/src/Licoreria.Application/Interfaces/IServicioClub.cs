@@ -28,11 +28,28 @@ public interface IServicioClub
     /// </summary>
     Task<bool> DesalojarMesaAsync(Guid mesaId, CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<PlanoDto>> ObtenerPlanosAsync(CancellationToken cancellationToken = default);
-    Task<PlanoDto?> ObtenerPlanoAsync(Guid id, CancellationToken cancellationToken = default);
+    /// <summary>Lista los planos; las plantillas solo se incluyen si <paramref name="incluirPlantillas"/> es verdadero.</summary>
+    Task<IReadOnlyList<PlanoDto>> ObtenerPlanosAsync(bool incluirPlantillas = false, CancellationToken cancellationToken = default);
+
+    /// <summary>Obtiene un plano; una plantilla solo se devuelve si <paramref name="puedeVerPlantillas"/> es verdadero.</summary>
+    Task<PlanoDto?> ObtenerPlanoAsync(Guid id, bool puedeVerPlantillas = false, CancellationToken cancellationToken = default);
     Task<PlanoDto> CrearPlanoAsync(PlanoCrearDto dto, CancellationToken cancellationToken = default);
     Task<PlanoDto?> EditarPlanoAsync(PlanoEditarDto dto, CancellationToken cancellationToken = default);
     Task<bool> EliminarPlanoAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>Asigna o reemplaza el croquis del plano (valida formato, tamaño y firma); null si no existe.</summary>
+    Task<PlanoDto?> AsignarFondoPlanoAsync(
+        Guid id,
+        Stream contenido,
+        string nombreArchivo,
+        string? tipoContenido,
+        long tamano,
+        CancellationToken cancellationToken = default);
+
+    Task<PlanoDto?> QuitarFondoPlanoAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>Duplica un plano (inactivo, con su fondo copiado) o lo guarda/usa como plantilla; null si no existe.</summary>
+    Task<PlanoDto?> DuplicarPlanoAsync(Guid id, PlanoDuplicarDto dto, CancellationToken cancellationToken = default);
 
     Task<ResultadoPaginado<ReservaDto>> ObtenerReservasAsync(
         PaginacionRequest paginacion,

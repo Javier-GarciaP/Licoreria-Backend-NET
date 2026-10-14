@@ -21,12 +21,12 @@ public class ZonasController : ControllerBase
         => Ok(await _servicio.ObtenerZonasAsync(cancellationToken));
 
     [HttpPost]
-    [Authorize(Policy = Permisos.ClubGestionar)]
+    [Authorize(Policy = Permisos.ClubDistribucion)]
     public async Task<ActionResult<ZonaDto>> Crear([FromBody] ZonaCrearDto dto, CancellationToken cancellationToken)
         => StatusCode(StatusCodes.Status201Created, await _servicio.CrearZonaAsync(dto, cancellationToken));
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = Permisos.ClubGestionar)]
+    [Authorize(Policy = Permisos.ClubDistribucion)]
     public async Task<ActionResult<ZonaDto>> Editar(Guid id, [FromBody] ZonaEditarDto dto, CancellationToken cancellationToken)
     {
         if (id != dto.Id)
@@ -39,7 +39,7 @@ public class ZonasController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = Permisos.ClubGestionar)]
+    [Authorize(Policy = Permisos.ClubDistribucion)]
     public async Task<IActionResult> Eliminar(Guid id, CancellationToken cancellationToken)
         => await _servicio.EliminarZonaAsync(id, cancellationToken) ? NoContent() : NotFound();
 }

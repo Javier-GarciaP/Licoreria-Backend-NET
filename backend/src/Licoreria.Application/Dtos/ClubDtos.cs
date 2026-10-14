@@ -111,7 +111,11 @@ public sealed record PlanoDto(
     decimal AltoFondo,
     decimal Rejilla,
     string Piso,
-    IReadOnlyList<PlanoElementoDto> Elementos);
+    IReadOnlyList<PlanoElementoDto> Elementos,
+    string? FondoImagenUrl = null,
+    decimal FondoOpacidad = 0.5m,
+    string FondoAjuste = "contener",
+    bool EsPlantilla = false);
 
 public sealed record PlanoCrearDto(
     string Nombre,
@@ -119,7 +123,9 @@ public sealed record PlanoCrearDto(
     decimal AnchoFondo = 24m,
     decimal AltoFondo = 16m,
     decimal Rejilla = 0.5m,
-    string Piso = "madera");
+    string Piso = "madera",
+    decimal FondoOpacidad = 0.5m,
+    string FondoAjuste = "contener");
 
 public sealed record PlanoEditarDto(
     Guid Id,
@@ -129,7 +135,12 @@ public sealed record PlanoEditarDto(
     decimal AnchoFondo = 24m,
     decimal AltoFondo = 16m,
     decimal Rejilla = 0.5m,
-    string Piso = "madera");
+    string Piso = "madera",
+    decimal FondoOpacidad = 0.5m,
+    string FondoAjuste = "contener");
+
+/// <summary>Opciones al duplicar un plano; sin nombre se usa el original seguido de "(copia)".</summary>
+public sealed record PlanoDuplicarDto(string? Nombre = null, bool ComoPlantilla = false);
 
 public sealed record ReservaMesaResumenDto(Guid MesaId, string Numero, string Zona);
 

@@ -142,6 +142,7 @@ public static class DependencyInjection
         services.AddTransient<IValidator<ZonaEditarDto>, ZonaEditarDtoValidator>();
         services.AddTransient<IValidator<MesaEditarDto>, MesaEditarDtoValidator>();
         services.AddTransient<IValidator<PlanoEditarDto>, PlanoEditarDtoValidator>();
+        services.AddTransient<IValidator<PlanoCrearDto>, PlanoCrearDtoValidator>();
         services.AddTransient<IValidator<EventoEditarDto>, EventoEditarDtoValidator>();
         services.AddTransient<IValidator<ClienteEditarDto>, ClienteEditarDtoValidator>();
         services.AddTransient<IValidator<PaginaEditarDto>, PaginaEditarDtoValidator>();

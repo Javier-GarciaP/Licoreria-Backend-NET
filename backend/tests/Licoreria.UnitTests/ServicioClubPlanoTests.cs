@@ -18,6 +18,7 @@ public sealed class ServicioClubPlanoTests
 {
     private readonly Mock<IRepository<Plano>> _planos = new();
     private readonly Mock<IRepository<PlanoElemento>> _elementos = new();
+    private readonly Mock<IAlmacenamientoArchivos> _almacenamiento = new();
 
     private ServicioClub CrearServicio()
         => new(
@@ -37,7 +38,8 @@ public sealed class ServicioClubPlanoTests
             Mock.Of<INotificadorComandas>(),
             Mock.Of<IServicioKardex>(),
             Mock.Of<IUnitOfWork>(),
-            new JornadaOperativa());
+            new JornadaOperativa(),
+            _almacenamiento.Object);
 
     private static Plano PlanoCon(params PlanoElemento[] elementos)
     {
@@ -165,7 +167,7 @@ public sealed class ServicioClubPlanoTests
 
         var servicio = CrearServicio();
 
-        var resultado = await servicio.ObtenerPlanosAsync(Token());
+        var resultado = await servicio.ObtenerPlanosAsync(false, Token());
 
         Assert.Single(resultado);
         Assert.Equal(2, resultado[0].Elementos.Count);

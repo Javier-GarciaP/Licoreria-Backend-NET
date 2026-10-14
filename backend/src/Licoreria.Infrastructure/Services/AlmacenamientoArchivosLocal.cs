@@ -42,6 +42,24 @@ public sealed class AlmacenamientoArchivosLocal : IAlmacenamientoArchivos
         return new ArchivoAlmacenado(rutaRelativa, url, nombreOriginal, tamano);
     }
 
+    public Task<ArchivoAlmacenado> CopiarAsync(string rutaRelativa, CancellationToken cancellationToken = default)
+    {
+        var carpeta = Path.GetDirectoryName(rutaRelativa)?.Replace('\\', '/') ?? string.Empty;
+        var origen = Path.Combine(_opciones.RutaBase, rutaRelativa);
+        if (!File.Exists(origen))
+        {
+            throw new FileNotFoundException("El archivo a copiar no existe.", rutaRelativa);
+        }
+
+        var nombreArchivo = $"{Guid.NewGuid():N}{Path.GetExtension(origen)}";
+        var destino = Path.Combine(_opciones.RutaBase, carpeta, nombreArchivo);
+        File.Copy(origen, destino);
+
+        var nuevaRuta = string.IsNullOrEmpty(carpeta) ? nombreArchivo : $"{carpeta}/{nombreArchivo}";
+        var url = $"{_opciones.UrlBase.TrimEnd('/')}/{nuevaRuta}";
+        return Task.FromResult(new ArchivoAlmacenado(nuevaRuta, url, Path.GetFileName(origen), new FileInfo(destino).Length));
+    }
+
     public Task EliminarAsync(string rutaRelativa, CancellationToken cancellationToken = default)
     {
         var ruta = Path.Combine(_opciones.RutaBase, rutaRelativa);

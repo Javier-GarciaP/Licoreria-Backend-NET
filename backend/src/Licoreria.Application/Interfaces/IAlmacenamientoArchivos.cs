@@ -11,6 +11,9 @@ public interface IAlmacenamientoArchivos
         string carpeta,
         CancellationToken cancellationToken = default);
 
+    /// <summary>Copia un archivo existente con un nombre nuevo, para que original y copia sean independientes.</summary>
+    Task<ArchivoAlmacenado> CopiarAsync(string rutaRelativa, CancellationToken cancellationToken = default);
+
     Task EliminarAsync(string rutaRelativa, CancellationToken cancellationToken = default);
 }
 

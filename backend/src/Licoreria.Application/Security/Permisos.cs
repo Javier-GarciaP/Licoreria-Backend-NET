@@ -31,6 +31,7 @@ public static class Permisos
 
     public const string ClubLeer = "club:read";
     public const string ClubGestionar = "club:manage";
+    public const string ClubDistribucion = "club:layout";
     public const string ReservasGestionar = "reservation:manage";
 
     public const string CrmLeer = "crm:read";
@@ -71,7 +72,8 @@ public static class Permisos
         new(CajaCerrar, "cash", "Cerrar sesiones de caja con arqueo."),
         new(CajaMovimiento, "cash", "Registrar ingresos y egresos de caja."),
         new(ClubLeer, "club", "Consultar zonas, mesas y planos."),
-        new(ClubGestionar, "club", "Administrar zonas, mesas y planos."),
+        new(ClubGestionar, "club", "Administrar lista VIP y entradas."),
+        new(ClubDistribucion, "club", "Editar la distribución del local: planos, zonas y mesas."),
         new(ReservasGestionar, "club", "Gestionar reservas y validar señas."),
         new(CrmLeer, "crm", "Consultar clientes y fidelidad."),
         new(CrmEscribir, "crm", "Crear y modificar clientes."),

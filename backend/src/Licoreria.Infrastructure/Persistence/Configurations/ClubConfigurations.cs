@@ -51,6 +51,10 @@ public class PlanoConfiguration : IEntityTypeConfiguration<Plano>
         builder.Property(p => p.AltoFondo).HasPrecision(10, 2);
         builder.Property(p => p.Rejilla).HasPrecision(10, 2);
         builder.Property(p => p.Piso).HasMaxLength(20);
+        builder.Property(p => p.FondoImagenUrl).HasMaxLength(300);
+        builder.Property(p => p.FondoOpacidad).HasPrecision(3, 2).HasDefaultValue(0.5m);
+        builder.Property(p => p.FondoAjuste).IsRequired().HasMaxLength(10).HasDefaultValue("contener");
+        builder.Property(p => p.EsPlantilla).HasDefaultValue(false);
     }
 }
 

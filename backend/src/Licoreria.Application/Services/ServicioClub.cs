@@ -27,6 +27,7 @@ public sealed class ServicioClub : IServicioClub
     private readonly IServicioKardex _kardex;
     private readonly IUnitOfWork _unitOfWork;
     private readonly JornadaOperativa _jornada;
+    private readonly IAlmacenamientoArchivos _almacenamiento;
 
     public ServicioClub(
         IRepository<Zona> zonas,
@@ -45,7 +46,8 @@ public sealed class ServicioClub : IServicioClub
         INotificadorComandas notificador,
         IServicioKardex kardex,
         IUnitOfWork unitOfWork,
-        JornadaOperativa jornada)
+        JornadaOperativa jornada,
+        IAlmacenamientoArchivos almacenamiento)
     {
         _zonas = zonas;
         _mesas = mesas;
@@ -63,6 +65,7 @@ public sealed class ServicioClub : IServicioClub
         _notificador = notificador;
         _kardex = kardex;
         _unitOfWork = unitOfWork;
+        _almacenamiento = almacenamiento;
         _jornada = jornada;
     }
 
@@ -278,9 +281,11 @@ public sealed class ServicioClub : IServicioClub
 
     // ================= Planos =================
 
-    public async Task<IReadOnlyList<PlanoDto>> ObtenerPlanosAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<PlanoDto>> ObtenerPlanosAsync(
+        bool incluirPlantillas = false,
+        CancellationToken cancellationToken = default)
     {
-        var planos = await _planos.FindAsync(p => !p.IsDeleted, cancellationToken);
+        var planos = await _planos.FindAsync(p => !p.IsDeleted && (incluirPlantillas || !p.EsPlantilla), cancellationToken);
         if (planos.Count == 0)
         {
             return [];
@@ -296,10 +301,13 @@ public sealed class ServicioClub : IServicioClub
         return planos.Select(p => MapearPlano(p, porPlano.GetValueOrDefault(p.Id) ?? [])).ToList();
     }
 
-    public async Task<PlanoDto?> ObtenerPlanoAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<PlanoDto?> ObtenerPlanoAsync(
+        Guid id,
+        bool puedeVerPlantillas = false,
+        CancellationToken cancellationToken = default)
     {
         var plano = await _planos.GetByIdAsync(id, cancellationToken);
-        if (plano is null || plano.IsDeleted)
+        if (plano is null || plano.IsDeleted || (plano.EsPlantilla && !puedeVerPlantillas))
         {
             return null;
         }
@@ -318,7 +326,9 @@ public sealed class ServicioClub : IServicioClub
             AnchoFondo = dto.AnchoFondo,
             AltoFondo = dto.AltoFondo,
             Rejilla = dto.Rejilla,
-            Piso = dto.Piso
+            Piso = dto.Piso,
+            FondoOpacidad = dto.FondoOpacidad,
+            FondoAjuste = dto.FondoAjuste
         };
 
         foreach (var elemento in dto.Elementos)
@@ -344,12 +354,19 @@ public sealed class ServicioClub : IServicioClub
             return null;
         }
 
+        if (plano.EsPlantilla && dto.Activo)
+        {
+            throw new ReglaNegocioException("Una plantilla no puede ser el plano activo.");
+        }
+
         plano.Nombre = dto.Nombre;
         plano.Activo = dto.Activo;
         plano.AnchoFondo = dto.AnchoFondo;
         plano.AltoFondo = dto.AltoFondo;
         plano.Rejilla = dto.Rejilla;
         plano.Piso = dto.Piso;
+        plano.FondoOpacidad = dto.FondoOpacidad;
+        plano.FondoAjuste = dto.FondoAjuste;
         plano.Version += 1;
 
         var existentes = await _planoElementos.FindAsync(e => e.PlanoId == dto.Id, cancellationToken);
@@ -419,10 +436,146 @@ public sealed class ServicioClub : IServicioClub
             return false;
         }
 
+        var fondo = plano.FondoImagenUrl;
         plano.EliminarLogico();
         _planos.Update(plano);
         await _planos.SaveChangesAsync(cancellationToken);
+        await EliminarArchivoFondoAsync(fondo, cancellationToken);
         return true;
+    }
+
+    public async Task<PlanoDto?> AsignarFondoPlanoAsync(
+        Guid id,
+        Stream contenido,
+        string nombreArchivo,
+        string? tipoContenido,
+        long tamano,
+        CancellationToken cancellationToken = default)
+    {
+        var plano = await _planos.GetByIdAsync(id, cancellationToken);
+        if (plano is null || plano.IsDeleted)
+        {
+            return null;
+        }
+
+        var memoria = new MemoryStream();
+        await contenido.CopyToAsync(memoria, cancellationToken);
+        var motivo = ValidadorImagenFondo.Validar(nombreArchivo, tipoContenido, memoria.Length, memoria.GetBuffer().AsSpan(0, (int)Math.Min(memoria.Length, 16)));
+        if (motivo is not null)
+        {
+            throw new ArgumentException(motivo);
+        }
+
+        memoria.Position = 0;
+        var guardado = await _almacenamiento.GuardarAsync(memoria, nombreArchivo, CarpetaPlanos, cancellationToken);
+
+        var anterior = plano.FondoImagenUrl;
+        plano.FondoImagenUrl = guardado.Url;
+        _planos.Update(plano);
+        await _planos.SaveChangesAsync(cancellationToken);
+        await EliminarArchivoFondoAsync(anterior, cancellationToken);
+
+        return MapearPlano(plano, await ElementosDelPlanoAsync(id, cancellationToken));
+    }
+
+    public async Task<PlanoDto?> QuitarFondoPlanoAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var plano = await _planos.GetByIdAsync(id, cancellationToken);
+        if (plano is null || plano.IsDeleted)
+        {
+            return null;
+        }
+
+        var anterior = plano.FondoImagenUrl;
+        plano.FondoImagenUrl = null;
+        _planos.Update(plano);
+        await _planos.SaveChangesAsync(cancellationToken);
+        await EliminarArchivoFondoAsync(anterior, cancellationToken);
+
+        return MapearPlano(plano, await ElementosDelPlanoAsync(id, cancellationToken));
+    }
+
+    public async Task<PlanoDto?> DuplicarPlanoAsync(Guid id, PlanoDuplicarDto dto, CancellationToken cancellationToken = default)
+    {
+        var origen = await _planos.GetByIdAsync(id, cancellationToken);
+        if (origen is null || origen.IsDeleted)
+        {
+            return null;
+        }
+
+        var nombre = string.IsNullOrWhiteSpace(dto.Nombre) ? $"{origen.Nombre} (copia)" : dto.Nombre.Trim();
+        if (nombre.Length > 60)
+        {
+            throw new ArgumentException("El nombre no puede superar los 60 caracteres.");
+        }
+
+        var copia = new Plano
+        {
+            Nombre = nombre,
+            Version = 1,
+            Activo = false,
+            EsPlantilla = dto.ComoPlantilla,
+            AnchoFondo = origen.AnchoFondo,
+            AltoFondo = origen.AltoFondo,
+            Rejilla = origen.Rejilla,
+            Piso = origen.Piso,
+            FondoOpacidad = origen.FondoOpacidad,
+            FondoAjuste = origen.FondoAjuste
+        };
+
+        // Los vínculos con mesas reales solo tienen sentido entre planos normales.
+        var conservarMesas = !origen.EsPlantilla && !dto.ComoPlantilla;
+        foreach (var e in await ElementosDelPlanoAsync(id, cancellationToken))
+        {
+            copia.Elementos.Add(new PlanoElemento
+            {
+                ZonaId = e.ZonaId,
+                MesaId = conservarMesas ? e.MesaId : null,
+                Tipo = e.Tipo,
+                Forma = e.Forma,
+                Color = e.Color,
+                Etiqueta = e.Etiqueta,
+                Z = e.Z,
+                PosX = e.PosX,
+                PosY = e.PosY,
+                Ancho = e.Ancho,
+                Alto = e.Alto,
+                Rotacion = e.Rotacion
+            });
+        }
+
+        if (!string.IsNullOrEmpty(origen.FondoImagenUrl))
+        {
+            var copiado = await _almacenamiento.CopiarAsync(RutaDeFondo(origen.FondoImagenUrl), cancellationToken);
+            copia.FondoImagenUrl = copiado.Url;
+        }
+
+        await _planos.AddAsync(copia, cancellationToken);
+        await _planos.SaveChangesAsync(cancellationToken);
+
+        return MapearPlano(copia, await ElementosDelPlanoAsync(copia.Id, cancellationToken));
+    }
+
+    private const string CarpetaPlanos = "planos";
+
+    /// <summary>La URL solo se asigna al subir un archivo, así que su último segmento es el nombre guardado.</summary>
+    private static string RutaDeFondo(string url) => $"{CarpetaPlanos}/{Path.GetFileName(url)}";
+
+    private async Task EliminarArchivoFondoAsync(string? url, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(url))
+        {
+            return;
+        }
+
+        try
+        {
+            await _almacenamiento.EliminarAsync(RutaDeFondo(url), cancellationToken);
+        }
+        catch (IOException)
+        {
+            // Un archivo huérfano no debe impedir la operación; se puede limpiar a mano.
+        }
     }
 
     // ================= Reservas =================
@@ -961,7 +1114,8 @@ public sealed class ServicioClub : IServicioClub
     private static PlanoDto MapearPlano(Plano p, IReadOnlyList<PlanoElemento> elementos)
         => new(p.Id, p.Nombre, p.Version, p.Activo, p.AnchoFondo, p.AltoFondo, p.Rejilla, p.Piso,
             elementos.OrderBy(e => e.Z).Select(e => new PlanoElementoDto(
-                e.Id, e.ZonaId, e.MesaId, e.Tipo, e.Forma, e.Color, e.Etiqueta, e.Z, e.PosX, e.PosY, e.Ancho, e.Alto, e.Rotacion)).ToList());
+                e.Id, e.ZonaId, e.MesaId, e.Tipo, e.Forma, e.Color, e.Etiqueta, e.Z, e.PosX, e.PosY, e.Ancho, e.Alto, e.Rotacion)).ToList(),
+            p.FondoImagenUrl, p.FondoOpacidad, p.FondoAjuste, p.EsPlantilla);
 
     private static PlanoDto MapearPlano(Plano p) => MapearPlano(p, p.Elementos.ToList());
 

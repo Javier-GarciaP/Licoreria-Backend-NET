@@ -57,7 +57,8 @@ public sealed class ServicioClubReservasTests
             _notificador.Object,
             _kardex.Object,
             _unitOfWork.Object,
-            new JornadaOperativa());
+            new JornadaOperativa(),
+            Mock.Of<IAlmacenamientoArchivos>());
     }
 
     private static Mesa Mesa() => new() { ZonaId = ZonaId, Numero = "M1", Capacidad = 4, Activa = true };

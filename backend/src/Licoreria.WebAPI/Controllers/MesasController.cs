@@ -24,12 +24,12 @@ public class MesasController : ControllerBase
         => Ok(await _servicio.ObtenerMesasAsync(zonaId, fechaHora, cancellationToken));
 
     [HttpPost]
-    [Authorize(Policy = Permisos.ClubGestionar)]
+    [Authorize(Policy = Permisos.ClubDistribucion)]
     public async Task<ActionResult<MesaDto>> Crear([FromBody] MesaCrearDto dto, CancellationToken cancellationToken)
         => StatusCode(StatusCodes.Status201Created, await _servicio.CrearMesaAsync(dto, cancellationToken));
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = Permisos.ClubGestionar)]
+    [Authorize(Policy = Permisos.ClubDistribucion)]
     public async Task<ActionResult<MesaDto>> Editar(Guid id, [FromBody] MesaEditarDto dto, CancellationToken cancellationToken)
     {
         if (id != dto.Id)
@@ -42,7 +42,7 @@ public class MesasController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = Permisos.ClubGestionar)]
+    [Authorize(Policy = Permisos.ClubDistribucion)]
     public async Task<IActionResult> Eliminar(Guid id, CancellationToken cancellationToken)
         => await _servicio.EliminarMesaAsync(id, cancellationToken) ? NoContent() : NotFound();
 
