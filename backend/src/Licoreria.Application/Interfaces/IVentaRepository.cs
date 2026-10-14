@@ -19,7 +19,11 @@ public interface IVentaRepository
 
     Task AgregarPagoAsync(Pago pago, CancellationToken cancellationToken = default);
 
-    Task<int> ContarComprobantesAsync(CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Siguiente número correlativo de comprobante, tomado de una secuencia de la base de datos:
+    /// nunca se repite entre ventas simultáneas (puede haber saltos si una venta se revierte).
+    /// </summary>
+    Task<long> ObtenerSiguienteCorrelativoComprobanteAsync(CancellationToken cancellationToken = default);
 
     Task AgregarDevolucionAsync(Devolucion devolucion, CancellationToken cancellationToken = default);
 

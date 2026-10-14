@@ -34,7 +34,10 @@ public sealed class ServicioClubPlanoTests
             Mock.Of<ICuentaRepository>(),
             new DetectorConflictosReserva(),
             Mock.Of<IRelojSistema>(),
-            Mock.Of<INotificadorComandas>());
+            Mock.Of<INotificadorComandas>(),
+            Mock.Of<IServicioKardex>(),
+            Mock.Of<IUnitOfWork>(),
+            new JornadaOperativa());
 
     private static Plano PlanoCon(params PlanoElemento[] elementos)
     {

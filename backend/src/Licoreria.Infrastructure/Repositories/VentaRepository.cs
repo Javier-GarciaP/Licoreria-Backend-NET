@@ -55,8 +55,10 @@ public class VentaRepository : IVentaRepository
     public async Task AgregarPagoAsync(Pago pago, CancellationToken cancellationToken = default)
         => await _context.Pagos.AddAsync(pago, cancellationToken);
 
-    public Task<int> ContarComprobantesAsync(CancellationToken cancellationToken = default)
-        => _context.ComprobantesFiscales.CountAsync(cancellationToken);
+    public Task<long> ObtenerSiguienteCorrelativoComprobanteAsync(CancellationToken cancellationToken = default)
+        => _context.Database
+            .SqlQuery<long>($"SELECT nextval('comprobante_numero_seq') AS \"Value\"")
+            .SingleAsync(cancellationToken);
 
     public async Task AgregarDevolucionAsync(Devolucion devolucion, CancellationToken cancellationToken = default)
         => await _context.Devoluciones.AddAsync(devolucion, cancellationToken);

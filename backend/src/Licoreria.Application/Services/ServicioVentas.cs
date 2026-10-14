@@ -80,10 +80,10 @@ public sealed class ServicioVentas : IServicioVentas
         await _unitOfWork.EjecutarEnTransaccionAsync(async ct =>
         {
             venta = await CrearVentaAsync(dto, ct);
+            _auditoria.Registrar("registrar", "venta", venta.Id, new { venta.TotalUSD, venta.TotalBS, venta.TasaCambio });
         }, cancellationToken);
 
         var creada = await _ventaRepository.ObtenerConDetalleAsync(venta!.Id, cancellationToken);
-        await _auditoria.RegistrarAsync("registrar", "venta", venta.Id, new { venta.TotalUSD, venta.TotalBS, venta.TasaCambio }, cancellationToken);
         return Mapear(creada!);
     }
 
@@ -102,7 +102,7 @@ public sealed class ServicioVentas : IServicioVentas
         var usuarioId = _contextoUsuario.UsuarioId
             ?? throw new ReglaNegocioException("No se pudo identificar al usuario que registra la venta.");
 
-        var sesionCaja = await _sesionesCaja.ObtenerAbiertaAsync(cancellationToken)
+        var sesionCaja = await _sesionesCaja.ObtenerAbiertaBloqueadaAsync(cancellationToken)
             ?? throw new ReglaNegocioException("No hay un turno abierto. Pida al cajero que abra la caja para operar.");
 
         var tasa = await _finanzas.ObtenerValorVigenteAsync(TipoTasa.Paralelo, cancellationToken);
@@ -193,7 +193,7 @@ public sealed class ServicioVentas : IServicioVentas
             });
         }
 
-        var correlativo = await _ventaRepository.ContarComprobantesAsync(cancellationToken) + 1;
+        var correlativo = await _ventaRepository.ObtenerSiguienteCorrelativoComprobanteAsync(cancellationToken);
         venta.Comprobante = new ComprobanteFiscal
         {
             VentaId = venta.Id,
@@ -299,9 +299,8 @@ public sealed class ServicioVentas : IServicioVentas
         devolucion.MontoUSD = devolucion.Detalles.Sum(d => d.Cantidad * d.PrecioUnitarioUSD);
 
         await _ventaRepository.AgregarDevolucionAsync(devolucion, cancellationToken);
+        _auditoria.Registrar("devolucion", "venta", ventaId, new { devolucion.MontoUSD, devolucion.Motivo });
         await _ventaRepository.SaveChangesAsync(cancellationToken);
-
-        await _auditoria.RegistrarAsync("devolucion", "venta", ventaId, new { devolucion.MontoUSD, devolucion.Motivo }, cancellationToken);
 
         return new DevolucionDto(
             devolucion.Id,

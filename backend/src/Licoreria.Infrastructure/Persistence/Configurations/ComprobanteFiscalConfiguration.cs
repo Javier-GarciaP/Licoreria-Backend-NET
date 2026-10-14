@@ -16,6 +16,9 @@ public class ComprobanteFiscalConfiguration : IEntityTypeConfiguration<Comproban
         builder.Property(c => c.TotalBS).HasPrecision(18, 2);
         builder.HasIndex(c => c.VentaId).IsUnique();
 
+        // El número lo asigna la secuencia comprobante_numero_seq; el índice garantiza que nunca se repita.
+        builder.HasIndex(c => c.Numero).IsUnique().HasDatabaseName("ux_comprobantes_numero");
+
         builder.HasOne(c => c.Venta)
                .WithOne(v => v.Comprobante)
                .HasForeignKey<ComprobanteFiscal>(c => c.VentaId)

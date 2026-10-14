@@ -66,8 +66,6 @@ public sealed class ServicioUsuarios : IServicioUsuarios
         await _usuarioRepository.AddAsync(usuario, cancellationToken);
         await _usuarioRepository.SaveChangesAsync(cancellationToken);
 
-        await _auditoria.RegistrarAsync("crear", "usuario", usuario.Id, new { usuario.Email, Rol = usuario.Rol.ToString() }, cancellationToken);
-
         return Mapear(usuario);
     }
 
@@ -100,8 +98,6 @@ public sealed class ServicioUsuarios : IServicioUsuarios
         _usuarioRepository.Update(usuario);
         await _usuarioRepository.SaveChangesAsync(cancellationToken);
 
-        await _auditoria.RegistrarAsync("editar", "usuario", usuario.Id, new { usuario.Email, Rol = usuario.Rol.ToString(), usuario.Activo }, cancellationToken);
-
         return Mapear(usuario);
     }
 
@@ -116,8 +112,6 @@ public sealed class ServicioUsuarios : IServicioUsuarios
         usuario.EliminarLogico();
         _usuarioRepository.Update(usuario);
         await _usuarioRepository.SaveChangesAsync(cancellationToken);
-
-        await _auditoria.RegistrarAsync("eliminar", "usuario", usuario.Id, new { usuario.Email }, cancellationToken);
 
         return true;
     }
@@ -139,8 +133,8 @@ public sealed class ServicioUsuarios : IServicioUsuarios
         // Revoca las sesiones activas del usuario al cambiar la contraseña.
         await _refreshTokens.RevocarTodosDelUsuarioAsync(id, _reloj.UtcNow, cancellationToken);
 
+        _auditoria.Registrar("cambiar-password", "usuario", usuario.Id, new { usuario.Email });
         await _usuarioRepository.SaveChangesAsync(cancellationToken);
-        await _auditoria.RegistrarAsync("cambiar-password", "usuario", usuario.Id, new { usuario.Email }, cancellationToken);
 
         return true;
     }
@@ -154,8 +148,8 @@ public sealed class ServicioUsuarios : IServicioUsuarios
         }
 
         await _refreshTokens.RevocarTodosDelUsuarioAsync(id, _reloj.UtcNow, cancellationToken);
+        _auditoria.Registrar("revocar-sesiones", "usuario", usuario.Id, new { usuario.Email });
         await _refreshTokens.SaveChangesAsync(cancellationToken);
-        await _auditoria.RegistrarAsync("revocar-sesiones", "usuario", usuario.Id, new { usuario.Email }, cancellationToken);
 
         return true;
     }

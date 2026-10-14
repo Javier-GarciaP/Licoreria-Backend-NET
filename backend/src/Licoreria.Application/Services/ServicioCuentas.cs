@@ -22,6 +22,7 @@ public sealed class ServicioCuentas : IServicioCuentas
     private readonly INotificadorComandas _notificador;
     private readonly IServicioFinanzas _finanzas;
     private readonly MaquinaEstadosComanda _maquinaEstados;
+    private readonly IUnitOfWork _unitOfWork;
 
     public ServicioCuentas(
         ICuentaRepository cuentaRepository,
@@ -35,7 +36,8 @@ public sealed class ServicioCuentas : IServicioCuentas
         IRelojSistema reloj,
         INotificadorComandas notificador,
         IServicioFinanzas finanzas,
-        MaquinaEstadosComanda maquinaEstados)
+        MaquinaEstadosComanda maquinaEstados,
+        IUnitOfWork unitOfWork)
     {
         _cuentaRepository = cuentaRepository;
         _variantes = variantes;
@@ -49,12 +51,13 @@ public sealed class ServicioCuentas : IServicioCuentas
         _notificador = notificador;
         _finanzas = finanzas;
         _maquinaEstados = maquinaEstados;
+        _unitOfWork = unitOfWork;
     }
 
     /// <summary>Exige que exista un turno (sesión de caja) abierto para operar el salón.</summary>
     private async Task ExigirTurnoAbiertoAsync(CancellationToken cancellationToken)
     {
-        var sesion = await _sesionesCaja.ObtenerAbiertaAsync(cancellationToken);
+        var sesion = await _sesionesCaja.ObtenerAbiertaBloqueadaAsync(cancellationToken);
         if (sesion is null)
         {
             throw new ReglaNegocioException("No hay un turno abierto. Pida al cajero que abra la caja para operar.");
@@ -159,60 +162,79 @@ public sealed class ServicioCuentas : IServicioCuentas
         CrearComandaDto dto,
         CancellationToken cancellationToken = default)
     {
-        await ExigirTurnoAbiertoAsync(cancellationToken);
+        Guid? comandaId = null;
 
-        var cuenta = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, cancellationToken);
-        if (cuenta is null || cuenta.IsDeleted || cuenta.Estado == EstadoCuenta.Cerrada)
+        // Un solo intento atómico: la comanda, el total de la cuenta y la reserva de los insumos
+        // se confirman juntos. Ante un conflicto de versión se relee todo y se repite.
+        await _unitOfWork.EjecutarEnTransaccionAsync(async ct =>
+        {
+            comandaId = null;
+
+            await ExigirTurnoAbiertoAsync(ct);
+
+            var cuenta = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, ct);
+            if (cuenta is null || cuenta.IsDeleted || cuenta.Estado == EstadoCuenta.Cerrada)
+            {
+                return;
+            }
+
+            if (dto.Items.Count == 0)
+            {
+                throw new ReglaNegocioException("La comanda debe tener al menos un ítem.");
+            }
+
+            var comanda = new Comanda { CuentaId = cuentaId, Area = dto.Area };
+
+            var insumos = new List<KardexInsumo>();
+
+            foreach (var item in dto.Items)
+            {
+                if (item.Cantidad <= 0)
+                {
+                    throw new ReglaNegocioException("La cantidad de cada ítem debe ser mayor que cero.");
+                }
+
+                var variante = await _variantes.GetByIdAsync(item.VarianteId, ct)
+                    ?? throw new NoEncontradoException($"No existe la variante {item.VarianteId}.");
+
+                if (!variante.Activo || variante.IsDeleted)
+                {
+                    throw new ReglaNegocioException($"La variante '{variante.Nombre}' no está disponible.");
+                }
+
+                var desglose = await _kardex.DesglosarInsumosAsync(item.VarianteId, item.Cantidad, ct);
+
+                comanda.Detalles.Add(new ComandaDetalle
+                {
+                    VarianteId = variante.Id,
+                    Cantidad = item.Cantidad,
+                    PrecioUnitarioUSD = variante.PrecioVentaUSD,
+                    AreaDestino = dto.Area,
+                    Estado = EstadoItemComanda.Recibido,
+                    EsCortesia = item.EsCortesia,
+                    // Los productos de Cocina no llevan inventario: no hay nada que reservar.
+                    Reservado = desglose.Count > 0
+                });
+
+                insumos.AddRange(desglose);
+            }
+
+            // Compromete la existencia: si otro mesonero ya pidió la última unidad, falla aquí
+            // (422) y no cuando barra intente servirla.
+            await _kardex.ReservarAsync(insumos, ct);
+
+            cuenta.Acumular(comanda.Detalles.Sum(d => d.SubtotalUSD));
+
+            await _cuentaRepository.AgregarComandaAsync(comanda, ct);
+            comandaId = comanda.Id;
+        }, cancellationToken);
+
+        if (comandaId is not Guid creada)
         {
             return null;
         }
 
-        if (dto.Items.Count == 0)
-        {
-            throw new ReglaNegocioException("La comanda debe tener al menos un ítem.");
-        }
-
-        var comanda = new Comanda { CuentaId = cuentaId, Area = dto.Area };
-
-        var insumos = new List<KardexInsumo>();
-
-        foreach (var item in dto.Items)
-        {
-            if (item.Cantidad <= 0)
-            {
-                throw new ReglaNegocioException("La cantidad de cada ítem debe ser mayor que cero.");
-            }
-
-            var variante = await _variantes.GetByIdAsync(item.VarianteId, cancellationToken)
-                ?? throw new NoEncontradoException($"No existe la variante {item.VarianteId}.");
-
-            if (!variante.Activo || variante.IsDeleted)
-            {
-                throw new ReglaNegocioException($"La variante '{variante.Nombre}' no está disponible.");
-            }
-
-            comanda.Detalles.Add(new ComandaDetalle
-            {
-                VarianteId = variante.Id,
-                Cantidad = item.Cantidad,
-                PrecioUnitarioUSD = variante.PrecioVentaUSD,
-                AreaDestino = dto.Area,
-                Estado = EstadoItemComanda.Recibido,
-                EsCortesia = item.EsCortesia
-            });
-
-            insumos.AddRange(await _kardex.DesglosarInsumosAsync(item.VarianteId, item.Cantidad, cancellationToken));
-        }
-
-        // Evita aceptar pedidos que la barra/cocina no podría servir con la existencia actual.
-        await _kardex.VerificarStockAsync(insumos, cancellationToken);
-
-        cuenta.Acumular(comanda.Detalles.Sum(d => d.SubtotalUSD));
-
-        await _cuentaRepository.AgregarComandaAsync(comanda, cancellationToken);
-        await _cuentaRepository.SaveChangesAsync(cancellationToken);
-
-        await _notificador.ComandaCreadaAsync(cuentaId, comanda.Id, comanda.Area.ToString(), cancellationToken);
+        await _notificador.ComandaCreadaAsync(cuentaId, creada, dto.Area.ToString(), cancellationToken);
 
         var actualizada = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, cancellationToken);
         return actualizada is null ? null : Mapear(actualizada);
@@ -223,50 +245,72 @@ public sealed class ServicioCuentas : IServicioCuentas
         RegistrarAbonoCuentaDto dto,
         CancellationToken cancellationToken = default)
     {
-        await ExigirTurnoAbiertoAsync(cancellationToken);
+        var registrado = false;
+        var intentos = 0;
 
-        var cuenta = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, cancellationToken);
-        if (cuenta is null || cuenta.IsDeleted || cuenta.Estado == EstadoCuenta.Cerrada)
+        // Dos abonos (o un abono y el cierre) sobre la misma cuenta compiten por su total: ante un
+        // conflicto de versión se relee la cuenta y se reaplica, de modo que ningún abono se pierde.
+        await _unitOfWork.EjecutarEnTransaccionAsync(async ct =>
+        {
+            intentos++;
+            registrado = false;
+
+            await ExigirTurnoAbiertoAsync(ct);
+
+            var cuenta = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, ct);
+            if (cuenta is null || cuenta.IsDeleted || cuenta.Estado == EstadoCuenta.Cerrada)
+            {
+                // Tras un conflicto, una cuenta ya cerrada significa que otra operación la cobró primero.
+                if (intentos > 1)
+                {
+                    throw new ConflictoException("La cuenta ya fue cobrada por otra operación; el abono no se registró.");
+                }
+
+                return;
+            }
+
+            var metodo = await _metodosPago.GetByIdAsync(dto.MetodoPagoId, ct)
+                ?? throw new NoEncontradoException($"No existe el método de pago {dto.MetodoPagoId}.");
+
+            // Los abonos en Bs se convierten a USD con la tasa vigente para que
+            // TotalAbonado y Saldo de la cuenta siempre estén en USD.
+            var montoUsd = dto.Monto;
+            if (dto.Moneda == Moneda.BS)
+            {
+                var tasa = await _finanzas.ObtenerValorVigenteAsync(TipoTasa.Paralelo, ct);
+                if (tasa <= 0)
+                {
+                    throw new ReglaNegocioException("No hay una tasa de cambio vigente para convertir el abono en Bs.");
+                }
+
+                montoUsd = Math.Round(dto.Monto / tasa, 2);
+            }
+
+            try
+            {
+                cuenta.Abonar(montoUsd);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new ReglaNegocioException(ex.Message);
+            }
+
+            var abono = new Abono
+            {
+                CuentaId = cuentaId,
+                MetodoPagoId = metodo.Id,
+                Monto = dto.Monto,
+                Moneda = dto.Moneda
+            };
+
+            await _cuentaRepository.AgregarAbonoAsync(abono, ct);
+            registrado = true;
+        }, cancellationToken);
+
+        if (!registrado)
         {
             return null;
         }
-
-        var metodo = await _metodosPago.GetByIdAsync(dto.MetodoPagoId, cancellationToken)
-            ?? throw new NoEncontradoException($"No existe el método de pago {dto.MetodoPagoId}.");
-
-        // Los abonos en Bs se convierten a USD con la tasa vigente para que
-        // TotalAbonado y Saldo de la cuenta siempre estén en USD.
-        var montoUsd = dto.Monto;
-        if (dto.Moneda == Moneda.BS)
-        {
-            var tasa = await _finanzas.ObtenerValorVigenteAsync(TipoTasa.Paralelo, cancellationToken);
-            if (tasa <= 0)
-            {
-                throw new ReglaNegocioException("No hay una tasa de cambio vigente para convertir el abono en Bs.");
-            }
-
-            montoUsd = Math.Round(dto.Monto / tasa, 2);
-        }
-
-        try
-        {
-            cuenta.Abonar(montoUsd);
-        }
-        catch (InvalidOperationException ex)
-        {
-            throw new ReglaNegocioException(ex.Message);
-        }
-
-        var abono = new Abono
-        {
-            CuentaId = cuentaId,
-            MetodoPagoId = metodo.Id,
-            Monto = dto.Monto,
-            Moneda = dto.Moneda
-        };
-
-        await _cuentaRepository.AgregarAbonoAsync(abono, cancellationToken);
-        await _cuentaRepository.SaveChangesAsync(cancellationToken);
 
         var actualizada = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, cancellationToken);
         return actualizada is null ? null : Mapear(actualizada);
@@ -349,72 +393,123 @@ public sealed class ServicioCuentas : IServicioCuentas
         ActualizarEstadoItemDto dto,
         CancellationToken cancellationToken = default)
     {
-        await ExigirTurnoAbiertoAsync(cancellationToken);
+        var encontrado = false;
+        var aplicado = false;
+        var areaDestino = AreaDestino.Barra;
 
-        var cuenta = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, cancellationToken);
-        if (cuenta is null || cuenta.IsDeleted || cuenta.Estado == EstadoCuenta.Cerrada)
+        await _unitOfWork.EjecutarEnTransaccionAsync(async ct =>
+        {
+            encontrado = false;
+            aplicado = false;
+
+            await ExigirTurnoAbiertoAsync(ct);
+
+            var cuenta = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, ct);
+            if (cuenta is null || cuenta.IsDeleted || cuenta.Estado == EstadoCuenta.Cerrada)
+            {
+                return;
+            }
+
+            var detalle = await _cuentaRepository.ObtenerDetalleAsync(comandaId, detalleId, ct);
+            if (detalle is null)
+            {
+                return;
+            }
+
+            encontrado = true;
+            var estadoAnterior = detalle.Estado;
+
+            // Transición trivial (mismo estado): no repite kardex ni descuentos. También es lo que
+            // ocurre cuando otro usuario ya aplicó el mismo cambio al mismo tiempo.
+            if (dto.Estado == estadoAnterior)
+            {
+                return;
+            }
+
+            // La máquina de estados valida Recibido → EnProceso → Preparado → Entregado
+            // (y cancelaciones); prohíbe regresiones y estados terminales.
+            if (!_maquinaEstados.PuedeTransicionar(estadoAnterior, dto.Estado))
+            {
+                throw new ReglaNegocioException(
+                    $"Transición de comanda no permitida: {estadoAnterior} → {dto.Estado}.");
+            }
+
+            var servidoAnterior = estadoAnterior is EstadoItemComanda.Preparado or EstadoItemComanda.Entregado;
+            var servidoNuevo = dto.Estado is EstadoItemComanda.Preparado or EstadoItemComanda.Entregado;
+
+            // Al servir (Preparado/Entregado) se consume la reserva y se descuenta el insumo del
+            // inventario; si un ítem servido deja de estarlo (incluida la cancelación) se reintegra.
+            if (servidoNuevo && !servidoAnterior)
+            {
+                await ServirItemAsync(detalle, ct);
+            }
+            else if (servidoAnterior && !servidoNuevo)
+            {
+                await AplicarKardexComandaAsync(detalle, +1, "Reintegro por comanda no servida", ct);
+            }
+
+            if (dto.Estado == EstadoItemComanda.Cancelado)
+            {
+                // Un ítem cancelado que aún conserva su reserva la devuelve a disponible.
+                await _kardex.LiberarReservasAsync([detalle], ct);
+
+                // El ítem cancelado deja de formar parte del total de la cuenta.
+                cuenta.Descontar(detalle.SubtotalUSD);
+            }
+
+            detalle.CambiarEstado(dto.Estado);
+
+            // El estado general de la comanda se deriva de sus líneas.
+            var comanda = cuenta.Comandas.FirstOrDefault(c => c.Id == comandaId);
+            if (comanda is not null)
+            {
+                comanda.Estado = CalcularEstadoComanda(comanda);
+            }
+
+            areaDestino = detalle.AreaDestino;
+            aplicado = true;
+        }, cancellationToken);
+
+        if (!encontrado)
         {
             return null;
         }
 
-        var detalle = await _cuentaRepository.ObtenerDetalleAsync(comandaId, detalleId, cancellationToken);
-        if (detalle is null)
+        if (aplicado)
         {
-            return null;
+            await _notificador.ItemActualizadoAsync(cuentaId, comandaId, detalleId, dto.Estado.ToString(), areaDestino.ToString(), cancellationToken);
         }
-
-        var estadoAnterior = detalle.Estado;
-
-        // Transición trivial (mismo estado): no repite kardex ni descuentos.
-        if (dto.Estado == estadoAnterior)
-        {
-            var sinCambios = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, cancellationToken);
-            return sinCambios is null ? null : Mapear(sinCambios);
-        }
-
-        // La máquina de estados valida Recibido → EnProceso → Preparado → Entregado
-        // (y cancelaciones); prohíbe regresiones y estados terminales.
-        if (!_maquinaEstados.PuedeTransicionar(estadoAnterior, dto.Estado))
-        {
-            throw new ReglaNegocioException(
-                $"Transición de comanda no permitida: {estadoAnterior} → {dto.Estado}.");
-        }
-
-        var servidoAnterior = estadoAnterior is EstadoItemComanda.Preparado or EstadoItemComanda.Entregado;
-        var servidoNuevo = dto.Estado is EstadoItemComanda.Preparado or EstadoItemComanda.Entregado;
-
-        // Al servir (Preparado/Entregado) se descuenta el insumo del inventario; si un
-        // ítem servido deja de estarlo (incluida la cancelación) se reintegra.
-        if (servidoNuevo && !servidoAnterior)
-        {
-            await AplicarKardexComandaAsync(detalle, -1, "Salida por comanda servida", cancellationToken);
-        }
-        else if (servidoAnterior && !servidoNuevo)
-        {
-            await AplicarKardexComandaAsync(detalle, +1, "Reintegro por comanda no servida", cancellationToken);
-        }
-
-        if (dto.Estado == EstadoItemComanda.Cancelado)
-        {
-            // El ítem cancelado deja de formar parte del total de la cuenta.
-            cuenta.Descontar(detalle.SubtotalUSD);
-        }
-
-        detalle.CambiarEstado(dto.Estado);
-
-        // El estado general de la comanda se deriva de sus líneas.
-        var comanda = cuenta.Comandas.FirstOrDefault(c => c.Id == comandaId);
-        if (comanda is not null)
-        {
-            comanda.Estado = CalcularEstadoComanda(comanda);
-        }
-
-        await _cuentaRepository.SaveChangesAsync(cancellationToken);
-
-        await _notificador.ItemActualizadoAsync(cuentaId, comandaId, detalleId, dto.Estado.ToString(), detalle.AreaDestino.ToString(), cancellationToken);
 
         var actualizada = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, cancellationToken);
         return actualizada is null ? null : Mapear(actualizada);
+    }
+
+    /// <summary>
+    /// Sirve un ítem: si conserva su reserva la consume (descuenta existencia y reserva a la vez);
+    /// los ítems anteriores a la reserva descuentan directamente del inventario.
+    /// </summary>
+    private async Task ServirItemAsync(ComandaDetalle detalle, CancellationToken cancellationToken)
+    {
+        if (!detalle.Reservado)
+        {
+            await AplicarKardexComandaAsync(detalle, -1, "Salida por comanda servida", cancellationToken);
+            return;
+        }
+
+        var insumos = await _kardex.DesglosarInsumosAsync(detalle.VarianteId, detalle.Cantidad, cancellationToken);
+        foreach (var insumo in insumos)
+        {
+            await _kardex.ConsumirReservaAsync(
+                insumo.VarianteId,
+                TipoMovimientoInventario.Venta,
+                insumo.Cantidad,
+                "comanda",
+                detalle.ComandaId,
+                "Salida por comanda servida",
+                cancellationToken);
+        }
+
+        detalle.Reservado = false;
     }
 
     /// <summary>Aplica la salida/reintegro de insumos de un ítem de comanda en el kardex.</summary>
@@ -465,51 +560,78 @@ public sealed class ServicioCuentas : IServicioCuentas
         CerrarCuentaDto dto,
         CancellationToken cancellationToken = default)
     {
-        await ExigirTurnoAbiertoAsync(cancellationToken);
+        VentaDto? venta = null;
+        Guid? mesaLiberada = null;
+        var intentos = 0;
 
-        var cuenta = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, cancellationToken);
-        if (cuenta is null || cuenta.IsDeleted || cuenta.Estado == EstadoCuenta.Cerrada)
+        // La venta, el descuento de inventario y el cierre de la cuenta se confirman juntos: si
+        // algo falla (o dos cajeros cobran la misma mesa) no queda una venta sin cuenta cerrada.
+        await _unitOfWork.EjecutarEnTransaccionAsync(async ct =>
+        {
+            intentos++;
+            venta = null;
+            mesaLiberada = null;
+
+            await ExigirTurnoAbiertoAsync(ct);
+
+            var cuenta = await _cuentaRepository.ObtenerConDetalleAsync(cuentaId, ct);
+            if (cuenta is null || cuenta.IsDeleted || cuenta.Estado == EstadoCuenta.Cerrada)
+            {
+                // Tras un conflicto, una cuenta ya cerrada significa que otra operación la cobró primero.
+                if (intentos > 1)
+                {
+                    throw new ConflictoException("La cuenta ya fue cobrada por otra operación.");
+                }
+
+                return;
+            }
+
+            var items = cuenta.Comandas
+                .SelectMany(c => c.Detalles)
+                .Where(d => d.Estado != EstadoItemComanda.Cancelado)
+                .Select(d => new VentaItemDto(
+                    d.VarianteId,
+                    d.Cantidad,
+                    d.PrecioUnitarioUSD,
+                    0,
+                    d.EsCortesia,
+                    d.Estado is EstadoItemComanda.Preparado or EstadoItemComanda.Entregado))
+                .ToList();
+
+            if (items.Count == 0)
+            {
+                throw new ReglaNegocioException("La cuenta no tiene consumos para cobrar.");
+            }
+
+            var pagos = dto.Pagos
+                .Select(p => new VentaPagoDto(p.MetodoPagoId, p.Monto, p.Moneda, p.Propina))
+                .ToList();
+
+            foreach (var abono in cuenta.Abonos)
+            {
+                pagos.Add(new VentaPagoDto(abono.MetodoPagoId, abono.Monto, abono.Moneda));
+            }
+
+            // Los ítems aún sin servir pierden su reserva: la venta descontará su inventario ahora.
+            await _kardex.LiberarReservasAsync(cuenta.Comandas.SelectMany(c => c.Detalles), ct);
+
+            venta = await _ventas.RegistrarVentaAsync(
+                new RegistrarVentaDto(items, pagos, dto.DescuentoUSD, cuenta.Id),
+                ct);
+
+            cuenta.Cerrar();
+            cuenta.SesionMesa.CerradaEn = _reloj.UtcNow;
+            mesaLiberada = cuenta.SesionMesa.MesaId;
+        }, cancellationToken);
+
+        if (venta is null)
         {
             return null;
         }
 
-        var items = cuenta.Comandas
-            .SelectMany(c => c.Detalles)
-            .Where(d => d.Estado != EstadoItemComanda.Cancelado)
-            .Select(d => new VentaItemDto(
-                d.VarianteId,
-                d.Cantidad,
-                d.PrecioUnitarioUSD,
-                0,
-                d.EsCortesia,
-                d.Estado is EstadoItemComanda.Preparado or EstadoItemComanda.Entregado))
-            .ToList();
-
-        if (items.Count == 0)
+        if (mesaLiberada is Guid mesaId)
         {
-            throw new ReglaNegocioException("La cuenta no tiene consumos para cobrar.");
-        }
-
-        var pagos = dto.Pagos
-            .Select(p => new VentaPagoDto(p.MetodoPagoId, p.Monto, p.Moneda, p.Propina))
-            .ToList();
-
-        foreach (var abono in cuenta.Abonos)
-        {
-            pagos.Add(new VentaPagoDto(abono.MetodoPagoId, abono.Monto, abono.Moneda));
-        }
-
-        var venta = await _ventas.RegistrarVentaAsync(
-            new RegistrarVentaDto(items, pagos, dto.DescuentoUSD, cuenta.Id),
-            cancellationToken);
-
-        cuenta.Cerrar();
-        cuenta.SesionMesa.CerradaEn = _reloj.UtcNow;
-        await _cuentaRepository.SaveChangesAsync(cancellationToken);
-
-        if (cuenta.SesionMesa.MesaId is Guid mesaId)
-        {
-            await _notificador.MesaActualizadaAsync(mesaId, "Libre", cuenta.Id, cancellationToken);
+            await _notificador.MesaActualizadaAsync(mesaId, "Libre", cuentaId, cancellationToken);
         }
 
         return venta;

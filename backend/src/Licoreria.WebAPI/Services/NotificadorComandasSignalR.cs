@@ -80,6 +80,9 @@ public sealed class NotificadorComandasSignalR : INotificadorComandas
     public Task TurnoCerradoAsync(Guid sesionId, CancellationToken cancellationToken = default)
         => EnviarGlobalAsync("turno:cerrado", new { sesionId }, cancellationToken);
 
+    public Task EnvaseActualizadoAsync(Guid envaseId, Guid porcionVarianteId, string estado, CancellationToken cancellationToken = default)
+        => EnviarGlobalAsync("envase:actualizado", new { envaseId, porcionVarianteId, estado }, cancellationToken);
+
     /// <summary>Difunde un evento a todas las áreas operativas (barra, cocina, meseros, mesas y staff).</summary>
     private Task EnviarGlobalAsync(string evento, object payload, CancellationToken cancellationToken)
         => Task.WhenAll(

@@ -17,6 +17,8 @@ public sealed class ServicioCaja : IServicioCaja
     private readonly IContextoUsuario _contextoUsuario;
     private readonly IRelojSistema _reloj;
     private readonly IServicioAuditoria _auditoria;
+    private readonly IServicioKardex _kardex;
+    private readonly IUnitOfWork _unitOfWork;
 
     public ServicioCaja(
         ISesionCajaRepository sesionRepository,
@@ -26,7 +28,9 @@ public sealed class ServicioCaja : IServicioCaja
         INotificadorComandas notificador,
         IContextoUsuario contextoUsuario,
         IRelojSistema reloj,
-        IServicioAuditoria auditoria)
+        IServicioAuditoria auditoria,
+        IServicioKardex kardex,
+        IUnitOfWork unitOfWork)
     {
         _sesionRepository = sesionRepository;
         _denominacionRepository = denominacionRepository;
@@ -36,6 +40,8 @@ public sealed class ServicioCaja : IServicioCaja
         _contextoUsuario = contextoUsuario;
         _reloj = reloj;
         _auditoria = auditoria;
+        _kardex = kardex;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<IReadOnlyList<DenominacionDto>> ObtenerDenominacionesAsync(CancellationToken cancellationToken = default)
@@ -72,10 +78,10 @@ public sealed class ServicioCaja : IServicioCaja
         };
 
         await _sesionRepository.AgregarAsync(sesion, cancellationToken);
+        _auditoria.Registrar("abrir", "sesion-caja", sesion.Id, new { sesion.FondoInicial });
         await _sesionRepository.SaveChangesAsync(cancellationToken);
 
         await _notificador.TurnoAbiertoAsync(sesion.Id, cancellationToken);
-        await _auditoria.RegistrarAsync("abrir", "sesion-caja", sesion.Id, new { sesion.FondoInicial }, cancellationToken);
 
         return await MapearAsync(sesion, cancellationToken);
     }
@@ -110,28 +116,40 @@ public sealed class ServicioCaja : IServicioCaja
         MovimientoCajaCrearDto dto,
         CancellationToken cancellationToken = default)
     {
-        var sesion = await _sesionRepository.ObtenerConDetalleAsync(sesionId, cancellationToken);
-        if (sesion is null || sesion.IsDeleted || sesion.Estado != EstadoSesionCaja.Abierta)
-        {
-            return null;
-        }
-
         if (dto.Monto <= 0)
         {
             throw new ReglaNegocioException("El monto del movimiento debe ser mayor que cero.");
         }
 
-        var movimiento = new MovimientoCaja
-        {
-            SesionCajaId = sesionId,
-            Tipo = dto.Tipo,
-            Monto = dto.Monto,
-            Moneda = dto.Moneda,
-            Motivo = dto.Motivo
-        };
+        var registrado = false;
 
-        await _sesionRepository.AgregarMovimientoAsync(movimiento, cancellationToken);
-        await _sesionRepository.SaveChangesAsync(cancellationToken);
+        // El bloqueo compartido del turno hace que un movimiento en curso termine antes de un cierre
+        // y que, cerrado el turno, ya no se acepte.
+        await _unitOfWork.EjecutarEnTransaccionAsync(async ct =>
+        {
+            registrado = false;
+
+            var abierta = await _sesionRepository.ObtenerAbiertaBloqueadaAsync(ct);
+            if (abierta is null || abierta.Id != sesionId)
+            {
+                return;
+            }
+
+            await _sesionRepository.AgregarMovimientoAsync(new MovimientoCaja
+            {
+                SesionCajaId = sesionId,
+                Tipo = dto.Tipo,
+                Monto = dto.Monto,
+                Moneda = dto.Moneda,
+                Motivo = dto.Motivo
+            }, ct);
+            registrado = true;
+        }, cancellationToken);
+
+        if (!registrado)
+        {
+            return null;
+        }
 
         var actualizada = await _sesionRepository.ObtenerConDetalleAsync(sesionId, cancellationToken);
         return actualizada is null ? null : await MapearAsync(actualizada, cancellationToken);
@@ -142,60 +160,91 @@ public sealed class ServicioCaja : IServicioCaja
         CerrarCajaDto dto,
         CancellationToken cancellationToken = default)
     {
-        var sesion = await _sesionRepository.ObtenerConDetalleAsync(sesionId, cancellationToken);
-        if (sesion is null || sesion.IsDeleted || sesion.Estado != EstadoSesionCaja.Abierta)
+        var cerrada = false;
+        decimal esperado = 0, contado = 0;
+        var mesasDesalojadas = new List<Guid>();
+        SesionCaja? sesionCerrada = null;
+
+        await _unitOfWork.EjecutarEnTransaccionAsync(async ct =>
+        {
+            cerrada = false;
+            esperado = 0;
+            contado = 0;
+            mesasDesalojadas = new List<Guid>();
+
+            // Bloqueo exclusivo: espera a las ventas y movimientos en curso y serializa cierres
+            // simultáneos del mismo turno. Todo lo que sigue se lee ya con el turno estable.
+            await _sesionRepository.BloquearParaCierreAsync(sesionId, ct);
+
+            var sesion = await _sesionRepository.ObtenerConDetalleAsync(sesionId, ct);
+            if (sesion is null || sesion.IsDeleted)
+            {
+                return;
+            }
+
+            if (sesion.Estado != EstadoSesionCaja.Abierta)
+            {
+                throw new ConflictoException("El turno ya fue cerrado.");
+            }
+
+            var totalIngresos = sesion.Movimientos.Where(m => m.Tipo == TipoMovimientoCaja.Ingreso).Sum(m => m.Monto);
+            var totalEgresos = sesion.Movimientos.Where(m => m.Tipo == TipoMovimientoCaja.Egreso).Sum(m => m.Monto);
+            esperado = sesion.FondoInicial + totalIngresos - totalEgresos;
+
+            foreach (var linea in dto.Arqueo)
+            {
+                var denominacion = await _denominacionRepository.GetByIdAsync(linea.DenominacionId, ct)
+                    ?? throw new NoEncontradoException($"No existe la denominación {linea.DenominacionId}.");
+
+                if (linea.Cantidad < 0)
+                {
+                    throw new ReglaNegocioException("La cantidad de una denominación no puede ser negativa.");
+                }
+
+                var subtotal = denominacion.Valor * linea.Cantidad;
+                contado += subtotal;
+
+                await _sesionRepository.AgregarArqueoAsync(new ArqueoDenominacion
+                {
+                    SesionCajaId = sesionId,
+                    DenominacionId = denominacion.Id,
+                    Cantidad = linea.Cantidad,
+                    Subtotal = subtotal
+                }, ct);
+            }
+
+            // Desaloja las mesas que quedaron abiertas: con saldo quedan por cobrar,
+            // sin saldo se cierran, y todas las mesas vuelven a libres.
+            var abiertas = await _cuentaRepository.ObtenerAbiertasConSesionAsync(ct);
+            foreach (var cuenta in abiertas)
+            {
+                cuenta.SesionMesa.CerradaEn = _reloj.UtcNow;
+                cuenta.Estado = cuenta.Saldo > 0m ? EstadoCuenta.PorCobrar : EstadoCuenta.Cerrada;
+
+                if (cuenta.SesionMesa.MesaId is Guid mesaId)
+                {
+                    mesasDesalojadas.Add(mesaId);
+                }
+            }
+
+            // Las comandas que quedaron sin servir ni cobrar liberan la existencia que tenían reservada.
+            await _kardex.LiberarReservasAsync(
+                abiertas.SelectMany(c => c.Comandas.SelectMany(cd => cd.Detalles)),
+                ct);
+
+            sesion.VentasDelTurnoUSD = await _ventaRepository.ObtenerTotalVentasDelTurnoAsync(sesionId, ct);
+            sesion.CuentasDesalojadas = mesasDesalojadas.Count;
+
+            sesion.Cerrar(esperado, contado, _reloj.UtcNow);
+            _auditoria.Registrar("cerrar", "sesion-caja", sesion.Id, new { esperado, contado, descuadre = sesion.Descuadre, ventas = sesion.VentasDelTurnoUSD, mesas = sesion.CuentasDesalojadas });
+            sesionCerrada = sesion;
+            cerrada = true;
+        }, cancellationToken);
+
+        if (!cerrada || sesionCerrada is null)
         {
             return null;
         }
-
-        var totalIngresos = sesion.Movimientos.Where(m => m.Tipo == TipoMovimientoCaja.Ingreso).Sum(m => m.Monto);
-        var totalEgresos = sesion.Movimientos.Where(m => m.Tipo == TipoMovimientoCaja.Egreso).Sum(m => m.Monto);
-        var esperado = sesion.FondoInicial + totalIngresos - totalEgresos;
-
-        decimal contado = 0;
-
-        foreach (var linea in dto.Arqueo)
-        {
-            var denominacion = await _denominacionRepository.GetByIdAsync(linea.DenominacionId, cancellationToken)
-                ?? throw new NoEncontradoException($"No existe la denominación {linea.DenominacionId}.");
-
-            if (linea.Cantidad < 0)
-            {
-                throw new ReglaNegocioException("La cantidad de una denominación no puede ser negativa.");
-            }
-
-            var subtotal = denominacion.Valor * linea.Cantidad;
-            contado += subtotal;
-
-            await _sesionRepository.AgregarArqueoAsync(new ArqueoDenominacion
-            {
-                SesionCajaId = sesionId,
-                DenominacionId = denominacion.Id,
-                Cantidad = linea.Cantidad,
-                Subtotal = subtotal
-            }, cancellationToken);
-        }
-
-        // Desaloja las mesas que quedaron abiertas: con saldo quedan por cobrar,
-        // sin saldo se cierran, y todas las mesas vuelven a libres.
-        var abiertas = await _cuentaRepository.ObtenerAbiertasConSesionAsync(cancellationToken);
-        var mesasDesalojadas = new List<Guid>();
-        foreach (var cuenta in abiertas)
-        {
-            cuenta.SesionMesa.CerradaEn = _reloj.UtcNow;
-            cuenta.Estado = cuenta.Saldo > 0m ? EstadoCuenta.PorCobrar : EstadoCuenta.Cerrada;
-
-            if (cuenta.SesionMesa.MesaId is Guid mesaId)
-            {
-                mesasDesalojadas.Add(mesaId);
-            }
-        }
-
-        sesion.VentasDelTurnoUSD = await _ventaRepository.ObtenerTotalVentasDelTurnoAsync(sesionId, cancellationToken);
-        sesion.CuentasDesalojadas = mesasDesalojadas.Count;
-
-        sesion.Cerrar(esperado, contado, _reloj.UtcNow);
-        await _sesionRepository.SaveChangesAsync(cancellationToken);
 
         foreach (var mesaId in mesasDesalojadas.Distinct())
         {
@@ -203,10 +252,9 @@ public sealed class ServicioCaja : IServicioCaja
         }
 
         await _notificador.TurnoCerradoAsync(sesionId, cancellationToken);
-        await _auditoria.RegistrarAsync("cerrar", "sesion-caja", sesion.Id, new { esperado, contado, descuadre = sesion.Descuadre, ventas = sesion.VentasDelTurnoUSD, mesas = sesion.CuentasDesalojadas }, cancellationToken);
 
-        var cerrada = await _sesionRepository.ObtenerConDetalleAsync(sesionId, cancellationToken);
-        return cerrada is null ? null : await MapearAsync(cerrada, cancellationToken);
+        var resultado = await _sesionRepository.ObtenerConDetalleAsync(sesionId, cancellationToken);
+        return resultado is null ? null : await MapearAsync(resultado, cancellationToken);
     }
 
     private async Task<SesionCajaDto> MapearAsync(SesionCaja s, CancellationToken cancellationToken)

@@ -48,12 +48,12 @@ public sealed class ServicioVentasTests
             .Setup(f => f.ObtenerValorVigenteAsync(TipoTasa.Paralelo, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Tasa);
         _sesionesCaja
-            .Setup(s => s.ObtenerAbiertaAsync(It.IsAny<CancellationToken>()))
+            .Setup(s => s.ObtenerAbiertaBloqueadaAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SesionCaja());
         _contexto.SetupGet(c => c.UsuarioId).Returns(Guid.NewGuid());
         _reloj.SetupGet(r => r.UtcNow).Returns(new DateTime(2026, 10, 9, 12, 0, 0, DateTimeKind.Utc));
 
-        _ventas.Setup(v => v.ContarComprobantesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(0);
+        _ventas.Setup(v => v.ObtenerSiguienteCorrelativoComprobanteAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1L);
         _ventas
             .Setup(v => v.AgregarAsync(It.IsAny<Venta>(), It.IsAny<CancellationToken>()))
             .Callback<Venta, CancellationToken>((venta, _) => _creada = venta)
@@ -89,6 +89,17 @@ public sealed class ServicioVentasTests
             Pagos: [new VentaPagoDto(_metodoId, pago, moneda)]);
 
     [Fact]
+    public async Task RegistrarVentaAsync_RegistraElEventoDentroDeLaTransaccion()
+    {
+        var venta = await CrearServicio().RegistrarVentaAsync(VentaUnica(100m));
+
+        _auditoria.Verify(a => a.Registrar("registrar", "venta", venta.Id, It.IsAny<object?>()), Times.Once);
+        _auditoria.Verify(
+            a => a.RegistrarAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Guid?>(), It.IsAny<object?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
     public async Task RegistrarVentaAsync_PagoEnUsd_RegistraTasaYTotalBs()
     {
         var venta = await CrearServicio().RegistrarVentaAsync(VentaUnica(100m));
@@ -100,6 +111,21 @@ public sealed class ServicioVentasTests
         var pago = Assert.Single(venta.Pagos);
         Assert.Equal(Moneda.USD, pago.Moneda);
         Assert.Equal(100m, pago.Monto);
+    }
+
+    [Fact]
+    public async Task RegistrarVentaAsync_NumeraElComprobanteConElCorrelativoDeLaSecuencia()
+    {
+        _ventas
+            .Setup(v => v.ObtenerSiguienteCorrelativoComprobanteAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(42L);
+
+        var venta = await CrearServicio().RegistrarVentaAsync(VentaUnica(100m));
+
+        Assert.Equal("F-00000042", venta.NumeroComprobante);
+        Assert.Equal("00-00000042", _creada.Comprobante!.NumeroControl);
+        _ventas.Verify(
+            v => v.ObtenerSiguienteCorrelativoComprobanteAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -136,7 +162,7 @@ public sealed class ServicioVentasTests
     public async Task RegistrarVentaAsync_SinTurnoAbierto_LanzaReglaDeNegocio()
     {
         _sesionesCaja
-            .Setup(s => s.ObtenerAbiertaAsync(It.IsAny<CancellationToken>()))
+            .Setup(s => s.ObtenerAbiertaBloqueadaAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync((SesionCaja?)null);
 
         var excepcion = await Assert.ThrowsAsync<ReglaNegocioException>(

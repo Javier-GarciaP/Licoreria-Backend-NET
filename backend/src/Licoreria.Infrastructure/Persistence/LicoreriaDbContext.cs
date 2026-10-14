@@ -23,6 +23,9 @@ public class LicoreriaDbContext : DbContext
     public DbSet<Modificador> Modificadores => Set<Modificador>();
     public DbSet<ProductoModificador> ProductoModificadores => Set<ProductoModificador>();
     public DbSet<StockProducto> StockProductos => Set<StockProducto>();
+    public DbSet<PorcionOrigen> PorcionOrigenes => Set<PorcionOrigen>();
+    public DbSet<EnvaseAbierto> EnvasesAbiertos => Set<EnvaseAbierto>();
+    public DbSet<StockPorcion> StockPorciones => Set<StockPorcion>();
     public DbSet<MovimientoInventario> MovimientosInventario => Set<MovimientoInventario>();
     public DbSet<Merma> Mermas => Set<Merma>();
     public DbSet<TasaCambio> TasasCambio => Set<TasaCambio>();
@@ -89,6 +92,10 @@ public class LicoreriaDbContext : DbContext
         // definidas en este ensamblado, incluidas las precisiones, índices,
         // integridad referencial y la siembra de datos.
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+        // Numeración de comprobantes: una secuencia de PostgreSQL no se repite bajo concurrencia
+        // (puede dejar saltos si una venta se revierte, nunca duplicados).
+        modelBuilder.HasSequence<long>("comprobante_numero_seq");
 
         // Concurrencia optimista: mapea una propiedad uint al sistema xmin de PostgreSQL
         // como token de versión en todas las entidades de negocio (sin columnas adicionales).

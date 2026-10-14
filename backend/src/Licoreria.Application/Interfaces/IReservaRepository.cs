@@ -39,5 +39,12 @@ public interface IReservaRepository
         int horas,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Serializa la creación de reservas sobre las mismas mesas: toma, dentro de la transacción en curso,
+    /// un bloqueo por mesa (en orden estable para evitar interbloqueos) que se libera al confirmar o
+    /// revertir. Quien llega después espera y ve la reserva ya confirmada al comprobar los solapamientos.
+    /// </summary>
+    Task BloquearMesasAsync(IEnumerable<Guid> mesaIds, CancellationToken cancellationToken = default);
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

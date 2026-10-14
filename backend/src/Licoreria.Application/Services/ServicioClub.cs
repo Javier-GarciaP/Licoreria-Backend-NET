@@ -24,6 +24,9 @@ public sealed class ServicioClub : IServicioClub
     private readonly DetectorConflictosReserva _detector;
     private readonly IRelojSistema _reloj;
     private readonly INotificadorComandas _notificador;
+    private readonly IServicioKardex _kardex;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly JornadaOperativa _jornada;
 
     public ServicioClub(
         IRepository<Zona> zonas,
@@ -39,7 +42,10 @@ public sealed class ServicioClub : IServicioClub
         ICuentaRepository cuentas,
         DetectorConflictosReserva detector,
         IRelojSistema reloj,
-        INotificadorComandas notificador)
+        INotificadorComandas notificador,
+        IServicioKardex kardex,
+        IUnitOfWork unitOfWork,
+        JornadaOperativa jornada)
     {
         _zonas = zonas;
         _mesas = mesas;
@@ -55,6 +61,9 @@ public sealed class ServicioClub : IServicioClub
         _detector = detector;
         _reloj = reloj;
         _notificador = notificador;
+        _kardex = kardex;
+        _unitOfWork = unitOfWork;
+        _jornada = jornada;
     }
 
     // ================= Zonas =================
@@ -129,16 +138,16 @@ public sealed class ServicioClub : IServicioClub
         var zonas = (await _zonas.GetAllAsync(cancellationToken)).ToDictionary(z => z.Id, z => z.Nombre);
         var cuentasPorMesa = await _cuentas.ObtenerCuentasAbiertasPorMesaAsync(cancellationToken);
 
-        // Sin fechaHora se muestra la operación próxima (ventana fija); con fechaHora,
-        // la disponibilidad se calcula sobre el intervalo presunto de cada reserva.
+        // Sin fechaHora se marcan las reservas de la jornada en curso (de 12:00 a 06:00 por defecto): una
+        // reserva de las 10 p. m. deja la mesa reservada durante toda esa jornada, no solo en las horas
+        // previas. Con fechaHora, la disponibilidad se calcula sobre el intervalo presunto de cada reserva.
         var ahora = _reloj.UtcNow;
         var horas = DetectorConflictosReserva.DuracionReservaPresuntaHoras;
         DateTime desde;
         DateTime hasta;
         if (fechaHora is null)
         {
-            desde = ahora.AddHours(-2);
-            hasta = ahora.AddHours(12);
+            (desde, hasta) = _jornada.VentanaQueContiene(ahora);
         }
         else
         {
@@ -147,8 +156,9 @@ public sealed class ServicioClub : IServicioClub
             var fecha = fechaHora.Value.Kind == DateTimeKind.Unspecified
                 ? DateTime.SpecifyKind(fechaHora.Value, DateTimeKind.Utc)
                 : fechaHora.Value;
-            desde = fecha.AddHours(-horas);
-            hasta = fecha.AddHours(horas);
+            // Dos reservas de 2 horas que se tocan en el borde no se solapan: los extremos quedan fuera (1 µs, la precisión de PostgreSQL).
+            desde = fecha.AddHours(-horas).AddMicroseconds(1);
+            hasta = fecha.AddHours(horas).AddMicroseconds(-1);
         }
 
         var reservadas = (await _reservas.ObtenerMesasReservadasAsync(
@@ -233,20 +243,36 @@ public sealed class ServicioClub : IServicioClub
 
     public async Task<bool> DesalojarMesaAsync(Guid mesaId, CancellationToken cancellationToken = default)
     {
-        var cuenta = await _cuentas.ObtenerCuentaAbiertaPorMesaAsync(mesaId, cancellationToken);
-        if (cuenta is null)
+        Guid? cuentaId = null;
+
+        await _unitOfWork.EjecutarEnTransaccionAsync(async ct =>
+        {
+            cuentaId = null;
+
+            var cuenta = await _cuentas.ObtenerCuentaAbiertaPorMesaAsync(mesaId, ct);
+            if (cuenta is null)
+            {
+                return;
+            }
+
+            cuenta.SesionMesa.CerradaEn = _reloj.UtcNow;
+            if (cuenta.Saldo > 0m && cuenta.Estado != EstadoCuenta.Cerrada)
+            {
+                cuenta.Estado = EstadoCuenta.PorCobrar;
+            }
+
+            // Lo pedido y no servido deja de estar comprometido: la existencia vuelve a estar disponible.
+            await _kardex.LiberarReservasAsync(cuenta.Comandas.SelectMany(c => c.Detalles), ct);
+
+            cuentaId = cuenta.Id;
+        }, cancellationToken);
+
+        if (cuentaId is not Guid id)
         {
             return false;
         }
 
-        cuenta.SesionMesa.CerradaEn = _reloj.UtcNow;
-        if (cuenta.Saldo > 0m && cuenta.Estado != EstadoCuenta.Cerrada)
-        {
-            cuenta.Estado = EstadoCuenta.PorCobrar;
-        }
-
-        await _cuentas.SaveChangesAsync(cancellationToken);
-        await _notificador.MesaActualizadaAsync(mesaId, "Libre", cuenta.Id, cancellationToken);
+        await _notificador.MesaActualizadaAsync(mesaId, "Libre", id, cancellationToken);
         return true;
     }
 
@@ -437,56 +463,65 @@ public sealed class ServicioClub : IServicioClub
         }
 
         var mesasDistintas = dto.Mesas.Distinct().ToList();
-        var mesasPorId = new Dictionary<Guid, Mesa>();
-        foreach (var mesaId in mesasDistintas)
-        {
-            var mesa = await _mesas.GetByIdAsync(mesaId, cancellationToken)
-                ?? throw new NoEncontradoException($"No existe la mesa {mesaId}.");
-            mesasPorId[mesaId] = mesa;
-        }
+        Guid reservaId = default;
 
-        // Evita doble reserva: la misma mesa no puede quedar asignada a dos reservas
-        // vigentes con intervalos presuntos solapados.
-        var horas = DetectorConflictosReserva.DuracionReservaPresuntaHoras;
-        var candidatas = mesasDistintas
-            .Select(mesaId => IntervaloReserva.Presunto(mesaId, dto.FechaHora, horas))
-            .ToList();
-        var existentes = await _reservas.ObtenerIntervalosActivosAsync(
-            mesasDistintas,
-            dto.FechaHora.AddHours(-horas),
-            dto.FechaHora.AddHours(horas),
-            horas,
-            cancellationToken);
-
-        foreach (var candidata in candidatas)
+        // Comprobar solapamientos y guardar son un solo paso atómico por mesa: sin el bloqueo, dos
+        // reservas simultáneas para la misma mesa y hora podrían pasar ambas la comprobación.
+        await _unitOfWork.EjecutarEnTransaccionAsync(async ct =>
         {
-            if (_detector.HayConflicto(existentes, candidata))
+            var mesasPorId = new Dictionary<Guid, Mesa>();
+            foreach (var mesaId in mesasDistintas)
             {
-                var numero = mesasPorId[candidata.MesaId].Numero;
-                throw new ConflictoException($"La mesa {numero} ya está reservada para ese horario.");
+                var mesa = await _mesas.GetByIdAsync(mesaId, ct)
+                    ?? throw new NoEncontradoException($"No existe la mesa {mesaId}.");
+                mesasPorId[mesaId] = mesa;
             }
-        }
 
-        var reserva = new Reserva
-        {
-            FechaHora = dto.FechaHora,
-            Personas = dto.Personas,
-            Origen = dto.Origen,
-            NombreContacto = dto.NombreContacto,
-            Telefono = dto.Telefono,
-            Notas = dto.Notas,
-            Estado = EstadoReserva.Pendiente
-        };
+            await _reservas.BloquearMesasAsync(mesasDistintas, ct);
 
-        foreach (var mesaId in mesasDistintas)
-        {
-            reserva.Mesas.Add(new ReservaMesa { MesaId = mesaId });
-        }
+            // Evita doble reserva: la misma mesa no puede quedar asignada a dos reservas
+            // vigentes con intervalos presuntos solapados.
+            var horas = DetectorConflictosReserva.DuracionReservaPresuntaHoras;
+            var candidatas = mesasDistintas
+                .Select(mesaId => IntervaloReserva.Presunto(mesaId, dto.FechaHora, horas))
+                .ToList();
+            var existentes = await _reservas.ObtenerIntervalosActivosAsync(
+                mesasDistintas,
+                dto.FechaHora.AddHours(-horas),
+                dto.FechaHora.AddHours(horas),
+                horas,
+                ct);
 
-        await _reservas.AgregarAsync(reserva, cancellationToken);
-        await _reservas.SaveChangesAsync(cancellationToken);
+            foreach (var candidata in candidatas)
+            {
+                if (_detector.HayConflicto(existentes, candidata))
+                {
+                    var numero = mesasPorId[candidata.MesaId].Numero;
+                    throw new ConflictoException($"La mesa {numero} ya está reservada para ese horario.");
+                }
+            }
 
-        var creada = await _reservas.ObtenerConDetalleAsync(reserva.Id, cancellationToken);
+            var reserva = new Reserva
+            {
+                FechaHora = dto.FechaHora,
+                Personas = dto.Personas,
+                Origen = dto.Origen,
+                NombreContacto = dto.NombreContacto,
+                Telefono = dto.Telefono,
+                Notas = dto.Notas,
+                Estado = EstadoReserva.Pendiente
+            };
+
+            foreach (var mesaId in mesasDistintas)
+            {
+                reserva.Mesas.Add(new ReservaMesa { MesaId = mesaId });
+            }
+
+            await _reservas.AgregarAsync(reserva, ct);
+            reservaId = reserva.Id;
+        }, cancellationToken);
+
+        var creada = await _reservas.ObtenerConDetalleAsync(reservaId, cancellationToken);
         return MapearReserva(creada!);
     }
 

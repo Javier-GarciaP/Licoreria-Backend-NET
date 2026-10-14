@@ -44,6 +44,7 @@ public static class DependencyInjection
         services.AddScoped<IUsuarioRepository, UsuarioRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IInventarioRepository, InventarioRepository>();
+        services.AddScoped<IPorcionRepository, PorcionRepository>();
         services.AddScoped<ITasaCambioRepository, TasaCambioRepository>();
         services.AddScoped<IVentaRepository, VentaRepository>();
         services.AddScoped<ICuentaRepository, CuentaRepository>();
@@ -66,6 +67,7 @@ public static class DependencyInjection
         services.AddSingleton<IGeneradorMenuPdf, GeneradorMenuPdfQuestPdf>();
 
         services.AddScoped<IServicioInventario, ServicioInventario>();
+        services.AddScoped<IServicioEnvases, ServicioEnvases>();
         services.AddScoped<IServicioAutenticacion, ServicioAutenticacion>();
         services.AddScoped<IServicioCatalogo, ServicioCatalogo>();
         services.AddScoped<IServicioUsuarios, ServicioUsuarios>();
@@ -167,6 +169,12 @@ public static class DependencyInjection
         services.AddSingleton<EvaluadorMerma>();
         services.AddSingleton<MaquinaEstadosComanda>();
         services.AddSingleton<DetectorConflictosReserva>();
+
+        // Jornada de operación (hora local por desfase fijo respecto de UTC): decide qué reservas son «de hoy».
+        services.AddSingleton(new JornadaOperativa(
+            configuration.GetValue("Jornada:DesfaseUtcHoras", -4.0),
+            configuration.GetValue("Jornada:InicioHora", 12),
+            configuration.GetValue("Jornada:FinHora", 6)));
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
 
         // Configuración y generación de tokens JWT

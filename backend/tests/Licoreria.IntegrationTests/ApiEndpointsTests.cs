@@ -5,7 +5,7 @@ using System.Text.Json;
 namespace Licoreria.IntegrationTests;
 
 [Collection("api")]
-public class ApiEndpointsTests
+public partial class ApiEndpointsTests
 {
     private readonly LicoreriaApiFactory _factory;
 
@@ -133,6 +133,35 @@ public class ApiEndpointsTests
         var stock = await _factory.Client.GetAsync($"/api/v1/stock?busqueda={sku}");
         var stockBody = await JsonAsync(stock);
         Assert.Equal(9m, stockBody.GetProperty("items")[0].GetProperty("cantidad").GetDecimal());
+    }
+
+    [Fact]
+    public async Task Ventas_Simultaneas_RecibenNumerosDeComprobanteDistintos()
+    {
+        await AbrirTurnoAsync();
+        var metodoPagoId = await ObtenerPrimerIdAsync("/api/v1/metodos-pago");
+
+        // Cada venta usa su propio producto: la única disputa es el correlativo del comprobante.
+        var variantes = new List<Guid>();
+        for (var i = 0; i < 6; i++)
+        {
+            variantes.Add((await CrearProductoConStockAsync(5.0m, 10)).VarianteId);
+        }
+
+        var respuestas = await Task.WhenAll(variantes.Select(varianteId => _factory.Client.PostAsJsonAsync("/api/v1/ventas", new
+        {
+            items = new[] { new { varianteId, cantidad = 1 } },
+            pagos = new[] { new { metodoPagoId, monto = 5.0, moneda = "USD" } }
+        })));
+
+        Assert.All(respuestas, r => Assert.Equal(HttpStatusCode.Created, r.StatusCode));
+        var numeros = new List<string>();
+        foreach (var respuesta in respuestas)
+        {
+            numeros.Add((await JsonAsync(respuesta)).GetProperty("numeroComprobante").GetString()!);
+        }
+
+        Assert.Equal(numeros.Count, numeros.Distinct().Count());
     }
 
     [Fact]
@@ -890,6 +919,159 @@ public class ApiEndpointsTests
         response.EnsureSuccessStatusCode();
         var body = await JsonAsync(response);
         return body[0].GetProperty("id").GetGuid();
+    }
+
+    /* ===================== Reserva de stock al pedir ===================== */
+
+    private async Task<(decimal Cantidad, decimal Reservada)> ObtenerStockAsync(string sku)
+    {
+        var respuesta = await _factory.Client.GetAsync($"/api/v1/stock?busqueda={sku}");
+        var item = (await JsonAsync(respuesta)).GetProperty("items")[0];
+        return (item.GetProperty("cantidad").GetDecimal(), item.GetProperty("cantidadReservada").GetDecimal());
+    }
+
+    private async Task<(Guid CuentaId, Guid ComandaId, Guid DetalleId)> PedirAsync(string mesa, Guid varianteId, int cantidad)
+    {
+        var abrir = await _factory.Client.PostAsJsonAsync("/api/v1/cuentas", new { nombreMesa = mesa });
+        abrir.EnsureSuccessStatusCode();
+        var cuentaId = (await JsonAsync(abrir)).GetProperty("id").GetGuid();
+
+        var comanda = await _factory.Client.PostAsJsonAsync($"/api/v1/cuentas/{cuentaId}/comandas", new
+        {
+            area = "Barra",
+            items = new[] { new { varianteId, cantidad } }
+        });
+        Assert.Equal(HttpStatusCode.OK, comanda.StatusCode);
+        var cuerpo = await JsonAsync(comanda);
+        var primera = cuerpo.GetProperty("comandas")[0];
+        return (cuentaId, primera.GetProperty("id").GetGuid(), primera.GetProperty("detalles")[0].GetProperty("id").GetGuid());
+    }
+
+    [Fact]
+    public async Task Comanda_AlPedir_ReservaLaExistenciaSinDescontarla()
+    {
+        await AbrirTurnoAsync();
+        var (varianteId, sku) = await CrearProductoConStockAsync(5.0m, 10);
+
+        await PedirAsync("Mesa Reserva 1", varianteId, 2);
+
+        var (cantidad, reservada) = await ObtenerStockAsync(sku);
+        Assert.Equal(10m, cantidad);
+        Assert.Equal(2m, reservada);
+    }
+
+    [Fact]
+    public async Task Comanda_UltimaUnidadReservada_LaSegundaMesaRecibe422AlPedir()
+    {
+        await AbrirTurnoAsync();
+        var (varianteId, sku) = await CrearProductoConStockAsync(5.0m, 1);
+
+        await PedirAsync("Mesa Ultima A", varianteId, 1);
+
+        var abrir = await _factory.Client.PostAsJsonAsync("/api/v1/cuentas", new { nombreMesa = "Mesa Ultima B" });
+        var cuentaB = (await JsonAsync(abrir)).GetProperty("id").GetGuid();
+        var segunda = await _factory.Client.PostAsJsonAsync($"/api/v1/cuentas/{cuentaB}/comandas", new
+        {
+            area = "Barra",
+            items = new[] { new { varianteId, cantidad = 1 } }
+        });
+
+        // Se entera al pedir, no cuando barra intenta servirla.
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, segunda.StatusCode);
+        var (cantidad, reservada) = await ObtenerStockAsync(sku);
+        Assert.Equal(1m, cantidad);
+        Assert.Equal(1m, reservada);
+    }
+
+    [Fact]
+    public async Task Item_AlServirse_ConsumeLaReservaYDescuentaUnaSolaVez()
+    {
+        await AbrirTurnoAsync();
+        var (varianteId, sku) = await CrearProductoConStockAsync(5.0m, 10);
+        var (cuentaId, comandaId, detalleId) = await PedirAsync("Mesa Servir Reserva", varianteId, 2);
+
+        var servir = await _factory.Client.PutAsJsonAsync(
+            $"/api/v1/cuentas/{cuentaId}/comandas/{comandaId}/detalles/{detalleId}/estado", new { estado = "Preparado" });
+        Assert.Equal(HttpStatusCode.OK, servir.StatusCode);
+        var entregar = await _factory.Client.PutAsJsonAsync(
+            $"/api/v1/cuentas/{cuentaId}/comandas/{comandaId}/detalles/{detalleId}/estado", new { estado = "Entregado" });
+        Assert.Equal(HttpStatusCode.OK, entregar.StatusCode);
+
+        var (cantidad, reservada) = await ObtenerStockAsync(sku);
+        Assert.Equal(8m, cantidad);
+        Assert.Equal(0m, reservada);
+    }
+
+    [Fact]
+    public async Task Item_AlCancelarse_LiberaLaReservaSinTocarLaExistencia()
+    {
+        await AbrirTurnoAsync();
+        var (varianteId, sku) = await CrearProductoConStockAsync(5.0m, 10);
+        var (cuentaId, comandaId, detalleId) = await PedirAsync("Mesa Cancelar Reserva", varianteId, 2);
+
+        var cancelar = await _factory.Client.PutAsJsonAsync(
+            $"/api/v1/cuentas/{cuentaId}/comandas/{comandaId}/detalles/{detalleId}/estado", new { estado = "Cancelado" });
+        Assert.Equal(HttpStatusCode.OK, cancelar.StatusCode);
+
+        var (cantidad, reservada) = await ObtenerStockAsync(sku);
+        Assert.Equal(10m, cantidad);
+        Assert.Equal(0m, reservada);
+    }
+
+    [Fact]
+    public async Task Cuenta_AlCerrarConItemsSinServir_DescuentaUnaVezYLiberaLaReserva()
+    {
+        await AbrirTurnoAsync();
+        var (varianteId, sku) = await CrearProductoConStockAsync(5.0m, 10);
+        var (cuentaId, _, _) = await PedirAsync("Mesa Cerrar Sin Servir", varianteId, 2);
+
+        var cerrar = await _factory.Client.PostAsJsonAsync($"/api/v1/cuentas/{cuentaId}/cerrar", new
+        {
+            pagos = new[] { new { metodoPagoId = await ObtenerPrimerIdAsync("/api/v1/metodos-pago"), monto = 10.0, moneda = "USD" } }
+        });
+        Assert.Equal(HttpStatusCode.OK, cerrar.StatusCode);
+
+        var (cantidad, reservada) = await ObtenerStockAsync(sku);
+        Assert.Equal(8m, cantidad);
+        Assert.Equal(0m, reservada);
+    }
+
+    [Fact]
+    public async Task Venta_DeLaUnidadReservadaPorUnaMesa_Devuelve422()
+    {
+        await AbrirTurnoAsync();
+        var (varianteId, sku) = await CrearProductoConStockAsync(5.0m, 1);
+        await PedirAsync("Mesa Reserva Venta", varianteId, 1);
+
+        var venta = await _factory.Client.PostAsJsonAsync("/api/v1/ventas", new
+        {
+            items = new[] { new { varianteId, cantidad = 1 } },
+            pagos = new[] { new { metodoPagoId = await ObtenerPrimerIdAsync("/api/v1/metodos-pago"), monto = 5.0, moneda = "USD" } }
+        });
+
+        // El mostrador no puede vender lo que ya está comprometido para una mesa.
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, venta.StatusCode);
+        var (cantidad, reservada) = await ObtenerStockAsync(sku);
+        Assert.Equal(1m, cantidad);
+        Assert.Equal(1m, reservada);
+    }
+
+    [Fact]
+    public async Task Turno_AlCerrar_LiberaLasReservasDeLoNoServido()
+    {
+        await AbrirTurnoAsync();
+        var (varianteId, sku) = await CrearProductoConStockAsync(5.0m, 10);
+        await PedirAsync("Mesa Turno Reserva", varianteId, 3);
+        Assert.Equal(3m, (await ObtenerStockAsync(sku)).Reservada);
+
+        var sesion = await JsonAsync(await _factory.Client.GetAsync("/api/v1/sesiones-caja/activa"));
+        var cerrar = await _factory.Client.PostAsJsonAsync(
+            $"/api/v1/sesiones-caja/{sesion.GetProperty("id").GetGuid()}/cerrar", new { arqueo = await ArqueoCeroAsync() });
+        Assert.Equal(HttpStatusCode.OK, cerrar.StatusCode);
+
+        var (cantidad, reservada) = await ObtenerStockAsync(sku);
+        Assert.Equal(10m, cantidad);
+        Assert.Equal(0m, reservada);
     }
 
     private async Task<(Guid VarianteId, string Sku)> CrearProductoConStockAsync(decimal precioVenta, int stock)

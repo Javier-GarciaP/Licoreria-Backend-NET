@@ -104,5 +104,9 @@ public class CuentaRepository : ICuentaRepository
             .ToListAsync(cancellationToken);
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-        => _context.SaveChangesAsync(cancellationToken);
+        => ViolacionUnicidad.GuardarAsync(
+            _context,
+            cancellationToken,
+            ("ux_sesiones_mesa_abierta_por_mesa", "La mesa ya está ocupada por otra cuenta."),
+            ("ux_ventas_por_cuenta", "La cuenta ya fue cobrada por otra operación."));
 }

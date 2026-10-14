@@ -21,6 +21,31 @@ public class SesionCajaRepository : ISesionCajaRepository
     public Task<SesionCaja?> ObtenerAbiertaAsync(CancellationToken cancellationToken = default)
         => ConDetalle().FirstOrDefaultAsync(s => !s.IsDeleted && s.Estado == EstadoSesionCaja.Abierta, cancellationToken);
 
+    public async Task<SesionCaja?> ObtenerAbiertaBloqueadaAsync(CancellationToken cancellationToken = default)
+    {
+        var id = await _context.SesionesCaja
+            .AsNoTracking()
+            .Where(s => !s.IsDeleted && s.Estado == EstadoSesionCaja.Abierta)
+            .Select(s => (Guid?)s.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (id is not Guid sesionId)
+        {
+            return null;
+        }
+
+        await _context.Database.ExecuteSqlAsync(
+            $"SELECT 1 FROM sesiones_caja WHERE \"Id\" = {sesionId} FOR SHARE", cancellationToken);
+
+        // Se vuelve a consultar tras obtener el bloqueo: si el turno se cerró mientras se esperaba, ya no figura abierto.
+        return await _context.SesionesCaja.FirstOrDefaultAsync(
+            s => s.Id == sesionId && !s.IsDeleted && s.Estado == EstadoSesionCaja.Abierta, cancellationToken);
+    }
+
+    public async Task BloquearParaCierreAsync(Guid sesionId, CancellationToken cancellationToken = default)
+        => await _context.Database.ExecuteSqlAsync(
+            $"SELECT 1 FROM sesiones_caja WHERE \"Id\" = {sesionId} FOR UPDATE", cancellationToken);
+
     public Task<SesionCaja?> ObtenerConDetalleAsync(Guid id, CancellationToken cancellationToken = default)
         => ConDetalle().FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted, cancellationToken);
 
@@ -43,5 +68,8 @@ public class SesionCajaRepository : ISesionCajaRepository
         => await _context.ArqueosDenominacion.AddAsync(arqueo, cancellationToken);
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-        => _context.SaveChangesAsync(cancellationToken);
+        => ViolacionUnicidad.GuardarAsync(
+            _context,
+            cancellationToken,
+            ("ux_sesiones_caja_abierta", "Ya existe una sesión de caja abierta."));
 }

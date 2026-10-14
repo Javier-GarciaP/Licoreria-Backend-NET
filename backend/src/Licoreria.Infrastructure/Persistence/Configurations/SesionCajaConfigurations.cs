@@ -11,6 +11,12 @@ public class SesionCajaConfiguration : IEntityTypeConfiguration<SesionCaja>
         builder.ToTable("sesiones_caja");
         builder.HasKey(s => s.Id);
         builder.Property(s => s.Estado).HasConversion<string>().HasMaxLength(20);
+
+        // A lo sumo una sesión de caja abierta: el índice único sobre el estado filtrado a 'Abierta'.
+        builder.HasIndex(s => s.Estado)
+               .IsUnique()
+               .HasDatabaseName("ux_sesiones_caja_abierta")
+               .HasFilter("\"Estado\" = 'Abierta' AND \"IsDeleted\" = false");
         builder.Property(s => s.FondoInicial).HasPrecision(18, 2);
         builder.Property(s => s.MontoEsperado).HasPrecision(18, 2);
         builder.Property(s => s.MontoContado).HasPrecision(18, 2);

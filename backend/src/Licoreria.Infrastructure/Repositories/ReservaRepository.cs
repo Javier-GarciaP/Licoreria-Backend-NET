@@ -14,6 +14,18 @@ public class ReservaRepository : IReservaRepository
 
     public ReservaRepository(LicoreriaDbContext context) => _context = context;
 
+    public async Task BloquearMesasAsync(IEnumerable<Guid> mesaIds, CancellationToken cancellationToken = default)
+    {
+        // Bloqueo asesor de transacción: se libera solo al terminar la transacción. El orden fijo por
+        // identificador evita que dos reservas multimesa se esperen mutuamente.
+        foreach (var mesaId in mesaIds.Distinct().OrderBy(id => id))
+        {
+            var clave = mesaId.ToString();
+            await _context.Database.ExecuteSqlAsync(
+                $"SELECT pg_advisory_xact_lock(hashtextextended({clave}, 0))", cancellationToken);
+        }
+    }
+
     private IQueryable<Reserva> ConDetalle()
         => _context.Reservas
             .Include(r => r.Mesas).ThenInclude(rm => rm.Mesa).ThenInclude(m => m.Zona)

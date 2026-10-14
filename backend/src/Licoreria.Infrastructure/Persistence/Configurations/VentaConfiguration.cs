@@ -25,5 +25,11 @@ public class VentaConfiguration : IEntityTypeConfiguration<Venta>
 
         builder.HasIndex(v => v.Fecha);
         builder.HasIndex(v => v.SesionCajaId);
+
+        // Una cuenta de mesa genera como máximo una venta vigente.
+        builder.HasIndex(v => v.CuentaId)
+               .IsUnique()
+               .HasDatabaseName("ux_ventas_por_cuenta")
+               .HasFilter("\"CuentaId\" IS NOT NULL AND \"Estado\" <> 'Anulada' AND \"IsDeleted\" = false");
     }
 }

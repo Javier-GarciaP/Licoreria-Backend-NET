@@ -110,9 +110,8 @@ public sealed class ServicioInventario : IServicioInventario
             }
         }
 
+        _auditoria.Registrar("registrar", "merma", primerMovimiento!.Id, new { dto.VarianteId, dto.Cantidad, Motivo = dto.Motivo.ToString(), dto.ReponerSinCobro });
         await _inventario.SaveChangesAsync(cancellationToken);
-
-        await _auditoria.RegistrarAsync("registrar", "merma", primerMovimiento!.Id, new { dto.VarianteId, dto.Cantidad, Motivo = dto.Motivo.ToString(), dto.ReponerSinCobro }, cancellationToken);
 
         return new MermaDto(
             merma!.Id,
@@ -336,10 +335,10 @@ public sealed class ServicioInventario : IServicioInventario
         }
 
         await _inventario.AgregarTomaAsync(toma, cancellationToken);
+        _auditoria.Registrar("registrar", "toma-fisica", toma.Id, new { Lineas = toma.Detalles.Count });
         await _inventario.SaveChangesAsync(cancellationToken);
 
         var creada = await _inventario.ObtenerTomaConDetalleAsync(toma.Id, cancellationToken);
-        await _auditoria.RegistrarAsync("registrar", "toma-fisica", toma.Id, new { Lineas = toma.Detalles.Count }, cancellationToken);
         return MapearToma(creada!);
     }
 

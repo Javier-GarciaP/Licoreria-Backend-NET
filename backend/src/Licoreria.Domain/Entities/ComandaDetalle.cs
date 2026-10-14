@@ -20,6 +20,9 @@ public class ComandaDetalle : BaseEntity
     public EstadoItemComanda Estado { get; set; } = EstadoItemComanda.Recibido;
     public bool EsCortesia { get; set; }
 
+    /// <summary>Indica que los insumos del ítem están reservados y aún no se sirvieron ni liberaron.</summary>
+    public bool Reservado { get; set; }
+
     public decimal SubtotalUSD => EsCortesia ? 0m : Cantidad * PrecioUnitarioUSD;
 
     public void CambiarEstado(EstadoItemComanda estado)

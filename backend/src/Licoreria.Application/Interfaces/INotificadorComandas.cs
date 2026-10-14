@@ -38,4 +38,10 @@ public interface INotificadorComandas
 
     /// <summary>Notifica que se cerró el turno y las mesas quedaron libres.</summary>
     Task TurnoCerradoAsync(Guid sesionId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Notifica que se destapó o descartó un envase: la disponibilidad de la porción cambió y las cartas y
+    /// los paneles de barra deben refrescarse.
+    /// </summary>
+    Task EnvaseActualizadoAsync(Guid envaseId, Guid porcionVarianteId, string estado, CancellationToken cancellationToken = default);
 }

@@ -20,8 +20,8 @@ public class InventarioRepository : IInventarioRepository
         IReadOnlyList<Guid> varianteIds,
         CancellationToken cancellationToken = default)
     {
+        // Con rastreo: dentro de una transacción debe reflejar las reservas ya hechas y aún no guardadas.
         return await _context.StockProductos
-            .AsNoTracking()
             .Where(s => !s.IsDeleted && varianteIds.Contains(s.VarianteId))
             .ToListAsync(cancellationToken);
     }

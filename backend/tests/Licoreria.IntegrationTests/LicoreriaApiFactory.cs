@@ -72,7 +72,9 @@ public sealed class LicoreriaApiFactory : WebApplicationFactory<Program>, IAsync
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:DefaultConnection"] = $"{AdminConn};Database={DbName}"
+                ["ConnectionStrings:DefaultConnection"] = $"{AdminConn};Database={DbName}",
+                // Las pruebas de carrera lanzan ráfagas desde una sola IP: se sube el límite global.
+                ["RateLimiting:PermitLimitPorMinuto"] = "100000"
             });
         });
     }

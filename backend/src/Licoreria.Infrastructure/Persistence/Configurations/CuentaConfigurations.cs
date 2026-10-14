@@ -11,6 +11,12 @@ public class SesionMesaConfiguration : IEntityTypeConfiguration<SesionMesa>
         builder.ToTable("sesiones_mesa");
         builder.HasKey(s => s.Id);
         builder.Property(s => s.NombreMesa).IsRequired().HasMaxLength(60);
+
+        // Una sola sesión abierta por mesa, aunque dos mesoneros la abran a la vez.
+        builder.HasIndex(s => s.MesaId)
+               .IsUnique()
+               .HasDatabaseName("ux_sesiones_mesa_abierta_por_mesa")
+               .HasFilter("\"MesaId\" IS NOT NULL AND \"CerradaEn\" IS NULL AND \"IsDeleted\" = false");
     }
 }
 
@@ -80,6 +86,7 @@ public class ComandaDetalleConfiguration : IEntityTypeConfiguration<ComandaDetal
         builder.Property(d => d.PrecioUnitarioUSD).HasPrecision(18, 2);
         builder.Property(d => d.AreaDestino).HasConversion<string>().HasMaxLength(20);
         builder.Property(d => d.Estado).HasConversion<string>().HasMaxLength(20);
+        builder.Property(d => d.Reservado).HasDefaultValue(false);
         builder.Ignore(d => d.SubtotalUSD);
 
         builder.HasOne(d => d.Comanda)

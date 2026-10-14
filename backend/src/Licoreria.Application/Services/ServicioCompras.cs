@@ -341,10 +341,10 @@ public sealed class ServicioCompras : IServicioCompras
         await _compras.AgregarCuentaPorPagarAsync(cuenta, cancellationToken);
 
         await _compras.AgregarRecepcionAsync(recepcion, cancellationToken);
+        _auditoria.Registrar("recepcion", "orden-compra", orden.Id, new { recepcion.TotalUSD, Lineas = recepcion.Detalles.Count });
         await _compras.SaveChangesAsync(cancellationToken);
 
         var creada = await _compras.ObtenerRecepcionConDetalleAsync(recepcion.Id, cancellationToken);
-        await _auditoria.RegistrarAsync("recepcion", "orden-compra", orden.Id, new { recepcion.TotalUSD, Lineas = recepcion.Detalles.Count }, cancellationToken);
         return MapearRecepcion(creada!);
     }
 
