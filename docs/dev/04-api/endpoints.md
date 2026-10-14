@@ -258,7 +258,10 @@ Las rutas marcadas como **publica** no requieren token.
 | `POST` | `/api/v1/planos` | token |
 | `DELETE` | `/api/v1/planos/{id}` | token |
 | `GET` | `/api/v1/planos/{id}` | token |
-| `PUT` | `/api/v1/planos/{id}` | token |
+| `PUT` | `/api/v1/planos/{id}` | token (`club:layout`) |
+| `POST` | `/api/v1/planos/{id}/fondo` | token (`club:layout`) |
+| `DELETE` | `/api/v1/planos/{id}/fondo` | token (`club:layout`) |
+| `POST` | `/api/v1/planos/{id}/duplicar` | token (`club:layout`) |
 
 ## PreciosProducto
 

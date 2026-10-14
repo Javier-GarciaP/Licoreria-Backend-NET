@@ -130,7 +130,7 @@ como cambios [OpenSpec](openspec/changes) y se implementan con `/opsx:apply <cam
 | [`auditoria-total`](openspec/changes/auditoria-total) | Bitácora automática de quién cambió qué, con antes y después. | Pendiente (0/21) |
 | [`modulos-complementarios`](openspec/changes/modulos-complementarios) | Reactivar Promociones, Clientes/CxC, Compras, Existencias, Entradas y Lista VIP. | Pendiente (0/25) |
 | [`reportes-kpis-export`](openspec/changes/reportes-kpis-export) | KPIs (incl. desempeño del mesonero) y exportación PDF/Excel. | Pendiente (0/30) |
-| [`croquis-planos`](openspec/changes/croquis-planos) | Precargar un croquis como fondo del lienzo, plantillas y duplicar. | Pendiente (0/22) |
+| [`croquis-planos`](openspec/changes/croquis-planos) | Precargar un croquis como fondo del lienzo, plantillas y duplicar. | Hecho (22/22) · falta archivar |
 | [`pruebas-y-cobertura`](openspec/changes/pruebas-y-cobertura) | Pruebas con Moq, concurrencia, separar integración y cobertura con coverlet. | Pendiente (0/32) |
 
 ### Orden sugerido y dependencias

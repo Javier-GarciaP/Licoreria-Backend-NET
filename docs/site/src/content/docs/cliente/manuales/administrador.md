@@ -32,6 +32,18 @@ title: Manual del administrador
 Consulta ventas, ocupación, ticket promedio, productos más vendidos, reservas y mermas
 para tomar decisiones.
 
+## Croquis, duplicados y plantillas
+
+Solo el **Administrador** edita la distribución del local (planos, zonas y mesas); el Host y los
+demás roles ven el plano en solo lectura.
+
+- **Croquis:** en el editor, el botón de imagen permite subir un croquis (PNG, JPG o WebP, hasta
+  5 MB), ajustar su opacidad y cómo se acomoda al lienzo, ocultarlo mientras editas o quitarlo.
+  Se ve detrás de las mesas en el editor y en la vista de operación.
+- **Duplicar:** crea una copia inactiva para probar otra distribución sin tocar la vigente.
+- **Plantillas:** «Guardar como plantilla» copia la distribución sin enlaces a mesas;
+  «Nuevo desde plantilla» crea un plano nuevo (inactivo) para enlazar las mesas después.
+
 ## Plano con IA
 
 Puedes subir una **foto de un croquis en papel** y el sistema propone el plano con

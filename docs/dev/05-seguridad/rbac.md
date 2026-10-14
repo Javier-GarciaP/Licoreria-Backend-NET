@@ -46,7 +46,8 @@ Los permisos se nombran `modulo:accion`:
 | `account:abono` | ✅ | ✅ | — | — | — | — | — |
 | `account:close` | ✅ | ✅ | — | — | — | — | — |
 | `cash:open` / `cash:close` | ✅ | ✅ | — | — | — | — | — |
-| `club:manage` | ✅ | — | — | — | — | ✅ | — |
+| `club:manage` (lista VIP y entradas) | ✅ | — | — | — | — | ✅ | — |
+| `club:layout` (editar planos, zonas y mesas) | ✅ | — | — | — | — | — | — |
 | `reservation:manage` | ✅ | ✅ | ✅ | — | — | ✅ | — |
 | `content:publish` | ✅ | — | — | — | — | — | ✅ |
 | `ai:approve` | ✅ | — | — | — | — | — | — |

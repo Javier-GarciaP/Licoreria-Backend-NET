@@ -13,6 +13,24 @@ y el proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
 ### Agregado
 
+- **Croquis, duplicado y plantillas de plano (`croquis-planos`):**
+  - **Croquis de fondo:** imagen PNG/JPG/WebP (máx. 5 MB) por plano con opacidad y ajuste
+    (`contener`, `cubrir`, `estirar`); `POST/DELETE /api/v1/planos/{id}/fondo` con validación de
+    extensión, tipo, tamaño y firma de archivo. Se dibuja detrás de los elementos en el editor y en
+    la operación del admin (no en la web pública) y el archivo se borra al reemplazar, quitar o
+    eliminar el plano. Migración `CroquisPlanos`.
+  - **Duplicar y plantillas:** `POST /api/v1/planos/{id}/duplicar` crea una copia inactiva con su
+    propio archivo; `comoPlantilla` la guarda sin vínculos a mesas. Las plantillas no se activan
+    (`422`) ni se publican (solo `GET /api/v1/planos?plantillas=true` con `club:layout`).
+  - **BREAKING — permiso `club:layout`:** crear, editar, duplicar y eliminar planos, zonas y mesas
+    pasa a exigir `club:layout`, asignado solo al Administrador. El **Host deja de poder editar la
+    distribución** (conserva `club:manage` para Lista VIP y Entradas, y ve el plano en solo
+    lectura). Las sesiones abiertas conservan los permisos antiguos hasta renovar el token
+    (60 minutos).
+  - **Interfaz:** panel de croquis en el editor, «Duplicar», «Guardar como plantilla» y «Nuevo desde
+    plantilla» en Planos; controles y ruta del editor protegidos por `club:layout`.
+  - **Documentación:** `docs/dev/06-modulos/club-reservas.md`, `rbac.md`, `endpoints.md` y manual
+    del administrador.
 - **Auditoría total (`auditoria-total`):**
   - **Captura automática:** `AuditoriaInterceptor` registra un `AuditLog` por cada alta, edición y
     borrado (lógico, `restaurar` o físico) de cualquier entidad, con usuario, correo, IP y los
