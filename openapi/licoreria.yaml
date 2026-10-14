@@ -159,6 +159,14 @@ paths:
           schema:
             type: string
             format: date-time
+        - name: accion
+          in: query
+          schema:
+            type: string
+        - name: tipo
+          in: query
+          schema:
+            $ref: '#/components/schemas/TipoAuditoria'
       responses:
         '200':
           description: OK
@@ -172,6 +180,53 @@ paths:
             text/json:
               schema:
                 $ref: '#/components/schemas/ResultadoPaginadoOfAuditLogDto'
+  /api/v1/auditoria/entidades:
+    get:
+      tags:
+        - Auditoria
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  type: string
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+            text/json:
+              schema:
+                type: array
+                items:
+                  type: string
+  /api/v1/auditoria/{id}:
+    get:
+      tags:
+        - Auditoria
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/AuditLogDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogDto'
   /api/auth/login:
     post:
       tags:
@@ -1516,6 +1571,117 @@ paths:
       responses:
         '200':
           description: OK
+  /api/v1/envases-abiertos:
+    get:
+      tags:
+        - EnvasesAbiertos
+      parameters:
+        - name: porcionVarianteId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: estado
+          in: query
+          schema:
+            $ref: '#/components/schemas/EstadoEnvase'
+        - name: todos
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: limite
+          in: query
+          schema:
+            pattern: ^-?(?:0|[1-9]\d*)$
+            type:
+              - integer
+              - string
+            format: int32
+            default: 100
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EnvaseAbiertoDto'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EnvaseAbiertoDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EnvaseAbiertoDto'
+    post:
+      tags:
+        - EnvasesAbiertos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DestaparEnvaseDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/DestaparEnvaseDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/DestaparEnvaseDto'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/EnvaseAbiertoDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvaseAbiertoDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/EnvaseAbiertoDto'
+  /api/v1/envases-abiertos/{id}/descartar:
+    post:
+      tags:
+        - EnvasesAbiertos
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DescartarEnvaseDto'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/DescartarEnvaseDto'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/DescartarEnvaseDto'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/EnvaseAbiertoDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvaseAbiertoDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/EnvaseAbiertoDto'
   /api/v1/eventos:
     get:
       tags:
@@ -5246,6 +5412,83 @@ paths:
       responses:
         '200':
           description: OK
+  /api/v1/variantes/{id}/origenes:
+    get:
+      tags:
+        - Variantes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrigenPorcionDto'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrigenPorcionDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrigenPorcionDto'
+    put:
+      tags:
+        - Variantes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/OrigenPorcionCrearDto'
+          text/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/OrigenPorcionCrearDto'
+          application/*+json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/OrigenPorcionCrearDto'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrigenPorcionDto'
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrigenPorcionDto'
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrigenPorcionDto'
   /api/v1/ventas:
     get:
       tags:
@@ -5743,6 +5986,7 @@ components:
         - datos
         - ip
         - fecha
+        - tipo
       type: object
       properties:
         id:
@@ -5777,6 +6021,8 @@ components:
         fecha:
           type: string
           format: date-time
+        tipo:
+          type: string
     AuthResponseDto:
       required:
         - usuarioId
@@ -6545,6 +6791,25 @@ components:
             - number
             - string
           format: double
+    DescartarEnvaseDto:
+      required:
+        - motivo
+      type: object
+      properties:
+        motivo:
+          type: string
+    DestaparEnvaseDto:
+      required:
+        - porcionVarianteId
+        - presentacionVarianteId
+      type: object
+      properties:
+        porcionVarianteId:
+          type: string
+          format: uuid
+        presentacionVarianteId:
+          type: string
+          format: uuid
     DevolucionDetalleCrearDto:
       required:
         - varianteId
@@ -6833,6 +7098,66 @@ components:
             - 'null'
             - string
           format: date-time
+    EnvaseAbiertoDto:
+      required:
+        - id
+        - porcionVarianteId
+        - porcionNombre
+        - presentacionVarianteId
+        - presentacionNombre
+        - porcionesIniciales
+        - porcionesRestantes
+        - estado
+        - abiertoEn
+        - abiertoPorUsuarioId
+        - cerradoEn
+        - motivoDescarte
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        porcionVarianteId:
+          type: string
+          format: uuid
+        porcionNombre:
+          type: string
+        presentacionVarianteId:
+          type: string
+          format: uuid
+        presentacionNombre:
+          type: string
+        porcionesIniciales:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+        porcionesRestantes:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+        estado:
+          $ref: '#/components/schemas/EstadoEnvase'
+        abiertoEn:
+          type: string
+          format: date-time
+        abiertoPorUsuarioId:
+          type:
+            - 'null'
+            - string
+          format: uuid
+        cerradoEn:
+          type:
+            - 'null'
+            - string
+          format: date-time
+        motivoDescarte:
+          type:
+            - 'null'
+            - string
     EstadoComanda:
       type: integer
     EstadoCuenta:
@@ -6842,6 +7167,8 @@ components:
     EstadoCuentaPorPagar:
       type: integer
     EstadoEntrada:
+      type: integer
+    EstadoEnvase:
       type: integer
     EstadoIa:
       type: integer
@@ -8201,6 +8528,46 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/OrdenCompraDetalleDto'
+    OrigenPorcionCrearDto:
+      required:
+        - presentacionVarianteId
+        - porcionesPorUnidad
+      type: object
+      properties:
+        presentacionVarianteId:
+          type: string
+          format: uuid
+        porcionesPorUnidad:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+    OrigenPorcionDto:
+      required:
+        - id
+        - presentacionVarianteId
+        - presentacionNombre
+        - sku
+        - porcionesPorUnidad
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        presentacionVarianteId:
+          type: string
+          format: uuid
+        presentacionNombre:
+          type: string
+        sku:
+          type: string
+        porcionesPorUnidad:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
     OrigenReserva:
       type: integer
     PaginaCrearDto:
@@ -8934,6 +9301,30 @@ components:
             - number
             - string
           format: double
+        naturaleza:
+          type: string
+          default: SinDefinir
+        porcionesDisponibles:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+          default: 0
+        porcionesPotenciales:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+          default: 0
+        envasesCerradosAbribles:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+          default: 0
     PromocionCrearDto:
       required:
         - nombre
@@ -10827,6 +11218,8 @@ components:
             - number
             - string
           format: double
+    TipoAuditoria:
+      type: integer
     TipoDenominacion:
       type: integer
     TipoMovimientoCaja:
@@ -11581,6 +11974,7 @@ tags:
   - name: CuentasPorPagar
   - name: Denominaciones
   - name: Entradas
+  - name: EnvasesAbiertos
   - name: Eventos
   - name: Ia
   - name: Impuestos
