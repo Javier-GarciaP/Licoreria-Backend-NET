@@ -9,6 +9,7 @@ import {
   ArrowLeft,
   Check,
   Grid3x3,
+  ImageIcon,
   Hand,
   Magnet,
   Maximize,
@@ -20,11 +21,12 @@ import {
   ZoomOut,
 } from 'lucide-react';
 import { Button, cn, Input, Modal, Skeleton } from '@licoreria/ui';
-import type { Mesa, Plano, PlanoElemento, Zona } from '@licoreria/types';
+import type { FondoAjuste, Mesa, Plano, PlanoElemento, Zona } from '@licoreria/types';
 import { clubApi } from '@licoreria/api-client';
 import { dibujarElemento, ELEMENTOS, ELEMENTOS_POR_FORMA, UNIT } from '../components/mapa/elementos';
 import { MapaView } from '../components/mapa/MapaView';
 import { EditorOverlay } from '../components/mapa/EditorOverlay';
+import { PanelCroquis } from '../components/mapa/PanelCroquis';
 import { mensajeDeError } from '../lib/api';
 import { planoAPayload } from '../lib/plano';
 import { formaMesaDeElemento, zonaPorDefecto } from '../lib/salon';
@@ -38,6 +40,8 @@ interface Borrador {
   altoFondo: number;
   rejilla: number;
   piso: string;
+  fondoOpacidad: number;
+  fondoAjuste: FondoAjuste;
   elementos: PlanoElemento[];
 }
 
@@ -85,6 +89,8 @@ function desdePlano(plano: Plano): Borrador {
     altoFondo: plano.altoFondo,
     rejilla: plano.rejilla,
     piso: plano.piso,
+    fondoOpacidad: plano.fondoOpacidad ?? 0.5,
+    fondoAjuste: plano.fondoAjuste ?? 'contener',
     elementos: plano.elementos.map((e) => ({ ...e })),
   };
 }
@@ -111,6 +117,8 @@ export function EditorMapaPage() {
   const [herramienta, setHerramienta] = useState<Herramienta>('seleccionar');
   const [colocandoForma, setColocandoForma] = useState<string | null>(null);
   const [rejillaActiva, setRejillaActiva] = useState(true);
+  const [panelCroquis, setPanelCroquis] = useState(false);
+  const [croquisVisible, setCroquisVisible] = useState(true);
   const [snapActivo, setSnapActivo] = useState(true);
   const [coords, setCoords] = useState({ x: 0, y: 0 });
   const [dirty, setDirty] = useState(false);
@@ -125,7 +133,7 @@ export function EditorMapaPage() {
   const frameCoords = useRef<number | null>(null);
   const pendiente = useRef<Borrador | null>(null);
 
-  const planos = useQuery({ queryKey: ['planos'], queryFn: clubApi.planos });
+  const planos = useQuery({ queryKey: ['planos'], queryFn: () => clubApi.planos() });
   const zonas = useQuery({ queryKey: ['zonas'], queryFn: clubApi.zonas });
   const mesas = useQuery({ queryKey: ['mesas'], queryFn: () => clubApi.mesas() });
 
@@ -638,6 +646,25 @@ export function EditorMapaPage() {
         <HerramientaBtn activo={snapActivo} onClick={() => setSnapActivo((v) => !v)} label="Ajustar a rejilla">
           <Magnet size={16} />
         </HerramientaBtn>
+        <div className="relative">
+          <HerramientaBtn activo={panelCroquis} onClick={() => setPanelCroquis((v) => !v)} label="Croquis">
+            <ImageIcon size={16} />
+          </HerramientaBtn>
+          {panelCroquis && (
+            <div className="absolute left-0 top-full z-30 mt-2">
+              <PanelCroquis
+                planoId={planoBase.id}
+                tieneCroquis={Boolean(planoBase.fondoImagenUrl)}
+                opacidad={draft.fondoOpacidad}
+                ajuste={draft.fondoAjuste}
+                visible={croquisVisible}
+                onOpacidad={(valor) => { setDraft({ ...draft, fondoOpacidad: valor }); setDirty(true); }}
+                onAjuste={(valor) => { setDraft({ ...draft, fondoAjuste: valor }); setDirty(true); }}
+                onVisible={setCroquisVisible}
+              />
+            </div>
+          )}
+        </div>
 
         <div className="ml-auto flex items-center gap-1">
           <HerramientaBtn onClick={() => setZoom((z) => Math.max(0.4, +(z - 0.1).toFixed(2)))} label="Alejar">
@@ -710,6 +737,7 @@ export function EditorMapaPage() {
                 zonas={zonas.data ?? []}
                 modo="editor"
                 rejilla={rejillaActiva}
+                mostrarCroquis={croquisVisible}
                 onElementoPointerDown={herramienta === 'mano' ? undefined : alPointerElemento}
               />
             </div>

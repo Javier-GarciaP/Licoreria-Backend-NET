@@ -1,4 +1,4 @@
-import type { Mesa, Plano, PlanoElemento } from '@licoreria/types';
+import type { FondoAjuste, Mesa, Plano, PlanoElemento } from '@licoreria/types';
 import type { EstadoMesaPlano } from '../components/mapa/MapaView';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -63,6 +63,8 @@ interface PlanoEditable {
   altoFondo: number;
   rejilla: number;
   piso: string;
+  fondoOpacidad?: number;
+  fondoAjuste?: FondoAjuste;
   elementos: PlanoElemento[];
 }
 
@@ -76,6 +78,8 @@ export function planoAPayload(plano: PlanoEditable) {
     altoFondo: plano.altoFondo,
     rejilla: plano.rejilla,
     piso: plano.piso,
+    fondoOpacidad: plano.fondoOpacidad ?? 0.5,
+    fondoAjuste: plano.fondoAjuste ?? 'contener',
     elementos: plano.elementos.map((e) => ({
       id: esIdServidor(e.id) ? e.id : undefined,
       zonaId: e.zonaId,

@@ -155,7 +155,7 @@ export const GRUPOS: NavGroup[] = [
         to: '/salon',
         label: 'Salón',
         icon: MapIcon,
-        permiso: 'club:manage',
+        permiso: 'club:read',
         end: true,
         roles: ['Administrador', 'Host'],
       },

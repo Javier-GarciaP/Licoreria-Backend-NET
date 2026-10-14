@@ -32,6 +32,7 @@ import type {
   Pagina,
   PedidoAnticipado,
   Plano,
+  PlanoDuplicarRequest,
   Producto,
   ProductoModificador,
   Promocion,
@@ -168,11 +169,23 @@ export const clubApi = {
   actualizarMesa: (id: string, body: unknown) => apiFetch<Mesa>(`/api/v1/mesas/${id}`, { method: 'PUT', body }),
   eliminarMesa: (id: string) => apiFetch<void>(`/api/v1/mesas/${id}`, { method: 'DELETE' }),
   desalojar: (mesaId: string) => apiFetch<void>(`/api/v1/mesas/${mesaId}/desalojar`, { method: 'POST' }),
-  planos: () => apiFetch<Plano[]>('/api/v1/planos'),
+  /** Con `plantillas` incluye las plantillas (solo quien tiene `club:layout`; para el resto se ignora). */
+  planos: (plantillas = false) =>
+    apiFetch<Plano[]>('/api/v1/planos', { query: plantillas ? { plantillas: true } : undefined }),
   plano: (id: string) => apiFetch<Plano>(`/api/v1/planos/${id}`),
   crearPlano: (body: unknown) => apiFetch<Plano>('/api/v1/planos', { method: 'POST', body }),
   actualizarPlano: (id: string, body: unknown) => apiFetch<Plano>(`/api/v1/planos/${id}`, { method: 'PUT', body }),
   eliminarPlano: (id: string) => apiFetch<void>(`/api/v1/planos/${id}`, { method: 'DELETE' }),
+  /** Sube o reemplaza el croquis del plano (PNG, JPG o WebP de hasta 5 MB). */
+  subirFondo: (id: string, archivo: File) => {
+    const formData = new FormData();
+    formData.append('archivo', archivo);
+    return apiFetch<Plano>(`/api/v1/planos/${id}/fondo`, { method: 'POST', formData });
+  },
+  quitarFondo: (id: string) => apiFetch<Plano>(`/api/v1/planos/${id}/fondo`, { method: 'DELETE' }),
+  /** Copia inactiva del plano; con `comoPlantilla` la guarda como plantilla (sin vínculos a mesas). */
+  duplicarPlano: (id: string, body: PlanoDuplicarRequest = {}) =>
+    apiFetch<Plano>(`/api/v1/planos/${id}/duplicar`, { method: 'POST', body }),
   reservas: (query: PaginaQuery & { estado?: string } = {}) =>
     apiFetch<ResultadoPaginado<Reserva>>('/api/v1/reservas', { query }),
   reserva: (id: string) => apiFetch<Reserva>(`/api/v1/reservas/${id}`),

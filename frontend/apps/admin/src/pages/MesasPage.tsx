@@ -110,7 +110,7 @@ export function MesasPage() {
   const [mesaLiberar, setMesaLiberar] = useState<Mesa | null>(null);
   const wrapper = useRef<HTMLDivElement>(null);
 
-  const planos = useQuery({ queryKey: ['planos'], queryFn: clubApi.planos });
+  const planos = useQuery({ queryKey: ['planos'], queryFn: () => clubApi.planos() });
   const zonas = useQuery({ queryKey: ['zonas'], queryFn: clubApi.zonas });
   const mesas = useQuery({ queryKey: ['mesas'], queryFn: () => clubApi.mesas() });
   const cuentas = useQuery({

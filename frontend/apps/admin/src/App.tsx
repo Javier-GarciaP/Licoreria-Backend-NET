@@ -154,9 +154,23 @@ export default function App() {
         <Route path="/finanzas" element={<TasasPage />} />
         <Route path="/salon" element={<SalonLayout />}>
           <Route index element={<PlanosPage />} />
-          <Route path="mesas" element={<SalonMesasPage />} />
+          <Route
+            path="mesas"
+            element={
+              <ProtectedRoute permisos={['club:layout']}>
+                <SalonMesasPage />
+              </ProtectedRoute>
+            }
+          />
         </Route>
-        <Route path="/salon/planos/:id" element={<EditorMapaPage />} />
+        <Route
+          path="/salon/planos/:id"
+          element={
+            <ProtectedRoute permisos={['club:layout']}>
+              <EditorMapaPage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/entradas" element={<EntradasPage />} />
         <Route path="/vip" element={<ListaVipPage />} />
         <Route path="/productos" element={<ProductosPage />} />

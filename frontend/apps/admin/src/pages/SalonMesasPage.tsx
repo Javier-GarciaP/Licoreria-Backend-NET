@@ -22,6 +22,7 @@ import type { Mesa, Plano } from '@licoreria/types';
 import { clubApi } from '@licoreria/api-client';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { mensajeDeError } from '../lib/api';
+import { planoAPayload } from '../lib/plano';
 import { etiquetaForma, FORMAS_MESA, formaElementoDeMesa, planosDeMesa } from '../lib/salon';
 
 const esquemaMesa = z.object({
@@ -44,7 +45,7 @@ export function SalonMesasPage() {
   const mesaForm = useForm<FormularioMesa>({ resolver: zodResolver(esquemaMesa), defaultValues: MESA_VACIA });
 
   const mesas = useQuery({ queryKey: ['mesas'], queryFn: () => clubApi.mesas() });
-  const planos = useQuery({ queryKey: ['planos'], queryFn: clubApi.planos });
+  const planos = useQuery({ queryKey: ['planos'], queryFn: () => clubApi.planos() });
 
   const invalidar = () => {
     queryClient.invalidateQueries({ queryKey: ['mesas'] });
@@ -59,16 +60,7 @@ export function SalonMesasPage() {
     const forma = formaElementoDeMesa(mesa.forma);
     const pendientes = planosMesa.map((plano) => {
       const elementos = plano.elementos.map((e) => (e.mesaId === mesa.id ? { ...e, forma, tipo: 'mesa' } : e));
-      return clubApi.actualizarPlano(plano.id, {
-        id: plano.id,
-        nombre: plano.nombre,
-        activo: plano.activo,
-        anchoFondo: plano.anchoFondo,
-        altoFondo: plano.altoFondo,
-        rejilla: plano.rejilla,
-        piso: plano.piso,
-        elementos,
-      });
+      return clubApi.actualizarPlano(plano.id, planoAPayload({ ...plano, elementos }));
     });
     Promise.allSettled(pendientes);
   };

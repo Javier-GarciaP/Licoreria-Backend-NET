@@ -577,6 +577,19 @@ export interface Plano {
   rejilla: number;
   piso: string;
   elementos: PlanoElemento[];
+  /** Croquis del local: solo cambia al subir un archivo, nunca por la edición del plano. */
+  fondoImagenUrl?: string | null;
+  fondoOpacidad?: number;
+  fondoAjuste?: FondoAjuste;
+  /** Las plantillas no se activan ni se publican; solo las ve quien edita la distribución. */
+  esPlantilla?: boolean;
+}
+
+export type FondoAjuste = 'contener' | 'cubrir' | 'estirar';
+
+export interface PlanoDuplicarRequest {
+  nombre?: string;
+  comoPlantilla?: boolean;
 }
 
 export interface Reserva {

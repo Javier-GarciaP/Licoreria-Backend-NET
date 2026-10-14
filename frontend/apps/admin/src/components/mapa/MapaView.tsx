@@ -1,6 +1,7 @@
 import { memo, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import type { Plano, PlanoElemento, Zona } from '@licoreria/types';
 import { cn } from '@licoreria/ui';
+import { urlDeImagen } from '../../lib/imagenProducto';
 import { dibujarElemento, ELEMENTOS_POR_FORMA, UNIT } from './elementos';
 
 export type EstadoMesaPlano = 'Libre' | 'Ocupada' | 'Reservada' | 'EnLimpieza';
@@ -75,6 +76,31 @@ function FondoMapa({ plano, rejilla }: { plano: Plano; rejilla: boolean }) {
   );
 }
 
+const AJUSTE_FONDO = {
+  contener: 'xMidYMid meet',
+  cubrir: 'xMidYMid slice',
+  estirar: 'none',
+} as const;
+
+/** Croquis del local: va detrás de zonas y elementos y no intercepta clics ni arrastres. */
+function CapaCroquis({ plano }: { plano: Plano }) {
+  const href = urlDeImagen(plano.fondoImagenUrl);
+  if (!href) return null;
+  return (
+    <image
+      data-testid="fondo-croquis"
+      href={href}
+      x={0}
+      y={0}
+      width={plano.anchoFondo * UNIT}
+      height={plano.altoFondo * UNIT}
+      preserveAspectRatio={AJUSTE_FONDO[plano.fondoAjuste ?? 'contener']}
+      opacity={plano.fondoOpacidad ?? 0.5}
+      pointerEvents="none"
+    />
+  );
+}
+
 function CapaZonas({ zonas }: { zonas: Zona[] }) {
   return (
     <>
@@ -110,6 +136,7 @@ export function MapaViewBase({
   numeroPorMesa,
   modo = 'operacion',
   rejilla = true,
+  mostrarCroquis = true,
   onElementoPointerDown,
   onFondoPointerDown,
   children,
@@ -120,6 +147,8 @@ export function MapaViewBase({
   numeroPorMesa?: Record<string, string>;
   modo?: 'editor' | 'operacion';
   rejilla?: boolean;
+  /** Permite ocultar el croquis localmente (p. ej. mientras se edita) sin tocar el plano. */
+  mostrarCroquis?: boolean;
   onElementoPointerDown?: (evento: ReactPointerEvent, elemento: PlanoElemento) => void;
   onFondoPointerDown?: (evento: ReactPointerEvent) => void;
   children?: ReactNode;
@@ -137,6 +166,7 @@ export function MapaViewBase({
       onPointerDown={onFondoPointerDown}
     >
       <FondoMapa plano={plano} rejilla={rejilla} />
+      {mostrarCroquis && <CapaCroquis plano={plano} />}
       <CapaZonas zonas={zonas} />
       {elementos.map((el) => {
         const esMesa = (el.tipo ?? '').startsWith('mesa');
