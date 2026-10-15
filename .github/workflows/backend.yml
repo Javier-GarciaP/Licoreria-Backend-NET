@@ -5,10 +5,14 @@ on:
     branches: [master]
     paths:
       - 'backend/**'
+      - 'scripts/coverage/**'
+      - '.config/dotnet-tools.json'
       - '.github/workflows/backend.yml'
   pull_request:
     paths:
       - 'backend/**'
+      - 'scripts/coverage/**'
+      - '.config/dotnet-tools.json'
 
 jobs:
   build:
@@ -56,5 +60,41 @@ jobs:
       - name: Build
         run: dotnet build backend/Licoreria.slnx --no-restore --configuration Release
 
-      - name: Test
-        run: dotnet test backend/Licoreria.slnx --no-build --configuration Release --verbosity normal
+      - name: Unit tests with coverage
+        run: >-
+          dotnet test backend/tests/Licoreria.UnitTests
+          --no-build --configuration Release
+          --settings backend/coverage.runsettings
+          --collect:"XPlat Code Coverage"
+          --results-directory artifacts/coverage/raw
+
+      - name: Coverage report
+        run: |
+          dotnet tool restore
+          dotnet reportgenerator \
+            "-reports:artifacts/coverage/raw/**/coverage.cobertura.xml" \
+            "-targetdir:artifacts/coverage/report" \
+            "-reporttypes:Html;JsonSummary;TextSummary;MarkdownSummaryGithub"
+          cat artifacts/coverage/report/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: artifacts/coverage/report
+          if-no-files-found: ignore
+
+      - name: Check coverage threshold
+        shell: bash
+        run: |
+          node --test scripts/coverage/verificar-umbral.test.mjs
+          node scripts/coverage/verificar-umbral.mjs artifacts/coverage/report/Summary.json 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # La base de datos es obligatoria en CI: si PostgreSQL no responde, las pruebas fallan en lugar de omitirse.
+      - name: Integration tests
+        env:
+          LICORERIA_TESTS_REQUIRE_DB: 'true'
+        run: >-
+          dotnet test backend/tests/Licoreria.IntegrationTests
+          --no-build --configuration Release --verbosity normal
