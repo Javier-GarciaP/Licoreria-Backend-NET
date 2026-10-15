@@ -5,6 +5,7 @@ using Licoreria.Application.Services;
 using Licoreria.Domain.Common;
 using Licoreria.Domain.Entities;
 using Licoreria.Domain.Enums;
+using Licoreria.UnitTests.Support;
 using Moq;
 
 namespace Licoreria.UnitTests;
@@ -65,9 +66,7 @@ public sealed class ServicioVentasTests
         _ventas.Setup(v => v.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         // La transacción debe ejecutar la operación para que la venta se construya.
-        _unitOfWork
-            .Setup(u => u.EjecutarEnTransaccionAsync(It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>()))
-            .Returns((Func<CancellationToken, Task> operacion, CancellationToken ct) => operacion(ct));
+        _unitOfWork.EjecutarOperaciones();
     }
 
     private ServicioVentas CrearServicio()

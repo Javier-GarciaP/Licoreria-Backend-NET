@@ -6,6 +6,7 @@ using Licoreria.Domain.Common;
 using Licoreria.Domain.Entities;
 using Licoreria.Domain.Enums;
 using Licoreria.Domain.Services;
+using Licoreria.UnitTests.Support;
 using Moq;
 
 namespace Licoreria.UnitTests;
@@ -79,9 +80,7 @@ public sealed class ServicioCuentasTests
             .ReturnsAsync(Tasa);
 
         // La transacción ejecuta la operación; el guardado real lo hace la unidad de trabajo.
-        _unitOfWork
-            .Setup(u => u.EjecutarEnTransaccionAsync(It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>()))
-            .Returns((Func<CancellationToken, Task> operacion, CancellationToken ct) => operacion(ct));
+        _unitOfWork.EjecutarOperaciones();
         _kardex
             .Setup(k => k.DesglosarInsumosAsync(It.IsAny<Guid>(), It.IsAny<decimal>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Guid variante, decimal cantidad, CancellationToken _) => new List<KardexInsumo> { new(variante, cantidad) });
