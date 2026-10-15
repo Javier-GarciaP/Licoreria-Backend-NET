@@ -45,3 +45,9 @@ la lógica del servicio de productos.
 `spa` ≈ 106 MB en disco (< 120 MB). `api` ≈ 248 MB en disco descomprimido (base `aspnet:10.0-alpine` ≈ 204 MB
 más 44 MB de la app, publicada solo para `linux-musl-x64`); su tamaño comprimido de transferencia es menor.
 Reducirla más requiere recortar el runtime (trimming/ReadyToRun), pendiente.
+
+## Evidencias
+
+![CI en verde](../../assets/evidencias/fase-5/github-actions-ci-verde.png)
+
+![docker ps](../../assets/evidencias/fase-5/docker-ps-healthy.png)
