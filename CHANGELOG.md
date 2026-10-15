@@ -13,6 +13,51 @@ y el proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
 ### Agregado
 
+- **Pruebas y cobertura (`pruebas-y-cobertura`):**
+  - **Pruebas unitarias con Moq** de `ServicioInventario`, `ServicioCaja`, `ServicioCompras`, `ServicioUsuarios`,
+    `ServicioAuditoria`, `ServicioKardex` y `ServicioAutenticacion` (casos exitosos, de borde y de error), de los
+    validadores de entrada y de los conflictos de concurrencia; de 470 a 699 pruebas unitarias.
+  - **`dotnet test` verde sin PostgreSQL:** las pruebas de integración usan `[HechoDeIntegracion]` (categoría
+    `Integration`) y se omiten con un motivo visible si no hay base de datos; con `LICORERIA_TESTS_REQUIRE_DB=true`
+    (CI) fallan. `LICORERIA_TEST_DB` cambia el servidor. Tareas `backend:test` (unitarias), `backend:test:integration`
+    y `backend:test:all`.
+  - **Arnés de concurrencia** (`EjecucionConcurrente`, `RepetirAsync`, `ConflictoUnaVez`) y escenarios de mermas y
+    ajustes, recepción de una misma línea, pagos de cuentas por pagar y por cobrar y usuarios con el mismo correo,
+    repetidos 10 veces.
+  - **Cobertura:** `task backend:coverage` (coverlet + ReportGenerator, reporte HTML) y umbral de 75 % de líneas de
+    Domain + Application (`scripts/coverage/umbral.json`), verificado en CI, que publica el reporte como artefacto.
+    Cobertura de Domain + Application: 60,9 % → 76,5 %. Guía en `docs/dev/11-guias/pruebas.md`.
+
+- **Reportes, KPIs y exportación (`reportes-kpis-export`):**
+  - **KPIs de ventas y producto:** top de productos por unidades o ingresos con su porcentaje del total y
+    rotación (unidades del periodo / existencia actual; *no calculable* con existencia 0, *sin
+    movimiento* con existencia y sin ventas); ticket promedio y ventas por método de pago ya existentes
+    se verifican con pruebas. `GET /api/v1/reportes/productos` (`sales:read`).
+  - **KPIs del local:** ocupación actual y por zona, permanencia promedio y sesiones por mesa
+    (`GET /reportes/ocupacion`, `club:read`), asistencia de reservas y tasa de no asistencia
+    (`GET /reportes/reservas-asistencia`, `club:read`), descuadre de caja por turno cerrado
+    (`GET /reportes/caja`, `cash:close`) y proporción de cada motivo de merma frente a las ventas
+    (`porcentajeVentas` en `mermas-vs-ventas`).
+  - **Desempeño del mesonero** (`GET /reportes/mesoneros`, solo Administrador): comandas, ítems
+    servidos, ventas generadas, ticket por cuenta, tasa de cancelación y tiempo de servicio, atribuidos
+    a quien creó la comanda. Nueva columna `comanda_detalles.ServidoEn` (migración `ServidoEnComandaDetalle`,
+    nullable y sin relleno de datos previos).
+  - **Periodo válido:** `desde > hasta` o más de 366 días responden `400`; sin periodo son 30 días; una
+    fecha sin hora incluye el día final completo.
+  - **Exportación a PDF y Excel:** `GET /api/v1/reportes/{reporte}/exportar?formato=pdf|xlsx` para ventas,
+    productos, inventario, compras, propinas, mesoneros, caja, ocupación, mermas vs ventas y la bitácora de
+    auditoría, con los filtros de la pantalla y el permiso de su consulta. PDF con QuestPDF (hasta 5 000
+    filas, `422` si se supera) y Excel con ClosedXML (hasta 100 000, valores numéricos y de fecha con
+    formato, encabezado congelado y filtro). Archivo `reporte-<id>-<desde>_<hasta>`.
+  - **Dashboard y Reportes:** selector de periodo común guardado en la URL, tarjetas de ticket promedio,
+    más vendido, ocupación, no asistencia, descuadre de caja y mermas con estado vacío, gráficas de altura
+    uniforme con esqueleto de carga, pestañas nuevas en Reportes (la de mesoneros solo para el
+    Administrador) y botones de exportar. El ítem **Reportes** vuelve al menú de Analítica.
+  - **Pruebas:** unitarias con Moq de `ServicioReportes` y de la exportación, de los mapeadores y de ambos
+    exportadores; de integración de cada consulta nueva y de las descargas; y de página del Dashboard,
+    Reportes, el selector de periodo y la descarga autenticada.
+  - **Documentación:** [Reportes](docs/dev/06-modulos/reportes.md) con la definición de cada KPI.
+
 - **Módulos complementarios (`modulos-complementarios`):**
   - **Reactivación por modo y rol:** Promociones, Existencias, Clientes, Cuentas por cobrar, Entradas y
     Lista VIP vuelven al menú (Compras ya estaba). Promociones, Existencias, Clientes, Cuentas por cobrar

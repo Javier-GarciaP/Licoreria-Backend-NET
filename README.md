@@ -60,7 +60,7 @@ Detalle en [docs/dev/02-arquitectura](docs/dev/02-arquitectura/onion.md).
 ```bash
 # Backend
 dotnet build backend/Licoreria.slnx
-dotnet test backend/Licoreria.slnx
+dotnet test backend/Licoreria.slnx   # sin PostgreSQL las pruebas de integración se omiten (ver docs/dev/11-guias/pruebas.md)
 dotnet run --project backend/src/Licoreria.WebAPI
 
 # Base de datos local (PostgreSQL, objetivo de la Fase 2)
@@ -134,7 +134,7 @@ como cambios [OpenSpec](openspec/changes) y se implementan con `/opsx:apply <cam
 | [`modulos-complementarios`](openspec/changes/archive/2026-10-14-modulos-complementarios) | Reactivar Promociones, Clientes/CxC, Compras, Existencias, Entradas y Lista VIP; cliente en la venta, puntos automáticos y fiado. | Hecho (25/25) ✅ archivado |
 | [`reportes-kpis-export`](openspec/changes/reportes-kpis-export) | KPIs (incl. desempeño del mesonero) y exportación PDF/Excel. | Pendiente (0/30) |
 | [`croquis-planos`](openspec/changes/archive/2026-10-14-croquis-planos) | Precargar un croquis como fondo del lienzo, plantillas y duplicar. | Hecho (22/22) ✅ archivado |
-| [`pruebas-y-cobertura`](openspec/changes/pruebas-y-cobertura) | Pruebas con Moq, concurrencia, separar integración y cobertura con coverlet. | Pendiente (0/32) |
+| [`pruebas-y-cobertura`](openspec/changes/pruebas-y-cobertura) | Pruebas con Moq, concurrencia, separar integración y cobertura con coverlet. | Hecho (32/32) |
 
 ### Orden sugerido y dependencias
 

@@ -36,6 +36,31 @@ cómo trabajamos el repositorio para mantener un historial limpio y trazable.
 6. Tras la revisión y el CI en verde, se integra preservando los commits atómicos
    (rebase/merge). Evita el *squash* salvo que la rama contenga commits ruidosos.
 
+## Pruebas del backend
+
+| Tarea | Qué ejecuta | ¿Necesita PostgreSQL? |
+| :--- | :--- | :--- |
+| `task backend:test` | Solo pruebas unitarias (`--filter "Category!=Integration"`) | No |
+| `task backend:test:integration` | Solo pruebas de integración (`Category=Integration`) | Sí, es obligatorio |
+| `task backend:test:all` | Todo; la integración se omite si no hay base de datos | Opcional |
+
+`dotnet test backend/Licoreria.slnx` equivale a `backend:test:all`: en un equipo sin PostgreSQL las pruebas
+unitarias pasan y las de integración se reportan como **omitidas** con el motivo, y el resultado es verde.
+
+Variables de entorno de las pruebas de integración:
+
+| Variable | Efecto | Valor por defecto |
+| :--- | :--- | :--- |
+| `LICORERIA_TEST_DB` | Cadena de conexión del servidor (sin base de datos); se usa la base `licoreria_test` | `Host=localhost;Port=5432;Username=licoreria;Password=licoreria` |
+| `LICORERIA_TESTS_REQUIRE_DB` | Con `true`, la ausencia de PostgreSQL hace **fallar** las pruebas de integración en lugar de omitirlas | `false` (en CI es `true`) |
+
+La disponibilidad de PostgreSQL se comprueba una sola vez por corrida y expira a los 3 segundos.
+Para levantar la base local: `task db:up`.
+
+La cobertura se mide con `task backend:coverage` (umbral de líneas de Domain + Application en
+`scripts/coverage/umbral.json`). Convenciones, arnés de pruebas de carrera y lectura del reporte:
+[`docs/dev/11-guias/pruebas.md`](docs/dev/11-guias/pruebas.md).
+
 ## Ramas
 
 | Prefijo | Uso | Ejemplo |
