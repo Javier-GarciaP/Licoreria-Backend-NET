@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardBody, CardHeader, CardTitle, cn, DataTable, Pill, Skeleton } from '@licoreria/ui';
+import { Card, CardBody, CardHeader, CardTitle, cn, DataTable, FiltroDropdown, Pill, Skeleton } from '@licoreria/ui';
 import { reportesApi } from '@licoreria/api-client';
 import type { OrdenProductos, ProductoVendido, ReporteExportableId } from '@licoreria/types';
 import { BotonesExportar } from '../components/BotonesExportar';
@@ -206,38 +206,31 @@ export function ReportesPage() {
 
   return (
     <div className="mx-auto flex max-w-page flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        {!actual.sinPeriodo ? (
-          <SelectorPeriodo periodo={periodo} onElegir={periodo.elegir} onRango={periodo.fijarRango} />
-        ) : (
-          <span />
-        )}
-        <BotonesExportar
-          key={actual.id}
-          reporte={actual.exporta}
-          filtros={filtrosExportar}
-          deshabilitado={!actual.sinPeriodo && !valido}
-        />
-      </div>
-
-      <nav aria-label="Secciones de reportes" className="flex flex-wrap gap-2">
-        {visibles.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            aria-current={pestana === item.id ? 'page' : undefined}
-            onClick={() => elegirPestana(item.id)}
-            className={cn(
-              'rounded-full border px-4 py-1.5 text-sm transition',
-              pestana === item.id
-                ? 'border-primary text-foreground'
-                : 'border-border text-muted-foreground hover:text-foreground',
-            )}
-          >
-            {item.label}
-          </button>
-        ))}
-      </nav>
+      <Card>
+        <CardHeader className="flex flex-wrap items-end gap-3">
+          <FiltroDropdown
+            label="Reporte"
+            limpiable={false}
+            opciones={visibles.map((item) => ({ valor: item.id, etiqueta: item.label }))}
+            valor={pestana}
+            onChange={(valor) => valor && elegirPestana(valor as Pestana)}
+          />
+          {!actual.sinPeriodo && (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs font-medium text-foreground">Periodo</span>
+              <SelectorPeriodo periodo={periodo} onElegir={periodo.elegir} onRango={periodo.fijarRango} />
+            </div>
+          )}
+          <div className="ml-auto">
+            <BotonesExportar
+              key={actual.id}
+              reporte={actual.exporta}
+              filtros={filtrosExportar}
+              deshabilitado={!actual.sinPeriodo && !valido}
+            />
+          </div>
+        </CardHeader>
+      </Card>
 
       {pestana === 'ventas' && (
         <Card>

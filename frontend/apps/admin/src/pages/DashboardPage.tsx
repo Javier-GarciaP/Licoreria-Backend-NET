@@ -27,7 +27,7 @@ import {
   TrendingUp,
   Wallet,
 } from 'lucide-react';
-import { cn, Pill, Skeleton } from '@licoreria/ui';
+import { Button, Card, CardHeader, cn, Pill, Skeleton } from '@licoreria/ui';
 import type { Dashboard, DiagnosticoInventario, ProductoVendido, ReporteHeatmap } from '@licoreria/types';
 import { ApiError, reportesApi } from '@licoreria/api-client';
 import { SelectorPeriodo } from '../components/SelectorPeriodo';
@@ -228,7 +228,7 @@ function Tile({
     <motion.div
       variants={item}
       className={cn(
-        'border border-border bg-card flex h-full flex-col overflow-hidden rounded-xl p-5 transition-colors hover:border-primary/40',
+        'border border-border bg-card shadow-sm flex h-full flex-col overflow-hidden rounded-xl p-5 transition-colors hover:border-primary/40',
         !children && 'justify-center',
         className,
       )}
@@ -268,7 +268,7 @@ function Panel({
     <motion.div
       variants={item}
       className={cn(
-        'border border-border bg-card flex h-full flex-col overflow-hidden rounded-xl p-5 transition-colors hover:border-primary/40',
+        'border border-border bg-card shadow-sm flex h-full flex-col overflow-hidden rounded-xl p-5 transition-colors hover:border-primary/40',
         className,
       )}
     >
@@ -734,24 +734,22 @@ export function DashboardPage() {
   return (
     <MotionConfig reducedMotion="user">
       <div className="flex flex-col gap-6">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-xs text-muted-foreground">
-              {valido ? `Periodo: ${etiquetaPeriodo}` : 'Elige un periodo válido para ver los indicadores.'}
+        <Card>
+          <CardHeader className="flex flex-wrap items-end gap-3">
+            <div className="flex flex-col gap-1">
+              <span className="text-xs font-medium text-foreground">Periodo</span>
+              <SelectorPeriodo periodo={periodo} onElegir={periodo.elegir} onRango={periodo.fijarRango} />
+            </div>
+            <p className="pb-2 text-xs text-muted-foreground">
+              {valido ? etiquetaPeriodo : 'Elige un periodo válido para ver los indicadores.'}
             </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={exportarPdf}
-              disabled={!valido || !ventas.data}
-              className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-xs font-medium text-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Download size={14} /> Exportar PDF
-            </button>
-            <SelectorPeriodo periodo={periodo} onElegir={periodo.elegir} onRango={periodo.fijarRango} />
-          </div>
-        </div>
+            <div className="ml-auto">
+              <Button leftIcon={<Download size={15} />} onClick={exportarPdf} disabled={!valido || !ventas.data}>
+                Exportar PDF
+              </Button>
+            </div>
+          </CardHeader>
+        </Card>
 
         <motion.div
           key={`${desde}-${hasta}`}

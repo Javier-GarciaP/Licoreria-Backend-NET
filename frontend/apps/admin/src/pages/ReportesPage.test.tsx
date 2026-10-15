@@ -55,9 +55,10 @@ describe('ReportesPage', () => {
     server.use(http.get(`${BASE}/api/v1/reportes/ventas`, () => HttpResponse.json(VENTAS)));
     renderizar();
 
-    const nav = screen.getByRole('navigation', { name: 'Secciones de reportes' });
+    await userEvent.click(screen.getByRole('button', { name: /Ventas/ }));
+    const menu = await screen.findByRole('menu');
     for (const nombre of ['Ventas', 'Productos', 'Inventario', 'Compras', 'Propinas', 'Mesoneros', 'Caja', 'Ocupación', 'Mermas']) {
-      expect(within(nav).getByRole('button', { name: nombre })).toBeInTheDocument();
+      expect(within(menu).getByRole('menuitem', { name: nombre })).toBeInTheDocument();
     }
   });
 
@@ -67,10 +68,11 @@ describe('ReportesPage', () => {
     server.use(http.get(`${BASE}/api/v1/reportes/ventas`, () => HttpResponse.json(VENTAS)));
     renderizar('/reportes?reporte=mesoneros');
 
-    const nav = screen.getByRole('navigation', { name: 'Secciones de reportes' });
-    expect(within(nav).queryByRole('button', { name: 'Mesoneros' })).not.toBeInTheDocument();
-    expect(within(nav).queryByRole('button', { name: 'Compras' })).not.toBeInTheDocument();
-    expect(within(nav).getByRole('button', { name: 'Caja' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /Ventas/ }));
+    const menu = await screen.findByRole('menu');
+    expect(within(menu).queryByRole('menuitem', { name: 'Mesoneros' })).not.toBeInTheDocument();
+    expect(within(menu).queryByRole('menuitem', { name: 'Compras' })).not.toBeInTheDocument();
+    expect(within(menu).getByRole('menuitem', { name: 'Caja' })).toBeInTheDocument();
     // Cae en la primera pestaña permitida en lugar de pedir el reporte restringido.
     expect(await screen.findByText('Ventas del período')).toBeInTheDocument();
   });
@@ -95,7 +97,8 @@ describe('ReportesPage', () => {
     renderizar('/reportes?periodo=personalizado&desde=2026-10-01&hasta=2026-10-13');
     await screen.findByText('Ventas del período');
 
-    await userEvent.click(screen.getByRole('button', { name: 'Caja' }));
+    await userEvent.click(screen.getByRole('button', { name: /Ventas/ }));
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Caja' }));
 
     expect(await screen.findByText('Descuadre de caja por turno')).toBeInTheDocument();
     expect(consultas).toContain('caja:2026-10-01|2026-10-13');

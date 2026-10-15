@@ -99,7 +99,7 @@ export const GRUPOS: NavGroup[] = [
         end: true,
         primario: true,
         corto: 'Inicio',
-        roles: CAJA,
+        roles: ADMIN,
       },
       { to: '/pos', label: 'POS', icon: ShoppingCart, permiso: 'sales:write', primario: true, roles: CAJA },
       {
@@ -181,8 +181,8 @@ export const GRUPOS: NavGroup[] = [
     roles: CAJA,
     items: [
       { to: '/productos', label: 'Catálogo', icon: Package, permiso: 'catalog:read' },
-      { to: '/catalogos', label: 'Categorías y marcas', icon: Tags, permiso: 'catalog:read' },
-      { to: '/catalogos-avanzado', label: 'Unidades', icon: Ruler, permiso: 'catalog:read' },
+      { to: '/catalogos', label: 'Categorías y marcas', icon: Tags, permiso: 'catalog:read', roles: ADMIN },
+      { to: '/catalogos-avanzado', label: 'Unidades', icon: Ruler, permiso: 'catalog:read', roles: ADMIN },
       {
         to: '/inventario',
         label: 'Existencias',
@@ -190,7 +190,7 @@ export const GRUPOS: NavGroup[] = [
         permiso: 'inventory:read',
         end: true,
       },
-      { to: '/inventario/kardex', label: 'Kardex', icon: ScrollText, permiso: 'inventory:read' },
+      { to: '/inventario/kardex', label: 'Kardex', icon: ScrollText, permiso: 'inventory:read', roles: ADMIN },
       { to: '/inventario/lotes', label: 'Lotes', icon: PackageOpen, permiso: 'inventory:read', oculto: true },
       { to: '/inventario/envases', label: 'Envases abiertos', icon: Wine, permiso: 'inventory:read' },
       {
@@ -216,7 +216,7 @@ export const GRUPOS: NavGroup[] = [
     roles: CAJA,
     items: [
       { to: '/caja', label: 'Caja', icon: Wallet, permiso: 'cash:movement' },
-      { to: '/finanzas', label: 'Tasas de cambio', icon: Coins, permiso: 'finance:read', end: true },
+      { to: '/finanzas', label: 'Tasas de cambio', icon: Coins, permiso: 'finance:read', end: true, roles: ADMIN },
     ],
   },
   {
