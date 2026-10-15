@@ -85,6 +85,9 @@ services:
     build:
       context: ./frontend
       dockerfile: apps/public-web/Dockerfile
+      args:
+        VITE_API_URL: http://localhost:${API_PORT:-5000}
+        VITE_HUB_URL: http://localhost:${API_PORT:-5000}/hubs/comandas
     container_name: licoreria-public-web
     restart: unless-stopped
     depends_on:
@@ -99,6 +102,9 @@ services:
     build:
       context: ./frontend
       dockerfile: apps/servicio/Dockerfile
+      args:
+        VITE_API_URL: http://localhost:${API_PORT:-5000}
+        VITE_HUB_URL: http://localhost:${API_PORT:-5000}/hubs/comandas
     container_name: licoreria-servicio
     restart: unless-stopped
     depends_on:
