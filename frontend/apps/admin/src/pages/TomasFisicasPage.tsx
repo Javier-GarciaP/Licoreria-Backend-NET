@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Eye } from 'lucide-react';
+import { Eye, Plus } from 'lucide-react';
 import {
   ActionMenu,
   Button,
@@ -12,7 +12,6 @@ import {
   DataTable,
   Input,
   Modal,
-  PageHeader,
   Pagination,
   StatusBadge,
 } from '@licoreria/ui';
@@ -57,17 +56,13 @@ export function TomasFisicasPage() {
   });
 
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader
-        title="Inventario"
-        subtitle="Tomas físicas y ajustes por diferencia."
-        actions={<Button onClick={() => setCreando(true)}>Nueva toma</Button>}
-      />
+    <div className="mx-auto flex max-w-page flex-col gap-4">
       <InventarioTabs />
 
       <Card>
         <CardHeader>
           <CardTitle>Tomas registradas</CardTitle>
+          <Button leftIcon={<Plus size={15} />} onClick={() => setCreando(true)}>Nueva toma</Button>
         </CardHeader>
         <CardBody>
           <DataTable<TomaFisica>

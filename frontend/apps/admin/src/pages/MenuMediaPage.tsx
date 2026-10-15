@@ -10,7 +10,6 @@ import {
   CardHeader,
   CardTitle,
   DataTable,
-  PageHeader,
   Pill,
   Skeleton,
 } from '@licoreria/ui';
@@ -57,8 +56,7 @@ export function MenuMediaPage() {
   });
 
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader title="Contenido" subtitle="Menú digital, código QR y archivos." />
+    <div className="mx-auto flex max-w-page flex-col gap-4">
       <ContenidoTabs />
 
       <Card>

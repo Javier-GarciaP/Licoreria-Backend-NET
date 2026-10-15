@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardBody, CardHeader, CardTitle, cn, DataTable, PageHeader, Pill, Skeleton } from '@licoreria/ui';
+import { Card, CardBody, CardHeader, CardTitle, cn, DataTable, Pill, Skeleton } from '@licoreria/ui';
 import { reportesApi } from '@licoreria/api-client';
 import type { OrdenProductos, ProductoVendido, ReporteExportableId } from '@licoreria/types';
 import { BotonesExportar } from '../components/BotonesExportar';
@@ -194,8 +194,8 @@ export function ReportesPage() {
 
   if (!actual) {
     return (
-      <div className="mx-auto flex max-w-page flex-col gap-6">
-        <PageHeader title="Reportes" subtitle="No tienes permiso para consultar reportes." />
+      <div className="mx-auto flex max-w-page flex-col gap-4">
+        <p className="text-sm text-muted-foreground">No tienes permiso para consultar reportes.</p>
       </div>
     );
   }
@@ -205,23 +205,20 @@ export function ReportesPage() {
     : { desde, hasta, ...(actual.id === 'productos' ? { orden, limite: LIMITE_TOP } : {}) };
 
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader
-        title="Reportes"
-        subtitle="Ventas, productos, inventario, compras, propinas, mesoneros, caja, ocupación y mermas."
-        actions={
-          <BotonesExportar
-            key={actual.id}
-            reporte={actual.exporta}
-            filtros={filtrosExportar}
-            deshabilitado={!actual.sinPeriodo && !valido}
-          />
-        }
-      />
-
-      {!actual.sinPeriodo && (
-        <SelectorPeriodo periodo={periodo} onElegir={periodo.elegir} onRango={periodo.fijarRango} />
-      )}
+    <div className="mx-auto flex max-w-page flex-col gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {!actual.sinPeriodo ? (
+          <SelectorPeriodo periodo={periodo} onElegir={periodo.elegir} onRango={periodo.fijarRango} />
+        ) : (
+          <span />
+        )}
+        <BotonesExportar
+          key={actual.id}
+          reporte={actual.exporta}
+          filtros={filtrosExportar}
+          deshabilitado={!actual.sinPeriodo && !valido}
+        />
+      </div>
 
       <nav aria-label="Secciones de reportes" className="flex flex-wrap gap-2">
         {visibles.map((item) => (

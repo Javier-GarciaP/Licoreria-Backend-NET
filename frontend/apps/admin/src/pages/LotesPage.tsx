@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, Plus } from 'lucide-react';
 import {
   ActionMenu,
   Button,
@@ -15,7 +15,6 @@ import {
   DataTable,
   Input,
   Modal,
-  PageHeader,
   Pill,
   Select,
 } from '@licoreria/ui';
@@ -115,17 +114,13 @@ export function LotesPage() {
   };
 
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader
-        title="Inventario"
-        subtitle="Lotes y fechas de vencimiento."
-        actions={<Button onClick={abrirCrear}>Nuevo lote</Button>}
-      />
+    <div className="mx-auto flex max-w-page flex-col gap-4">
       <InventarioTabs />
 
       <Card>
         <CardHeader>
           <CardTitle>Lotes</CardTitle>
+          <Button leftIcon={<Plus size={15} />} onClick={abrirCrear}>Nuevo lote</Button>
         </CardHeader>
         <CardBody>
           <DataTable<Lote>

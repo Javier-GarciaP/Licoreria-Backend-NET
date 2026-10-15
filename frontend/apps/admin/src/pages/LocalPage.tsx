@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Button, Card, CardBody, CardHeader, CardTitle, Input, PageHeader, Skeleton } from '@licoreria/ui';
+import { Button, Card, CardBody, CardHeader, CardTitle, Input, Skeleton } from '@licoreria/ui';
 import type { Horario } from '@licoreria/types';
 import { contenidoApi } from '@licoreria/api-client';
 import { ContenidoTabs } from '../components/ContenidoTabs';
@@ -142,8 +142,7 @@ export function LocalPage() {
   });
 
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader title="Contenido" subtitle="Información del local y horarios de atención." />
+    <div className="mx-auto flex max-w-page flex-col gap-4">
       <ContenidoTabs />
 
       <Card>

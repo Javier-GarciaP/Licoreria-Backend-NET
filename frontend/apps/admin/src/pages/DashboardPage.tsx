@@ -736,7 +736,6 @@ export function DashboardPage() {
       <div className="flex flex-col gap-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-lg font-medium text-foreground">Dashboard</h1>
             <p className="text-xs text-muted-foreground">
               {valido ? `Periodo: ${etiquetaPeriodo}` : 'Elige un periodo válido para ver los indicadores.'}
             </p>

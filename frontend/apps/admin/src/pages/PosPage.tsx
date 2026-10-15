@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Keyboard, Search } from 'lucide-react';
-import { Button, Card, Input, PageHeader, Pill } from '@licoreria/ui';
+import { Button, Card, Input, Pill } from '@licoreria/ui';
 import { estadoExistencia, type Cliente, type Moneda, type Producto, type ProductoVariante, type TasaCambio, type Venta } from '@licoreria/types';
 import { catalogoApi, finanzasApi, promocionesApi, ventasApi } from '@licoreria/api-client';
 import { avisarError } from '../lib/api';
@@ -248,17 +248,12 @@ export function PosPage() {
 
   return (
     <div className="mx-auto flex max-w-page flex-col gap-4 lg:h-[calc(100dvh-9rem)] lg:min-h-0">
-      <PageHeader
-        title="POS"
-        actions={
-          <>
-            <Pill tone="accent">Tasa {valorTasa > 0 ? formatBS(valorTasa) : '—'}</Pill>
-            <Button variant="ghost" size="sm" leftIcon={<Keyboard size={15} />} onClick={() => setAyudaAbierta(true)}>
-              Atajos (F1)
-            </Button>
-          </>
-        }
-      />
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <Pill tone="accent">Tasa {valorTasa > 0 ? formatBS(valorTasa) : '—'}</Pill>
+        <Button variant="ghost" size="sm" leftIcon={<Keyboard size={15} />} onClick={() => setAyudaAbierta(true)}>
+          Atajos (F1)
+        </Button>
+      </div>
 
       <div className="grid grid-cols-1 items-start gap-4 lg:min-h-0 lg:flex-1 lg:items-stretch lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="flex min-w-0 flex-col gap-4 lg:min-h-0">
