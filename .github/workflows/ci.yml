@@ -1,0 +1,69 @@
+name: CI Pipeline - Inventario Licorería
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  backend-ci:
+    name: Backend (.NET 10) - restore, build, xUnit/Moq
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restaurar dependencias
+        run: dotnet restore backend/Licoreria.slnx
+      - name: Compilar solución
+        run: dotnet build backend/Licoreria.slnx --configuration Release --no-restore
+      - name: Pruebas unitarias (xUnit y Moq)
+        run: dotnet test backend/tests/Licoreria.UnitTests --configuration Release --no-build --verbosity normal
+
+  frontend-ci:
+    name: Frontend (React + Vite) - install, test, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Pruebas unitarias
+        run: npm run test
+      - name: Compilar SPA
+        run: npm run build
+
+  publish-artifacts:
+    name: Publicar artefactos (solo si todo está en verde)
+    needs: [backend-ci, frontend-ci]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Publicar API
+        run: dotnet publish backend/src/Licoreria.WebAPI/Licoreria.WebAPI.csproj -c Release -o artifacts/api /p:UseAppHost=false
+      - uses: actions/upload-artifact@v4
+        with:
+          name: api-publish
+          path: artifacts/api
+
+  docker-build:
+    name: Imágenes Docker multi-stage
+    needs: [backend-ci, frontend-ci]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construir imágenes
+        run: docker compose build api spa
+      - name: Tamaño de imágenes
+        run: docker images --format '{{.Repository}}: {{.Size}}' | grep -i licoreria

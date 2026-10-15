@@ -84,7 +84,7 @@ tasks:
   db:up:
     desc: Levanta PostgreSQL con Docker Compose
     cmds:
-      - docker compose up -d postgres
+      - docker compose up -d db
 
   db:down:
     desc: Detiene los servicios de base de datos

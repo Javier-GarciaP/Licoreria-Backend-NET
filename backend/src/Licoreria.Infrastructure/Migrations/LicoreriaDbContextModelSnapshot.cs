@@ -4188,6 +4188,10 @@ namespace Licoreria.Infrastructure.Migrations
                         .HasPrecision(14, 3)
                         .HasColumnType("numeric(14,3)");
 
+                    b.Property<string>("Ubicacion")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uuid");
 
