@@ -30,7 +30,15 @@ title: Manual del administrador
 ## Tablero de KPIs
 
 Consulta ventas, ocupación, ticket promedio, productos más vendidos, reservas y mermas
-para tomar decisiones.
+para tomar decisiones. Elige el periodo (hoy, últimos 7 o 30 días, mes actual o un rango
+personalizado) y todas las tarjetas y gráficas se actualizan.
+
+## Reportes y exportación
+
+En **Analítica → Reportes** hay una pestaña por reporte: ventas, productos, inventario, compras,
+propinas, mesoneros, caja, ocupación y mermas. Con los botones **PDF** y **Excel** descargas el reporte
+con el mismo periodo y filtros que ves en pantalla. La bitácora de **Auditoría** también se exporta.
+Si el PDF resulta demasiado largo, el sistema te pide acotar el periodo o exportar en Excel.
 
 ## Croquis, duplicados y plantillas
 

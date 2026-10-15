@@ -92,6 +92,7 @@ export default defineConfig({
                 'dev/06-modulos/caja-turnos',
                 'dev/06-modulos/club-reservas',
                 'dev/06-modulos/crm',
+                'dev/06-modulos/reportes',
                 'dev/06-modulos/finanzas',
                 'dev/06-modulos/contenido',
                 'dev/06-modulos/ia',
@@ -120,7 +121,7 @@ export default defineConfig({
             },
             {
               label: 'Guías',
-              items: ['dev/11-guias/commits', 'dev/11-guias/ramas'],
+              items: ['dev/11-guias/commits', 'dev/11-guias/ramas', 'dev/11-guias/pruebas'],
             },
             {
               label: 'Decisiones (ADR)',
