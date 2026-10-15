@@ -66,4 +66,5 @@ jobs:
       - name: Construir imágenes
         run: docker compose build api spa
       - name: Tamaño de imágenes
-        run: docker images --format '{{.Repository}}: {{.Size}}' | grep -i licoreria
+        run: |
+          docker images --format '{{.Repository}} {{.Size}}' | grep -i licoreria
