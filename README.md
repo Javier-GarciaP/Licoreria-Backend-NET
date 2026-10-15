@@ -124,22 +124,6 @@ Cada fase tiene su propio documento con alcance, decisiones, evidencias y prueba
 | 4 | Frontend React + Docker | Completada | [fase-4](docs/dev/10-fases/fase-4.md) |
 | 5 | Contenerización multi-stage, Docker Compose y CI/CD | Completada | [fase-5](docs/dev/09-operaciones/fase5-contenerizacion.md) |
 
-### Fase 5: correcciones y ajustes documentados en spec
-
-Durante la entrega de la Fase 5 se corrigieron y unificaron estos puntos, registrados en el cambio OpenSpec
-[`fase-5-devops-y-ajustes-ui`](openspec/changes/archive/2026-10-15-fase-5-devops-y-ajustes-ui) (guía detallada en
-[Fase 5](docs/dev/09-operaciones/fase5-contenerizacion.md)):
-
-| Corrección | Detalle |
-| :--- | :--- |
-| Orquestación | Servicios `db`, `api` y `spa` (5432, 5000, 8080) con healthchecks y `depends_on` por salud; se corrigió la API que quedaba `unhealthy` por contenedores huérfanos del esquema anterior (`docker compose down --remove-orphans`). |
-| Imagen de la API | Pasa a `aspnet:10.0-alpine` y se publica solo para `linux-musl-x64`; la SPA queda en ~106 MB y la API en ~248 MB en disco (pendiente recortar). |
-| CI | `ci.yml` fallaba por YAML inválido (`": "` sin comillas); corregido. Publica artefacto e imágenes solo si backend y frontend pasan. |
-| Dominio | `StockProducto.Ubicacion` con migración `UbicacionStock`. |
-| Dashboard | Más KPIs y paneles, exportación a PDF y barra de filtros sin desborde (relleno inferior de la tarjeta). |
-| Patrón visual | Listados con toolbar (buscador, filtros y acción), sin encabezado de página ni pestañas fuera de Salón, Envases abiertos en el sidebar y nuevo logo de corcho de champán. |
-| Rol Cajero | Sin Dashboard, Categorías y marcas, Unidades, Kardex ni Tasas de cambio; inicia en el POS (restricción de interfaz). |
-
 > Las fases académicas se rigen por lo indicado por el docente; las mejoras de estructura,
 > documentación e infraestructura del repositorio son independientes. Ver el
 > [roadmap](docs/dev/10-fases/roadmap.md). La API final está descrita en la
