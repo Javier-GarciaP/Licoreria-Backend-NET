@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardBody, CardHeader, CardTitle, DataTable, FiltroDropdown, Pill } from '@licoreria/ui';
 import type { EnvaseAbierto, EstadoEnvase } from '@licoreria/types';
 import { envasesApi } from '@licoreria/api-client';
-import { InventarioTabs } from '../components/InventarioTabs';
 import { useRealtime } from '../hooks/useRealtime';
 import { formatDateTime } from '../lib/format';
 
@@ -36,7 +35,6 @@ export function EnvasesAbiertosPage() {
 
   return (
     <div className="mx-auto flex max-w-page flex-col gap-4">
-      <InventarioTabs />
 
       <Card>
         <CardHeader className="flex flex-wrap items-center justify-between gap-3">

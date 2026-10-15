@@ -375,7 +375,7 @@ export function FormularioProducto({
 
   return (
     <form
-      className="flex h-full min-h-0 flex-col gap-4"
+      className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto app-scroll lg:overflow-hidden"
       onSubmit={productoForm.handleSubmit((datos) => onGuardar(completarSkus(datos)))}
       onKeyDown={avanzarConEnter}
       noValidate
@@ -397,7 +397,7 @@ export function FormularioProducto({
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:h-full lg:items-start lg:grid-cols-[minmax(0,35%)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-4 lg:min-h-0 lg:flex-1 lg:items-start lg:grid-cols-[minmax(0,35%)_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)]">
         <aside className="min-w-0 lg:self-start">
           <PanelImagenProducto
             imagenUrl={imagenUrl ?? null}
@@ -410,7 +410,7 @@ export function FormularioProducto({
           />
         </aside>
 
-        <div className="flex min-w-0 flex-col gap-4 lg:overflow-y-auto lg:pr-1">
+        <div className="flex min-w-0 flex-col gap-4 lg:h-full lg:overflow-y-auto lg:pr-1 app-scroll">
           {metricas && producto && (
             <section className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
               <Metrica etiqueta="Variantes" valor={String(metricas.variantes)} />

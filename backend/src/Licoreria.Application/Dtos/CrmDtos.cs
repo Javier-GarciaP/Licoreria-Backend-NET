@@ -31,6 +31,13 @@ public sealed record ClienteEditarDto(
     string? Direccion,
     bool Activo);
 
+public sealed record ClienteVentaDto(
+    Guid Id,
+    DateTime Fecha,
+    decimal TotalUSD,
+    string? NumeroComprobante,
+    EstadoVenta Estado);
+
 public sealed record PuntosMovimientoDto(
     Guid Id,
     TipoMovimientoPuntos Tipo,
@@ -51,7 +58,8 @@ public sealed record CuentaPorCobrarDto(
     decimal MontoUSD,
     decimal SaldoUSD,
     DateTime Vencimiento,
-    EstadoCuentaPorCobrar Estado);
+    EstadoCuentaPorCobrar Estado,
+    Guid? VentaId = null);
 
 public sealed record CuentaPorCobrarCrearDto(
     Guid ClienteId,

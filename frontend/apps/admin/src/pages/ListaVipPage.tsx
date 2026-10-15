@@ -4,23 +4,25 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import {
   ActionMenu,
+  Buscador,
+  FiltroDropdown,
+  LimpiarFiltros,
   Button,
   Card,
   CardBody,
   CardHeader,
-  CardTitle,
   DataTable,
   Input,
   Modal,
-  PageHeader,
   Pill,
 } from '@licoreria/ui';
 import type { ListaVip } from '@licoreria/types';
 import { listaVipApi } from '@licoreria/api-client';
 import { mensajeDeError } from '../lib/api';
+import { contiene } from '../lib/filtros';
 
 const esquema = z.object({
   nombre: z.string().min(1, 'Ingresa el nombre'),
@@ -36,9 +38,23 @@ export function ListaVipPage() {
   const queryClient = useQueryClient();
   const [editando, setEditando] = useState<ListaVip | null>(null);
   const [abierto, setAbierto] = useState(false);
+  const [busqueda, setBusqueda] = useState('');
+  const [estado, setEstado] = useState('');
   const [eliminar, setEliminar] = useState<ListaVip | null>(null);
 
   const invitados = useQuery({ queryKey: ['lista-vip'], queryFn: listaVipApi.listar });
+
+  const filas = (invitados.data ?? []).filter((fila) => {
+    if (!contiene(`${fila.nombre} ${fila.documento ?? ''} ${fila.telefono ?? ''}`, busqueda)) return false;
+    if (estado === 'activos' && !fila.activo) return false;
+    if (estado === 'inactivos' && fila.activo) return false;
+    return true;
+  });
+  const hayFiltros = Boolean(busqueda || estado);
+  const limpiarFiltros = () => {
+    setBusqueda('');
+    setEstado('');
+  };
   const form = useForm<Formulario>({
     resolver: zodResolver(esquema),
     defaultValues: { nombre: '', documento: '', telefono: '', notas: '', activo: true },
@@ -94,24 +110,39 @@ export function ListaVipPage() {
   };
 
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader
-        title="Lista VIP"
-        subtitle="Invitados y control de acceso preferente."
-        actions={<Button onClick={abrirCrear}>Agregar invitado</Button>}
-      />
-
+    <div className="mx-auto flex max-w-page flex-col gap-4">
       <Card>
-        <CardHeader>
-          <CardTitle>Invitados</CardTitle>
-          <span className="text-xs text-muted-foreground">{invitados.data?.length ?? 0} en la lista</span>
+        <CardHeader className="flex flex-col items-stretch gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Buscador placeholder="Buscar nombre, documento o teléfono…" value={busqueda} onCambio={setBusqueda} />
+            <div className="ml-auto">
+              <Button leftIcon={<Plus size={15} />} onClick={abrirCrear}>
+                Agregar invitado
+              </Button>
+            </div>
+          </div>
+          <div className="border-b border-border" />
+          <div className="flex flex-wrap items-center gap-2">
+            <FiltroDropdown
+              label="Estado"
+              opciones={[
+                { valor: 'activos', etiqueta: 'Activos' },
+                { valor: 'inactivos', etiqueta: 'Inactivos' },
+              ]}
+              valor={estado}
+              onChange={setEstado}
+            />
+            <div className="ml-auto">
+              <LimpiarFiltros activo={hayFiltros} onClick={limpiarFiltros} />
+            </div>
+          </div>
         </CardHeader>
         <CardBody>
           <DataTable<ListaVip>
-            rows={invitados.data ?? []}
+            rows={filas}
             loading={invitados.isLoading}
             rowKey={(fila) => fila.id}
-            empty="La lista VIP está vacía."
+            empty={hayFiltros ? 'Sin invitados con esos filtros.' : 'La lista VIP está vacía.'}
             columns={[
               { key: 'nombre', header: 'Nombre', render: (fila) => fila.nombre },
               { key: 'documento', header: 'Documento', render: (fila) => fila.documento ?? '—' },

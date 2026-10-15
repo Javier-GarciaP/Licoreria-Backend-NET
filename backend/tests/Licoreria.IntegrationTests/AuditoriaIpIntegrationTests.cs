@@ -60,7 +60,7 @@ public class AuditoriaIpIntegrationTests
         return (await db.AuditLogs.SingleAsync(l => l.EntidadId == id && l.Accion == "crear")).Ip;
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task ProxyPrivado_ConXForwardedFor_RegistraLaIpDelCliente()
     {
         var ip = await CrearCategoriaDesdeAsync("172.18.0.5", "198.51.100.23");
@@ -68,7 +68,7 @@ public class AuditoriaIpIntegrationTests
         Assert.Equal("198.51.100.23", ip);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task ConexionPublica_IgnoraElXForwardedForFalsificado()
     {
         var ip = await CrearCategoriaDesdeAsync("203.0.113.9", "1.2.3.4");

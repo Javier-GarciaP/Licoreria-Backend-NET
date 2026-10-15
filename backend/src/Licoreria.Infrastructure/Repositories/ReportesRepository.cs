@@ -354,4 +354,223 @@ public class ReportesRepository : IReportesRepository
 
         return (ventasUsd, porMotivo);
     }
+
+    public async Task<IReadOnlyList<ProductoVendidoCrudoDto>> ObtenerProductosVendidosAsync(
+        DateTime desde,
+        DateTime hasta,
+        CancellationToken cancellationToken = default)
+    {
+        var vendidos = await _context.DetallesVenta
+            .AsNoTracking()
+            .Where(d => !d.IsDeleted
+                && !d.Venta.IsDeleted
+                && d.Venta.Estado == EstadoVenta.Completada
+                && d.Venta.Fecha >= desde
+                && d.Venta.Fecha <= hasta)
+            .GroupBy(d => d.VarianteId)
+            .Select(g => new
+            {
+                VarianteId = g.Key,
+                Unidades = g.Sum(d => d.Cantidad),
+                Ingreso = g.Sum(d => d.EsCortesia
+                    ? 0m
+                    : Math.Max(0m, d.Cantidad * d.PrecioUnitarioUSD - d.DescuentoUSD))
+            })
+            .ToListAsync(cancellationToken);
+
+        var existencias = await _context.StockProductos
+            .AsNoTracking()
+            .Where(s => !s.IsDeleted)
+            .GroupBy(s => s.VarianteId)
+            .Select(g => new { VarianteId = g.Key, Existencia = g.Sum(s => s.Cantidad) })
+            .ToDictionaryAsync(x => x.VarianteId, x => x.Existencia, cancellationToken);
+
+        var ids = vendidos.Select(v => v.VarianteId)
+            .Concat(existencias.Where(e => e.Value > 0m).Select(e => e.Key))
+            .Distinct()
+            .ToList();
+
+        var variantes = await _context.ProductoVariantes
+            .AsNoTracking()
+            .Where(v => ids.Contains(v.Id))
+            .Select(v => new { v.Id, v.Sku, ProductoNombre = v.Producto.Nombre, VarianteNombre = v.Nombre, v.IsDeleted })
+            .ToDictionaryAsync(v => v.Id, cancellationToken);
+
+        var ventasPorVariante = vendidos.ToDictionary(v => v.VarianteId);
+
+        return ids
+            .Where(variantes.ContainsKey)
+            .Where(id => ventasPorVariante.ContainsKey(id) || !variantes[id].IsDeleted)
+            .Select(id =>
+            {
+                var variante = variantes[id];
+                ventasPorVariante.TryGetValue(id, out var venta);
+                existencias.TryGetValue(id, out var existencia);
+
+                return new ProductoVendidoCrudoDto(
+                    id,
+                    variante.Sku,
+                    variante.ProductoNombre,
+                    variante.VarianteNombre,
+                    venta?.Unidades ?? 0m,
+                    venta?.Ingreso ?? 0m,
+                    existencia);
+            })
+            .ToList();
+    }
+
+    public async Task<IReadOnlyList<OcupacionZonaCrudaDto>> ObtenerOcupacionAsync(
+        DateTime desde,
+        DateTime hasta,
+        DateTime ahora,
+        CancellationToken cancellationToken = default)
+    {
+        var mesas = await _context.Mesas
+            .AsNoTracking()
+            .Where(m => !m.IsDeleted && m.Activa && !m.Zona.IsDeleted)
+            .Select(m => new { m.Id, m.ZonaId, ZonaNombre = m.Zona.Nombre })
+            .ToListAsync(cancellationToken);
+
+        var mesaPorId = mesas.ToDictionary(m => m.Id);
+
+        var ocupadas = await _context.SesionesMesa
+            .AsNoTracking()
+            .Where(s => !s.IsDeleted
+                && s.MesaId != null
+                && s.CerradaEn == null
+                && (s.Cuenta == null || s.Cuenta.Estado != EstadoCuenta.Cerrada))
+            .Select(s => s.MesaId!.Value)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        var sesiones = await _context.SesionesMesa
+            .AsNoTracking()
+            .Where(s => !s.IsDeleted && s.AbiertaEn >= desde && s.AbiertaEn <= hasta)
+            .Select(s => new { s.MesaId, s.AbiertaEn, s.CerradaEn })
+            .ToListAsync(cancellationToken);
+
+        (Guid? ZonaId, string Zona) ZonaDe(Guid? mesaId)
+            => mesaId is { } id && mesaPorId.TryGetValue(id, out var mesa)
+                ? (mesa.ZonaId, mesa.ZonaNombre)
+                : (null, "Sin zona");
+
+        // Las sesiones sin mesa asignada no tienen zona: se agrupan bajo Guid.Empty ("Sin zona").
+        var filas = new Dictionary<Guid, (string Zona, int Activas, int Ocupadas, int Sesiones, int Abiertas, decimal Minutos)>();
+
+        void Acumular(Guid? zonaId, string zona, int activas = 0, int ocupadas = 0, int sesion = 0, int abiertas = 0, decimal minutos = 0m)
+        {
+            var clave = zonaId ?? Guid.Empty;
+            filas.TryGetValue(clave, out var actual);
+            filas[clave] = (zona, actual.Activas + activas, actual.Ocupadas + ocupadas, actual.Sesiones + sesion, actual.Abiertas + abiertas, actual.Minutos + minutos);
+        }
+
+        foreach (var mesa in mesas)
+        {
+            Acumular(mesa.ZonaId, mesa.ZonaNombre, activas: 1, ocupadas: ocupadas.Contains(mesa.Id) ? 1 : 0);
+        }
+
+        foreach (var sesion in sesiones)
+        {
+            var (zonaId, zona) = ZonaDe(sesion.MesaId);
+            var abierta = sesion.CerradaEn is null;
+            var minutos = (decimal)((sesion.CerradaEn ?? ahora) - sesion.AbiertaEn).TotalMinutes;
+            Acumular(zonaId, zona, sesion: 1, abiertas: abierta ? 1 : 0, minutos: Math.Max(0m, minutos));
+        }
+
+        return filas
+            .Select(f => new OcupacionZonaCrudaDto(
+                f.Key == Guid.Empty ? null : f.Key, f.Value.Zona, f.Value.Activas, f.Value.Ocupadas, f.Value.Sesiones, f.Value.Abiertas, f.Value.Minutos))
+            .OrderBy(f => f.Zona)
+            .ToList();
+    }
+
+    public async Task<IReadOnlyList<ReservasPorEstadoDto>> ObtenerReservasPorEstadoAsync(
+        DateTime desde,
+        DateTime hasta,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Reservas
+            .AsNoTracking()
+            .Where(r => !r.IsDeleted && r.FechaHora >= desde && r.FechaHora <= hasta)
+            .GroupBy(r => r.Estado)
+            .OrderBy(g => g.Key)
+            .Select(g => new ReservasPorEstadoDto(g.Key, g.Count()))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<TurnoCajaDto>> ObtenerTurnosCerradosAsync(
+        DateTime desde,
+        DateTime hasta,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.SesionesCaja
+            .AsNoTracking()
+            .Where(s => !s.IsDeleted
+                && s.Estado == EstadoSesionCaja.Cerrada
+                && s.CerradaEn != null
+                && s.CerradaEn >= desde
+                && s.CerradaEn <= hasta)
+            .OrderBy(s => s.CerradaEn)
+            .Select(s => new TurnoCajaDto(
+                s.Id,
+                s.UsuarioId,
+                s.Usuario.NombreCompleto,
+                s.AbiertaEn,
+                s.CerradaEn!.Value,
+                s.MontoEsperado,
+                s.MontoContado,
+                s.Descuadre))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<MesoneroCrudoDto>> ObtenerActividadMesonerosAsync(
+        DateTime desde,
+        DateTime hasta,
+        CancellationToken cancellationToken = default)
+    {
+        var grupos = await _context.ComandaDetalles
+            .AsNoTracking()
+            .Where(d => !d.IsDeleted
+                && !d.Comanda.IsDeleted
+                && d.Comanda.CreatedAt >= desde
+                && d.Comanda.CreatedAt <= hasta)
+            .GroupBy(d => d.Comanda.CreatedBy)
+            .Select(g => new
+            {
+                Mesonero = g.Key,
+                Comandas = g.Select(d => d.ComandaId).Distinct().Count(),
+                Cuentas = g.Select(d => d.Comanda.CuentaId).Distinct().Count(),
+                Totales = g.Count(),
+                Cancelados = g.Count(d => d.Estado == EstadoItemComanda.Cancelado),
+                Servidos = g.Count(d => d.Estado == EstadoItemComanda.Preparado || d.Estado == EstadoItemComanda.Entregado),
+                Ventas = g.Sum(d => d.Estado != EstadoItemComanda.Cancelado && !d.EsCortesia
+                    ? d.Cantidad * d.PrecioUnitarioUSD
+                    : 0m),
+                ConTiempo = g.Count(d => d.ServidoEn != null),
+                Segundos = g.Sum(d => d.ServidoEn != null
+                    ? Math.Max(0d, (d.ServidoEn.Value - d.CreatedAt).TotalSeconds)
+                    : 0d)
+            })
+            .ToListAsync(cancellationToken);
+
+        var ids = grupos.Where(g => g.Mesonero != null).Select(g => g.Mesonero!.Value).ToList();
+        var nombres = await _context.Usuarios
+            .AsNoTracking()
+            .Where(u => ids.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id, u => u.NombreCompleto, cancellationToken);
+
+        return grupos
+            .Select(g => new MesoneroCrudoDto(
+                g.Mesonero,
+                g.Mesonero is { } id && nombres.TryGetValue(id, out var nombre) ? nombre : "Sin asignar",
+                g.Comandas,
+                g.Cuentas,
+                g.Totales,
+                g.Cancelados,
+                g.Servidos,
+                g.Ventas,
+                g.ConTiempo,
+                g.Segundos))
+            .ToList();
+    }
 }

@@ -87,6 +87,7 @@ public class ComandaDetalleConfiguration : IEntityTypeConfiguration<ComandaDetal
         builder.Property(d => d.AreaDestino).HasConversion<string>().HasMaxLength(20);
         builder.Property(d => d.Estado).HasConversion<string>().HasMaxLength(20);
         builder.Property(d => d.Reservado).HasDefaultValue(false);
+        builder.Property(d => d.ServidoEn);
         builder.Ignore(d => d.SubtotalUSD);
 
         builder.HasOne(d => d.Comanda)

@@ -24,7 +24,7 @@ public partial class ApiEndpointsTests
         throw new InvalidOperationException("La mesa no aparece en el listado.");
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Mesa_ConReservaDeEstaJornada_AparecePorReservadaEnLaOperacion()
     {
         var mesaId = await CrearMesaAsync();
@@ -52,7 +52,7 @@ public partial class ApiEndpointsTests
         Assert.True(await MesaReservadaAsync(mesaId));
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Mesa_ConReservaLejana_NoAparecePorReservadaEnLaOperacionDeHoy()
     {
         var mesaId = await CrearMesaAsync();

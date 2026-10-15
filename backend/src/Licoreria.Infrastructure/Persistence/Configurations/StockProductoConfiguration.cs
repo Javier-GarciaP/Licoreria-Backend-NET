@@ -23,6 +23,7 @@ public class StockProductoConfiguration : IEntityTypeConfiguration<StockProducto
         builder.Property(s => s.CantidadReservada).HasPrecision(14, 3);
         builder.Property(s => s.StockMinimo).HasPrecision(14, 3);
         builder.Property(s => s.StockMaximo).HasPrecision(14, 3);
+        builder.Property(s => s.Ubicacion).HasMaxLength(80);
         builder.Ignore(s => s.BajoMinimo);
         builder.Ignore(s => s.Disponible);
 

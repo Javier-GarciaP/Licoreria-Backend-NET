@@ -26,3 +26,13 @@ if (!window.matchMedia) {
     }),
   });
 }
+
+// recharts (ResponsiveContainer) observa su contenedor; jsdom no trae ResizeObserver.
+if (!('ResizeObserver' in globalThis)) {
+  class ResizeObserverFalso {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+  Object.defineProperty(globalThis, 'ResizeObserver', { writable: true, value: ResizeObserverFalso });
+}

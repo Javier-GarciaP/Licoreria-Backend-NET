@@ -31,10 +31,43 @@ tasks:
       - dotnet format Licoreria.slnx
 
   backend:test:
-    desc: Ejecuta las pruebas del backend
+    desc: Ejecuta solo las pruebas unitarias del backend (no necesitan PostgreSQL)
+    dir: backend
+    cmds:
+      - dotnet test Licoreria.slnx --filter "Category!=Integration"
+
+  backend:test:integration:
+    desc: Ejecuta solo las pruebas de integración (exigen PostgreSQL; ver LICORERIA_TEST_DB)
+    dir: backend
+    env:
+      LICORERIA_TESTS_REQUIRE_DB: 'true'
+    cmds:
+      - dotnet test Licoreria.slnx --filter "Category=Integration"
+
+  backend:test:all:
+    desc: Ejecuta todas las pruebas; las de integración se omiten si no hay PostgreSQL
     dir: backend
     cmds:
       - dotnet test Licoreria.slnx
+
+  backend:coverage:
+    desc: Mide la cobertura de las pruebas unitarias, genera el reporte HTML y verifica el umbral
+    cmds:
+      - rm -rf artifacts/coverage
+      - dotnet tool restore
+      - >-
+        dotnet test backend/tests/Licoreria.UnitTests
+        --settings backend/coverage.runsettings
+        --collect:"XPlat Code Coverage"
+        --results-directory artifacts/coverage/raw
+      - >-
+        dotnet reportgenerator
+        "-reports:artifacts/coverage/raw/**/coverage.cobertura.xml"
+        "-targetdir:artifacts/coverage/report"
+        "-reporttypes:Html;JsonSummary;TextSummary;MarkdownSummaryGithub"
+      - cat artifacts/coverage/report/Summary.txt
+      - node scripts/coverage/verificar-umbral.mjs artifacts/coverage/report/Summary.json
+      - 'echo "Reporte HTML: artifacts/coverage/report/index.html"'
 
   backend:openapi:
     desc: Genera el contrato OpenAPI desde el código y exporta el YAML
@@ -51,7 +84,7 @@ tasks:
   db:up:
     desc: Levanta PostgreSQL con Docker Compose
     cmds:
-      - docker compose up -d postgres
+      - docker compose up -d db
 
   db:down:
     desc: Detiene los servicios de base de datos

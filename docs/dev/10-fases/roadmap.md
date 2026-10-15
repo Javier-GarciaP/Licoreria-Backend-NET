@@ -86,6 +86,8 @@ Documentada en [Fase 4](fase-4.md) y [guía de contribución del frontend](../..
 
 ## Fase 5 · Despliegue
 
+> Entregada: ver [Fase 5 · Contenerización y CI/CD](../09-operaciones/fase5-contenerizacion.md).
+
 **Alcance**
 
 - Contenedores y CI/CD.

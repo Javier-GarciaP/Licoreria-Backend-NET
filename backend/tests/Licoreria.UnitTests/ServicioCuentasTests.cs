@@ -6,6 +6,7 @@ using Licoreria.Domain.Common;
 using Licoreria.Domain.Entities;
 using Licoreria.Domain.Enums;
 using Licoreria.Domain.Services;
+using Licoreria.UnitTests.Support;
 using Moq;
 
 namespace Licoreria.UnitTests;
@@ -79,9 +80,7 @@ public sealed class ServicioCuentasTests
             .ReturnsAsync(Tasa);
 
         // La transacción ejecuta la operación; el guardado real lo hace la unidad de trabajo.
-        _unitOfWork
-            .Setup(u => u.EjecutarEnTransaccionAsync(It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>()))
-            .Returns((Func<CancellationToken, Task> operacion, CancellationToken ct) => operacion(ct));
+        _unitOfWork.EjecutarOperaciones();
         _kardex
             .Setup(k => k.DesglosarInsumosAsync(It.IsAny<Guid>(), It.IsAny<decimal>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Guid variante, decimal cantidad, CancellationToken _) => new List<KardexInsumo> { new(variante, cantidad) });
@@ -145,6 +144,21 @@ public sealed class ServicioCuentasTests
             () => CrearServicio().RegistrarAbonoAsync(_cuentaId, new RegistrarAbonoCuentaDto(_metodoId, 3650m, Moneda.BS)));
 
         Assert.Contains("tasa de cambio", excepcion.Message);
+    }
+
+    [Fact]
+    public async Task RegistrarAbonoAsync_ConMetodoCredito_LanzaReglaDeNegocio()
+    {
+        var creditoId = Guid.NewGuid();
+        _metodos
+            .Setup(m => m.GetByIdAsync(creditoId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MetodoPago { Codigo = MetodoPago.CodigoCredito, Nombre = "Crédito" });
+
+        var excepcion = await Assert.ThrowsAsync<ReglaNegocioException>(
+            () => CrearServicio().RegistrarAbonoAsync(_cuentaId, new RegistrarAbonoCuentaDto(creditoId, 50m, Moneda.USD)));
+
+        Assert.Contains("cerrar la cuenta", excepcion.Message);
+        Assert.Equal(0m, _cuenta.TotalAbonado);
     }
 
     [Fact]
@@ -467,6 +481,27 @@ public sealed class ServicioCuentasTests
         Assert.Equal(["liberar", "venta"], orden);
         Assert.Equal(EstadoCuenta.Cerrada, _cuenta.Estado);
         Assert.NotNull(_cuenta.SesionMesa.CerradaEn);
+    }
+
+    [Fact]
+    public async Task CerrarCuentaAsync_ConClienteYVencimiento_LosPasaALaVenta()
+    {
+        var clienteId = Guid.NewGuid();
+        var vence = new DateTime(2026, 12, 1, 0, 0, 0, DateTimeKind.Utc);
+        RegistrarVentaDto? enviado = null;
+        _ventas
+            .Setup(v => v.RegistrarVentaAsync(It.IsAny<RegistrarVentaDto>(), It.IsAny<CancellationToken>()))
+            .Callback<RegistrarVentaDto, CancellationToken>((d, _) => enviado = d)
+            .ReturnsAsync(VentaRegistrada());
+
+        var venta = await CrearServicio().CerrarCuentaAsync(
+            _cuentaId,
+            new CerrarCuentaDto([new VentaPagoDto(_metodoId, 100m, Moneda.USD)], ClienteId: clienteId, VencimientoCredito: vence));
+
+        Assert.NotNull(venta);
+        Assert.Equal(clienteId, enviado!.ClienteId);
+        Assert.Equal(vence, enviado.VencimientoCredito);
+        Assert.Equal(_cuenta.Id, enviado.CuentaId);
     }
 
     [Fact]

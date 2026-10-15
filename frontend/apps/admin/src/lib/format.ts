@@ -39,3 +39,7 @@ export function haceCuanto(iso: string): string {
   const horas = Math.floor(minutos / 60);
   return `hace ${horas} h`;
 }
+
+/** Porcentaje con coma decimal (`12,5%`); `decimales` fija los decimales mostrados. */
+export const formatPercent = (value: number, decimales = 1) =>
+  `${new Intl.NumberFormat('es-VE', { minimumFractionDigits: decimales, maximumFractionDigits: decimales }).format(Number(value ?? 0))}%`;

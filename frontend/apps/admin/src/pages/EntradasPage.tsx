@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { XCircle } from 'lucide-react';
+import { Plus, XCircle } from 'lucide-react';
 import {
   ActionMenu,
+  Buscador,
+  FiltroDropdown,
+  LimpiarFiltros,
   Button,
   Card,
   CardBody,
@@ -12,13 +15,13 @@ import {
   DataTable,
   Input,
   Modal,
-  PageHeader,
   Select,
   StatusBadge,
 } from '@licoreria/ui';
 import type { Entrada } from '@licoreria/types';
 import { contenidoApi, entradasApi } from '@licoreria/api-client';
 import { mensajeDeError } from '../lib/api';
+import { contiene } from '../lib/filtros';
 import { formatDateTime, formatUSD } from '../lib/format';
 
 export function EntradasPage() {
@@ -28,8 +31,20 @@ export function EntradasPage() {
   const [moneda, setMoneda] = useState<'USD' | 'BS'>('USD');
   const [eventoId, setEventoId] = useState('');
   const [codigo, setCodigo] = useState('');
+  const [busqueda, setBusqueda] = useState('');
+  const [estado, setEstado] = useState('');
 
   const entradas = useQuery({ queryKey: ['entradas'], queryFn: () => entradasApi.listar() });
+  const filas = (entradas.data?.items ?? []).filter(
+    (fila) => contiene(`${fila.codigo} ${fila.eventoTitulo ?? ''}`, busqueda) && (!estado || fila.estado === estado),
+  );
+  const estadosDisponibles = Array.from(new Set((entradas.data?.items ?? []).map((fila) => fila.estado)));
+  const hayFiltros = Boolean(busqueda || estado);
+  const limpiarFiltros = () => {
+    setBusqueda('');
+    setEstado('');
+  };
+
   const eventos = useQuery({ queryKey: ['eventos', 'todos'], queryFn: contenidoApi.eventos });
 
   const invalidar = () => queryClient.invalidateQueries({ queryKey: ['entradas'] });
@@ -66,13 +81,7 @@ export function EntradasPage() {
   });
 
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader
-        title="Entradas"
-        subtitle="Emisión y control de acceso a eventos."
-        actions={<Button onClick={() => setEmitiendo(true)}>Emitir entrada</Button>}
-      />
-
+    <div className="mx-auto flex max-w-page flex-col gap-4">
       <Card>
         <CardHeader>
           <CardTitle>Validar por código</CardTitle>
@@ -100,16 +109,34 @@ export function EntradasPage() {
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Entradas</CardTitle>
-          <span className="text-xs text-muted-foreground">{entradas.data?.length ?? 0} emitidas</span>
+        <CardHeader className="flex flex-col items-stretch gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Buscador placeholder="Buscar código o evento…" value={busqueda} onCambio={setBusqueda} />
+            <div className="ml-auto">
+              <Button leftIcon={<Plus size={15} />} onClick={() => setEmitiendo(true)}>
+                Emitir entrada
+              </Button>
+            </div>
+          </div>
+          <div className="border-b border-border" />
+          <div className="flex flex-wrap items-center gap-2">
+            <FiltroDropdown
+              label="Estado"
+              opciones={estadosDisponibles.map((valor) => ({ valor, etiqueta: valor }))}
+              valor={estado}
+              onChange={setEstado}
+            />
+            <div className="ml-auto">
+              <LimpiarFiltros activo={hayFiltros} onClick={limpiarFiltros} />
+            </div>
+          </div>
         </CardHeader>
         <CardBody>
           <DataTable<Entrada>
-            rows={entradas.data ?? []}
+            rows={filas}
             loading={entradas.isLoading}
             rowKey={(fila) => fila.id}
-            empty="Sin entradas emitidas."
+            empty={hayFiltros ? 'Sin entradas con esos filtros.' : 'Sin entradas emitidas.'}
             columns={[
               { key: 'codigo', header: 'Código', render: (fila) => <span className="num">{fila.codigo}</span> },
               { key: 'evento', header: 'Evento', render: (fila) => fila.eventoTitulo ?? '—' },

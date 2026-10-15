@@ -57,6 +57,16 @@ public class ClientesController : ControllerBase
     public async Task<IActionResult> Eliminar(Guid id, CancellationToken cancellationToken)
         => await _servicio.EliminarClienteAsync(id, cancellationToken) ? NoContent() : NotFound();
 
+    [HttpGet("{id:guid}/ventas")]
+    public async Task<ActionResult<ResultadoPaginado<ClienteVentaDto>>> ObtenerVentas(
+        Guid id,
+        [FromQuery] PaginacionRequest paginacion,
+        CancellationToken cancellationToken)
+    {
+        var ventas = await _servicio.ObtenerVentasDeClienteAsync(id, paginacion, cancellationToken);
+        return ventas is null ? NotFound() : Ok(ventas);
+    }
+
     [HttpGet("{id:guid}/puntos")]
     public async Task<ActionResult<IReadOnlyList<PuntosMovimientoDto>>> ObtenerPuntos(Guid id, CancellationToken cancellationToken)
         => Ok(await _servicio.ObtenerPuntosAsync(id, cancellationToken));

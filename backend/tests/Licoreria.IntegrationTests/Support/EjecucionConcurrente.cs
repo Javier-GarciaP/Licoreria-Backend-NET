@@ -52,4 +52,38 @@ public static class EjecucionConcurrente
 
         return await todas;
     }
+
+    public const int RepeticionesPorDefecto = 10;
+
+    /// <summary>Repite un escenario de carrera <see cref="RepeticionesPorDefecto"/> veces.</summary>
+    public static Task RepetirAsync(Func<Task> escenario) => RepetirAsync(RepeticionesPorDefecto, escenario);
+
+    /// <summary>
+    /// Repite un escenario de carrera para reducir los falsos verdes: una sola ejecución puede ganar la carrera por azar.
+    /// El escenario debe crear sus propios datos en cada repetición y verificar invariantes, no el orden de llegada.
+    /// Si una repetición falla, la excepción indica cuál.
+    /// </summary>
+    public static async Task RepetirAsync(int veces, Func<Task> escenario)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(veces, 1);
+
+        for (var repeticion = 1; repeticion <= veces; repeticion++)
+        {
+            try
+            {
+                await escenario();
+            }
+            catch (Exception ex)
+            {
+                throw new RepeticionFallidaException(repeticion, veces, ex);
+            }
+        }
+    }
+}
+
+/// <summary>Una repetición de un escenario de carrera falló; <see cref="Exception.InnerException"/> trae la causa.</summary>
+public sealed class RepeticionFallidaException(int repeticion, int total, Exception causa)
+    : Exception($"El escenario falló en la repetición {repeticion} de {total}: {causa.Message}", causa)
+{
+    public int Repeticion { get; } = repeticion;
 }

@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, Plus } from 'lucide-react';
 import {
   ActionMenu,
   Button,
@@ -15,7 +15,6 @@ import {
   DataTable,
   Input,
   Modal,
-  PageHeader,
   Pill,
 } from '@licoreria/ui';
 import type { Pagina } from '@licoreria/types';
@@ -187,26 +186,13 @@ export function PaginasPage() {
   };
 
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader
-        title="Contenido"
-        subtitle="Páginas, secciones y bloques de la web."
-        actions={
-          <Button
-            onClick={() => {
-              form.reset(VACIO);
-              setCreando(true);
-            }}
-          >
-            Nueva página
-          </Button>
-        }
-      />
+    <div className="mx-auto flex max-w-page flex-col gap-4">
       <ContenidoTabs />
 
       <Card>
         <CardHeader>
           <CardTitle>Páginas</CardTitle>
+          <Button leftIcon={<Plus size={15} />} onClick={() => { form.reset(VACIO); setCreando(true); }}>Nueva página</Button>
         </CardHeader>
         <CardBody>
           <DataTable<Pagina>

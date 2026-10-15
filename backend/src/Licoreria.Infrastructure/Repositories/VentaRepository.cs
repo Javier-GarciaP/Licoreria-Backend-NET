@@ -17,7 +17,8 @@ public class VentaRepository : IVentaRepository
         => _context.Ventas
             .Include(v => v.Detalles).ThenInclude(d => d.Variante).ThenInclude(va => va.Producto)
             .Include(v => v.Pagos).ThenInclude(p => p.MetodoPago)
-            .Include(v => v.Comprobante);
+            .Include(v => v.Comprobante)
+            .Include(v => v.Cliente);
 
     public Task<ResultadoPaginado<Venta>> ObtenerPaginadoAsync(
         PaginacionRequest paginacion,
@@ -45,6 +46,17 @@ public class VentaRepository : IVentaRepository
 
         return consulta.OrderByDescending(v => v.Fecha).PaginarAsync(paginacion, cancellationToken);
     }
+
+    public Task<ResultadoPaginado<Venta>> ObtenerPorClienteAsync(
+        Guid clienteId,
+        PaginacionRequest paginacion,
+        CancellationToken cancellationToken = default)
+        => _context.Ventas
+            .Include(v => v.Comprobante)
+            .AsNoTracking()
+            .Where(v => !v.IsDeleted && v.ClienteId == clienteId)
+            .OrderByDescending(v => v.Fecha)
+            .PaginarAsync(paginacion, cancellationToken);
 
     public Task<Venta?> ObtenerConDetalleAsync(Guid id, CancellationToken cancellationToken = default)
         => ConDetalle().FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted, cancellationToken);

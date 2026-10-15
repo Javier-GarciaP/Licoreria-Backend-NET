@@ -13,6 +13,11 @@ public interface IVentaRepository
         EstadoVenta? estado = null,
         CancellationToken cancellationToken = default);
 
+    Task<ResultadoPaginado<Venta>> ObtenerPorClienteAsync(
+        Guid clienteId,
+        PaginacionRequest paginacion,
+        CancellationToken cancellationToken = default);
+
     Task<Venta?> ObtenerConDetalleAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task AgregarAsync(Venta venta, CancellationToken cancellationToken = default);

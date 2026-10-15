@@ -75,7 +75,7 @@ public partial class ApiEndpointsTests
         throw new InvalidOperationException("Variante no encontrada");
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Origenes_VasoConDosBotellas_SeGuardanYElProductoInformaLaDisponibilidad()
     {
         var cola = await CrearColaAsync();
@@ -98,7 +98,7 @@ public partial class ApiEndpointsTests
         Assert.Equal("Presentacion", litro.GetProperty("naturaleza").GetString());
     }
 
-    [Theory]
+    [TeoriaDeIntegracion]
     [InlineData(0)]
     [InlineData(-2)]
     public async Task Origenes_PorcionesInvalidas_Devuelve422(int porciones)
@@ -110,7 +110,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.UnprocessableEntity, respuesta.StatusCode);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Origenes_UnaPresentacionNoPuedeSerPorcion_Devuelve422()
     {
         var cola = await CrearColaAsync();
@@ -120,7 +120,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.UnprocessableEntity, respuesta.StatusCode);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Origenes_DeOtroProducto_Devuelve422()
     {
         var cola = await CrearColaAsync();
@@ -131,7 +131,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.UnprocessableEntity, respuesta.StatusCode);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Origenes_SinPermisoDeCatalogo_Devuelve401SinToken()
     {
         var cola = await CrearColaAsync();
@@ -142,7 +142,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.Unauthorized, respuesta.StatusCode);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Receta_EnUnaPorcion_Devuelve422()
     {
         var cola = await CrearColaAsync();
@@ -154,7 +154,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.UnprocessableEntity, respuesta.StatusCode);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Producto_ConOrigenDePorcion_NoSePuedeEliminar_Devuelve409()
     {
         var cola = await CrearColaAsync();
@@ -203,7 +203,7 @@ public partial class ApiEndpointsTests
         });
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Presentacion_ConUnaPorcionQueSaleDeEllaNoPuedeDejarDeSerlo_Devuelve409()
     {
         var cola = await CrearColaAsync();
@@ -214,7 +214,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.Conflict, respuesta.StatusCode);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Presentacion_ConUnaPorcionQueSaleDeEllaNoSePuedeQuitarDelProducto_Devuelve409()
     {
         var cola = await CrearColaAsync();
@@ -225,7 +225,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.Conflict, respuesta.StatusCode);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Presentacion_SinVinculos_SiSePuedeEditar()
     {
         var cola = await CrearColaAsync();
@@ -235,7 +235,7 @@ public partial class ApiEndpointsTests
         Assert.True(respuesta.StatusCode == HttpStatusCode.OK, await respuesta.Content.ReadAsStringAsync());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Porcion_NoPuedeConvertirseEnPresentacionSinQuitarAntesSusOrigenes_Devuelve422()
     {
         var cola = await CrearColaAsync();

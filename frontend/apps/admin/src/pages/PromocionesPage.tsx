@@ -4,18 +4,19 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import {
   ActionMenu,
+  Buscador,
+  FiltroDropdown,
+  LimpiarFiltros,
   Button,
   Card,
   CardBody,
   CardHeader,
-  CardTitle,
   DataTable,
   Input,
   Modal,
-  PageHeader,
   Pill,
   Select,
 } from '@licoreria/ui';
@@ -23,6 +24,8 @@ import type { Promocion } from '@licoreria/types';
 import { promocionesApi } from '@licoreria/api-client';
 import { mensajeDeError } from '../lib/api';
 import { formatUSD } from '../lib/format';
+import { contiene } from '../lib/filtros';
+import { useAuth } from '../context/AuthContext';
 
 const esquema = z.object({
   nombre: z.string().min(1, 'Ingresa el nombre'),
@@ -37,11 +40,30 @@ type Formulario = z.infer<typeof esquema>;
 
 export function PromocionesPage() {
   const queryClient = useQueryClient();
+  const { esAdmin, tienePermiso } = useAuth() as { esAdmin: boolean; tienePermiso: (clave: string) => boolean };
+  const puedeGestionar = esAdmin || tienePermiso('promotions:manage');
   const [editando, setEditando] = useState<Promocion | null>(null);
   const [creando, setCreando] = useState(false);
+  const [busqueda, setBusqueda] = useState('');
+  const [estado, setEstado] = useState('');
+  const [tipo, setTipo] = useState('');
   const [eliminar, setEliminar] = useState<Promocion | null>(null);
 
   const promociones = useQuery({ queryKey: ['promociones'], queryFn: promocionesApi.listar });
+
+  const filas = (promociones.data ?? []).filter((fila) => {
+    if (!contiene(fila.nombre, busqueda)) return false;
+    if (estado === 'activas' && !fila.activo) return false;
+    if (estado === 'inactivas' && fila.activo) return false;
+    if (tipo && fila.tipo !== tipo) return false;
+    return true;
+  });
+  const hayFiltros = Boolean(busqueda || estado || tipo);
+  const limpiarFiltros = () => {
+    setBusqueda('');
+    setEstado('');
+    setTipo('');
+  };
   const form = useForm<Formulario>({
     resolver: zodResolver(esquema),
     defaultValues: { nombre: '', tipo: 'Porcentaje', valor: 0, activo: true, fechaInicio: '', fechaFin: '' },
@@ -105,24 +127,50 @@ export function PromocionesPage() {
   };
 
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader
-        title="Promociones"
-        subtitle="Descuentos y promociones aplicables en caja y POS."
-        actions={<Button onClick={abrirCrear}>Nueva promoción</Button>}
-      />
-
+    <div className="mx-auto flex max-w-page flex-col gap-4">
       <Card>
-        <CardHeader>
-          <CardTitle>Promociones</CardTitle>
-          <span className="text-xs text-muted-foreground">{promociones.data?.length ?? 0} registradas</span>
+        <CardHeader className="flex flex-col items-stretch gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Buscador placeholder="Buscar promoción…" value={busqueda} onCambio={setBusqueda} />
+            <div className="ml-auto">
+              {puedeGestionar ? (
+                <Button leftIcon={<Plus size={15} />} onClick={abrirCrear}>
+                  Nueva promoción
+                </Button>
+              ) : null}
+            </div>
+          </div>
+          <div className="border-b border-border" />
+          <div className="flex flex-wrap items-center gap-2">
+            <FiltroDropdown
+              label="Estado"
+              opciones={[
+                { valor: 'activas', etiqueta: 'Activas' },
+                { valor: 'inactivas', etiqueta: 'Inactivas' },
+              ]}
+              valor={estado}
+              onChange={setEstado}
+            />
+            <FiltroDropdown
+              label="Tipo"
+              opciones={[
+                { valor: 'Porcentaje', etiqueta: 'Porcentaje' },
+                { valor: 'MontoFijo', etiqueta: 'Monto fijo' },
+              ]}
+              valor={tipo}
+              onChange={setTipo}
+            />
+            <div className="ml-auto">
+              <LimpiarFiltros activo={hayFiltros} onClick={limpiarFiltros} />
+            </div>
+          </div>
         </CardHeader>
         <CardBody>
           <DataTable<Promocion>
-            rows={promociones.data ?? []}
+            rows={filas}
             loading={promociones.isLoading}
             rowKey={(fila) => fila.id}
-            empty="No hay promociones."
+            empty={hayFiltros ? 'Sin promociones con esos filtros.' : 'No hay promociones.'}
             columns={[
               { key: 'nombre', header: 'Nombre', render: (fila) => fila.nombre },
               { key: 'tipo', header: 'Tipo', render: (fila) => (fila.tipo === 'MontoFijo' ? 'Monto fijo' : 'Porcentaje') },
@@ -137,20 +185,24 @@ export function PromocionesPage() {
                 header: 'Estado',
                 render: (fila) => <Pill tone={fila.activo ? 'success' : 'neutral'}>{fila.activo ? 'Activa' : 'Inactiva'}</Pill>,
               },
-              {
-                key: 'acciones',
-                header: '',
-                align: 'right',
-                render: (fila) => (
-                  <ActionMenu
-                    label={`Acciones de ${fila.nombre}`}
-                    options={[
-                      { label: 'Editar', icon: <Pencil size={15} />, onClick: () => abrirEditar(fila) },
-                      { label: 'Eliminar', icon: <Trash2 size={15} />, danger: true, onClick: () => setEliminar(fila) },
-                    ]}
-                  />
-                ),
-              },
+              ...(puedeGestionar
+                ? [
+                    {
+                      key: 'acciones',
+                      header: '',
+                      align: 'right' as const,
+                      render: (fila: Promocion) => (
+                        <ActionMenu
+                          label={`Acciones de ${fila.nombre}`}
+                          options={[
+                            { label: 'Editar', icon: <Pencil size={15} />, onClick: () => abrirEditar(fila) },
+                            { label: 'Eliminar', icon: <Trash2 size={15} />, danger: true, onClick: () => setEliminar(fila) },
+                          ]}
+                        />
+                      ),
+                    },
+                  ]
+                : []),
             ]}
           />
         </CardBody>

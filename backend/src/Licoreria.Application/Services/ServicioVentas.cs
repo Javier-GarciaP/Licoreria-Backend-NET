@@ -20,6 +20,7 @@ public sealed class ServicioVentas : IServicioVentas
     private readonly IRelojSistema _reloj;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IServicioAuditoria _auditoria;
+    private readonly IServicioClienteVenta _clienteVenta;
 
     public ServicioVentas(
         IVentaRepository ventaRepository,
@@ -32,7 +33,8 @@ public sealed class ServicioVentas : IServicioVentas
         IContextoUsuario contextoUsuario,
         IRelojSistema reloj,
         IUnitOfWork unitOfWork,
-        IServicioAuditoria auditoria)
+        IServicioAuditoria auditoria,
+        IServicioClienteVenta clienteVenta)
     {
         _ventaRepository = ventaRepository;
         _inventarioRepository = inventarioRepository;
@@ -45,6 +47,7 @@ public sealed class ServicioVentas : IServicioVentas
         _reloj = reloj;
         _unitOfWork = unitOfWork;
         _auditoria = auditoria;
+        _clienteVenta = clienteVenta;
     }
 
     public async Task<IReadOnlyList<MetodoPagoDto>> ObtenerMetodosPagoAsync(CancellationToken cancellationToken = default)
@@ -76,18 +79,20 @@ public sealed class ServicioVentas : IServicioVentas
     public async Task<VentaDto> RegistrarVentaAsync(RegistrarVentaDto dto, CancellationToken cancellationToken = default)
     {
         Venta? venta = null;
+        var puntosGanados = 0;
+        var creditoUsd = 0m;
 
         await _unitOfWork.EjecutarEnTransaccionAsync(async ct =>
         {
-            venta = await CrearVentaAsync(dto, ct);
-            _auditoria.Registrar("registrar", "venta", venta.Id, new { venta.TotalUSD, venta.TotalBS, venta.TasaCambio });
+            (venta, puntosGanados, creditoUsd) = await CrearVentaAsync(dto, ct);
+            _auditoria.Registrar("registrar", "venta", venta.Id, new { venta.TotalUSD, venta.TotalBS, venta.TasaCambio, venta.ClienteId, puntosGanados, creditoUsd });
         }, cancellationToken);
 
         var creada = await _ventaRepository.ObtenerConDetalleAsync(venta!.Id, cancellationToken);
-        return Mapear(creada!);
+        return Mapear(creada!) with { PuntosGanados = puntosGanados, CreditoUSD = creditoUsd };
     }
 
-    private async Task<Venta> CrearVentaAsync(RegistrarVentaDto dto, CancellationToken cancellationToken)
+    private async Task<(Venta Venta, int PuntosGanados, decimal CreditoUSD)> CrearVentaAsync(RegistrarVentaDto dto, CancellationToken cancellationToken)
     {
         if (dto.Items.Count == 0)
         {
@@ -102,6 +107,11 @@ public sealed class ServicioVentas : IServicioVentas
         var usuarioId = _contextoUsuario.UsuarioId
             ?? throw new ReglaNegocioException("No se pudo identificar al usuario que registra la venta.");
 
+        if (dto.ClienteId is Guid clienteId)
+        {
+            await _clienteVenta.ValidarClienteAsync(clienteId, cancellationToken);
+        }
+
         var sesionCaja = await _sesionesCaja.ObtenerAbiertaBloqueadaAsync(cancellationToken)
             ?? throw new ReglaNegocioException("No hay un turno abierto. Pida al cajero que abra la caja para operar.");
 
@@ -114,7 +124,8 @@ public sealed class ServicioVentas : IServicioVentas
             UsuarioId = usuarioId,
             DescuentoUSD = dto.DescuentoUSD,
             SesionCajaId = sesionCaja.Id,
-            CuentaId = dto.CuentaId
+            CuentaId = dto.CuentaId,
+            ClienteId = dto.ClienteId
         };
 
         var insumos = new List<KardexInsumo>();
@@ -179,18 +190,30 @@ public sealed class ServicioVentas : IServicioVentas
             throw new ReglaNegocioException("El total de los pagos no cubre el total de la venta.");
         }
 
+        var pagosCredito = new List<Pago>();
         foreach (var pago in dto.Pagos)
         {
             var metodo = await _metodoPagoRepository.GetByIdAsync(pago.MetodoPagoId, cancellationToken)
                 ?? throw new NoEncontradoException($"No existe el método de pago {pago.MetodoPagoId}.");
 
-            venta.Pagos.Add(new Pago
+            var registrado = new Pago
             {
                 MetodoPagoId = metodo.Id,
                 Monto = pago.Monto,
                 Moneda = pago.Moneda,
                 Propina = pago.Propina
-            });
+            };
+            venta.Pagos.Add(registrado);
+
+            if (metodo.Codigo == MetodoPago.CodigoCredito)
+            {
+                pagosCredito.Add(registrado);
+            }
+        }
+
+        if (pagosCredito.Count > 0 && dto.ClienteId is null)
+        {
+            throw new ReglaNegocioException("La venta a crédito requiere un cliente.");
         }
 
         var correlativo = await _ventaRepository.ObtenerSiguienteCorrelativoComprobanteAsync(cancellationToken);
@@ -215,8 +238,12 @@ public sealed class ServicioVentas : IServicioVentas
             }
         }
 
+        // Puntos y cuenta por cobrar se preparan junto con la venta y se confirman en el mismo guardado.
+        var creditoUsd = await _clienteVenta.RegistrarCreditoAsync(venta, pagosCredito, dto.VencimientoCredito, cancellationToken);
+        var puntosGanados = await _clienteVenta.AcumularPorVentaAsync(venta, creditoUsd, cancellationToken);
+
         await _ventaRepository.SaveChangesAsync(cancellationToken);
-        return venta;
+        return (venta, puntosGanados, creditoUsd);
     }
 
     public async Task<VentaDto?> RegistrarPagoAsync(
@@ -299,8 +326,13 @@ public sealed class ServicioVentas : IServicioVentas
         devolucion.MontoUSD = devolucion.Detalles.Sum(d => d.Cantidad * d.PrecioUnitarioUSD);
 
         await _ventaRepository.AgregarDevolucionAsync(devolucion, cancellationToken);
-        _auditoria.Registrar("devolucion", "venta", ventaId, new { devolucion.MontoUSD, devolucion.Motivo });
+        var puntosRevertidos = await _clienteVenta.RevertirPorDevolucionAsync(venta, devolucion.MontoUSD, cancellationToken);
+        _auditoria.Registrar("devolucion", "venta", ventaId, new { devolucion.MontoUSD, devolucion.Motivo, puntosRevertidos });
         await _ventaRepository.SaveChangesAsync(cancellationToken);
+
+        var aviso = await _clienteVenta.TieneCuentaPendienteAsync(ventaId, cancellationToken)
+            ? "La venta tiene una cuenta por cobrar pendiente: ajuste su saldo manualmente."
+            : null;
 
         return new DevolucionDto(
             devolucion.Id,
@@ -313,7 +345,8 @@ public sealed class ServicioVentas : IServicioVentas
                 d.VarianteId,
                 d.Variante?.Sku ?? string.Empty,
                 d.Cantidad,
-                d.PrecioUnitarioUSD)).ToList());
+                d.PrecioUnitarioUSD)).ToList(),
+            aviso);
     }
 
     public async Task<IReadOnlyList<PromocionDto>> ObtenerPromocionesAsync(bool soloVigentes = false, CancellationToken cancellationToken = default)
@@ -413,5 +446,7 @@ public sealed class ServicioVentas : IServicioVentas
                 p.MetodoPago?.Nombre ?? string.Empty,
                 p.Monto,
                 p.Moneda,
-                p.Propina)).ToList());
+                p.Propina)).ToList(),
+            v.ClienteId,
+            v.Cliente?.Nombre);
 }

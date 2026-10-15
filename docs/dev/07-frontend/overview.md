@@ -38,9 +38,12 @@ frontend/
 | Mesas / Plano | Editor de distribución del local. |
 | Reservas | Gestión y validación de señas. |
 | Operación | Comandas, KDS barra y cocina, vista mesero. |
-| Caja / POS | Sesiones de caja, abonos y cobro. |
+| Caja / POS | Sesiones de caja, abonos y cobro, con método de pago, cliente y crédito. |
+| Promociones | Descuentos aplicables en el POS (gestión solo del Administrador). |
+| Existencias | Stock por variante y ajustes. |
+| Entradas y Lista VIP | Solo en modo Discoteca (Administrador y Host). |
 | Compras | Proveedores y órdenes. |
-| CRM | Clientes y fidelidad. |
+| CRM | Clientes, puntos, historial y cuentas por cobrar (Administrador y Cajero). |
 | Contenido | Páginas, eventos y menú digital. |
 | Administración | Usuarios, roles y configuración. |
 

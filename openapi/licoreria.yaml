@@ -659,6 +659,62 @@ paths:
       responses:
         '200':
           description: OK
+  /api/v1/clientes/{id}/ventas:
+    get:
+      tags:
+        - Clientes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: Page
+          in: query
+          schema:
+            pattern: ^-?(?:0|[1-9]\d*)$
+            type:
+              - integer
+              - string
+            format: int32
+        - name: PageSize
+          in: query
+          schema:
+            pattern: ^-?(?:0|[1-9]\d*)$
+            type:
+              - integer
+              - string
+            format: int32
+        - name: PaginaNormalizada
+          in: query
+          schema:
+            pattern: ^-?(?:0|[1-9]\d*)$
+            type:
+              - integer
+              - string
+            format: int32
+        - name: TamanoNormalizado
+          in: query
+          schema:
+            pattern: ^-?(?:0|[1-9]\d*)$
+            type:
+              - integer
+              - string
+            format: int32
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ResultadoPaginadoOfClienteVentaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoPaginadoOfClienteVentaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoPaginadoOfClienteVentaDto'
   /api/v1/clientes/{id}/puntos:
     get:
       tags:
@@ -4341,6 +4397,221 @@ paths:
             text/json:
               schema:
                 $ref: '#/components/schemas/ReporteMermasVsVentasDto'
+  /api/v1/reportes/productos:
+    get:
+      tags:
+        - Reportes
+      parameters:
+        - name: desde
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: hasta
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: orden
+          in: query
+          schema:
+            default: 1
+            $ref: '#/components/schemas/OrdenProductos'
+        - name: limite
+          in: query
+          schema:
+            pattern: ^-?(?:0|[1-9]\d*)$
+            type:
+              - integer
+              - string
+            format: int32
+            default: 10
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ReporteProductosDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReporteProductosDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ReporteProductosDto'
+  /api/v1/reportes/ocupacion:
+    get:
+      tags:
+        - Reportes
+      parameters:
+        - name: desde
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: hasta
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ReporteOcupacionDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReporteOcupacionDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ReporteOcupacionDto'
+  /api/v1/reportes/reservas-asistencia:
+    get:
+      tags:
+        - Reportes
+      parameters:
+        - name: desde
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: hasta
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ReporteReservasAsistenciaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReporteReservasAsistenciaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ReporteReservasAsistenciaDto'
+  /api/v1/reportes/caja:
+    get:
+      tags:
+        - Reportes
+      parameters:
+        - name: desde
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: hasta
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ReporteCajaDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReporteCajaDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ReporteCajaDto'
+  /api/v1/reportes/mesoneros:
+    get:
+      tags:
+        - Reportes
+      parameters:
+        - name: desde
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: hasta
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ReporteMesonerosDto'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReporteMesonerosDto'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ReporteMesonerosDto'
+  /api/v1/reportes/{reporte}/exportar:
+    get:
+      tags:
+        - Reportes
+      parameters:
+        - name: reporte
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: formato
+          in: query
+          schema:
+            type: string
+        - name: desde
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: hasta
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: usuarioId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: orden
+          in: query
+          schema:
+            default: 1
+            $ref: '#/components/schemas/OrdenProductos'
+        - name: limite
+          in: query
+          schema:
+            pattern: ^-?(?:0|[1-9]\d*)$
+            type:
+              - integer
+              - string
+            format: int32
+            default: 10
+        - name: entidad
+          in: query
+          schema:
+            type: string
+        - name: accion
+          in: query
+          schema:
+            type: string
+        - name: tipo
+          in: query
+          schema:
+            $ref: '#/components/schemas/TipoAuditoria'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/pdf: {}
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet: {}
   /api/v1/reservas:
     get:
       tags:
@@ -6308,6 +6579,16 @@ components:
             - string
           format: double
           default: 0
+        clienteId:
+          type:
+            - 'null'
+            - string
+          format: uuid
+        vencimientoCredito:
+          type:
+            - 'null'
+            - string
+          format: date-time
     ChatEnviarDto:
       required:
         - mensaje
@@ -6452,6 +6733,33 @@ components:
             - string
         activo:
           type: boolean
+    ClienteVentaDto:
+      required:
+        - id
+        - fecha
+        - totalUSD
+        - numeroComprobante
+        - estado
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        fecha:
+          type: string
+          format: date-time
+        totalUSD:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        numeroComprobante:
+          type:
+            - 'null'
+            - string
+        estado:
+          $ref: '#/components/schemas/EstadoVenta'
     ComandaDetalleDto:
       required:
         - id
@@ -6569,6 +6877,13 @@ components:
             - number
             - string
           format: double
+        porcentajeVentas:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+          default: 0
     CrearComandaDto:
       required:
         - area
@@ -6728,6 +7043,11 @@ components:
           format: date-time
         estado:
           $ref: '#/components/schemas/EstadoCuentaPorCobrar'
+        ventaId:
+          type:
+            - 'null'
+            - string
+          format: uuid
     CuentaPorPagarDto:
       required:
         - id
@@ -6986,6 +7306,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DevolucionDetalleDto'
+        aviso:
+          type:
+            - 'null'
+            - string
     DiagnosticoInventarioDto:
       required:
         - total
@@ -7281,6 +7605,8 @@ components:
     EstadoReserva:
       type: integer
     EstadoReservaPago:
+      type: integer
+    EstadoRotacion:
       type: integer
     EstadoSesionCaja:
       type: integer
@@ -8325,6 +8651,76 @@ components:
           format: double
         activa:
           type: boolean
+    MesoneroDto:
+      required:
+        - usuarioId
+        - nombre
+        - comandas
+        - itemsServidos
+        - itemsCancelados
+        - cuentas
+        - ventasGeneradasUSD
+        - ticketPorCuentaUSD
+        - tasaCancelacion
+        - tiempoServicioPromedioSegundos
+      type: object
+      properties:
+        usuarioId:
+          type:
+            - 'null'
+            - string
+          format: uuid
+        nombre:
+          type: string
+        comandas:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+        itemsServidos:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+        itemsCancelados:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+        cuentas:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+        ventasGeneradasUSD:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        ticketPorCuentaUSD:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        tasaCancelacion:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        tiempoServicioPromedioSegundos:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - 'null'
+            - number
+            - string
+          format: double
     MetodoPagoDto:
       required:
         - id
@@ -8503,6 +8899,70 @@ components:
         fecha:
           type: string
           format: date-time
+    OcupacionZonaDto:
+      required:
+        - zonaId
+        - zona
+        - mesasActivas
+        - mesasOcupadas
+        - porcentajeOcupacion
+        - sesiones
+        - sesionesAbiertas
+        - sesionesPorMesa
+        - permanenciaPromedioMinutos
+      type: object
+      properties:
+        zonaId:
+          type:
+            - 'null'
+            - string
+          format: uuid
+        zona:
+          type: string
+        mesasActivas:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+        mesasOcupadas:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+        porcentajeOcupacion:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        sesiones:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+        sesionesAbiertas:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+        sesionesPorMesa:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - 'null'
+            - number
+            - string
+          format: double
+        permanenciaPromedioMinutos:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - 'null'
+            - number
+            - string
+          format: double
     OrdenCompraCrearDto:
       required:
         - proveedorId
@@ -8630,6 +9090,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/OrdenCompraDetalleDto'
+    OrdenProductos:
+      type: integer
     OrigenPorcionCrearDto:
       required:
         - presentacionVarianteId
@@ -9474,6 +9936,69 @@ components:
             - string
           format: int32
           default: 0
+    ProductoVendidoDto:
+      required:
+        - varianteId
+        - sku
+        - productoNombre
+        - varianteNombre
+        - unidades
+        - ingresoUSD
+        - porcentajeUnidades
+        - porcentajeIngreso
+        - existencia
+        - rotacion
+        - estadoRotacion
+      type: object
+      properties:
+        varianteId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        productoNombre:
+          type: string
+        varianteNombre:
+          type: string
+        unidades:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        ingresoUSD:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        porcentajeUnidades:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        porcentajeIngreso:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        existencia:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        rotacion:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - 'null'
+            - number
+            - string
+          format: double
+        estadoRotacion:
+          $ref: '#/components/schemas/EstadoRotacion'
     PromocionCrearDto:
       required:
         - nombre
@@ -10103,6 +10628,61 @@ components:
             - 'null'
             - string
           format: uuid
+        clienteId:
+          type:
+            - 'null'
+            - string
+          format: uuid
+        vencimientoCredito:
+          type:
+            - 'null'
+            - string
+          format: date-time
+    ReporteCajaDto:
+      required:
+        - desde
+        - hasta
+        - turnos
+        - descuadreTotal
+        - descuadrePromedio
+        - mayorDescuadre
+        - items
+      type: object
+      properties:
+        desde:
+          type: string
+          format: date-time
+        hasta:
+          type: string
+          format: date-time
+        turnos:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+        descuadreTotal:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        descuadrePromedio:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        mayorDescuadre:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TurnoCajaDto'
     ReporteComprasDto:
       required:
         - desde
@@ -10257,6 +10837,148 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ComparativoMermaDto'
+    ReporteMesonerosDto:
+      required:
+        - desde
+        - hasta
+        - totalVentasUSD
+        - mesoneros
+      type: object
+      properties:
+        desde:
+          type: string
+          format: date-time
+        hasta:
+          type: string
+          format: date-time
+        totalVentasUSD:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        mesoneros:
+          type: array
+          items:
+            $ref: '#/components/schemas/MesoneroDto'
+    ReporteOcupacionDto:
+      required:
+        - desde
+        - hasta
+        - generadoEn
+        - mesasActivas
+        - mesasOcupadas
+        - porcentajeOcupacion
+        - sesiones
+        - sesionesAbiertas
+        - sesionesPorMesa
+        - permanenciaPromedioMinutos
+        - porZona
+      type: object
+      properties:
+        desde:
+          type: string
+          format: date-time
+        hasta:
+          type: string
+          format: date-time
+        generadoEn:
+          type: string
+          format: date-time
+        mesasActivas:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+        mesasOcupadas:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+        porcentajeOcupacion:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        sesiones:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+        sesionesAbiertas:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+        sesionesPorMesa:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - 'null'
+            - number
+            - string
+          format: double
+        permanenciaPromedioMinutos:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - 'null'
+            - number
+            - string
+          format: double
+        porZona:
+          type: array
+          items:
+            $ref: '#/components/schemas/OcupacionZonaDto'
+    ReporteProductosDto:
+      required:
+        - desde
+        - hasta
+        - orden
+        - limite
+        - totalUnidades
+        - totalIngresoUSD
+        - top
+        - sinMovimiento
+      type: object
+      properties:
+        desde:
+          type: string
+          format: date-time
+        hasta:
+          type: string
+          format: date-time
+        orden:
+          $ref: '#/components/schemas/OrdenProductos'
+        limite:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+        totalUnidades:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        totalIngresoUSD:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        top:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductoVendidoDto'
+        sinMovimiento:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductoVendidoDto'
     ReportePropinasDto:
       required:
         - desde
@@ -10281,6 +11003,59 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PropinaPorUsuarioDto'
+    ReporteReservasAsistenciaDto:
+      required:
+        - desde
+        - hasta
+        - total
+        - asistieron
+        - noAsistieron
+        - canceladas
+        - tasaNoAsistencia
+        - porEstado
+      type: object
+      properties:
+        desde:
+          type: string
+          format: date-time
+        hasta:
+          type: string
+          format: date-time
+        total:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+        asistieron:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+        noAsistieron:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+        canceladas:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+        tasaNoAsistencia:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - 'null'
+            - number
+            - string
+          format: double
+        porEstado:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReservasPorEstadoDto'
     ReporteVentasDto:
       required:
         - desde
@@ -10483,6 +11258,20 @@ components:
             - string
         estado:
           $ref: '#/components/schemas/EstadoReservaPago'
+    ReservasPorEstadoDto:
+      required:
+        - estado
+        - cantidad
+      type: object
+      properties:
+        estado:
+          $ref: '#/components/schemas/EstadoReserva'
+        cantidad:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
     ResultadoPaginadoOfAiGeneracionDto:
       required:
         - items
@@ -10567,6 +11356,42 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ClienteDto'
+        page:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+        pageSize:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+        totalItems:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+        totalPages:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+    ResultadoPaginadoOfClienteVentaDto:
+      required:
+        - items
+        - page
+        - pageSize
+        - totalItems
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClienteVentaDto'
         page:
           pattern: ^-?(?:0|[1-9]\d*)$
           type:
@@ -11470,6 +12295,50 @@ components:
             - 'null'
             - string
           format: date-time
+    TurnoCajaDto:
+      required:
+        - sesionId
+        - usuarioId
+        - usuarioNombre
+        - abiertaEn
+        - cerradaEn
+        - montoEsperado
+        - montoContado
+        - descuadre
+      type: object
+      properties:
+        sesionId:
+          type: string
+          format: uuid
+        usuarioId:
+          type: string
+          format: uuid
+        usuarioNombre:
+          type: string
+        abiertaEn:
+          type: string
+          format: date-time
+        cerradaEn:
+          type: string
+          format: date-time
+        montoEsperado:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        montoContado:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+        descuadre:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
     UnidadMedidaCrearDto:
       required:
         - nombre
@@ -11791,6 +12660,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/VentaPagoRegistradoDto'
+        clienteId:
+          type:
+            - 'null'
+            - string
+          format: uuid
+        clienteNombre:
+          type:
+            - 'null'
+            - string
+        puntosGanados:
+          pattern: ^-?(?:0|[1-9]\d*)$
+          type:
+            - integer
+            - string
+          format: int32
+          default: 0
+        creditoUSD:
+          pattern: ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+          type:
+            - number
+            - string
+          format: double
+          default: 0
     VentaItemDto:
       required:
         - varianteId

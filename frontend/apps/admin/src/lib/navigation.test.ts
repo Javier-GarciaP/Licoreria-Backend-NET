@@ -71,24 +71,83 @@ describe('puedeAcceder por modo', () => {
   });
 });
 
-describe('Auditoría en la navegación', () => {
+describe('Analítica en la navegación', () => {
   const rutasDe = (admin: boolean, modo?: Modo) =>
     filtrarGrupos(admin, admin ? conPermiso : sinPermiso, admin ? 'Administrador' : 'Cajero', modo).flatMap((g) =>
       g.items.map((i) => i.to),
     );
 
-  it('el administrador ve Auditoría en el menú de Analítica, sin Reportes', () => {
+  it('el administrador ve Reportes y Auditoría en el menú de Analítica, en ambos modos', () => {
     for (const modo of ['licoreria', 'discoteca'] as const) {
       const rutas = rutasDe(true, modo);
+      expect(rutas).toContain('/reportes');
       expect(rutas).toContain('/auditoria');
-      expect(rutas).not.toContain('/reportes');
     }
     const analitica = filtrarGrupos(true, conPermiso, 'Administrador').find((g) => g.id === 'analitica');
-    expect(analitica?.items.map((i) => i.to)).toEqual(['/auditoria']);
+    expect(analitica?.items.map((i) => i.to)).toEqual(['/reportes', '/auditoria']);
   });
 
-  it('el cajero no ve Auditoría ni puede acceder a su ruta', () => {
+  it('el cajero no ve Analítica ni puede acceder a Reportes ni a Auditoría', () => {
+    expect(rutasDe(false)).not.toContain('/reportes');
     expect(rutasDe(false)).not.toContain('/auditoria');
+    expect(filtrarGrupos(false, conPermiso, 'Cajero').some((g) => g.id === 'analitica')).toBe(false);
+    expect(puedeAcceder(itemDeRuta('/reportes'), false, conPermiso, 'Cajero')).toBe(false);
     expect(puedeAcceder(itemDeRuta('/auditoria'), false, conPermiso, 'Cajero')).toBe(false);
+  });
+});
+
+describe('Módulos complementarios por modo y rol', () => {
+  // Permisos efectivos por rol (reflejan la matriz del backend para estos módulos).
+  const PERMISOS: Record<string, string[]> = {
+    Administrador: [],
+    Cajero: ['sales:read', 'sales:write', 'inventory:read', 'crm:read', 'crm:write', 'catalog:read'],
+    Mesero: ['sales:read', 'sales:write', 'inventory:read', 'club:read'],
+    Host: ['club:read', 'club:manage', 'reservation:manage', 'content:read'],
+  };
+
+  const rutas = (rol: string, modo: Modo) => {
+    const admin = rol === 'Administrador';
+    return filtrarGrupos(admin, (c) => PERMISOS[rol].includes(c), rol, modo).flatMap((g) => g.items.map((i) => i.to));
+  };
+
+  it('el cajero en licorería ve Existencias, Clientes y Cuentas por cobrar, y no Compras ni Promociones', () => {
+    const r = rutas('Cajero', 'licoreria');
+    expect(r).toEqual(expect.arrayContaining(['/inventario', '/clientes', '/cxc']));
+    expect(r).not.toContain('/compras');
+    expect(r).not.toContain('/promociones');
+  });
+
+  it('el administrador ve en ambos modos Promociones, Existencias, Clientes, Cuentas por cobrar y Compras', () => {
+    for (const modo of ['licoreria', 'discoteca'] as const) {
+      expect(rutas('Administrador', modo)).toEqual(
+        expect.arrayContaining(['/promociones', '/inventario', '/clientes', '/cxc', '/compras']),
+      );
+    }
+  });
+
+  it('Entradas y Lista VIP solo aparecen en discoteca para administrador y host', () => {
+    for (const rol of ['Administrador', 'Host']) {
+      expect(rutas(rol, 'discoteca')).toEqual(expect.arrayContaining(['/entradas', '/vip']));
+      expect(rutas(rol, 'licoreria')).not.toContain('/entradas');
+      expect(rutas(rol, 'licoreria')).not.toContain('/vip');
+    }
+    expect(puedeAcceder(itemDeRuta('/vip'), true, conPermiso, undefined, 'licoreria')).toBe(false);
+    expect(rutas('Cajero', 'discoteca')).not.toContain('/vip');
+  });
+
+  it('el mesero no ve Clientes ni Promociones y no accede por dirección directa', () => {
+    const r = rutas('Mesero', 'discoteca');
+    expect(r).not.toContain('/clientes');
+    expect(r).not.toContain('/promociones');
+    expect(puedeAcceder(itemDeRuta('/clientes'), false, (c) => PERMISOS.Mesero.includes(c), 'Mesero', 'discoteca')).toBe(false);
+  });
+
+  it('los lotes, las tomas físicas y el contenido siguen fuera del menú', () => {
+    for (const modo of ['licoreria', 'discoteca'] as const) {
+      const r = rutas('Administrador', modo);
+      expect(r).not.toContain('/inventario/lotes');
+      expect(r).not.toContain('/inventario/tomas');
+      expect(r).not.toContain('/contenido');
+    }
   });
 });

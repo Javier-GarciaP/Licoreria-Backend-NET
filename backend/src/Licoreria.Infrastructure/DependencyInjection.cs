@@ -66,6 +66,10 @@ public static class DependencyInjection
         // Generación de PDF del menú digital.
         services.AddSingleton<IGeneradorMenuPdf, GeneradorMenuPdfQuestPdf>();
 
+        // Exportadores de reportes (PDF y Excel): el servicio elige el que corresponde al formato pedido.
+        services.AddSingleton<IExportadorReportes, ExportadorReportesPdf>();
+        services.AddSingleton<IExportadorReportes, ExportadorReportesExcel>();
+
         services.AddScoped<IServicioInventario, ServicioInventario>();
         services.AddScoped<IServicioEnvases, ServicioEnvases>();
         services.AddScoped<IServicioAutenticacion, ServicioAutenticacion>();
@@ -74,6 +78,7 @@ public static class DependencyInjection
         services.AddScoped<IServicioSeguridad, ServicioSeguridad>();
         services.AddScoped<IServicioFinanzas, ServicioFinanzas>();
         services.AddScoped<IServicioKardex, ServicioKardex>();
+        services.AddScoped<IServicioClienteVenta, ServicioClienteVenta>();
         services.AddScoped<IServicioVentas, ServicioVentas>();
         services.AddScoped<IServicioCuentas, ServicioCuentas>();
         services.AddScoped<IServicioCaja, ServicioCaja>();
@@ -83,6 +88,7 @@ public static class DependencyInjection
         services.AddScoped<IServicioIa, ServicioIa>();
         services.AddScoped<IServicioCompras, ServicioCompras>();
         services.AddScoped<IServicioReportes, ServicioReportes>();
+        services.AddScoped<IServicioExportacionReportes, ServicioExportacionReportes>();
         services.AddScoped<IServicioAuditoria, ServicioAuditoria>();
         services.AddScoped<IServicioChat, ServicioChat>();
 
@@ -184,6 +190,14 @@ public static class DependencyInjection
             configuration.GetSection(OpcionesAutenticacion.SectionName).Get<OpcionesAutenticacion>()
             ?? new OpcionesAutenticacion());
         services.AddSingleton<ITokenService, TokenService>();
+
+        // Reglas de fidelidad (puntos por USD) y de crédito (días de vencimiento).
+        services.AddSingleton(
+            configuration.GetSection(OpcionesFidelidad.SectionName).Get<OpcionesFidelidad>()
+            ?? new OpcionesFidelidad());
+        services.AddSingleton(
+            configuration.GetSection(OpcionesCredito.SectionName).Get<OpcionesCredito>()
+            ?? new OpcionesCredito());
 
         return services;
     }

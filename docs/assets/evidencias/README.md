@@ -26,3 +26,9 @@
 - Precio negativo (400): [`fase-3/fase3-400.png`](fase-3/fase3-400.png)
 - Colección Postman: [`Licoreria_Fase3_Postman_Collection.json`](Licoreria_Fase3_Postman_Collection.json)
 - Documentación detallada: [Fase 3](../dev/10-fases/fase-3.md)
+
+## Fase 5 · Contenerización y CI/CD
+
+- Pipeline `ci.yml` en verde (4 checks): [`fase-5/github-actions-ci-verde.png`](fase-5/github-actions-ci-verde.png)
+- `docker compose up --build -d` y `docker ps` con `db` y `api` en `healthy`: [`fase-5/docker-ps-healthy.png`](fase-5/docker-ps-healthy.png)
+- Documentación detallada: [Fase 5](../dev/09-operaciones/fase5-contenerizacion.md)

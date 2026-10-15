@@ -14,7 +14,7 @@ public class UnitOfWorkIntegrationTests
 
     public UnitOfWorkIntegrationTests(LicoreriaApiFactory factory) => _factory = factory;
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Anidada_ComparteLaTransaccion_YUnFalloExternoRevierteTodo()
     {
         using var scope = _factory.Services.CreateScope();
@@ -40,7 +40,7 @@ public class UnitOfWorkIntegrationTests
         Assert.False(await context.Categorias.AnyAsync(c => c.Nombre == nombre));
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Anidada_SiTodoTerminaBien_ConfirmaUnaSolaVez()
     {
         using var scope = _factory.Services.CreateScope();

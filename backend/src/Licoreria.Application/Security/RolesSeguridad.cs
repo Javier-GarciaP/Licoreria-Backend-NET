@@ -71,6 +71,8 @@ public static class RolesSeguridad
                 Permisos.CajaAbrir,
                 Permisos.CajaCerrar,
                 Permisos.CajaMovimiento,
+                Permisos.CrmLeer,
+                Permisos.CrmEscribir,
                 Permisos.FinanzasLeer
             ],
             RolUsuario.Mesero =>

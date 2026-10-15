@@ -3,11 +3,18 @@ import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Keyboard, Search } from 'lucide-react';
-import { Button, Card, Input, PageHeader, Pill } from '@licoreria/ui';
-import { estadoExistencia, type Moneda, type Producto, type ProductoVariante, type TasaCambio, type Venta } from '@licoreria/types';
+import { Button, Card, Input, Pill } from '@licoreria/ui';
+import { estadoExistencia, type Cliente, type Moneda, type Producto, type ProductoVariante, type TasaCambio, type Venta } from '@licoreria/types';
 import { catalogoApi, finanzasApi, promocionesApi, ventasApi } from '@licoreria/api-client';
 import { avisarError } from '../lib/api';
 import { formatBS } from '../lib/format';
+import {
+  DIAS_CREDITO_PREDETERMINADO,
+  esMetodoCredito,
+  fechaEnDias,
+  metodoPredeterminado,
+  vencimientoIso,
+} from '../lib/credito';
 import { precioUnitario, totalConPropina, usePos } from '../hooks/usePos';
 import { usePosHotkeys, type HotkeyMap } from '../hooks/usePosHotkeys';
 import { AyudaAtajos } from '../components/pos/AyudaAtajos';
@@ -27,6 +34,10 @@ export function PosPage() {
   const [ayudaAbierta, setAyudaAbierta] = useState(false);
   const [ventaTicket, setVentaTicket] = useState<Venta | null>(null);
   const [monedaPago, setMonedaPago] = useState<Moneda>('USD');
+  // Método elegido a mano; vacío = efectivo en la moneda seleccionada.
+  const [metodoElegidoId, setMetodoElegidoId] = useState('');
+  const [cliente, setCliente] = useState<Cliente | null>(null);
+  const [vencimiento, setVencimiento] = useState(() => fechaEnDias(DIAS_CREDITO_PREDETERMINADO));
 
   const busquedaRef = useRef<HTMLInputElement>(null);
   const descuentoRef = useRef<HTMLInputElement>(null);
@@ -63,7 +74,10 @@ export function PosPage() {
   );
 
   const totalCobrar = totalConPropina(activa);
-  const metodoPredeterminado = metodos.data?.[0] ?? null;
+  const listaMetodos = useMemo(() => metodos.data ?? [], [metodos.data]);
+  const metodoSeleccionado =
+    listaMetodos.find((metodo) => metodo.id === metodoElegidoId) ?? metodoPredeterminado(listaMetodos, monedaPago);
+  const esCredito = esMetodoCredito(metodoSeleccionado);
 
   const registrar = useMutation({
     mutationFn: () => {
@@ -77,10 +91,12 @@ export function PosPage() {
         })),
         descuentoUSD: activa.descuentoUSD,
         promocionId: activa.promocionId || null,
-        pagos: metodoPredeterminado
+        clienteId: cliente?.id ?? null,
+        vencimientoCredito: esCredito && vencimiento ? vencimientoIso(vencimiento) : null,
+        pagos: metodoSeleccionado
           ? [
               {
-                metodoPagoId: metodoPredeterminado.id,
+                metodoPagoId: metodoSeleccionado.id,
                 monto: enBs ? Number((totalCobrar * valorTasa).toFixed(2)) : totalCobrar,
                 moneda: monedaPago,
                 propina: enBs ? Number((activa.propinaUSD * valorTasa).toFixed(2)) : activa.propinaUSD,
@@ -92,6 +108,11 @@ export function PosPage() {
     onSuccess: (venta) => {
       setVentaTicket(venta);
       pos.reiniciar();
+      setCliente(null);
+      setMetodoElegidoId('');
+      setVencimiento(fechaEnDias(DIAS_CREDITO_PREDETERMINADO));
+      queryClient.invalidateQueries({ queryKey: ['clientes'] });
+      queryClient.invalidateQueries({ queryKey: ['cuentas-por-cobrar'] });
     },
     // La orden en pantalla se conserva: solo se limpia al registrar con éxito.
     onError: (error) =>
@@ -147,8 +168,12 @@ export function PosPage() {
       toast.error('Agrega al menos un producto');
       return;
     }
-    if (!metodoPredeterminado) {
+    if (!metodoSeleccionado) {
       toast.error('No hay métodos de pago configurados');
+      return;
+    }
+    if (esCredito && !cliente) {
+      toast.error('Elige un cliente para vender a crédito');
       return;
     }
     registrar.mutate();
@@ -223,17 +248,12 @@ export function PosPage() {
 
   return (
     <div className="mx-auto flex max-w-page flex-col gap-4 lg:h-[calc(100dvh-9rem)] lg:min-h-0">
-      <PageHeader
-        title="POS"
-        actions={
-          <>
-            <Pill tone="accent">Tasa {valorTasa > 0 ? formatBS(valorTasa) : '—'}</Pill>
-            <Button variant="ghost" size="sm" leftIcon={<Keyboard size={15} />} onClick={() => setAyudaAbierta(true)}>
-              Atajos (F1)
-            </Button>
-          </>
-        }
-      />
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <Pill tone="accent">Tasa {valorTasa > 0 ? formatBS(valorTasa) : '—'}</Pill>
+        <Button variant="ghost" size="sm" leftIcon={<Keyboard size={15} />} onClick={() => setAyudaAbierta(true)}>
+          Atajos (F1)
+        </Button>
+      </div>
 
       <div className="grid grid-cols-1 items-start gap-4 lg:min-h-0 lg:flex-1 lg:items-stretch lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="flex min-w-0 flex-col gap-4 lg:min-h-0">
@@ -279,6 +299,15 @@ export function PosPage() {
             moneda={monedaPago}
             onMonedaChange={setMonedaPago}
             tasa={valorTasa}
+            metodos={listaMetodos}
+            metodoPagoId={metodoSeleccionado?.id ?? ''}
+            onMetodoChange={setMetodoElegidoId}
+            cliente={cliente}
+            onClienteChange={setCliente}
+            esCredito={esCredito}
+            vencimiento={vencimiento}
+            onVencimientoChange={setVencimiento}
+            vencimientoMinimo={fechaEnDias(1)}
           />
         </Card>
       </div>

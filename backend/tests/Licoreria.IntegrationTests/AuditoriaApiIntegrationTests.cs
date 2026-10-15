@@ -26,7 +26,7 @@ public class AuditoriaApiIntegrationTests
         return (await JsonAsync(respuesta)).GetProperty("id").GetGuid();
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task IntentoFallido_DejaEntradaDeAccesoAunqueLaRespuestaSea401()
     {
         var correo = $"nadie-{Guid.NewGuid():N}@licoreria.com";
@@ -44,7 +44,7 @@ public class AuditoriaApiIntegrationTests
         Assert.DoesNotContain("incorrecta", await respuesta.Content.ReadAsStringAsync());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Listado_FiltraPorEntidadAccionTipoYCombinados()
     {
         var nombre = $"Cat-{Guid.NewGuid():N}";
@@ -64,7 +64,7 @@ public class AuditoriaApiIntegrationTests
         Assert.All(eventos.GetProperty("items").EnumerateArray(), i => Assert.Equal("Evento", i.GetProperty("tipo").GetString()));
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Detalle_DevuelveLaEntradaConSusValoresYEntidadesListaLasConRegistros()
     {
         var id = await CrearCategoriaAsync($"Cat-{Guid.NewGuid():N}");
@@ -83,7 +83,7 @@ public class AuditoriaApiIntegrationTests
         Assert.Contains(entidades.EnumerateArray(), e => e.GetString() == "Categoria");
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Cajero_RecibeForbiddenEnTodasLasRutasDeLaBitacora()
     {
         using var cliente = _factory.CreateClient();
@@ -97,7 +97,7 @@ public class AuditoriaApiIntegrationTests
         Assert.Equal(HttpStatusCode.Forbidden, (await cliente.GetAsync($"/api/v1/auditoria/{Guid.NewGuid()}")).StatusCode);
     }
 
-    [Theory]
+    [TeoriaDeIntegracion]
     [InlineData("PUT")]
     [InlineData("DELETE")]
     [InlineData("PATCH")]
@@ -118,7 +118,7 @@ public class AuditoriaApiIntegrationTests
         }
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Listado_AceptaFechasSinZonaYConRango()
     {
         await CrearCategoriaAsync($"Cat-{Guid.NewGuid():N}");

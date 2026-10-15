@@ -23,7 +23,7 @@ Los permisos se nombran `modulo:accion`:
 | Catálogo | `catalog:read`, `catalog:write` |
 | Inventario | `inventory:read`, `inventory:write`, `inventory:merma`, `inventory:open` |
 | Compras | `purchasing:read`, `purchasing:write` |
-| Ventas | `sales:read`, `sales:write`, `sales:void` |
+| Ventas | `sales:read`, `sales:write`, `sales:void`, `promotions:manage` |
 | Cuentas | `account:read`, `account:abono`, `account:close` |
 | Caja | `cash:open`, `cash:close`, `cash:movement` |
 | Club | `club:read`, `club:manage`, `reservation:manage` |
@@ -43,6 +43,8 @@ Los permisos se nombran `modulo:accion`:
 | `inventory:merma` | ✅ | ✅ | ✅ | — | — | — | — |
 | `inventory:open` (destapar y descartar envases) | ✅ | ✅ | — | ✅ | — | — | — |
 | `sales:write` | ✅ | ✅ | ✅ | — | — | — | — |
+| `promotions:manage` (crear, editar y eliminar promociones) | ✅ | — | — | — | — | — | — |
+| `crm:read` / `crm:write` | ✅ | ✅ | — | — | — | — | — |
 | `account:abono` | ✅ | ✅ | — | — | — | — | — |
 | `account:close` | ✅ | ✅ | — | — | — | — | — |
 | `cash:open` / `cash:close` | ✅ | ✅ | — | — | — | — | — |

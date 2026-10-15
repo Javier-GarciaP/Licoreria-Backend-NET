@@ -32,6 +32,8 @@ const stateTone: Record<string, NonNullable<PillProps['tone']>> = {
   Entregado: 'neutral',
   Cancelado: 'danger',
   Pendiente: 'warning',
+  Vencida: 'danger',
+  Pagada: 'success',
   Confirmada: 'success',
   Asistio: 'success',
   NoAsistio: 'danger',

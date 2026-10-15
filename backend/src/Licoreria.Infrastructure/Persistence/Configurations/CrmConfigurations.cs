@@ -51,5 +51,11 @@ public class CuentaPorCobrarConfiguration : IEntityTypeConfiguration<CuentaPorCo
                .WithMany()
                .HasForeignKey(c => c.ClienteId)
                .OnDelete(DeleteBehavior.Restrict);
+
+        // Una venta genera como máximo una cuenta por cobrar.
+        builder.HasIndex(c => c.VentaId)
+               .IsUnique()
+               .HasDatabaseName("ux_cuentas_por_cobrar_por_venta")
+               .HasFilter("\"VentaId\" IS NOT NULL");
     }
 }

@@ -13,6 +13,9 @@
 - Toda la configuración sensible se pasa por **variables de entorno**.
 - Plantilla en [`.env.example`](../../../.env.example); el `.env` real no se versiona.
 - Cadenas de conexión y claves de IA **nunca** en el repositorio.
+- Reglas de negocio configurables (ver [CRM](../06-modulos/crm.md)): `FIDELIDAD_PUNTOS_POR_USD`
+  (`Fidelidad:PuntosPorUSD`, 1 por defecto; 0 desactiva los puntos automáticos) y
+  `CREDITO_DIAS_VENCIMIENTO` (`Credito:DiasVencimiento`, 30 por defecto).
 
 ## Ejecución local
 

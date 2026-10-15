@@ -15,6 +15,9 @@ public class StockProducto : BaseEntity
     public decimal StockMinimo { get; set; }
     public decimal StockMaximo { get; set; }
 
+    /// <summary>Ubicación física en el almacén (p. ej. "Barra Principal", "Depósito Subsuelo").</summary>
+    public string? Ubicacion { get; set; }
+
     public bool BajoMinimo => Cantidad <= StockMinimo;
 
     /// <summary>Existencia que se puede comprometer: la cantidad menos lo ya reservado para comandas.</summary>

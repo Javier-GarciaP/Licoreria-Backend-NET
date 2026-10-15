@@ -13,6 +13,92 @@ y el proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
 ### Agregado
 
+- **Fase 5 y ajustes de interfaz (`fase-5-devops-y-ajustes-ui`):**
+  - **Compose `db` / `api` / `spa`** (5432, 5000, 8080) con healthchecks y `depends_on` por salud; imagen de la API sobre
+    `aspnet:10.0-alpine` y `ci.yml` que publica artefacto e imágenes solo si pasan las pruebas.
+  - **Dominio:** `StockProducto.Ubicacion` (migración `UbicacionStock`).
+  - **Dashboard:** más KPIs y paneles, y exportación a PDF; barra de filtros en tarjeta en Dashboard y Reportes.
+  - **Patrón visual unificado:** listados con toolbar, sin encabezado de página salvo Salón, Envases abiertos en el sidebar,
+    nuevo logo de corcho de champán.
+  - **Cajero:** sin Dashboard, Categorías y marcas, Unidades, Kardex ni Tasas de cambio.
+
+- **Pruebas y cobertura (`pruebas-y-cobertura`):**
+  - **Pruebas unitarias con Moq** de `ServicioInventario`, `ServicioCaja`, `ServicioCompras`, `ServicioUsuarios`,
+    `ServicioAuditoria`, `ServicioKardex` y `ServicioAutenticacion` (casos exitosos, de borde y de error), de los
+    validadores de entrada y de los conflictos de concurrencia; de 470 a 699 pruebas unitarias.
+  - **`dotnet test` verde sin PostgreSQL:** las pruebas de integración usan `[HechoDeIntegracion]` (categoría
+    `Integration`) y se omiten con un motivo visible si no hay base de datos; con `LICORERIA_TESTS_REQUIRE_DB=true`
+    (CI) fallan. `LICORERIA_TEST_DB` cambia el servidor. Tareas `backend:test` (unitarias), `backend:test:integration`
+    y `backend:test:all`.
+  - **Arnés de concurrencia** (`EjecucionConcurrente`, `RepetirAsync`, `ConflictoUnaVez`) y escenarios de mermas y
+    ajustes, recepción de una misma línea, pagos de cuentas por pagar y por cobrar y usuarios con el mismo correo,
+    repetidos 10 veces.
+  - **Cobertura:** `task backend:coverage` (coverlet + ReportGenerator, reporte HTML) y umbral de 75 % de líneas de
+    Domain + Application (`scripts/coverage/umbral.json`), verificado en CI, que publica el reporte como artefacto.
+    Cobertura de Domain + Application: 60,9 % → 76,5 %. Guía en `docs/dev/11-guias/pruebas.md`.
+
+- **Reportes, KPIs y exportación (`reportes-kpis-export`):**
+  - **KPIs de ventas y producto:** top de productos por unidades o ingresos con su porcentaje del total y
+    rotación (unidades del periodo / existencia actual; *no calculable* con existencia 0, *sin
+    movimiento* con existencia y sin ventas); ticket promedio y ventas por método de pago ya existentes
+    se verifican con pruebas. `GET /api/v1/reportes/productos` (`sales:read`).
+  - **KPIs del local:** ocupación actual y por zona, permanencia promedio y sesiones por mesa
+    (`GET /reportes/ocupacion`, `club:read`), asistencia de reservas y tasa de no asistencia
+    (`GET /reportes/reservas-asistencia`, `club:read`), descuadre de caja por turno cerrado
+    (`GET /reportes/caja`, `cash:close`) y proporción de cada motivo de merma frente a las ventas
+    (`porcentajeVentas` en `mermas-vs-ventas`).
+  - **Desempeño del mesonero** (`GET /reportes/mesoneros`, solo Administrador): comandas, ítems
+    servidos, ventas generadas, ticket por cuenta, tasa de cancelación y tiempo de servicio, atribuidos
+    a quien creó la comanda. Nueva columna `comanda_detalles.ServidoEn` (migración `ServidoEnComandaDetalle`,
+    nullable y sin relleno de datos previos).
+  - **Periodo válido:** `desde > hasta` o más de 366 días responden `400`; sin periodo son 30 días; una
+    fecha sin hora incluye el día final completo.
+  - **Exportación a PDF y Excel:** `GET /api/v1/reportes/{reporte}/exportar?formato=pdf|xlsx` para ventas,
+    productos, inventario, compras, propinas, mesoneros, caja, ocupación, mermas vs ventas y la bitácora de
+    auditoría, con los filtros de la pantalla y el permiso de su consulta. PDF con QuestPDF (hasta 5 000
+    filas, `422` si se supera) y Excel con ClosedXML (hasta 100 000, valores numéricos y de fecha con
+    formato, encabezado congelado y filtro). Archivo `reporte-<id>-<desde>_<hasta>`.
+  - **Dashboard y Reportes:** selector de periodo común guardado en la URL, tarjetas de ticket promedio,
+    más vendido, ocupación, no asistencia, descuadre de caja y mermas con estado vacío, gráficas de altura
+    uniforme con esqueleto de carga, pestañas nuevas en Reportes (la de mesoneros solo para el
+    Administrador) y botones de exportar. El ítem **Reportes** vuelve al menú de Analítica.
+  - **Pruebas:** unitarias con Moq de `ServicioReportes` y de la exportación, de los mapeadores y de ambos
+    exportadores; de integración de cada consulta nueva y de las descargas; y de página del Dashboard,
+    Reportes, el selector de periodo y la descarga autenticada.
+  - **Documentación:** [Reportes](docs/dev/06-modulos/reportes.md) con la definición de cada KPI.
+
+- **Módulos complementarios (`modulos-complementarios`):**
+  - **Reactivación por modo y rol:** Promociones, Existencias, Clientes, Cuentas por cobrar, Entradas y
+    Lista VIP vuelven al menú (Compras ya estaba). Promociones, Existencias, Clientes, Cuentas por cobrar
+    y Compras aparecen en ambos modos; Entradas y Lista VIP solo en Discoteca (Administrador y Host).
+    Lotes, tomas físicas y contenido siguen ocultos.
+  - **Cliente en la venta:** `ventas.ClienteId` opcional en el POS y en el cierre de cuenta; cliente
+    inexistente `404`, inactivo `422`. Migración `ModulosComplementarios` (`ventas.ClienteId`,
+    `cuentas_por_cobrar.VentaId`, sin relleno de datos previos).
+  - **Puntos automáticos:** ⌊USD pagado sin crédito × `Fidelidad:PuntosPorUSD`⌋ (1 por defecto, `0`
+    desactiva) en la misma transacción de la venta; la devolución revierte los puntos proporcionales
+    (`Reversion`), sin dejar el saldo negativo.
+  - **Fiado:** pagar con Crédito exige un cliente activo y crea una cuenta por cobrar enlazada a la venta
+    (vence a `Credito:DiasVencimiento` días, 30 por defecto, o en la fecha indicada). Las cuentas con
+    saldo y fecha pasada se muestran `Vencida`. El crédito no se acepta como abono de cuenta (`422`) y la
+    devolución de una venta fiada avisa que la cuenta se ajusta a mano.
+  - **POS:** selector de método de pago (efectivo en la moneda elegida por defecto), buscador de
+    clientes con creación rápida, condición de Crédito (cliente obligatorio y vencimiento visible);
+    ticket con cliente, puntos y crédito; cierre de cuenta con cliente y crédito.
+  - **API:** `GET /api/v1/clientes/{id}/ventas` (`crm:read`); `puntosGanados`, `creditoUSD`, `clienteId`
+    y `ventaId` en las respuestas; `aviso` en la devolución.
+  - **Pantallas:** detalle del cliente (ventas, puntos y cuentas por cobrar) y venta enlazada y estado
+    `Vencida` en Cuentas por cobrar.
+  - **Configuración:** `FIDELIDAD_PUNTOS_POR_USD` y `CREDITO_DIAS_VENCIMIENTO` (`.env.example`,
+    `docker-compose.yml`, `appsettings.json`).
+  - **Pruebas:** unitarias con Moq (puntos, crédito, devolución), de integración (venta con cliente y
+    fiado, permisos, Compras de punta a punta) y de página de cada módulo reactivado.
+  - **BREAKING — permiso `promotions:manage`:** crear, editar y eliminar promociones pasa a exigir
+    `promotions:manage`, asignado solo al Administrador; Cajero, Mesero, Barra y Cocina siguen
+    consultándolas desde el POS pero ya no pueden gestionarlas. El Cajero recibe `crm:read` y
+    `crm:write`. Los permisos viajan en el JWT: las sesiones abiertas se actualizan al renovar el token
+    (60 minutos).
+
 - **Croquis, duplicado y plantillas de plano (`croquis-planos`):**
   - **Croquis de fondo:** imagen PNG/JPG/WebP (máx. 5 MB) por plano con opacidad y ajuste
     (`contener`, `cubrir`, `estirar`); `POST/DELETE /api/v1/planos/{id}/fondo` con validación de

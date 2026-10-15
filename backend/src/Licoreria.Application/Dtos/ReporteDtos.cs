@@ -149,7 +149,8 @@ public sealed record ComparativoMermaDto(
     MotivoMerma Motivo,
     int Registros,
     decimal Unidades,
-    decimal ValorUSD);
+    decimal ValorUSD,
+    decimal PorcentajeVentas = 0m);
 
 /// <summary>Comparativo de mermas (valorizadas) frente a ventas del período.</summary>
 public sealed record ReporteMermasVsVentasDto(

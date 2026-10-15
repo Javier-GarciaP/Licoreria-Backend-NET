@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Configuración de cobertura (coverlet.collector) de las pruebas unitarias.
+  Uso: task backend:coverage (o dotnet test con la opción de settings y el recolector XPlat Code Coverage)
+-->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <!-- Solo se mide el código de producción -->
+          <Include>[Licoreria.Domain]*,[Licoreria.Application]*,[Licoreria.Infrastructure]*,[Licoreria.WebAPI]*</Include>
+          <ExcludeByAttribute>GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+          <!-- Migraciones, punto de entrada, siembra, configuraciones de EF y DTOs (records sin lógica) -->
+          <ExcludeByFile>**/Migrations/**,**/Program.cs,**/SeedData.cs,**/*Configuration.cs,**/*Configurations.cs,**/Dtos/**</ExcludeByFile>
+          <SkipAutoProps>true</SkipAutoProps>
+          <DeterministicReport>false</DeterministicReport>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

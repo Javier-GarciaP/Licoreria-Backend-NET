@@ -24,6 +24,9 @@ public interface IClienteRepository
 
     Task<CuentaPorCobrar?> ObtenerCuentaPorCobrarAsync(Guid id, CancellationToken cancellationToken = default);
 
+    /// <summary>Cuenta por cobrar originada por una venta, si existe.</summary>
+    Task<CuentaPorCobrar?> ObtenerCuentaPorCobrarDeVentaAsync(Guid ventaId, CancellationToken cancellationToken = default);
+
     Task AgregarCuentaPorCobrarAsync(CuentaPorCobrar cuenta, CancellationToken cancellationToken = default);
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

@@ -5,25 +5,25 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Coins, Pencil, Trash2 } from 'lucide-react';
+import { Coins, Eye, Pencil, Plus, Trash2 } from 'lucide-react';
 import {
   ActionMenu,
+  Buscador,
   Button,
   Card,
   CardBody,
   CardHeader,
-  CardTitle,
   DataTable,
   Input,
   Modal,
-  PageHeader,
   Pagination,
   Pill,
 } from '@licoreria/ui';
 import type { Cliente } from '@licoreria/types';
-import { clientesApi } from '@licoreria/api-client';
+import { clientesApi, cuentasPorCobrarApi } from '@licoreria/api-client';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { mensajeDeError } from '../lib/api';
+import { formatDateTime, formatUSD } from '../lib/format';
 
 const esquemaCliente = z.object({
   nombre: z.string().min(2, 'Ingresa el nombre'),
@@ -61,6 +61,7 @@ export function ClientesPage() {
   const [editando, setEditando] = useState<Cliente | null>(null);
   const [puntosDe, setPuntosDe] = useState<Cliente | null>(null);
   const [porEliminar, setPorEliminar] = useState<Cliente | null>(null);
+  const [detalleDe, setDetalleDe] = useState<Cliente | null>(null);
   const queryClient = useQueryClient();
 
   const clienteForm = useForm<FormularioCliente>({ resolver: zodResolver(esquemaCliente), defaultValues: VACIO });
@@ -72,6 +73,23 @@ export function ClientesPage() {
   const clientes = useQuery({
     queryKey: ['clientes', page, busqueda],
     queryFn: () => clientesApi.listar({ page, pageSize: 15, busqueda }),
+  });
+
+  const detalleId = detalleDe?.id ?? '';
+  const ventasCliente = useQuery({
+    queryKey: ['clientes', 'detalle', detalleId, 'ventas'],
+    queryFn: () => clientesApi.ventas(detalleId, { pageSize: 10 }),
+    enabled: Boolean(detalleId),
+  });
+  const puntosCliente = useQuery({
+    queryKey: ['clientes', 'detalle', detalleId, 'puntos'],
+    queryFn: () => clientesApi.puntos(detalleId),
+    enabled: Boolean(detalleId),
+  });
+  const cuentasCliente = useQuery({
+    queryKey: ['clientes', 'detalle', detalleId, 'cuentas'],
+    queryFn: () => cuentasPorCobrarApi.listar({ clienteId: detalleId, pageSize: 20 }),
+    enabled: Boolean(detalleId),
   });
 
   const invalidar = () => queryClient.invalidateQueries({ queryKey: ['clientes'] });
@@ -145,24 +163,23 @@ export function ClientesPage() {
   const formularioAbierto = creando || Boolean(editando);
 
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader
-        title="Clientes"
-        subtitle="CRM y programa de fidelidad."
-        actions={<Button onClick={abrirCrear}>Nuevo cliente</Button>}
-      />
+    <div className="mx-auto flex max-w-page flex-col gap-4">
       <Card>
-        <CardHeader>
-          <CardTitle>Clientes</CardTitle>
-          <div className="w-56">
-            <Input
-              placeholder="Buscar…"
+        <CardHeader className="flex flex-col items-stretch gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Buscador
+              placeholder="Buscar nombre, RIF, CI o teléfono…"
               value={busqueda}
-              onChange={(evento) => {
-                setBusqueda(evento.target.value);
+              onCambio={(valor) => {
+                setBusqueda(valor);
                 setPage(1);
               }}
             />
+            <div className="ml-auto">
+              <Button leftIcon={<Plus size={15} />} onClick={abrirCrear}>
+                Nuevo cliente
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardBody>
@@ -199,6 +216,7 @@ export function ClientesPage() {
                   <ActionMenu
                     label={`Acciones de ${cliente.nombre}`}
                     options={[
+                      { label: 'Ver detalle', icon: <Eye size={15} />, onClick: () => setDetalleDe(cliente) },
                       { label: 'Puntos', icon: <Coins size={15} />, onClick: () => setPuntosDe(cliente) },
                       { label: 'Editar', icon: <Pencil size={15} />, onClick: () => abrirEditar(cliente) },
                       {
@@ -262,6 +280,81 @@ export function ClientesPage() {
             Activo
           </label>
         </form>
+      </Modal>
+
+      <Modal
+        open={Boolean(detalleDe)}
+        onClose={() => setDetalleDe(null)}
+        title={`Cliente · ${detalleDe?.nombre ?? ''}`}
+        size="lg"
+        footer={
+          <Button variant="ghost" onClick={() => setDetalleDe(null)}>
+            Cerrar
+          </Button>
+        }
+      >
+        <div className="flex flex-col gap-5">
+          <div className="flex items-center justify-between rounded-xl border border-border bg-muted/40 px-4 py-3">
+            <span className="text-sm text-muted-foreground">Puntos</span>
+            <span className="num text-xl font-medium text-foreground">{detalleDe?.puntos ?? 0}</span>
+          </div>
+
+          <section aria-label="Ventas del cliente" className="flex flex-col gap-2">
+            <h3 className="text-sm font-medium text-foreground">Ventas recientes</h3>
+            {ventasCliente.isError && <p className="text-sm text-destructive-fg">No se pudieron cargar las ventas.</p>}
+            {!ventasCliente.isError && (ventasCliente.data?.items.length ?? 0) === 0 && !ventasCliente.isLoading && (
+              <p className="text-sm text-muted-foreground">Sin ventas asociadas.</p>
+            )}
+            {(ventasCliente.data?.items ?? []).map((venta) => (
+              <div key={venta.id} className="flex items-center justify-between gap-3 text-sm">
+                <span className="text-muted-foreground">
+                  {formatDateTime(venta.fecha)} · {venta.numeroComprobante ?? venta.id.slice(0, 8)}
+                </span>
+                <span className="num text-foreground">{formatUSD(venta.totalUSD)}</span>
+              </div>
+            ))}
+          </section>
+
+          <section aria-label="Cuentas por cobrar del cliente" className="flex flex-col gap-2">
+            <h3 className="text-sm font-medium text-foreground">Cuentas por cobrar</h3>
+            {cuentasCliente.isError && (
+              <p className="text-sm text-destructive-fg">No se pudieron cargar las cuentas por cobrar.</p>
+            )}
+            {!cuentasCliente.isError && (cuentasCliente.data?.items.length ?? 0) === 0 && !cuentasCliente.isLoading && (
+              <p className="text-sm text-muted-foreground">Sin cuentas por cobrar.</p>
+            )}
+            {(cuentasCliente.data?.items ?? []).map((cuenta) => (
+              <div key={cuenta.id} className="flex items-center justify-between gap-3 text-sm">
+                <span className="text-muted-foreground">Vence {cuenta.vencimiento.slice(0, 10)}</span>
+                <span className="flex items-center gap-2">
+                  <span className="num text-foreground">{formatUSD(cuenta.saldoUSD)}</span>
+                  <Pill tone={cuenta.estado === 'Vencida' ? 'danger' : cuenta.estado === 'Pagada' ? 'success' : 'warning'}>
+                    {cuenta.estado}
+                  </Pill>
+                </span>
+              </div>
+            ))}
+          </section>
+
+          <section aria-label="Movimientos de puntos" className="flex flex-col gap-2">
+            <h3 className="text-sm font-medium text-foreground">Movimientos de puntos</h3>
+            {puntosCliente.isError && <p className="text-sm text-destructive-fg">No se pudieron cargar los puntos.</p>}
+            {!puntosCliente.isError && (puntosCliente.data?.length ?? 0) === 0 && !puntosCliente.isLoading && (
+              <p className="text-sm text-muted-foreground">Sin movimientos de puntos.</p>
+            )}
+            {(puntosCliente.data ?? []).slice(0, 10).map((movimiento) => (
+              <div key={movimiento.id} className="flex items-center justify-between gap-3 text-sm">
+                <span className="text-muted-foreground">
+                  {movimiento.motivo} · {formatDateTime(movimiento.fecha)}
+                </span>
+                <span className="num text-foreground">
+                  {movimiento.tipo === 'Acumulacion' ? '+' : '−'}
+                  {movimiento.puntos}
+                </span>
+              </div>
+            ))}
+          </section>
+        </div>
       </Modal>
 
       <Modal

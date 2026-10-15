@@ -21,12 +21,12 @@ public class PromocionesController : ControllerBase
         => Ok(await _servicio.ObtenerPromocionesAsync(soloVigentes, cancellationToken));
 
     [HttpPost]
-    [Authorize(Policy = Permisos.VentasEscribir)]
+    [Authorize(Policy = Permisos.PromocionesGestionar)]
     public async Task<ActionResult<PromocionDto>> Crear([FromBody] PromocionCrearDto dto, CancellationToken cancellationToken)
         => StatusCode(StatusCodes.Status201Created, await _servicio.CrearPromocionAsync(dto, cancellationToken));
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = Permisos.VentasEscribir)]
+    [Authorize(Policy = Permisos.PromocionesGestionar)]
     public async Task<ActionResult<PromocionDto>> Editar(Guid id, [FromBody] PromocionEditarDto dto, CancellationToken cancellationToken)
     {
         if (id != dto.Id)
@@ -39,7 +39,7 @@ public class PromocionesController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = Permisos.VentasEscribir)]
+    [Authorize(Policy = Permisos.PromocionesGestionar)]
     public async Task<IActionResult> Eliminar(Guid id, CancellationToken cancellationToken)
         => await _servicio.EliminarPromocionAsync(id, cancellationToken) ? NoContent() : NotFound();
 }

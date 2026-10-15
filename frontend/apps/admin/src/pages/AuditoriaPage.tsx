@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { BotonesExportar } from '../components/BotonesExportar';
 import {
   Card,
   CardBody,
@@ -132,8 +133,19 @@ export function AuditoriaPage() {
               onDesde={(valor) => cambiar({ desde: valor })}
               onHasta={(valor) => cambiar({ hasta: valor })}
             />
-            <div className="ml-auto">
+            <div className="ml-auto flex flex-wrap items-center gap-2">
               <LimpiarFiltros activo={hayFiltros} onClick={limpiarFiltros} />
+              <BotonesExportar
+                reporte="auditoria"
+                filtros={{
+                  usuarioId: usuarioId || undefined,
+                  entidad: entidad || undefined,
+                  accion: accion || undefined,
+                  tipo: tipo || undefined,
+                  ...rangoIso(desde, hasta),
+                }}
+                deshabilitado={(auditoria.data?.totalItems ?? 0) === 0}
+              />
             </div>
           </div>
         </CardHeader>

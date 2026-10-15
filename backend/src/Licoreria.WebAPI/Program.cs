@@ -225,7 +225,8 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials();
+              .AllowCredentials()
+              .WithExposedHeaders("Content-Disposition"); // el nombre del archivo exportado viaja ahí
     });
 });
 

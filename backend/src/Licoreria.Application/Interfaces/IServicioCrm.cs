@@ -18,6 +18,12 @@ public interface IServicioCrm
     Task<ClienteDto?> EditarClienteAsync(ClienteEditarDto dto, CancellationToken cancellationToken = default);
     Task<bool> EliminarClienteAsync(Guid id, CancellationToken cancellationToken = default);
 
+    /// <summary>Ventas del cliente, más recientes primero; <c>null</c> si el cliente no existe.</summary>
+    Task<ResultadoPaginado<ClienteVentaDto>?> ObtenerVentasDeClienteAsync(
+        Guid clienteId,
+        PaginacionRequest paginacion,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<PuntosMovimientoDto>> ObtenerPuntosAsync(Guid clienteId, CancellationToken cancellationToken = default);
     Task<ClienteDto?> AcumularPuntosAsync(Guid clienteId, PuntosOperacionDto dto, CancellationToken cancellationToken = default);
     Task<ClienteDto?> CanjearPuntosAsync(Guid clienteId, PuntosOperacionDto dto, CancellationToken cancellationToken = default);

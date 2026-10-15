@@ -1,0 +1,4 @@
+{
+  "lineas": 75,
+  "ensamblados": ["Licoreria.Domain", "Licoreria.Application"]
+}

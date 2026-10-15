@@ -19,7 +19,6 @@ import {
 } from '@licoreria/ui';
 import type { StockItem } from '@licoreria/types';
 import { inventarioApi } from '@licoreria/api-client';
-import { InventarioTabs } from '../components/InventarioTabs';
 import { InlineForm } from '../components/InlineForm';
 import { Can } from '../components/Rbac';
 import { mensajeDeError } from '../lib/api';
@@ -106,7 +105,6 @@ export function InventarioPage() {
 
   return (
     <div className="mx-auto flex max-w-page flex-col gap-4">
-      <InventarioTabs />
 
       <Card>
         <CardHeader>

@@ -46,7 +46,7 @@ public partial class ApiEndpointsTests
         return body.GetProperty("id").GetGuid();
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Login_ConCredencialesValidas_DevuelveToken()
     {
         using var client = _factory.CreateClient();
@@ -62,7 +62,7 @@ public partial class ApiEndpointsTests
         Assert.False(string.IsNullOrWhiteSpace(body.GetProperty("accessToken").GetString()));
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task EndpointProtegido_SinToken_Devuelve401()
     {
         using var client = _factory.CreateClient();
@@ -72,7 +72,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Producto_ConVariante_SeCreaYObtiene()
     {
         var categoriaId = await ObtenerPrimerIdAsync("/api/v1/categorias");
@@ -111,7 +111,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(sku, body.GetProperty("variantes")[0].GetProperty("sku").GetString());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Venta_ConPagoSuficiente_GeneraComprobanteYDescuentaStock()
     {
         await AbrirTurnoAsync();
@@ -135,7 +135,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(9m, stockBody.GetProperty("items")[0].GetProperty("cantidad").GetDecimal());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Ventas_Simultaneas_RecibenNumerosDeComprobanteDistintos()
     {
         await AbrirTurnoAsync();
@@ -164,7 +164,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(numeros.Count, numeros.Distinct().Count());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Venta_ConPagoInsuficiente_Devuelve422()
     {
         await AbrirTurnoAsync();
@@ -180,7 +180,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Preparado_ConReceta_AlVender_DescuentaElInsumo()
     {
         await AbrirTurnoAsync();
@@ -213,7 +213,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(0, stockTragoBody.GetProperty("items").GetArrayLength());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Preparado_ConPresentacionBase_Devuelve422()
     {
         var categoriaId = await ObtenerPrimerIdAsync("/api/v1/categorias");
@@ -246,7 +246,7 @@ public partial class ApiEndpointsTests
         Assert.Contains("preparado", body.GetProperty("detail").GetString()!, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Preparado_ConStockPropio_Devuelve422()
     {
         var categoriaId = await ObtenerPrimerIdAsync("/api/v1/categorias");
@@ -315,7 +315,7 @@ public partial class ApiEndpointsTests
         return (varianteId, sku);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Dashboard_ComoAdmin_DevuelveIndicadores()
     {
         var response = await _factory.Client.GetAsync("/api/v1/reportes/dashboard");
@@ -325,7 +325,7 @@ public partial class ApiEndpointsTests
         Assert.True(body.TryGetProperty("ventasMesUSD", out _));
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Modificador_SeCreaYAsignaAProducto()
     {
         var (productoId, _, _) = await CrearProductoConStockAsync("Producto Modificador", 5.0m, 3);
@@ -355,7 +355,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.NoContent, quitar.StatusCode);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task ReportePropinas_ReflejaLaVentaConPropina()
     {
         await AbrirTurnoAsync();
@@ -377,7 +377,7 @@ public partial class ApiEndpointsTests
         Assert.True(body.GetProperty("porUsuario").GetArrayLength() >= 1);
     }
 
-    [Theory]
+    [TeoriaDeIntegracion]
     [InlineData("/api/v1/reportes/ventas")]
     [InlineData("/api/v1/reportes/inventario")]
     [InlineData("/api/v1/reportes/compras")]
@@ -388,7 +388,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Plano_ConElementos_SeCreaYSeRecuperaConSusElementos()
     {
         var creado = await CrearPlanoAsync("Plano Integración");
@@ -405,7 +405,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(1, body.GetProperty("elementos").GetArrayLength());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Plano_AlCrearUnoNuevo_DesactivaElAnterior()
     {
         var primero = await CrearPlanoAsync("Plano Activo Anterior");
@@ -420,7 +420,7 @@ public partial class ApiEndpointsTests
         Assert.True(p2.GetProperty("activo").GetBoolean());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Cuenta_AlAbrirMesa_RegistraQuienLaAbrio()
     {
         await AbrirTurnoAsync();
@@ -447,7 +447,7 @@ public partial class ApiEndpointsTests
         Assert.Equal("Cliente Prueba", body.GetProperty("cliente").GetString());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Chat_EnviaYObtieneMensaje()
     {
         var enviar = await _factory.Client.PostAsJsonAsync("/api/v1/staff/chat", new { mensaje = "Comanda 5 lista en barra" });
@@ -471,7 +471,7 @@ public partial class ApiEndpointsTests
         Assert.True(encontrado);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Item_SePuedeMoverAEnProceso()
     {
         await AbrirTurnoAsync();
@@ -499,7 +499,7 @@ public partial class ApiEndpointsTests
         Assert.Equal("EnProceso", movido.GetProperty("comandas")[0].GetProperty("detalles")[0].GetProperty("estado").GetString());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Cuenta_SinTurnoAbierto_NoSePuedeAbrirMesa()
     {
         var turno = await _factory.Client.GetAsync("/api/v1/sesiones-caja/turno");
@@ -518,7 +518,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.UnprocessableEntity, abrir.StatusCode);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Cuenta_Reabrir_DevuelveAOcupada()
     {
         await AbrirTurnoAsync();
@@ -576,7 +576,7 @@ public partial class ApiEndpointsTests
         Assert.True(mesaOperativa);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Turno_AlCerrar_DesalojaLasMesasYDejaPorCobrar()
     {
         await AbrirTurnoAsync();
@@ -609,7 +609,7 @@ public partial class ApiEndpointsTests
         Assert.Equal("PorCobrar", cuerpo.GetProperty("estado").GetString());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Comanda_ConStockInsuficiente_Devuelve422()
     {
         await AbrirTurnoAsync();
@@ -627,7 +627,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.UnprocessableEntity, comanda.StatusCode);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Item_AlServirse_DescuentaStockYAlCerrarNoDuplica()
     {
         await AbrirTurnoAsync();
@@ -667,7 +667,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(9m, cuerpoFinal.GetProperty("items")[0].GetProperty("cantidad").GetDecimal());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Item_AlCancelarse_ReduceElTotalDeLaCuenta()
     {
         await AbrirTurnoAsync();
@@ -700,7 +700,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(5m, cancelado.GetProperty("saldo").GetDecimal());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Producto_ConVarianteNoBaseYStockInicial_CreaExistencia()
     {
         var categoriaId = await ObtenerPrimerIdAsync("/api/v1/categorias");
@@ -746,7 +746,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(7m, cuerpo.GetProperty("items")[0].GetProperty("cantidad").GetDecimal());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Producto_CocinaSinStock_SePuedePedirYServirSinKardex()
     {
         await AbrirTurnoAsync();
@@ -803,7 +803,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(0, cuerpoStock.GetProperty("items").GetArrayLength());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Producto_BarraSimpleSinBase_Devuelve422()
     {
         var categoriaId = await ObtenerPrimerIdAsync("/api/v1/categorias");
@@ -833,7 +833,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Producto_CocinaConStockInicial_Devuelve422()
     {
         var categoriaId = await ObtenerPrimerIdAsync("/api/v1/categorias");
@@ -947,7 +947,7 @@ public partial class ApiEndpointsTests
         return (cuentaId, primera.GetProperty("id").GetGuid(), primera.GetProperty("detalles")[0].GetProperty("id").GetGuid());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Comanda_AlPedir_ReservaLaExistenciaSinDescontarla()
     {
         await AbrirTurnoAsync();
@@ -960,7 +960,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(2m, reservada);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Comanda_UltimaUnidadReservada_LaSegundaMesaRecibe422AlPedir()
     {
         await AbrirTurnoAsync();
@@ -983,7 +983,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(1m, reservada);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Item_AlServirse_ConsumeLaReservaYDescuentaUnaSolaVez()
     {
         await AbrirTurnoAsync();
@@ -1002,7 +1002,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(0m, reservada);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Item_AlCancelarse_LiberaLaReservaSinTocarLaExistencia()
     {
         await AbrirTurnoAsync();
@@ -1018,7 +1018,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(0m, reservada);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Cuenta_AlCerrarConItemsSinServir_DescuentaUnaVezYLiberaLaReserva()
     {
         await AbrirTurnoAsync();
@@ -1036,7 +1036,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(0m, reservada);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Venta_DeLaUnidadReservadaPorUnaMesa_Devuelve422()
     {
         await AbrirTurnoAsync();
@@ -1056,7 +1056,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(1m, reservada);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Turno_AlCerrar_LiberaLasReservasDeLoNoServido()
     {
         await AbrirTurnoAsync();

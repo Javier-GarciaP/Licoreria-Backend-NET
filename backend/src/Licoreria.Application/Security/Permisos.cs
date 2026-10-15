@@ -20,6 +20,7 @@ public static class Permisos
     public const string VentasLeer = "sales:read";
     public const string VentasEscribir = "sales:write";
     public const string VentasAnular = "sales:void";
+    public const string PromocionesGestionar = "promotions:manage";
 
     public const string CuentasLeer = "account:read";
     public const string CuentasAbonar = "account:abono";
@@ -65,6 +66,7 @@ public static class Permisos
         new(VentasLeer, "sales", "Consultar ventas y comprobantes."),
         new(VentasEscribir, "sales", "Registrar ventas y pagos."),
         new(VentasAnular, "sales", "Anular ventas y emitir devoluciones."),
+        new(PromocionesGestionar, "sales", "Crear, editar y eliminar promociones."),
         new(CuentasLeer, "account", "Consultar cuentas y abonos."),
         new(CuentasAbonar, "account", "Registrar abonos sobre una cuenta."),
         new(CuentasCerrar, "account", "Cerrar cuentas y generar la venta."),

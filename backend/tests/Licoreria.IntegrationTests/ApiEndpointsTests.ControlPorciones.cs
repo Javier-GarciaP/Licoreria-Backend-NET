@@ -45,7 +45,7 @@ public partial class ApiEndpointsTests
         return (await JsonAsync(abrir)).GetProperty("id").GetGuid();
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Porcion_SinEnvaseAbiertoPeroConBotellasCerradas_PideDestaparYNoEsAgotado()
     {
         await AbrirTurnoAsync();
@@ -61,7 +61,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(3, cuerpo.GetProperty("envasesCerrados").GetInt32());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Porcion_SinNadaQueServir_EsExistenciaAgotada()
     {
         await AbrirTurnoAsync();
@@ -75,7 +75,7 @@ public partial class ApiEndpointsTests
         Assert.Equal("existencia-agotada", (await JsonAsync(respuesta)).GetProperty("codigo").GetString());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Porcion_AlPedir_ReservaYAlServirConsumeDelEnvaseUnaSolaVez()
     {
         await AbrirTurnoAsync();
@@ -96,7 +96,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(1, await VasosDisponiblesAsync(cola));
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Porcion_AlCancelarElPedido_LasPorcionesVuelvenADisponibles()
     {
         await AbrirTurnoAsync();
@@ -112,7 +112,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(4, await RestantesDelEnvaseAsync(cola, envaseId));
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Porcion_AlCerrarLaCuentaSinServir_SeDescuentaUnaVezYSeLiberaLaReserva()
     {
         await AbrirTurnoAsync();
@@ -129,7 +129,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(2, await VasosDisponiblesAsync(cola));
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Porcion_AlCerrarElTurno_SeLiberanLasReservasPendientes()
     {
         await AbrirTurnoAsync();
@@ -145,7 +145,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(4, await VasosDisponiblesAsync(cola));
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Porcion_VentaDirectaEnElPos_ConsumeDeInmediatoYNoToca_LoReservadoPorMesas()
     {
         await AbrirTurnoAsync();
@@ -171,7 +171,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(3, await RestantesDelEnvaseAsync(cola, envaseId));
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Porcion_UnPreparadoConUnaPorcionComoInsumo_ReservaYConsumeLosVasos()
     {
         await AbrirTurnoAsync();
@@ -215,7 +215,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.UnprocessableEntity, demasiadas.StatusCode);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Porcion_DosMeserosPidenElUltimoVasoAlMismoTiempo_SoloUnoLoObtiene()
     {
         await AbrirTurnoAsync();
