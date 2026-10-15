@@ -9,25 +9,32 @@ import {
   type Variants,
 } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { Area, AreaChart, Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
+import { Area, AreaChart, Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
 import {
+  Armchair,
   Boxes,
   CalendarClock,
+  CalendarX2,
   LayoutGrid,
-  Package,
   Receipt,
+  Star,
   Trash2,
   TrendingUp,
-  Users,
   Wallet,
 } from 'lucide-react';
 import { cn, Pill, Skeleton } from '@licoreria/ui';
-import type { Dashboard, DiagnosticoInventario, ReporteHeatmap } from '@licoreria/types';
-import { reportesApi } from '@licoreria/api-client';
-import { formatNumber, formatUSD } from '../lib/format';
+import type { Dashboard, DiagnosticoInventario, ProductoVendido, ReporteHeatmap } from '@licoreria/types';
+import { ApiError, reportesApi } from '@licoreria/api-client';
+import { SelectorPeriodo } from '../components/SelectorPeriodo';
+import { usePeriodo } from '../hooks/usePeriodo';
+import { formatNumber, formatPercent, formatUSD } from '../lib/format';
+import { fechaLocal } from '../lib/periodo';
 
 const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 const HORAS = Array.from({ length: 24 }, (_, hora) => hora);
+
+/** Alto uniforme del contenido de cada panel (móvil / escritorio) para que las gráficas se lean parejas. */
+const ALTURA_GRAFICA = 'h-52 md:h-64';
 
 type Tone = 'mint' | 'sky' | 'lavender' | 'peach' | 'rose' | 'butter';
 
@@ -67,27 +74,6 @@ const item: Variants = {
   oculto: { opacity: 0, y: 22, scale: 0.96 },
   visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
 };
-
-/** Tramas de carga del bento de KPIs (10 tiles: héroe 2 + caja 2 + 8 sencillos). */
-const KPI_ESQUELETOS = ['col-span-2', 'col-span-2', '', '', '', '', '', '', '', ''];
-
-function claveLocal(fecha: Date): string {
-  return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
-}
-
-/**
- * Rango que cubre el mes en curso y, a la vez, los últimos 7 días.
- * Se envían fechas ISO con zona horaria (Z): el API rechaza fechas sin
- * zona al compararlas contra columnas `timestamp with time zone`.
- */
-function rangoDashboard(): { desde: string; hasta: string } {
-  const hoy = new Date();
-  const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-  const hace6 = new Date(hoy);
-  hace6.setDate(hace6.getDate() - 6);
-  const desde = inicioMes < hace6 ? inicioMes : hace6;
-  return { desde: `${claveLocal(desde)}T00:00:00Z`, hasta: `${claveLocal(hoy)}T23:59:59Z` };
-}
 
 /** Cifra que se cuenta desde 0 hasta su valor al aparecer. */
 function Contador({ valor, formato }: { valor: number; formato: (numero: number) => string }) {
@@ -136,30 +122,52 @@ function AreaSpark({ data, tone = 'mint' }: { data: Punto[]; tone?: Tone }) {
   );
 }
 
-/** Barras compactas (por ejemplo, ventas por día del mes), resaltando el día de hoy. */
-function MiniBars({ data, tone = 'mint' }: { data: Punto[]; tone?: Tone }) {
-  const color = `rgb(var(${TONE_VAR[tone]}))`;
-  const hoy = new Date().getDate();
+/** Barras de ventas por día del periodo, con eje de fechas y tooltip. */
+function BarrasDia({ data }: { data: Punto[] }) {
+  const color = `rgb(var(${TONE_VAR.mint}))`;
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <BarChart data={data} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
-        <XAxis dataKey="etiqueta" hide />
+      <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
+        <XAxis
+          dataKey="etiqueta"
+          tickLine={false}
+          axisLine={false}
+          interval="preserveStartEnd"
+          minTickGap={24}
+          tick={{ fontSize: 10, fill: 'rgb(var(--color-ink) / 0.55)' }}
+        />
         <Tooltip
           cursor={{ fill: 'rgb(var(--color-ink) / 0.05)' }}
           contentStyle={TOOLTIP_STYLE}
-          formatter={(value: number) => formatUSD(value)}
+          formatter={(value: number) => [formatUSD(value), 'Ventas']}
           labelFormatter={(etiqueta) => `Día ${etiqueta}`}
         />
-        <Bar dataKey="totalUSD" radius={[3, 3, 0, 0]} isAnimationActive animationDuration={800}>
-          {data.map((punto) => (
-            <Cell
-              key={punto.etiqueta}
-              fill={Number(punto.etiqueta) === hoy ? 'rgb(var(--color-accent-ink))' : color}
-            />
-          ))}
-        </Bar>
+        <Bar dataKey="totalUSD" fill={color} radius={[3, 3, 0, 0]} isAnimationActive animationDuration={800} />
       </BarChart>
     </ResponsiveContainer>
+  );
+}
+
+/** Ranking horizontal de los productos más vendidos. */
+function BarrasProductos({ items }: { items: ProductoVendido[] }) {
+  const max = Math.max(1, ...items.map((producto) => producto.unidades));
+  return (
+    <div className="flex h-full flex-col justify-center gap-3">
+      {items.map((producto) => (
+        <div key={producto.varianteId} className="flex flex-col gap-1">
+          <div className="flex items-center justify-between gap-2 text-xs">
+            <span className="truncate text-foreground">
+              {producto.productoNombre}
+              {producto.varianteNombre ? <span className="text-muted-foreground"> · {producto.varianteNombre}</span> : null}
+            </span>
+            <span className="num shrink-0 text-muted-foreground">{formatNumber(producto.unidades)} u</span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <div className="h-full rounded-full bg-primary" style={{ width: `${(producto.unidades / max) * 100}%` }} />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -262,14 +270,14 @@ function Panel({
         <h2 className="text-sm font-medium tracking-tighter2 text-foreground">{title}</h2>
         {aside && <span className="text-xs text-muted-foreground">{aside}</span>}
       </div>
-      <div className="min-h-0 flex-1">{children}</div>
+      <div className={cn(ALTURA_GRAFICA, 'min-h-0 overflow-y-auto overflow-x-hidden')}>{children}</div>
     </motion.div>
   );
 }
 
 function Heatmap({ data }: { data?: ReporteHeatmap }) {
   if (!data) {
-    return <Skeleton className="h-44 w-full" />;
+    return <Skeleton className="h-full w-full" />;
   }
 
   const mapa = new Map(data.franjas.map((franja) => [`${franja.diaSemana}-${franja.hora}`, franja.totalUSD]));
@@ -362,7 +370,7 @@ const ESTADOS_INVENTARIO: { clave: keyof DiagnosticoInventario; etiqueta: string
 ];
 
 function SaludInventario({ data }: { data?: DiagnosticoInventario }) {
-  if (!data) return <Skeleton className="h-24 w-full" />;
+  if (!data) return <Skeleton className="h-full w-full" />;
 
   const total = Math.max(1, data.total);
   const criticos = Number(data.sinStock) + Number(data.riesgoCritico);
@@ -404,153 +412,295 @@ function SaludInventario({ data }: { data?: DiagnosticoInventario }) {
   );
 }
 
+/** Tipo mínimo de una consulta de TanStack Query que usa el Dashboard. */
+interface Consulta<T> {
+  data: T | undefined;
+  isLoading: boolean;
+  error: unknown;
+}
+
+function sinAcceso(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 403;
+}
+
+/** Texto del tile cuando la consulta no devolvió datos (cargando, sin acceso o con error). */
+function textoDeEstado(consulta: Consulta<unknown>): string | null {
+  if (consulta.data) return null;
+  if (consulta.isLoading) return null;
+  return sinAcceso(consulta.error) ? 'Sin acceso' : 'No disponible';
+}
+
+const ESQUELETO_TILE = <Skeleton className="h-full min-h-20 w-full" />;
+
+function TileVacio({ label, icon, tone, mensaje, className }: {
+  label: string;
+  icon: ReactNode;
+  tone: Tone;
+  mensaje: string;
+  className?: string;
+}) {
+  return (
+    <Tile label={label} icon={icon} tone={tone} value={<span className="text-base text-muted-foreground">Sin datos</span>} hint={mensaje} className={className} />
+  );
+}
+
+/** Serie diaria completa del periodo (los días sin ventas cuentan 0). */
+function serieDelPeriodo(
+  porDia: { fecha: string; totalUSD: number; cantidad: number }[],
+  desde: string,
+  hasta: string,
+): (Punto & { cantidad: number })[] {
+  const mapa = new Map(porDia.map((dia) => [dia.fecha.slice(0, 10), dia]));
+  const filas: (Punto & { cantidad: number })[] = [];
+  const [ay, am, ad] = desde.split('-').map(Number);
+  const cursor = new Date(ay, am - 1, ad);
+  const [hy, hm, hd] = hasta.split('-').map(Number);
+  const fin = new Date(hy, hm - 1, hd);
+  while (cursor <= fin && filas.length < 400) {
+    const fila = mapa.get(fechaLocal(cursor));
+    filas.push({
+      etiqueta: `${cursor.getDate()}/${cursor.getMonth() + 1}`,
+      totalUSD: fila?.totalUSD ?? 0,
+      cantidad: fila?.cantidad ?? 0,
+    });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return filas;
+}
+
 export function DashboardPage() {
+  const periodo = usePeriodo();
+  const { desde, hasta, valido } = periodo;
+  const habilitada = valido;
+
+  // Estado en vivo (no depende del periodo).
   const dashboard = useQuery({ queryKey: ['reportes', 'dashboard'], queryFn: reportesApi.dashboard });
-  const heatmap = useQuery({ queryKey: ['reportes', 'heatmap'], queryFn: () => reportesApi.heatmap() });
-  const salud = useQuery({
-    queryKey: ['reportes', 'inventario-salud'],
-    queryFn: reportesApi.inventarioSalud,
+  const salud = useQuery({ queryKey: ['reportes', 'inventario-salud'], queryFn: reportesApi.inventarioSalud });
+
+  // Indicadores del periodo elegido: cada clave incluye el periodo para recalcular al cambiarlo.
+  const ventas = useQuery({
+    queryKey: ['reportes', 'ventas', desde, hasta],
+    queryFn: () => reportesApi.ventas(desde, hasta),
+    enabled: habilitada,
+    retry: false,
+  });
+  const productos = useQuery({
+    queryKey: ['reportes', 'productos', desde, hasta, 'Unidades', 5],
+    queryFn: () => reportesApi.productos(desde, hasta, 'Unidades', 5),
+    enabled: habilitada,
+    retry: false,
+  });
+  const ocupacion = useQuery({
+    queryKey: ['reportes', 'ocupacion', desde, hasta],
+    queryFn: () => reportesApi.ocupacion(desde, hasta),
+    enabled: habilitada,
+    retry: false,
+  });
+  const asistencia = useQuery({
+    queryKey: ['reportes', 'reservas-asistencia', desde, hasta],
+    queryFn: () => reportesApi.reservasAsistencia(desde, hasta),
+    enabled: habilitada,
+    retry: false,
+  });
+  const caja = useQuery({
+    queryKey: ['reportes', 'caja', desde, hasta],
+    queryFn: () => reportesApi.caja(desde, hasta),
+    enabled: habilitada,
+    retry: false,
   });
   const mermas = useQuery({
-    queryKey: ['reportes', 'mermas-vs-ventas'],
-    queryFn: () => reportesApi.mermasVsVentas(),
+    queryKey: ['reportes', 'mermas-vs-ventas', desde, hasta],
+    queryFn: () => reportesApi.mermasVsVentas(desde, hasta),
+    enabled: habilitada,
+    retry: false,
   });
-
-  const rango = useMemo(() => rangoDashboard(), []);
-  const ventas = useQuery({
-    queryKey: ['reportes', 'ventas', rango.desde, rango.hasta],
-    queryFn: () => reportesApi.ventas(rango.desde, rango.hasta),
+  const heatmap = useQuery({
+    queryKey: ['reportes', 'heatmap', desde, hasta],
+    queryFn: () => reportesApi.heatmap(desde, hasta),
+    enabled: habilitada,
+    retry: false,
   });
 
   const datos: Dashboard | undefined = dashboard.data;
-  const cargando = dashboard.isLoading || !datos;
 
-  const serie = useMemo(() => {
-    const porDia = ventas.data?.porDia ?? [];
-    const mapa = new Map(porDia.map((dia) => [dia.fecha.slice(0, 10), dia]));
-    const hoy = new Date();
-    const filas: (Punto & { cantidad: number })[] = [];
-    for (let indice = 6; indice >= 0; indice -= 1) {
-      const fecha = new Date(hoy);
-      fecha.setDate(fecha.getDate() - indice);
-      const fila = mapa.get(claveLocal(fecha));
-      filas.push({
-        etiqueta: `${fecha.getDate()}/${fecha.getMonth() + 1}`,
-        totalUSD: fila?.totalUSD ?? 0,
-        cantidad: fila?.cantidad ?? 0,
-      });
-    }
-    return filas;
-  }, [ventas.data]);
-
-  const total7 = serie.reduce((acumulado, fila) => acumulado + fila.totalUSD, 0);
-  const ayer = serie[5]?.totalUSD ?? 0;
-  const ventasHoy = datos?.ventasHoyUSD ?? 0;
-  const variacion = ayer > 0 ? ((ventasHoy - ayer) / ayer) * 100 : null;
-
-  const serieMes = useMemo(() => {
-    const porDia = ventas.data?.porDia ?? [];
-    const mapa = new Map(porDia.map((dia) => [dia.fecha.slice(0, 10), dia]));
-    const hoy = new Date();
-    const filas: Punto[] = [];
-    for (let dia = 1; dia <= hoy.getDate(); dia += 1) {
-      const fecha = new Date(hoy.getFullYear(), hoy.getMonth(), dia);
-      const fila = mapa.get(claveLocal(fecha));
-      filas.push({ etiqueta: String(dia), totalUSD: fila?.totalUSD ?? 0 });
-    }
-    return filas;
-  }, [ventas.data]);
-
-  const ticketSerie = useMemo(
-    () =>
-      serie.map((fila) => ({
-        etiqueta: fila.etiqueta,
-        totalUSD: fila.cantidad > 0 ? fila.totalUSD / fila.cantidad : 0,
-      })),
-    [serie],
+  const serie = useMemo(
+    () => (ventas.data ? serieDelPeriodo(ventas.data.porDia, desde, hasta) : []),
+    [ventas.data, desde, hasta],
   );
+
+  const etiquetaPeriodo = `${desde} al ${hasta}`;
+  const cargaVentas = ventas.isLoading || (!ventas.data && habilitada && !ventas.error);
 
   return (
     <MotionConfig reducedMotion="user">
       <div className="flex flex-col gap-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-lg font-medium text-foreground">Dashboard</h1>
+            <p className="text-xs text-muted-foreground">
+              {valido ? `Periodo: ${etiquetaPeriodo}` : 'Elige un periodo válido para ver los indicadores.'}
+            </p>
+          </div>
+          <SelectorPeriodo periodo={periodo} onElegir={periodo.elegir} onRango={periodo.fijarRango} />
+        </div>
+
         <motion.div
-          key={cargando ? 'carga' : 'datos'}
+          key={`${desde}-${hasta}`}
           variants={contenedor}
           initial="oculto"
           animate="visible"
-          className="grid grid-cols-2 gap-4 overflow-x-auto lg:grid-cols-4"
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          aria-label="Indicadores del periodo"
         >
-          {cargando || !datos ? (
-            KPI_ESQUELETOS.map((clase, indice) => (
-              <motion.div key={indice} variants={item} className={cn('min-h-28', clase)}>
+          {/* Ventas del periodo */}
+          <Tile
+            hero
+            tone="mint"
+            icon={<TrendingUp size={16} />}
+            label="Ventas del periodo"
+            value={
+              ventas.data ? (
+                <Contador valor={ventas.data.totalUSD} formato={formatUSD} />
+              ) : (
+                <span className="text-base text-muted-foreground">{textoDeEstado(ventas) ?? '…'}</span>
+              )
+            }
+            hint={ventas.data ? `${formatNumber(ventas.data.cantidad)} ventas` : undefined}
+            className="sm:col-span-2"
+          >
+            <div className="mt-2 h-28">
+              {cargaVentas ? (
                 <Skeleton className="h-full w-full" />
-              </motion.div>
-            ))
-          ) : (
-            <>
-              <Tile
-                hero
-                tone="mint"
-                icon={<TrendingUp size={16} />}
-                label="Ventas de hoy"
-                value={<Contador valor={datos.ventasHoyUSD} formato={formatUSD} />}
-                hint={`${formatNumber(datos.ventasHoyCantidad)} ventas · ticket ${formatUSD(datos.ticketPromedioUSD)}`}
-                badge={
-                  variacion !== null ? (
-                    <Pill tone={variacion >= 0 ? 'success' : 'danger'}>
-                      {variacion >= 0 ? '▲' : '▼'} {Math.abs(variacion).toFixed(0)}%
-                    </Pill>
-                  ) : undefined
-                }
-                className="col-span-2"
-              >
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Últimos 7 días</span>
-                  <span className="num text-foreground">{formatUSD(total7)}</span>
-                </div>
-                <div className="mt-2 h-36">
-                  {ventas.data ? (
-                    <AreaSpark data={serie} tone="mint" />
-                  ) : (
-                    <Skeleton className="h-full w-full" />
-                  )}
-                </div>
-              </Tile>
+              ) : ventas.data && serie.length > 0 ? (
+                <AreaSpark data={serie} tone="mint" />
+              ) : null}
+            </div>
+          </Tile>
 
+          {/* Ticket promedio */}
+          {ventas.data ? (
+            ventas.data.cantidad > 0 ? (
+              <Tile
+                tone="mint"
+                icon={<Receipt size={16} />}
+                label="Ticket promedio"
+                value={<Contador valor={ventas.data.ticketPromedioUSD} formato={formatUSD} />}
+                hint={`${formatNumber(ventas.data.cantidad)} ventas completadas`}
+              />
+            ) : (
+              <TileVacio label="Ticket promedio" icon={<Receipt size={16} />} tone="mint" mensaje="No hubo ventas en el periodo." />
+            )
+          ) : (
+            <Tile label="Ticket promedio" icon={<Receipt size={16} />} tone="mint" value={textoDeEstado(ventas) ?? ESQUELETO_TILE} />
+          )}
+
+          {/* Producto más vendido */}
+          {productos.data ? (
+            productos.data.top.length > 0 ? (
+              <Tile
+                tone="lavender"
+                icon={<Star size={16} />}
+                label="Más vendido"
+                value={<span className="text-lg">{productos.data.top[0].productoNombre}</span>}
+                hint={`${formatNumber(productos.data.top[0].unidades)} unidades · ${formatPercent(productos.data.top[0].porcentajeUnidades)} del total`}
+              />
+            ) : (
+              <TileVacio label="Más vendido" icon={<Star size={16} />} tone="lavender" mensaje="No hubo productos vendidos en el periodo." />
+            )
+          ) : (
+            <Tile label="Más vendido" icon={<Star size={16} />} tone="lavender" value={textoDeEstado(productos) ?? ESQUELETO_TILE} />
+          )}
+
+          {/* Ocupación de mesas */}
+          {ocupacion.data ? (
+            ocupacion.data.mesasActivas > 0 ? (
+              <Tile
+                tone="sky"
+                icon={<Armchair size={16} />}
+                label="Ocupación de mesas"
+                value={<Contador valor={ocupacion.data.porcentajeOcupacion} formato={(n) => formatPercent(n, 0)} />}
+                hint={`${ocupacion.data.mesasOcupadas} de ${ocupacion.data.mesasActivas} mesas ocupadas ahora`}
+              />
+            ) : (
+              <TileVacio label="Ocupación de mesas" icon={<Armchair size={16} />} tone="sky" mensaje="No hay mesas activas." />
+            )
+          ) : (
+            <Tile label="Ocupación de mesas" icon={<Armchair size={16} />} tone="sky" value={textoDeEstado(ocupacion) ?? ESQUELETO_TILE} />
+          )}
+
+          {/* Tasa de no asistencia */}
+          {asistencia.data ? (
+            asistencia.data.tasaNoAsistencia !== null ? (
+              <Tile
+                tone="peach"
+                icon={<CalendarX2 size={16} />}
+                label="No asistencia a reservas"
+                value={<Contador valor={asistencia.data.tasaNoAsistencia} formato={(n) => formatPercent(n, 1)} />}
+                hint={`${asistencia.data.noAsistieron} de ${asistencia.data.asistieron + asistencia.data.noAsistieron} reservas no asistieron`}
+              />
+            ) : (
+              <TileVacio
+                label="No asistencia a reservas"
+                icon={<CalendarX2 size={16} />}
+                tone="peach"
+                mensaje="Sin reservas que debieran concretarse."
+              />
+            )
+          ) : (
+            <Tile label="No asistencia a reservas" icon={<CalendarX2 size={16} />} tone="peach" value={textoDeEstado(asistencia) ?? ESQUELETO_TILE} />
+          )}
+
+          {/* Descuadre de caja */}
+          {caja.data ? (
+            caja.data.turnos > 0 ? (
+              <Tile
+                tone={caja.data.descuadreTotal < 0 ? 'rose' : 'mint'}
+                icon={<Wallet size={16} />}
+                label="Descuadre de caja"
+                value={<Contador valor={caja.data.descuadreTotal} formato={formatUSD} />}
+                hint={`${caja.data.turnos} turnos cerrados · mayor ${formatUSD(caja.data.mayorDescuadre)}`}
+              />
+            ) : (
+              <TileVacio label="Descuadre de caja" icon={<Wallet size={16} />} tone="mint" mensaje="Sin turnos cerrados en el periodo." />
+            )
+          ) : (
+            <Tile label="Descuadre de caja" icon={<Wallet size={16} />} tone="mint" value={textoDeEstado(caja) ?? ESQUELETO_TILE} />
+          )}
+
+          {/* Mermas */}
+          {mermas.data ? (
+            mermas.data.porMotivo.length > 0 ? (
+              <Tile
+                tone="peach"
+                icon={<Trash2 size={16} />}
+                label="Mermas del periodo"
+                value={<Contador valor={mermas.data.mermaValorizadaUSD} formato={formatUSD} />}
+                hint={`${formatPercent(mermas.data.porcentaje, 1)} de las ventas`}
+              />
+            ) : (
+              <TileVacio label="Mermas del periodo" icon={<Trash2 size={16} />} tone="peach" mensaje="Sin mermas registradas." />
+            )
+          ) : (
+            <Tile label="Mermas del periodo" icon={<Trash2 size={16} />} tone="peach" value={textoDeEstado(mermas) ?? ESQUELETO_TILE} />
+          )}
+
+          {/* Estado en vivo */}
+          {datos ? (
+            <>
               <Tile
                 tone={datos.cajaAbierta ? 'mint' : 'rose'}
                 icon={<Wallet size={16} />}
                 label="Caja del turno"
                 value={datos.cajaAbierta ? 'Abierta' : 'Cerrada'}
-                badge={
-                  <Pill tone={datos.cajaAbierta ? 'success' : 'danger'}>
-                    {datos.cajaAbierta ? 'Turno en curso' : 'Sin turno'}
-                  </Pill>
-                }
-                className="col-span-2"
-              >
-                <div className="flex h-full flex-col justify-center gap-1.5 text-xs text-muted-foreground">
-                  <p>
-                    {datos.cajaAbierta
-                      ? 'Caja operativa: los cobros de hoy se registran sobre esta caja.'
-                      : 'No hay caja abierta: inicia el turno para poder registrar cobros.'}
-                  </p>
-                  <p>
-                    El turno se abrió con un fondo inicial de{' '}
-                    <span className="num text-foreground">{formatUSD(datos.cajaFondoInicial)}</span> · al
-                    cerrar se hace arqueo desde el módulo Caja.
-                  </p>
-                </div>
-              </Tile>
-
+                hint={datos.cajaAbierta ? `Fondo inicial ${formatUSD(datos.cajaFondoInicial)}` : 'Sin turno en curso'}
+              />
               <Tile
                 tone="sky"
                 icon={<LayoutGrid size={16} />}
                 label="Cuentas abiertas"
                 value={<Contador valor={datos.cuentasAbiertas} formato={formatNumber} />}
-                hint="en curso"
+                hint="en curso ahora"
               />
-
               <Tile
                 tone="lavender"
                 icon={<CalendarClock size={16} />}
@@ -558,39 +708,6 @@ export function DashboardPage() {
                 value={<Contador valor={datos.reservasProximas} formato={formatNumber} />}
                 hint="próximos 7 días"
               />
-
-              <Tile
-                tone="mint"
-                icon={<Receipt size={16} />}
-                label="Ventas del mes"
-                value={<Contador valor={datos.ventasMesUSD} formato={formatUSD} />}
-                hint={`${formatNumber(datos.ventasMesCantidad)} ventas`}
-              >
-                <div className="h-24">
-                  {ventas.data ? (
-                    <MiniBars data={serieMes} tone="mint" />
-                  ) : (
-                    <Skeleton className="h-full w-full" />
-                  )}
-                </div>
-              </Tile>
-
-              <Tile
-                tone="mint"
-                icon={<TrendingUp size={16} />}
-                label="Ticket promedio"
-                value={<Contador valor={datos.ticketPromedioUSD} formato={formatUSD} />}
-                hint="tendencia diaria"
-              >
-                <div className="h-24">
-                  {ventas.data ? (
-                    <AreaSpark data={ticketSerie} tone="lavender" />
-                  ) : (
-                    <Skeleton className="h-full w-full" />
-                  )}
-                </div>
-              </Tile>
-
               <Tile
                 tone="rose"
                 icon={<Boxes size={16} />}
@@ -598,48 +715,50 @@ export function DashboardPage() {
                 value={<Contador valor={datos.productosStockBajo} formato={formatNumber} />}
                 hint="productos bajo mínimo"
               />
-
-              <Tile
-                tone="peach"
-                icon={<Trash2 size={16} />}
-                label="Mermas del mes"
-                value={<Contador valor={datos.mermasMesCantidad} formato={formatNumber} />}
-                hint={`${formatNumber(datos.mermasMesUnidades)} unidades`}
-              />
-
-              <Tile
-                tone="lavender"
-                icon={<Users size={16} />}
-                label="Clientes"
-                value={<Contador valor={datos.clientes} formato={formatNumber} />}
-              />
-
-              <Tile
-                tone="sky"
-                icon={<Package size={16} />}
-                label="Productos activos"
-                value={<Contador valor={datos.productosActivos} formato={formatNumber} />}
-              />
             </>
+          ) : (
+            dashboard.isLoading &&
+            [0, 1, 2, 3].map((indice) => (
+              <motion.div key={indice} variants={item} className="min-h-28">
+                <Skeleton className="h-full w-full" />
+              </motion.div>
+            ))
           )}
         </motion.div>
 
         <motion.div
+          key={`graficas-${desde}-${hasta}`}
           variants={contenedor}
           initial="oculto"
           animate="visible"
-          className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3"
+          className="grid grid-cols-1 gap-6 lg:grid-cols-2"
         >
+          <Panel title="Ventas por día" aside={valido ? etiquetaPeriodo : '—'}>
+            {cargaVentas ? (
+              <Skeleton className="h-full w-full" />
+            ) : serie.length > 0 && ventas.data && ventas.data.cantidad > 0 ? (
+              <BarrasDia data={serie} />
+            ) : (
+              <p className="py-6 text-center text-sm text-muted-foreground">Sin ventas en el periodo.</p>
+            )}
+          </Panel>
+
+          <Panel title="Productos más vendidos" aside="Top 5 por unidades">
+            {productos.isLoading ? (
+              <Skeleton className="h-full w-full" />
+            ) : productos.data && productos.data.top.length > 0 ? (
+              <BarrasProductos items={productos.data.top} />
+            ) : (
+              <p className="py-6 text-center text-sm text-muted-foreground">Sin productos vendidos en el periodo.</p>
+            )}
+          </Panel>
+
           <Panel title="Horas pico" aside="USD por día y hora">
             <Heatmap data={heatmap.data} />
           </Panel>
 
           <Panel title="Mermas por motivo" aside={mermas.data ? `${mermas.data.porcentaje}% de ventas` : '—'}>
-            {mermas.data ? (
-              <BarrasMotivo items={mermas.data.porMotivo} />
-            ) : (
-              <Skeleton className="h-40 w-full" />
-            )}
+            {mermas.data ? <BarrasMotivo items={mermas.data.porMotivo} /> : <Skeleton className="h-full w-full" />}
           </Panel>
 
           <Panel

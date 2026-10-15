@@ -84,11 +84,12 @@ export interface RequestOptions {
   signal?: AbortSignal;
 }
 
-export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
+/** Envía la petición con el token y, si el servidor responde 401, rota el token y reintenta una vez. */
+async function enviar(path: string, options: RequestOptions, accept: string): Promise<Response> {
   const { method = 'GET', body, query, formData, signal } = options;
 
   const call = (token: string | null) => {
-    const headers: Record<string, string> = { Accept: 'application/json' };
+    const headers: Record<string, string> = { Accept: accept };
     if (token) headers.Authorization = `Bearer ${token}`;
     if (body !== undefined && !formData) headers['Content-Type'] = 'application/json';
 
@@ -118,9 +119,51 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     throw new ApiError(response.status, problem);
   }
 
+  return response;
+}
+
+export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const response = await enviar(path, options, 'application/json');
+
   if (response.status === 204) {
     return undefined as T;
   }
 
   return (await response.json()) as T;
+}
+
+export interface ArchivoDescargado {
+  blob: Blob;
+  /** Nombre sugerido por el servidor (`Content-Disposition`), o null si no lo envió. */
+  nombre: string | null;
+}
+
+/** Nombre de archivo de una cabecera `Content-Disposition` (admite `filename*=UTF-8''…` y `filename="…"`). */
+export function nombreDeContentDisposition(cabecera: string | null): string | null {
+  if (!cabecera) return null;
+
+  const extendido = /filename\*\s*=\s*(?:UTF-8'')?([^;]+)/i.exec(cabecera);
+  if (extendido) {
+    const valor = extendido[1].trim().replace(/^"|"$/g, '');
+    try {
+      return decodeURIComponent(valor);
+    } catch {
+      return valor;
+    }
+  }
+
+  const simple = /filename\s*=\s*("([^"]+)"|[^;]+)/i.exec(cabecera);
+  return simple ? (simple[2] ?? simple[1]).trim() : null;
+}
+
+/**
+ * Descarga un archivo con la sesión del usuario. El JWT viaja en la cabecera `Authorization`, así que
+ * un enlace directo no sirve: se pide el binario y la interfaz lo guarda con un enlace temporal.
+ */
+export async function apiDownload(path: string, query?: object, signal?: AbortSignal): Promise<ArchivoDescargado> {
+  const response = await enviar(path, { query, signal }, '*/*');
+  return {
+    blob: await response.blob(),
+    nombre: nombreDeContentDisposition(response.headers.get('Content-Disposition')),
+  };
 }

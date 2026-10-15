@@ -259,7 +259,7 @@ export const GRUPOS: NavGroup[] = [
     icon: Activity,
     roles: ADMIN,
     items: [
-      { to: '/reportes', label: 'Reportes', icon: BarChart3, oculto: true },
+      { to: '/reportes', label: 'Reportes', icon: BarChart3, admin: true },
       { to: '/auditoria', label: 'Auditoría', icon: FileClock, admin: true },
     ],
   },

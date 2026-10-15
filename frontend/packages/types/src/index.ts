@@ -715,6 +715,8 @@ export interface ComparativoMerma {
   registros: number;
   unidades: number;
   valorUSD: number;
+  /** Costo de la merma como porcentaje de las ventas del periodo. */
+  porcentajeVentas: number;
 }
 
 export interface ReporteMermasVsVentas {
@@ -1047,3 +1049,130 @@ export interface RecetaCrear {
   cantidad: number;
 }
 export * from './existencia';
+
+// ---------------------------------------------------------------------------
+// KPIs de ventas y operación, desempeño del mesonero y exportación de reportes
+// ---------------------------------------------------------------------------
+
+export type OrdenProductos = 'Unidades' | 'Ingresos';
+
+export type EstadoRotacion = 'Calculada' | 'NoCalculable' | 'SinMovimiento';
+
+export interface ProductoVendido {
+  varianteId: string;
+  sku: string;
+  productoNombre: string;
+  varianteNombre: string;
+  unidades: number;
+  ingresoUSD: number;
+  porcentajeUnidades: number;
+  porcentajeIngreso: number;
+  existencia: number;
+  /** Unidades vendidas / existencia actual; null cuando no es calculable. */
+  rotacion: number | null;
+  estadoRotacion: EstadoRotacion;
+}
+
+export interface ReporteProductos {
+  desde: string;
+  hasta: string;
+  orden: OrdenProductos;
+  limite: number;
+  totalUnidades: number;
+  totalIngresoUSD: number;
+  top: ProductoVendido[];
+  sinMovimiento: ProductoVendido[];
+}
+
+export interface OcupacionZona {
+  zonaId: string | null;
+  zona: string;
+  mesasActivas: number;
+  mesasOcupadas: number;
+  porcentajeOcupacion: number;
+  sesiones: number;
+  sesionesAbiertas: number;
+  sesionesPorMesa: number | null;
+  permanenciaPromedioMinutos: number | null;
+}
+
+export interface ReporteOcupacion {
+  desde: string;
+  hasta: string;
+  generadoEn: string;
+  mesasActivas: number;
+  mesasOcupadas: number;
+  porcentajeOcupacion: number;
+  sesiones: number;
+  sesionesAbiertas: number;
+  sesionesPorMesa: number | null;
+  permanenciaPromedioMinutos: number | null;
+  porZona: OcupacionZona[];
+}
+
+export interface ReporteReservasAsistencia {
+  desde: string;
+  hasta: string;
+  total: number;
+  asistieron: number;
+  noAsistieron: number;
+  canceladas: number;
+  /** Porcentaje de no asistencia sobre las reservas que debieron concretarse; null si no hubo ninguna. */
+  tasaNoAsistencia: number | null;
+  porEstado: { estado: string; cantidad: number }[];
+}
+
+export interface TurnoCaja {
+  sesionId: string;
+  usuarioId: string;
+  usuarioNombre: string;
+  abiertaEn: string;
+  cerradaEn: string;
+  montoEsperado: number;
+  montoContado: number;
+  descuadre: number;
+}
+
+export interface ReporteCaja {
+  desde: string;
+  hasta: string;
+  turnos: number;
+  descuadreTotal: number;
+  descuadrePromedio: number;
+  mayorDescuadre: number;
+  items: TurnoCaja[];
+}
+
+export interface DesempenoMesonero {
+  usuarioId: string | null;
+  nombre: string;
+  comandas: number;
+  itemsServidos: number;
+  itemsCancelados: number;
+  cuentas: number;
+  ventasGeneradasUSD: number;
+  ticketPorCuentaUSD: number;
+  tasaCancelacion: number;
+  tiempoServicioPromedioSegundos: number | null;
+}
+
+export interface ReporteMesoneros {
+  desde: string;
+  hasta: string;
+  totalVentasUSD: number;
+  mesoneros: DesempenoMesonero[];
+}
+
+export type ReporteExportableId =
+  | 'ventas'
+  | 'productos'
+  | 'inventario'
+  | 'compras'
+  | 'propinas'
+  | 'mesoneros'
+  | 'caja'
+  | 'ocupacion'
+  | 'mermas-vs-ventas'
+  | 'auditoria';
+
+export type FormatoExportacion = 'pdf' | 'xlsx';

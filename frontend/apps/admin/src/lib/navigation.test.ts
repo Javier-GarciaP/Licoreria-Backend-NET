@@ -71,24 +71,27 @@ describe('puedeAcceder por modo', () => {
   });
 });
 
-describe('Auditoría en la navegación', () => {
+describe('Analítica en la navegación', () => {
   const rutasDe = (admin: boolean, modo?: Modo) =>
     filtrarGrupos(admin, admin ? conPermiso : sinPermiso, admin ? 'Administrador' : 'Cajero', modo).flatMap((g) =>
       g.items.map((i) => i.to),
     );
 
-  it('el administrador ve Auditoría en el menú de Analítica, sin Reportes', () => {
+  it('el administrador ve Reportes y Auditoría en el menú de Analítica, en ambos modos', () => {
     for (const modo of ['licoreria', 'discoteca'] as const) {
       const rutas = rutasDe(true, modo);
+      expect(rutas).toContain('/reportes');
       expect(rutas).toContain('/auditoria');
-      expect(rutas).not.toContain('/reportes');
     }
     const analitica = filtrarGrupos(true, conPermiso, 'Administrador').find((g) => g.id === 'analitica');
-    expect(analitica?.items.map((i) => i.to)).toEqual(['/auditoria']);
+    expect(analitica?.items.map((i) => i.to)).toEqual(['/reportes', '/auditoria']);
   });
 
-  it('el cajero no ve Auditoría ni puede acceder a su ruta', () => {
+  it('el cajero no ve Analítica ni puede acceder a Reportes ni a Auditoría', () => {
+    expect(rutasDe(false)).not.toContain('/reportes');
     expect(rutasDe(false)).not.toContain('/auditoria');
+    expect(filtrarGrupos(false, conPermiso, 'Cajero').some((g) => g.id === 'analitica')).toBe(false);
+    expect(puedeAcceder(itemDeRuta('/reportes'), false, conPermiso, 'Cajero')).toBe(false);
     expect(puedeAcceder(itemDeRuta('/auditoria'), false, conPermiso, 'Cajero')).toBe(false);
   });
 });
