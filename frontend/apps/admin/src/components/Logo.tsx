@@ -1,19 +1,24 @@
+import { useId } from 'react';
 import { cn } from '@licoreria/ui';
 
-/** Corcho estilizado: cuerpo redondeado con estrías (marca del sistema). */
+/** Corcho de champán: cabeza ancha con destello y cuerpo cónico (marca del sistema). */
 export function LogoCorcho({ className }: { className?: string }) {
+  const id = useId();
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className={className}>
-      <path
-        d="M8 3.5h8A1.5 1.5 0 0 1 17.5 5v14a1.5 1.5 0 0 1-1.5 1.5H8A1.5 1.5 0 0 1 6.5 19V5A1.5 1.5 0 0 1 8 3.5Z"
-        fill="currentColor"
-      />
-      <path
-        d="M7.6 8.5h8.8M7.6 12h8.8M7.6 15.5h8.8"
-        stroke="rgb(var(--card))"
-        strokeWidth="1.3"
-        strokeLinecap="round"
-      />
+      <defs>
+        <mask id={id} maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
+          <rect width="24" height="24" fill="white" />
+          <path d="M7.4 5.3Q12 7.7 16.6 5.3" stroke="black" strokeWidth="0.9" strokeLinecap="round" />
+        </mask>
+      </defs>
+      <g fill="currentColor">
+        <path
+          mask={`url(#${id})`}
+          d="M12 2C15.6 2 18.1 2.5 18.1 4.2V9.2C18.1 10.6 16.9 11.2 15.4 11.3H8.6C7.1 11.2 5.9 10.6 5.9 9.2V4.2C5.9 2.5 8.4 2 12 2Z"
+        />
+        <path d="M8 12.1H16L16.8 20.6C16.8 21.5 15 22 12 22C9 22 7.2 21.5 7.2 20.6L8 12.1Z" />
+      </g>
     </svg>
   );
 }
