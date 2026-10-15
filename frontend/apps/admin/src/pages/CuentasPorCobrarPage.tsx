@@ -4,18 +4,19 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Wallet } from 'lucide-react';
+import { Plus, Wallet } from 'lucide-react';
 import {
   ActionMenu,
+  Buscador,
+  FiltroDropdown,
+  LimpiarFiltros,
   Button,
   Card,
   CardBody,
   CardHeader,
-  CardTitle,
   DataTable,
   Input,
   Modal,
-  PageHeader,
   Select,
   StatusBadge,
 } from '@licoreria/ui';
@@ -23,6 +24,7 @@ import type { CuentaPorCobrar } from '@licoreria/types';
 import { clientesApi, cuentasPorCobrarApi } from '@licoreria/api-client';
 import { mensajeDeError } from '../lib/api';
 import { formatUSD } from '../lib/format';
+import { contiene } from '../lib/filtros';
 
 const esquemaCrear = z.object({
   clienteId: z.string().min(1, 'Selecciona el cliente'),
@@ -37,12 +39,24 @@ const esquemaPago = z.object({
 export function CuentasPorCobrarPage() {
   const queryClient = useQueryClient();
   const [creando, setCreando] = useState(false);
+  const [busqueda, setBusqueda] = useState('');
+  const [estado, setEstado] = useState('');
   const [pagando, setPagando] = useState<CuentaPorCobrar | null>(null);
 
   const cuentas = useQuery({
     queryKey: ['cuentas-por-cobrar'],
     queryFn: () => cuentasPorCobrarApi.listar({ soloPendientes: true, pageSize: 100 }),
   });
+  const filas = (cuentas.data?.items ?? []).filter(
+    (fila) => contiene(fila.clienteNombre, busqueda) && (!estado || fila.estado === estado),
+  );
+  const estadosDisponibles = Array.from(new Set((cuentas.data?.items ?? []).map((fila) => fila.estado)));
+  const hayFiltros = Boolean(busqueda || estado);
+  const limpiarFiltros = () => {
+    setBusqueda('');
+    setEstado('');
+  };
+
   const clientes = useQuery({ queryKey: ['clientes'], queryFn: () => clientesApi.listar({ pageSize: 100 }) });
 
   const crearForm = useForm({ resolver: zodResolver(esquemaCrear), defaultValues: { clienteId: '', montoUSD: 0, vencimiento: '' } });
@@ -73,24 +87,36 @@ export function CuentasPorCobrarPage() {
   });
 
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader
-        title="Cuentas por cobrar"
-        subtitle="Créditos de clientes pendientes de cobro."
-        actions={<Button onClick={() => setCreando(true)}>Nueva cuenta</Button>}
-      />
-
+    <div className="mx-auto flex max-w-page flex-col gap-4">
       <Card>
-        <CardHeader>
-          <CardTitle>Pendientes</CardTitle>
-          <span className="text-xs text-muted-foreground">{cuentas.data?.items.length ?? 0} cuentas</span>
+        <CardHeader className="flex flex-col items-stretch gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Buscador placeholder="Buscar cliente…" value={busqueda} onCambio={setBusqueda} />
+            <div className="ml-auto">
+              <Button leftIcon={<Plus size={15} />} onClick={() => setCreando(true)}>
+                Nueva cuenta
+              </Button>
+            </div>
+          </div>
+          <div className="border-b border-border" />
+          <div className="flex flex-wrap items-center gap-2">
+            <FiltroDropdown
+              label="Estado"
+              opciones={estadosDisponibles.map((valor) => ({ valor, etiqueta: valor }))}
+              valor={estado}
+              onChange={setEstado}
+            />
+            <div className="ml-auto">
+              <LimpiarFiltros activo={hayFiltros} onClick={limpiarFiltros} />
+            </div>
+          </div>
         </CardHeader>
         <CardBody>
           <DataTable<CuentaPorCobrar>
-            rows={cuentas.data?.items ?? []}
+            rows={filas}
             loading={cuentas.isLoading}
             rowKey={(fila) => fila.id}
-            empty="Sin cuentas por cobrar."
+            empty={hayFiltros ? 'Sin cuentas con esos filtros.' : 'Sin cuentas por cobrar.'}
             columns={[
               { key: 'cliente', header: 'Cliente', render: (fila) => fila.clienteNombre },
               { key: 'monto', header: 'Monto', align: 'right', render: (fila) => formatUSD(fila.montoUSD) },

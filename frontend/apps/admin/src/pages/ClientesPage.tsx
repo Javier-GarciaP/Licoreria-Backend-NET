@@ -5,18 +5,17 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Coins, Eye, Pencil, Trash2 } from 'lucide-react';
+import { Coins, Eye, Pencil, Plus, Trash2 } from 'lucide-react';
 import {
   ActionMenu,
+  Buscador,
   Button,
   Card,
   CardBody,
   CardHeader,
-  CardTitle,
   DataTable,
   Input,
   Modal,
-  PageHeader,
   Pagination,
   Pill,
 } from '@licoreria/ui';
@@ -164,24 +163,23 @@ export function ClientesPage() {
   const formularioAbierto = creando || Boolean(editando);
 
   return (
-    <div className="mx-auto flex max-w-page flex-col gap-6">
-      <PageHeader
-        title="Clientes"
-        subtitle="CRM y programa de fidelidad."
-        actions={<Button onClick={abrirCrear}>Nuevo cliente</Button>}
-      />
+    <div className="mx-auto flex max-w-page flex-col gap-4">
       <Card>
-        <CardHeader>
-          <CardTitle>Clientes</CardTitle>
-          <div className="w-56">
-            <Input
-              placeholder="Buscar…"
+        <CardHeader className="flex flex-col items-stretch gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Buscador
+              placeholder="Buscar nombre, RIF, CI o teléfono…"
               value={busqueda}
-              onChange={(evento) => {
-                setBusqueda(evento.target.value);
+              onCambio={(valor) => {
+                setBusqueda(valor);
                 setPage(1);
               }}
             />
+            <div className="ml-auto">
+              <Button leftIcon={<Plus size={15} />} onClick={abrirCrear}>
+                Nuevo cliente
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardBody>
