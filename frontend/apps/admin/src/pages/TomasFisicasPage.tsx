@@ -17,7 +17,6 @@ import {
 } from '@licoreria/ui';
 import type { TomaFisica } from '@licoreria/types';
 import { inventarioApi } from '@licoreria/api-client';
-import { InventarioTabs } from '../components/InventarioTabs';
 import { mensajeDeError } from '../lib/api';
 import { formatDateTime, formatNumber } from '../lib/format';
 
@@ -57,7 +56,6 @@ export function TomasFisicasPage() {
 
   return (
     <div className="mx-auto flex max-w-page flex-col gap-4">
-      <InventarioTabs />
 
       <Card>
         <CardHeader>

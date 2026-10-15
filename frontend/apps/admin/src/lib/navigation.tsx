@@ -192,7 +192,7 @@ export const GRUPOS: NavGroup[] = [
       },
       { to: '/inventario/kardex', label: 'Kardex', icon: ScrollText, permiso: 'inventory:read' },
       { to: '/inventario/lotes', label: 'Lotes', icon: PackageOpen, permiso: 'inventory:read', oculto: true },
-      { to: '/inventario/envases', label: 'Envases abiertos', icon: Wine, permiso: 'inventory:read', oculto: true },
+      { to: '/inventario/envases', label: 'Envases abiertos', icon: Wine, permiso: 'inventory:read' },
       {
         to: '/inventario/tomas',
         label: 'Tomas físicas',

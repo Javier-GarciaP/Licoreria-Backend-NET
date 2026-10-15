@@ -21,7 +21,6 @@ import {
 import type { Lote } from '@licoreria/types';
 import { inventarioApi } from '@licoreria/api-client';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { InventarioTabs } from '../components/InventarioTabs';
 import { mensajeDeError } from '../lib/api';
 import { formatDateTime, formatNumber } from '../lib/format';
 
@@ -115,7 +114,6 @@ export function LotesPage() {
 
   return (
     <div className="mx-auto flex max-w-page flex-col gap-4">
-      <InventarioTabs />
 
       <Card>
         <CardHeader>
