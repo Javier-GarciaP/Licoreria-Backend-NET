@@ -39,3 +39,9 @@ El diccionario completo está en `docs/dev/03-base-datos/diccionario-datos.md`.
 
 `backend/tests/Licoreria.UnitTests/ServicioCatalogoProductoTests.cs` valida con xUnit + Moq (patrón AAA)
 la lógica del servicio de productos.
+
+## Tamaño de imágenes
+
+`spa` ≈ 106 MB en disco (< 120 MB). `api` ≈ 248 MB en disco descomprimido (base `aspnet:10.0-alpine` ≈ 204 MB
+más 44 MB de la app, publicada solo para `linux-musl-x64`); su tamaño comprimido de transferencia es menor.
+Reducirla más requiere recortar el runtime (trimming/ReadyToRun), pendiente.

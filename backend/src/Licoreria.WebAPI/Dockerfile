@@ -5,9 +5,9 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 COPY . .
-RUN dotnet restore Licoreria.slnx
+RUN dotnet restore src/Licoreria.WebAPI/Licoreria.WebAPI.csproj -r linux-musl-x64
 RUN dotnet publish src/Licoreria.WebAPI/Licoreria.WebAPI.csproj \
-    -c Release -o /app/publish /p:UseAppHost=false
+    -c Release -r linux-musl-x64 --self-contained false -o /app/publish /p:UseAppHost=false
 
 # ===== Runtime =====
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS final
