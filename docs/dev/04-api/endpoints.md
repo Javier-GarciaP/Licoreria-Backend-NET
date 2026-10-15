@@ -329,6 +329,14 @@ Las rutas marcadas como **publica** no requieren token.
 | `GET` | `/api/v1/reportes/heatmap` | token |
 | `GET` | `/api/v1/reportes/inventario-salud` | token |
 | `GET` | `/api/v1/reportes/mermas-vs-ventas` | token |
+| `GET` | `/api/v1/reportes/productos` | `sales:read` |
+| `GET` | `/api/v1/reportes/ocupacion` | `club:read` |
+| `GET` | `/api/v1/reportes/reservas-asistencia` | `club:read` |
+| `GET` | `/api/v1/reportes/caja` | `cash:close` |
+| `GET` | `/api/v1/reportes/mesoneros` | Administrador |
+| `GET` | `/api/v1/reportes/{reporte}/exportar` | permiso de la consulta |
+
+Definiciones de los indicadores y de la exportación: [Reportes](../06-modulos/reportes.md).
 
 ## Reservas
 

@@ -66,6 +66,10 @@ public static class DependencyInjection
         // Generación de PDF del menú digital.
         services.AddSingleton<IGeneradorMenuPdf, GeneradorMenuPdfQuestPdf>();
 
+        // Exportadores de reportes (PDF y Excel): el servicio elige el que corresponde al formato pedido.
+        services.AddSingleton<IExportadorReportes, ExportadorReportesPdf>();
+        services.AddSingleton<IExportadorReportes, ExportadorReportesExcel>();
+
         services.AddScoped<IServicioInventario, ServicioInventario>();
         services.AddScoped<IServicioEnvases, ServicioEnvases>();
         services.AddScoped<IServicioAutenticacion, ServicioAutenticacion>();
@@ -84,6 +88,7 @@ public static class DependencyInjection
         services.AddScoped<IServicioIa, ServicioIa>();
         services.AddScoped<IServicioCompras, ServicioCompras>();
         services.AddScoped<IServicioReportes, ServicioReportes>();
+        services.AddScoped<IServicioExportacionReportes, ServicioExportacionReportes>();
         services.AddScoped<IServicioAuditoria, ServicioAuditoria>();
         services.AddScoped<IServicioChat, ServicioChat>();
 

@@ -39,4 +39,31 @@ public interface IServicioReportes
         DateTime? desde = null,
         DateTime? hasta = null,
         CancellationToken cancellationToken = default);
+
+    Task<ReporteProductosDto> ObtenerProductosAsync(
+        DateTime? desde = null,
+        DateTime? hasta = null,
+        OrdenProductos orden = OrdenProductos.Unidades,
+        int limite = 10,
+        CancellationToken cancellationToken = default);
+
+    Task<ReporteOcupacionDto> ObtenerOcupacionAsync(
+        DateTime? desde = null,
+        DateTime? hasta = null,
+        CancellationToken cancellationToken = default);
+
+    Task<ReporteReservasAsistenciaDto> ObtenerReservasAsistenciaAsync(
+        DateTime? desde = null,
+        DateTime? hasta = null,
+        CancellationToken cancellationToken = default);
+
+    Task<ReporteCajaDto> ObtenerCajaAsync(
+        DateTime? desde = null,
+        DateTime? hasta = null,
+        CancellationToken cancellationToken = default);
+
+    Task<ReporteMesonerosDto> ObtenerMesonerosAsync(
+        DateTime? desde = null,
+        DateTime? hasta = null,
+        CancellationToken cancellationToken = default);
 }

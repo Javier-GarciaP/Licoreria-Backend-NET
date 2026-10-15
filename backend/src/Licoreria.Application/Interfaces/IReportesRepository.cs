@@ -47,4 +47,44 @@ public interface IReportesRepository
         DateTime desde,
         DateTime hasta,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Unidades e ingresos por variante en ventas no anuladas del periodo, junto con la existencia actual.
+    /// Incluye las variantes con existencia aunque no tengan ventas.
+    /// </summary>
+    Task<IReadOnlyList<ProductoVendidoCrudoDto>> ObtenerProductosVendidosAsync(
+        DateTime desde,
+        DateTime hasta,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Mesas activas y ocupadas ahora, y sesiones iniciadas en el periodo, agregadas por zona.
+    /// Las sesiones abiertas cuentan su permanencia hasta <paramref name="ahora"/>.
+    /// </summary>
+    Task<IReadOnlyList<OcupacionZonaCrudaDto>> ObtenerOcupacionAsync(
+        DateTime desde,
+        DateTime hasta,
+        DateTime ahora,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Reservas del periodo agrupadas por estado.</summary>
+    Task<IReadOnlyList<ReservasPorEstadoDto>> ObtenerReservasPorEstadoAsync(
+        DateTime desde,
+        DateTime hasta,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Turnos de caja cerrados en el periodo, con su arqueo.</summary>
+    Task<IReadOnlyList<TurnoCajaDto>> ObtenerTurnosCerradosAsync(
+        DateTime desde,
+        DateTime hasta,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Actividad de comandas del periodo agrupada por el usuario que las creó
+    /// (los ítems de comandas sin creador se agrupan como «Sin asignar»).
+    /// </summary>
+    Task<IReadOnlyList<MesoneroCrudoDto>> ObtenerActividadMesonerosAsync(
+        DateTime desde,
+        DateTime hasta,
+        CancellationToken cancellationToken = default);
 }

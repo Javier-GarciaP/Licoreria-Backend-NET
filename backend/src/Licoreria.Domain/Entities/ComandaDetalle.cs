@@ -23,11 +23,23 @@ public class ComandaDetalle : BaseEntity
     /// <summary>Indica que los insumos del ítem están reservados y aún no se sirvieron ni liberaron.</summary>
     public bool Reservado { get; set; }
 
+    /// <summary>
+    /// Momento en que el ítem se sirvió por primera vez (Preparado o Entregado). Es nulo en los
+    /// ítems anteriores a esta marca o que aún no se sirvieron, y nunca se sobrescribe.
+    /// </summary>
+    public DateTime? ServidoEn { get; set; }
+
     public decimal SubtotalUSD => EsCortesia ? 0m : Cantidad * PrecioUnitarioUSD;
 
-    public void CambiarEstado(EstadoItemComanda estado)
+    public void CambiarEstado(EstadoItemComanda estado, DateTime? ahora = null)
     {
         Estado = estado;
+
+        if (ServidoEn is null && estado is EstadoItemComanda.Preparado or EstadoItemComanda.Entregado)
+        {
+            ServidoEn = ahora ?? DateTime.UtcNow;
+        }
+
         MarcarModificado();
     }
 }

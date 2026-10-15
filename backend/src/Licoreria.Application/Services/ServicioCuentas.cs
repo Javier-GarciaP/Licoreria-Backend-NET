@@ -462,7 +462,7 @@ public sealed class ServicioCuentas : IServicioCuentas
                 cuenta.Descontar(detalle.SubtotalUSD);
             }
 
-            detalle.CambiarEstado(dto.Estado);
+            detalle.CambiarEstado(dto.Estado, _reloj.UtcNow);
 
             // El estado general de la comanda se deriva de sus líneas.
             var comanda = cuenta.Comandas.FirstOrDefault(c => c.Id == comandaId);

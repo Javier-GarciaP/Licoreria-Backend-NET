@@ -708,6 +708,9 @@ namespace Licoreria.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
+                    b.Property<DateTime?>("ServidoEn")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uuid");
 
