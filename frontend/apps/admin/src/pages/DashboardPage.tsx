@@ -735,7 +735,7 @@ export function DashboardPage() {
     <MotionConfig reducedMotion="user">
       <div className="flex flex-col gap-6">
         <Card>
-          <CardHeader className="flex flex-wrap items-end gap-3">
+          <CardHeader className="flex flex-wrap items-end gap-3 pb-5 lg:pb-6">
             <div className="flex flex-col gap-1">
               <span className="text-xs font-medium text-foreground">Periodo</span>
               <SelectorPeriodo periodo={periodo} onElegir={periodo.elegir} onRango={periodo.fijarRango} />

@@ -207,7 +207,7 @@ export function ReportesPage() {
   return (
     <div className="mx-auto flex max-w-page flex-col gap-4">
       <Card>
-        <CardHeader className="flex flex-wrap items-end gap-3">
+        <CardHeader className="flex flex-wrap items-end gap-3 pb-5 lg:pb-6">
           <FiltroDropdown
             label="Reporte"
             limpiable={false}
