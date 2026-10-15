@@ -13,6 +13,15 @@ y el proyecto se adhiere a [Versionado Semantico](https://semver.org/lang/es/).
 
 ### Agregado
 
+- **Fase 5 y ajustes de interfaz (`fase-5-devops-y-ajustes-ui`):**
+  - **Compose `db` / `api` / `spa`** (5432, 5000, 8080) con healthchecks y `depends_on` por salud; imagen de la API sobre
+    `aspnet:10.0-alpine` y `ci.yml` que publica artefacto e imágenes solo si pasan las pruebas.
+  - **Dominio:** `StockProducto.Ubicacion` (migración `UbicacionStock`).
+  - **Dashboard:** más KPIs y paneles, y exportación a PDF; barra de filtros en tarjeta en Dashboard y Reportes.
+  - **Patrón visual unificado:** listados con toolbar, sin encabezado de página salvo Salón, Envases abiertos en el sidebar,
+    nuevo logo de corcho de champán.
+  - **Cajero:** sin Dashboard, Categorías y marcas, Unidades, Kardex ni Tasas de cambio.
+
 - **Pruebas y cobertura (`pruebas-y-cobertura`):**
   - **Pruebas unitarias con Moq** de `ServicioInventario`, `ServicioCaja`, `ServicioCompras`, `ServicioUsuarios`,
     `ServicioAuditoria`, `ServicioKardex` y `ServicioAutenticacion` (casos exitosos, de borde y de error), de los
