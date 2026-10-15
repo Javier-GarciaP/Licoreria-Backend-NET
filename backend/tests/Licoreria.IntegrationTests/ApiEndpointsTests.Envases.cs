@@ -18,7 +18,7 @@ public partial class ApiEndpointsTests
     private async Task<decimal> ExistenciaAsync(Guid productoId, Guid varianteId)
         => (await VarianteDeAsync(productoId, varianteId)).GetProperty("cantidad").GetDecimal();
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Envase_Destapar_LaBotellaDeUnLitro_CreaCuatroVasosYDescuentaUnaBotella()
     {
         var cola = await CrearColaAsync(litros: 3);
@@ -37,7 +37,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(4, vaso.GetProperty("porcionesDisponibles").GetInt32());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Envase_Destapar_ElegirLaDeDosLitros_CreaOchoVasos()
     {
         var cola = await CrearColaAsync();
@@ -50,7 +50,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(4m, await ExistenciaAsync(cola.ProductoId, cola.DosLitros));
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Envase_Destapar_UnaPresentacionSinExistencia_Devuelve422()
     {
         var cola = await CrearColaAsync(litros: 0);
@@ -61,7 +61,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.UnprocessableEntity, respuesta.StatusCode);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Envase_Destapar_UnaPresentacionQueNoEsOrigen_Devuelve422()
     {
         var cola = await CrearColaAsync();
@@ -72,7 +72,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.UnprocessableEntity, respuesta.StatusCode);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Envase_Listar_MuestraLosAbiertosDeLaPorcion()
     {
         var cola = await CrearColaAsync();
@@ -88,7 +88,7 @@ public partial class ApiEndpointsTests
         Assert.Contains("Vaso", lista[0].GetProperty("porcionNombre").GetString());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Envase_Descartar_RetiraElEnvaseYSeRegistraLaMerma()
     {
         var cola = await CrearColaAsync();
@@ -108,7 +108,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(0, (await VarianteDeAsync(cola.ProductoId, cola.Vaso)).GetProperty("porcionesDisponibles").GetInt32());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Envase_Descartar_SinMotivo_Devuelve422YUnEnvaseInexistente_404()
     {
         var cola = await CrearColaAsync();
@@ -122,7 +122,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.NotFound, inexistente.StatusCode);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Envase_UnMeseroNoPuedeDestaparNiDescartar_PeroSiConsultar()
     {
         var cola = await CrearColaAsync();
@@ -139,7 +139,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.OK, consultar.StatusCode);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Envase_Barra_SiPuedeDestapar()
     {
         var cola = await CrearColaAsync();
@@ -151,7 +151,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.Created, respuesta.StatusCode);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Envase_DosBarrasDestapanLaUltimaBotellaAlMismoTiempo_SoloSeAbreUnEnvase()
     {
         for (var ronda = 0; ronda < 10; ronda++)

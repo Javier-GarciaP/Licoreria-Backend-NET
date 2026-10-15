@@ -23,7 +23,8 @@ public partial class ApiEndpointsTests
         return (await JsonAsync(respuesta)).GetProperty("id").GetGuid();
     }
 
-    [Fact]
+    [Trait("Category", "Concurrency")]
+    [HechoDeIntegracion]
     public async Task Mesa_AbiertaPorVariosMesonerosAlMismoTiempo_SoloUnaCuentaSeAbre()
     {
         await AbrirTurnoAsync();
@@ -38,7 +39,8 @@ public partial class ApiEndpointsTests
         Assert.All(resultados.Where(r => r.Valor != HttpStatusCode.Created), r => Assert.Equal(HttpStatusCode.Conflict, r.Valor));
     }
 
-    [Fact]
+    [Trait("Category", "Concurrency")]
+    [HechoDeIntegracion]
     public async Task Cuenta_CobradaPorVariosCajerosAlMismoTiempo_RegistraUnaSolaVenta()
     {
         await AbrirTurnoAsync();
@@ -65,7 +67,8 @@ public partial class ApiEndpointsTests
         Assert.Equal(0m, reservada);
     }
 
-    [Fact]
+    [Trait("Category", "Concurrency")]
+    [HechoDeIntegracion]
     public async Task Abonos_AlMismoTiempo_NoPierdenNingunAbono()
     {
         await AbrirTurnoAsync();
@@ -93,7 +96,8 @@ public partial class ApiEndpointsTests
         Assert.Equal(confirmados, cuenta.GetProperty("abonos").GetArrayLength());
     }
 
-    [Fact]
+    [Trait("Category", "Concurrency")]
+    [HechoDeIntegracion]
     public async Task Item_ServidoPorBarraYMesoneroAlMismoTiempo_DescuentaUnaSolaVez()
     {
         await AbrirTurnoAsync();
@@ -126,7 +130,8 @@ public partial class ApiEndpointsTests
         origen = "Web"
     };
 
-    [Fact]
+    [Trait("Category", "Concurrency")]
+    [HechoDeIntegracion]
     public async Task Reservas_DeLaMismaMesaYHoraAlMismoTiempo_SoloUnaSeCrea()
     {
         var mesaId = await CrearMesaAsync();
@@ -140,7 +145,8 @@ public partial class ApiEndpointsTests
         Assert.All(resultados.Where(r => r.Valor != HttpStatusCode.Created), r => Assert.Equal(HttpStatusCode.Conflict, r.Valor));
     }
 
-    [Fact]
+    [Trait("Category", "Concurrency")]
+    [HechoDeIntegracion]
     public async Task Reservas_MultimesaEnOrdenCruzado_NoSeBloqueanEntreSi()
     {
         var mesaA = await CrearMesaAsync();
@@ -159,7 +165,8 @@ public partial class ApiEndpointsTests
         Assert.All(resultados.Where(r => r.Valor != HttpStatusCode.Created), r => Assert.Equal(HttpStatusCode.Conflict, r.Valor));
     }
 
-    [Fact]
+    [Trait("Category", "Concurrency")]
+    [HechoDeIntegracion]
     public async Task Reservas_DeMesasDistintasAlMismoTiempo_SeCreanTodas()
     {
         var mesas = new List<Guid>();
@@ -194,7 +201,8 @@ public partial class ApiEndpointsTests
     private async Task<Guid> TurnoActivoAsync()
         => (await JsonAsync(await _factory.Client.GetAsync("/api/v1/sesiones-caja/activa"))).GetProperty("id").GetGuid();
 
-    [Fact]
+    [Trait("Category", "Concurrency")]
+    [HechoDeIntegracion]
     public async Task Turno_AbiertoPorVariosCajerosAlMismoTiempo_SoloUnoQuedaAbierto()
     {
         await CerrarTurnoSiHayAsync();
@@ -207,7 +215,8 @@ public partial class ApiEndpointsTests
         Assert.All(resultados.Where(r => r.Valor != HttpStatusCode.Created), r => Assert.Equal(HttpStatusCode.Conflict, r.Valor));
     }
 
-    [Fact]
+    [Trait("Category", "Concurrency")]
+    [HechoDeIntegracion]
     public async Task Turno_CerradoPorVariosUsuariosAlMismoTiempo_SeCierraUnaSolaVez()
     {
         await CerrarTurnoSiHayAsync();
@@ -223,7 +232,8 @@ public partial class ApiEndpointsTests
         Assert.All(resultados.Where(r => r.Valor != HttpStatusCode.OK), r => Assert.Equal(HttpStatusCode.Conflict, r.Valor));
     }
 
-    [Fact]
+    [Trait("Category", "Concurrency")]
+    [HechoDeIntegracion]
     public async Task Ventas_DuranteElCierreDelTurno_NuncaQuedanFueraDelArqueo()
     {
         await CerrarTurnoSiHayAsync();
@@ -273,7 +283,8 @@ public partial class ApiEndpointsTests
 
     /* ===================== La última Coca-Cola ===================== */
 
-    [Fact]
+    [Trait("Category", "Concurrency")]
+    [HechoDeIntegracion]
     public async Task UltimaUnidad_PedidaPorDosMesonerosAlMismoTiempo_SoloUnoLaObtiene()
     {
         await AbrirTurnoAsync();

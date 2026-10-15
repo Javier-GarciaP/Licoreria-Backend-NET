@@ -9,7 +9,7 @@ public partial class ApiEndpointsTests
 {
     private static object PromocionNueva(string nombre) => new { nombre, tipo = "Porcentaje", valor = 10m, activo = true };
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Promociones_MeseroNoPuedeCrear_CajeroListaYAdministradorCrea()
     {
         using var mesero = await ClienteDeAsync("mesero1@licoreria.com");
@@ -26,7 +26,7 @@ public partial class ApiEndpointsTests
         Assert.True(creaAdmin.IsSuccessStatusCode, await creaAdmin.Content.ReadAsStringAsync());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Clientes_CajeroPuedeListar_MeseroRecibe403()
     {
         using var mesero = await ClienteDeAsync("mesero1@licoreria.com");
@@ -54,7 +54,7 @@ public partial class ApiEndpointsTests
     private async Task<JsonElement> ClienteAsync(Guid id)
         => await JsonAsync(await _factory.Client.GetAsync($"/api/v1/clientes/{id}"));
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Venta_ConCliente_AcumulaPuntosYQuedaAsociada()
     {
         await AbrirTurnoAsync();
@@ -76,7 +76,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(25, (await ClienteAsync(clienteId)).GetProperty("puntos").GetInt32());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Venta_ConFiado_CreaCuentaPorCobrarEnlazadaYSumaPuntosSoloDeLoPagado()
     {
         await AbrirTurnoAsync();
@@ -107,7 +107,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(venta.GetProperty("id").GetGuid(), cuenta.GetProperty("ventaId").GetGuid());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Venta_ConCreditoSinCliente_Devuelve422YNoDescuentaStock()
     {
         await AbrirTurnoAsync();
@@ -124,7 +124,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(5m, (await ObtenerStockAsync(sku)).Cantidad);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Venta_ConClienteInactivoOInexistente_RechazaLaVenta()
     {
         await AbrirTurnoAsync();
@@ -145,7 +145,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.NotFound, (await _factory.Client.PostAsJsonAsync("/api/v1/ventas", Cuerpo(Guid.NewGuid()))).StatusCode);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Devolucion_RevierteLosPuntosYAvisaSiLaVentaEstaFiada()
     {
         await AbrirTurnoAsync();
@@ -179,7 +179,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(10, (await ClienteAsync(clienteId)).GetProperty("puntos").GetInt32());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Cliente_Ventas_ListaLasVentasAsociadasYRespetaElPermiso()
     {
         await AbrirTurnoAsync();
@@ -205,7 +205,7 @@ public partial class ApiEndpointsTests
 
     // ================= Compras: recorrido completo =================
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Compras_OrdenAprobadaYRecibida_AumentaElStockYGeneraLaCuentaPorPagar()
     {
         var (_, varianteId, sku) = await CrearProductoConStockAsync("Producto Compras", 9m, 2);
@@ -243,7 +243,7 @@ public partial class ApiEndpointsTests
         Assert.True(pago.IsSuccessStatusCode, await pago.Content.ReadAsStringAsync());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Compras_SoloElAdministradorLasConsulta()
     {
         using var cajero = await ClienteDeAsync("cajero1@licoreria.com");

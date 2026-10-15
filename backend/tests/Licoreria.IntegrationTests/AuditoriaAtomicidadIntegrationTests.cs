@@ -21,7 +21,7 @@ public class AuditoriaAtomicidadIntegrationTests
         return await db.AuditLogs.CountAsync(l => l.EntidadId == entidadId && (accion == null || l.Accion == accion));
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task TransaccionRevertida_NoDejaEntradasDeAuditoria()
     {
         using var scope = _factory.Services.CreateScope();
@@ -39,7 +39,7 @@ public class AuditoriaAtomicidadIntegrationTests
         Assert.Equal(0, await ContarAsync(categoria.Id));
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task TransaccionConfirmada_DejaUnaEntradaDeCreacion()
     {
         using var scope = _factory.Services.CreateScope();
@@ -56,7 +56,7 @@ public class AuditoriaAtomicidadIntegrationTests
         Assert.Equal(1, await ContarAsync(categoria.Id, "crear"));
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task ConflictoConReintento_DejaUnaSolaEntradaPorCambioReal()
     {
         Guid id;

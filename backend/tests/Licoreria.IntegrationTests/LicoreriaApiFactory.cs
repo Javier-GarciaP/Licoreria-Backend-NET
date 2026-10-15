@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Licoreria.IntegrationTests.Support;
 using Npgsql;
 
 namespace Licoreria.IntegrationTests;
@@ -18,8 +19,8 @@ namespace Licoreria.IntegrationTests;
 /// </summary>
 public sealed class LicoreriaApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    private const string DbName = "licoreria_test";
-    private const string AdminConn = "Host=localhost;Port=5432;Username=licoreria;Password=licoreria";
+    private static string DbName => BaseDeDatosDePruebas.NombreBase;
+    private static string AdminConn => BaseDeDatosDePruebas.ConexionServidor;
 
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {
@@ -31,7 +32,19 @@ public sealed class LicoreriaApiFactory : WebApplicationFactory<Program>, IAsync
 
     public async Task InitializeAsync()
     {
-        await using (var conn = new NpgsqlConnection($"{AdminConn};Database=postgres"))
+        // Sin base de datos no se intenta crear nada: las pruebas de integración se omiten (o fallan con un
+        // mensaje claro si LICORERIA_TESTS_REQUIRE_DB=true), pero la fixture no lanza antes de que eso ocurra.
+        if (!BaseDeDatosDePruebas.Disponible)
+        {
+            if (BaseDeDatosDePruebas.Obligatoria)
+            {
+                throw new InvalidOperationException(BaseDeDatosDePruebas.MotivoNoDisponible);
+            }
+
+            return;
+        }
+
+        await using (var conn = new NpgsqlConnection(BaseDeDatosDePruebas.ConexionAdministracion()))
         {
             await conn.OpenAsync();
             await using var drop = new NpgsqlCommand($"DROP DATABASE IF EXISTS {DbName} WITH (FORCE)", conn);

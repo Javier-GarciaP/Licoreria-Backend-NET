@@ -41,7 +41,7 @@ public partial class ApiEndpointsTests
 
     // ================= Permisos por rol =================
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Host_NoPuedeEditarPlanosNiCrearMesas_PeroSiGestionarListaVip()
     {
         var planoId = await PlanoNuevoAsync("Plano Permisos");
@@ -65,7 +65,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.OK, (await host.GetAsync("/api/v1/lista-vip")).StatusCode);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Mesero_PuedeConsultarElPlanoYDesalojar_PeroNoEditar()
     {
         var planoId = await PlanoNuevoAsync("Plano Mesero");
@@ -79,7 +79,7 @@ public partial class ApiEndpointsTests
 
     // ================= Fondo =================
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Fondo_SubirReemplazarYQuitar_GestionaElArchivo()
     {
         var planoId = await PlanoNuevoAsync("Plano Croquis");
@@ -98,7 +98,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(JsonValueKind.Null, (await JsonAsync(quitar)).GetProperty("fondoImagenUrl").ValueKind);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Fondo_ArchivoInvalido_Devuelve400()
     {
         var planoId = await PlanoNuevoAsync("Plano Croquis Invalido");
@@ -110,7 +110,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.BadRequest, grande.StatusCode);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Fondo_PlanoInexistente_Devuelve404()
     {
         var respuesta = await _factory.Client.PostAsync($"/api/v1/planos/{Guid.NewGuid()}/fondo", Archivo(PngMinimo, "a.png", "image/png"));
@@ -118,7 +118,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.NotFound, respuesta.StatusCode);
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Plano_Edicion_IgnoraUnaUrlDeFondoExterna()
     {
         var planoId = await PlanoNuevoAsync("Plano Url Externa");
@@ -139,7 +139,7 @@ public partial class ApiEndpointsTests
         Assert.Equal(0.3, body.GetProperty("fondoOpacidad").GetDouble());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Plano_OpacidadFueraDeRango_Devuelve400()
     {
         var planoId = await PlanoNuevoAsync("Plano Opacidad");
@@ -158,7 +158,7 @@ public partial class ApiEndpointsTests
 
     // ================= Duplicar y plantillas =================
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Duplicar_CreaCopiaInactivaYDejaElOriginalIntacto()
     {
         var planoId = await PlanoNuevoAsync("Plano Original");
@@ -179,7 +179,7 @@ public partial class ApiEndpointsTests
             copia.GetProperty("fondoImagenUrl").GetString());
     }
 
-    [Fact]
+    [HechoDeIntegracion]
     public async Task Plantilla_NoSeVeSinPermisoNiSePuedeActivar()
     {
         var planoId = await PlanoNuevoAsync("Plano Base");
